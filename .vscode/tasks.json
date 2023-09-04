@@ -9,7 +9,7 @@
   },
   "tasks": [
     {
-      "label": "Launch Cal.com Development terminals",
+      "label": "Launch OneHash Development terminals",
       "dependsOn": [
         "Web App(3000)",
         "Website(3001)",

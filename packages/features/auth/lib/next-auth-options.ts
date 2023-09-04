@@ -56,7 +56,7 @@ export const checkIfUserBelongsToActiveTeam = <T extends UserTeams>(user: T) =>
 const providers: Provider[] = [
   CredentialsProvider({
     id: "credentials",
-    name: "Cal.com",
+    name: "OneHash",
     type: "credentials",
     credentials: {
       email: { label: "Email Address", type: "email", placeholder: "john.doe@example.com" },

@@ -90,7 +90,7 @@ const zoomAuth = (credential: CredentialPayload) => {
 
     if (responseBody.error) {
       if (responseBody.error === "invalid_grant") {
-        return Promise.reject(new Error("Invalid grant for Cal.com zoom app"));
+        return Promise.reject(new Error("Invalid grant for OneHash zoom app"));
       }
     }
     // We check the if the new credentials matches the expected response structure
@@ -269,7 +269,7 @@ const ZoomVideoApiAdapter = (credential: CredentialPayload): VideoApiAdapter => 
         if (response.error) {
           if (response.error === "invalid_grant") {
             await invalidateCredential(credential.id);
-            return Promise.reject(new Error("Invalid grant for Cal.com zoom app"));
+            return Promise.reject(new Error("Invalid grant for OneHash zoom app"));
           }
         }
 

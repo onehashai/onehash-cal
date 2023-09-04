@@ -13,7 +13,7 @@ export const metadata = {
   category: "calendar",
   categories: ["calendar"],
   logo: "icon.svg",
-  publisher: "Cal.com",
+  publisher: "OneHash",
   slug: "google-calendar",
   url: "https://cal.com/",
   email: "help@cal.com",

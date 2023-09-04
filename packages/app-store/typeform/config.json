@@ -7,7 +7,7 @@
   "url": "https://cal.com/",
   "variant": "other",
   "categories": ["automation"],
-  "publisher": "Cal.com, Inc.",
+  "publisher": "OneHash, Inc.",
   "email": "help@cal.com",
   "description": "Adds a link to copy Typeform Redirect URL",
   "__createdUsingCli": true

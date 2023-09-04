@@ -30,7 +30,7 @@ export default class DisabledAppEmail extends BaseEmail {
 
   protected getNodeMailerPayload(): Record<string, unknown> {
     return {
-      from: `Cal.com <${this.getMailerOptions().from}>`,
+      from: `OneHash <${this.getMailerOptions().from}>`,
       to: this.email,
       subject:
         this.title && this.eventTypeId

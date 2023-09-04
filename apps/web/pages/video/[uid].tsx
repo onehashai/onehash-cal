@@ -107,7 +107,7 @@ export default function JoinCall(props: JoinCallPageProps) {
         <img
           className="h-5·w-auto fixed z-10 hidden sm:inline-block"
           src={`${WEBSITE_URL}/cal-logo-word-dark.svg`}
-          alt="Cal.com Logo"
+          alt="OneHash Logo"
           style={{
             top: 46,
             left: 24,

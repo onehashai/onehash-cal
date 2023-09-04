@@ -9,7 +9,7 @@ items:
 
 {DESCRIPTION}
 
-Skiff is a privacy-first, end-to-end encrypted workspace with Mail, Pages, Drive, and Calendar applications. Skiff Calendar integrates with Cal.com, enabling you to schedule appointments, organize events, and use your preferred video conferencing product.
+Skiff is a privacy-first, end-to-end encrypted workspace with Mail, Pages, Drive, and Calendar applications. Skiff Calendar integrates with OneHash, enabling you to schedule appointments, organize events, and use your preferred video conferencing product.
 
 ## Features
 

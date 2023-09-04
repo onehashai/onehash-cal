@@ -42,7 +42,7 @@ export const tips = [
     thumbnailUrl: "https://img.youtube.com/vi/0v_nQtpxC_4/0.jpg",
     mediaLink: "https://go.cal.com/payments-video",
     title: "Accept Payments",
-    description: "Charge for your time with Cal.com's Stripe App",
+    description: "Charge for your time with OneHash's Stripe App",
     href: "https://app.cal.com/apps/stripe",
   },
   {

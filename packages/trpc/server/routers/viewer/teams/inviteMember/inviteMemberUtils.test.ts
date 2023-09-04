@@ -303,7 +303,7 @@ describe("Invite Member Utils", () => {
       expect(() => throwIfInviteIsToOrgAndUserExists(inviteeWithOrg, teamWithOrg, isOrg)).toThrow(TRPCError);
     });
 
-    it("should throw a TRPCError with code FORBIDDEN if the invitee already exists in Cal.com and is being invited to an organization", () => {
+    it("should throw a TRPCError with code FORBIDDEN if the invitee already exists in OneHash and is being invited to an organization", () => {
       const isOrg = true;
       expect(() => throwIfInviteIsToOrgAndUserExists(invitee, mockedTeam, isOrg)).toThrow(TRPCError);
     });
