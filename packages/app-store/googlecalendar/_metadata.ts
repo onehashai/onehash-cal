@@ -15,8 +15,8 @@ export const metadata = {
   logo: "icon.svg",
   publisher: "OneHash",
   slug: "google-calendar",
-  url: "https://cal.com/",
-  email: "help@cal.com",
+  url: "https://www.onehash.ai",
+  email: "support@onehash.ai",
   dirName: "googlecalendar",
 } as AppMeta;
 

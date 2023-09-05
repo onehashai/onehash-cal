@@ -13,9 +13,9 @@ export const metadata = {
   slug: "zapier",
   title: "Zapier",
   type: "zapier_automation",
-  url: "https://cal.com/apps/zapier",
+  url: "https://cal.onehash.ai/apps/zapier",
   variant: "automation",
-  email: "help@cal.com",
+  email: "support@onehash.ai",
   dirName: "zapier",
 } as AppMeta;
 

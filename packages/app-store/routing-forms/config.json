@@ -6,12 +6,12 @@
   "slug": "routing-forms",
   "type": "routing-forms_other",
   "logo": "icon-dark.svg",
-  "url": "https://cal.com/resources/feature/routing-forms",
+  "url": "https://onehash.ai",
   "variant": "other",
   "categories": ["automation"],
-  "publisher": "OneHash, Inc.",
+  "publisher": "OneHash",
   "simplePath": "/apps/routing-forms",
-  "email": "help@cal.com",
+  "email": "support@onehash.ai",
   "licenseRequired": true,
   "teamsPlanRequired": {
     "upgradeUrl": "/routing-forms/forms"

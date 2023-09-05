@@ -5,11 +5,11 @@
   "slug": "closecom",
   "type": "closecom_other_calendar",
   "logo": "icon.svg",
-  "url": "https://cal.com/",
+  "url": "https://www.onehash.ai",
   "variant": "other",
   "categories": ["crm"],
-  "publisher": "OneHash, Inc.",
-  "email": "help@cal.com",
+  "publisher": "OneHash",
+  "email": "support@onehash.ai",
   "description": "Close is the inside sales CRM of choice for startups and SMBs. Make more calls, send more emails and close more deals starting today.",
   "__createdUsingCli": true
 }

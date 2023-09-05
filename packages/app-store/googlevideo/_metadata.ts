@@ -15,9 +15,9 @@ export const metadata = {
   variant: "conferencing",
   logo: "logo.webp",
   publisher: "OneHash",
-  url: "https://cal.com/",
+  url: "https://www.onehash.ai",
   isGlobal: false,
-  email: "help@cal.com",
+  email: "support@onehash.ai",
   appData: {
     location: {
       linkType: "dynamic",

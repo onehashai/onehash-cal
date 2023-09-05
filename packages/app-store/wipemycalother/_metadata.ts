@@ -14,9 +14,9 @@ export const metadata = {
   slug: "wipe-my-cal",
   title: "Wipe my cal",
   type: "wipemycal_other",
-  url: "https://cal.com/apps/wipe-my-cal",
+  url: "https://cal.onehash.ai/apps/wipe-my-cal",
   variant: "other",
-  email: "help@cal.com",
+  email: "support@onehash.ai",
   dirName: "wipemycalother",
 } as AppMeta;
 
