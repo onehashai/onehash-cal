@@ -2,8 +2,8 @@
   "name": "@calcom/features",
   "sideEffects": false,
   "private": true,
-  "description": "Cal.com's main collocation of features",
-  "authors": "Cal.com, Inc.",
+  "description": "OneHash's main collocation of features",
+  "authors": "OneHash, Inc.",
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {

@@ -3,8 +3,8 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "Cal.com Atoms",
-  "authors": "Cal.com, Inc.",
+  "description": "OneHash Atoms",
+  "authors": "OneHash, Inc.",
   "version": "1.0.0",
   "scripts": {
     "build": "node build.mjs"

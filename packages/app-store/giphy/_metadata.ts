@@ -8,7 +8,7 @@ export const metadata = {
   installed: true,
   categories: ["other"],
   logo: "icon.svg",
-  publisher: "Cal.com",
+  publisher: "OneHash",
   slug: "giphy",
   title: "Giphy",
   type: "giphy_other",

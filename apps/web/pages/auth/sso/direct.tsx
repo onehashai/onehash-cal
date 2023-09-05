@@ -10,7 +10,7 @@ import type { inferSSRProps } from "@lib/types/inferSSRProps";
 import PageWrapper from "@components/PageWrapper";
 
 // This page is used to initiate the SAML authentication flow by redirecting to the SAML provider.
-// Accessible only on self-hosted Cal.com instances.
+// Accessible only on self-hosted OneHash instances.
 export default function Page({ samlTenantID, samlProductID }: inferSSRProps<typeof getServerSideProps>) {
   const router = useRouter();
 

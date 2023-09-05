@@ -26,7 +26,7 @@ afterEach(() => {
 test("check generic lead generator: already exists", async () => {
   CloseCom.prototype.lead = {
     list: () => ({
-      data: [{ name: "From Cal.com", id: "abc" }],
+      data: [{ name: "From OneHash", id: "abc" }],
     }),
   } as any;
 
@@ -133,7 +133,7 @@ test("retrieve custom fields for custom activity type: type exists, no field cre
 
   CloseCom.prototype.customActivity = {
     type: {
-      get: () => ({ data: [{ id: "typeX", name: "Cal.com Activity" }] }),
+      get: () => ({ data: [{ id: "typeX", name: "OneHash Activity" }] }),
     },
   } as any;
 
@@ -251,7 +251,7 @@ test("prepare data to create custom activity type instance: one attendees, with 
 
   CloseCom.prototype.lead = {
     list: () => ({
-      data: [{ name: "From Cal.com", id: "abc" }],
+      data: [{ name: "From OneHash", id: "abc" }],
     }),
   } as any;
 

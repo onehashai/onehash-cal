@@ -2,7 +2,7 @@
 
 From the [Original RFC](https://github.com/calcom/cal.com/issues/7142):
 
-> We want to create organisations within Cal.com to enable people to easily and effectively manage multiple teams. An organisation will live above the current teams layer.
+> We want to create organisations within OneHash to enable people to easily and effectively manage multiple teams. An organisation will live above the current teams layer.
 
 ## Quick start
 
@@ -20,7 +20,7 @@ From the [Original RFC](https://github.com/calcom/cal.com/issues/7142):
 `CALCOM_LICENSE_KEY`: Since Organizations is an EE feature, a license key should be present, either as this environment variable or visiting as an Admin `/auth/setup`
 `NEXT_PUBLIC_WEBAPP_URL`: In case of local development, this variable should be set to `https://app.cal.local:3000` to be able to handle subdomains
 `NEXTAUTH_URL`: Should be equal to `NEXT_PUBLIC_WEBAPP_URL`
-`NEXTAUTH_COOKIE_DOMAIN`: In case of local development, this variable should be set to `.cal.local` to be able to accept session cookies in subdomains as well otherwise it should be set to the corresponding environment such as `.cal.dev`, `.cal.qa` or `.cal.com`
+`NEXTAUTH_COOKIE_DOMAIN`: In case of local development, this variable should be set to `.cal.local` to be able to accept session cookies in subdomains as well otherwise it should be set to the corresponding environment such as `.cal.dev`, `.cal.qa` or `.OneHash`
 `ORGANIZATIONS_ENABLED`: Should be set to `1`
 `STRIPE_ORG_MONTHLY_PRICE_ID`: For dev and all testing should be set to your own testing key. Or ask for the shared key if you're a core member.
 

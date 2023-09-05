@@ -246,7 +246,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             to: sendTo,
             from: {
               email: senderEmail,
-              name: reminder.workflowStep.sender || "Cal.com",
+              name: reminder.workflowStep.sender || "OneHash",
             },
             subject: emailContent.emailSubject,
             html: emailContent.emailBody,

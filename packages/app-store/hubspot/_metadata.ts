@@ -9,7 +9,7 @@ export const metadata = {
   type: "hubspot_other_calendar",
   variant: "other_calendar",
   logo: "icon.svg",
-  publisher: "Cal.com",
+  publisher: "OneHash",
   url: "https://hubspot.com/",
   categories: ["crm"],
   label: "HubSpot CRM",

@@ -141,7 +141,7 @@ export default function Custom404() {
                 <h1 className="font-cal text-emphasis mt-2 text-3xl font-extrabold">
                   {t("signup_requires")}
                 </h1>
-                <p className="mt-4">{t("signup_requires_description", { companyName: "Cal.com" })}</p>
+                <p className="mt-4">{t("signup_requires_description", { companyName: "OneHash" })}</p>
               </div>
               <div className="mt-12">
                 <h2 className="text-subtle text-sm font-semibold uppercase tracking-wide">
