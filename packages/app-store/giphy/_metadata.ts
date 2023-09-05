@@ -12,10 +12,10 @@ export const metadata = {
   slug: "giphy",
   title: "Giphy",
   type: "giphy_other",
-  url: "https://cal.com/apps/giphy",
+  url: "https://cal.onehash.ai/apps/giphy",
   variant: "other",
   extendsFeature: "EventType",
-  email: "help@cal.com",
+  email: "support@onehash.ai",
   dirName: "giphy",
 } as AppMeta;
 

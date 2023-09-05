@@ -14,8 +14,8 @@ export const metadata = {
   publisher: "OneHash",
   slug: "office365-calendar",
   dirName: "office365calendar",
-  url: "https://cal.com/",
-  email: "help@cal.com",
+  url: "https://www.onehash.ai",
+  email: "support@onehash.ai",
 } as AppMeta;
 
 export default metadata;

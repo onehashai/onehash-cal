@@ -58,17 +58,17 @@ export const HOSTED_CAL_FEATURES = process.env.NEXT_PUBLIC_HOSTED_CAL_FEATURES |
 export const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_WEBAPP_URL || `https://${process.env.VERCEL_URL}`;
 export const LOGO = "/onehash_logo.svg";
 export const LOGO_ICON = "/onehash_logo_icon.svg";
-export const FAVICON_16 = "/favicon-16x16.png";
-export const FAVICON_32 = "/favicon-32x32.png";
-export const APPLE_TOUCH_ICON = "/apple-touch-icon.png";
-export const MSTILE_ICON = "/mstile-150x150.png";
-export const ANDROID_CHROME_ICON_192 = "/android-chrome-192x192.png";
-export const ANDROID_CHROME_ICON_256 = "/android-chrome-256x256.png";
+export const FAVICON_16 = "/onehash-16x16.png";
+export const FAVICON_32 = "/onehash-32x32.png";
+export const APPLE_TOUCH_ICON = "/onehash_logo_icon.png";
+export const MSTILE_ICON = "/onehash-mstile-150x150.png";
+export const ANDROID_CHROME_ICON_192 = "/onehash_logo_icon-192x192.png";
+export const ANDROID_CHROME_ICON_256 = "/onehash_logo_icon-256x256.png";
 export const ROADMAP = "https://cal.com/roadmap";
 export const DESKTOP_APP_LINK = "https://cal.com/download";
 export const JOIN_DISCORD = "https://go.cal.com/discord";
 export const POWERED_BY_URL = `${WEBSITE_URL}/?utm_source=embed&utm_medium=powered-by-button`;
-export const DOCS_URL = "https://cal.com/docs";
+export const DOCS_URL = "https://help.onehash.ai/en/";
 export const DEVELOPER_DOCS = "https://developer.cal.com";
 export const SEO_IMG_DEFAULT = `${WEBSITE_URL}/og-image.png`;
 // The Dynamic OG Image is passed through Next's Image API to further optimize it.

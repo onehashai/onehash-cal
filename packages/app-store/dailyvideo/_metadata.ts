@@ -16,7 +16,7 @@ export const metadata = {
   slug: "daily-video",
   title: "Cal Video",
   isGlobal: true,
-  email: "help@cal.com",
+  email: "support@onehash.ai",
   appData: {
     location: {
       linkType: "dynamic",

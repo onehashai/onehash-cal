@@ -7,8 +7,8 @@
   "url": "https://cal.com/",
   "variant": "conferencing",
   "categories": ["conferencing"],
-  "publisher": "Cal.com, Inc.",
-  "email": "help@cal.com",
+  "publisher": "OneHash",
+  "email": "support@onehash.ai",
   "description": "Your online recording studio. The easiest way to record podcasts and videos in studio quality from anywhere. All from the browser.",
   "__createdUsingCli": true,
   "appData": {

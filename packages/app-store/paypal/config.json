@@ -7,7 +7,7 @@
   "variant": "payment",
   "categories": ["payment"],
   "publisher": "OneHash",
-  "email": "support@cal.com",
+  "email": "support@onehash.ai",
   "description": "Paypal payment app by OneHash",
   "extendsFeature": "EventType",
   "isTemplate": false,

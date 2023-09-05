@@ -17,11 +17,11 @@ export const metadata = {
   publisher: "OneHash",
   title: "Stripe",
   type: "stripe_payment",
-  url: "https://cal.com/",
+  url: "https://www.onehash.ai",
   docsUrl: "https://stripe.com/docs",
   variant: "payment",
   extendsFeature: "EventType",
-  email: "help@cal.com",
+  email: "support@onehash.ai",
   dirName: "stripepayment",
 } as AppMeta;
 
