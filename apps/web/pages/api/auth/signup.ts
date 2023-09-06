@@ -32,7 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(403).json({ message: "Signup is disabled" });
     return;
   }
-
   const data = req.body;
   const { email, password, language, token } = signupSchema.parse(data);
 
@@ -47,7 +46,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!isValid) {
       const message: string =
         email !== incomingEmail ? "Username already taken" : "Email address is already registered";
-
       return res.status(409).json({ message });
     }
   };
@@ -57,7 +55,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
+  const userValidation = await validateUsername(username, userEmail);
+  const validation_check = validationResponse(userEmail, userValidation);
+  if (validation_check !== undefined) {
+    return validation_check;
+  }
+
   let foundToken: { id: number; teamId: number | null; expires: Date } | null = null;
+  const hashedPassword = await hashPassword(password);
+
+  await prisma.user.upsert({
+    where: { email: userEmail },
+    update: {
+      username,
+      password: hashedPassword,
+      emailVerified: new Date(Date.now()),
+      identityProvider: IdentityProvider.CAL,
+    },
+    create: {
+      username,
+      email: userEmail,
+      password: hashedPassword,
+      identityProvider: IdentityProvider.CAL,
+    },
+  });
+
+  await sendEmailVerification({
+    email: userEmail,
+    username,
+    language,
+  });
+
   if (token) {
     foundToken = await prisma.verificationToken.findFirst({
       where: {
@@ -81,12 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const teamUserValidation = await validateUsernameInTeam(username, userEmail, foundToken?.teamId);
       return validationResponse(userEmail, teamUserValidation);
     }
-  } else {
-    const userValidation = await validateUsername(username, userEmail);
-    return validationResponse(userEmail, userValidation);
   }
-
-  const hashedPassword = await hashPassword(password);
 
   if (foundToken && foundToken?.teamId) {
     const team = await prisma.team.findUnique({
@@ -204,26 +227,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return;
       }
     }
-    await prisma.user.upsert({
-      where: { email: userEmail },
-      update: {
-        username,
-        password: hashedPassword,
-        emailVerified: new Date(Date.now()),
-        identityProvider: IdentityProvider.CAL,
-      },
-      create: {
-        username,
-        email: userEmail,
-        password: hashedPassword,
-        identityProvider: IdentityProvider.CAL,
-      },
-    });
-    await sendEmailVerification({
-      email: userEmail,
-      username,
-      language,
-    });
   }
 
   res.status(201).json({ message: "Created user" });
