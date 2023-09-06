@@ -32,8 +32,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(403).json({ message: "Signup is disabled" });
     return;
   }
-
+  console.log("running api");
   const data = req.body;
+  console.log(data);
   const { email, password, language, token } = signupSchema.parse(data);
 
   const username = slugify(data.username);
@@ -43,11 +44,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     incomingEmail: string,
     validation: { isValid: boolean; email: string | undefined }
   ) => {
+    console.log("in validation");
     const { isValid, email } = validation;
     if (!isValid) {
       const message: string =
         email !== incomingEmail ? "Username already taken" : "Email address is already registered";
-
       return res.status(409).json({ message });
     }
   };
@@ -59,6 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   let foundToken: { id: number; teamId: number | null; expires: Date } | null = null;
   if (token) {
+    console.log("if token");
     foundToken = await prisma.verificationToken.findFirst({
       where: {
         token,
@@ -82,13 +84,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return validationResponse(userEmail, teamUserValidation);
     }
   } else {
+    console.log("in not token");
     const userValidation = await validateUsername(username, userEmail);
-    return validationResponse(userEmail, userValidation);
+    const data = validationResponse(userEmail, userValidation);
+    if (data === undefined) {
+      return data;
+    } else return data;
   }
 
   const hashedPassword = await hashPassword(password);
-
   if (foundToken && foundToken?.teamId) {
+    console.log("if foundToken");
     const team = await prisma.team.findUnique({
       where: {
         id: foundToken.teamId,
@@ -195,6 +201,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
   } else {
+    console.log("in not found token");
     if (IS_CALCOM) {
       const checkUsername = await checkPremiumUsername(username);
       if (checkUsername.premium) {
