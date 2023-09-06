@@ -166,7 +166,7 @@ export default function Signup({ prepopulateFormValues, token, orgSlug }: Signup
                       color="secondary"
                       className="w-full justify-center"
                       onClick={() =>
-                        signIn("OneHash", {
+                        signIn("Cal.com", {
                           callbackUrl: searchParams?.get("callbackUrl")
                             ? `${WEBAPP_URL}/${searchParams.get("callbackUrl")}`
                             : `${WEBAPP_URL}/getting-started`,
