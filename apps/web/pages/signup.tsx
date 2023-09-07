@@ -7,6 +7,7 @@ import type { SubmitHandler } from "react-hook-form";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { isPasswordValid } from "@calcom/features/auth/lib/isPasswordValid";
 import { checkPremiumUsername } from "@calcom/features/ee/common/lib/checkPremiumUsername";
 import { getOrgFullDomain } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
@@ -30,7 +31,10 @@ const signupSchema = z.object({
     message: "String should not contain a plus symbol (+).",
   }),
   email: z.string().email(),
-  password: z.string().min(7),
+  password: z.string().refine((val) => isPasswordValid(val.trim(), false, true), {
+    message:
+      "The password must be a minimum of 7 characters long containing at least one number and have a mixture of uppercase and lowercase letters",
+  }),
   language: z.string().optional(),
   token: z.string().optional(),
   apiError: z.string().optional(), // Needed to display API errors doesnt get passed to the API
@@ -147,13 +151,7 @@ export default function Signup({ prepopulateFormValues, token, orgSlug }: Signup
                     labelProps={{
                       className: "block text-sm font-medium text-default",
                     }}
-                    {...register("password", {
-                      validate: (value: string) => {
-                        if (value.length >= 7) return true;
-                        return "Password length must be atleast 7";
-                      },
-                    })}
-                    hintErrors={["caplow", "min", "num"]}
+                    {...register("password")}
                     className="border-default mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-black sm:text-sm"
                   />
                 </div>

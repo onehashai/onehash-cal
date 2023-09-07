@@ -8,10 +8,10 @@ export function isPasswordValid(password: string, breakdown?: boolean, strict?: 
   let cap = false, // Has uppercase characters
     low = false, // Has lowercase characters
     num = false, // At least one number
-    min = false, // Eight characters, or fifteen in strict mode.
+    min = false, // Seven characters.
     admin_min = false;
-  if (password.length > 7 && (!strict || password.length > 14)) min = true;
-  if (strict && password.length > 14) admin_min = true;
+  if (password.length > 7 && (!strict || password.length > 7)) min = true;
+  if (strict && password.length > 7) admin_min = true;
   for (let i = 0; i < password.length; i++) {
     if (!isNaN(parseInt(password[i]))) num = true;
     else {
