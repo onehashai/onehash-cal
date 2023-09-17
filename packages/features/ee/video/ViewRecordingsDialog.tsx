@@ -2,7 +2,6 @@ import { useRouter } from "next/navigation";
 import { useState, Suspense } from "react";
 
 import dayjs from "@calcom/dayjs";
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { useHasTeamPlan } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RecordingItemSchema } from "@calcom/prisma/zod-utils";
@@ -177,7 +176,7 @@ export const ViewRecordingsDialog = (props: IViewRecordingsDialog) => {
       <DialogContent>
         <DialogHeader title={t("recordings_title")} subtitle={subtitle} />
         {roomName ? (
-          <LicenseRequired>
+          <>
             {isTeamPlanStatusLoading ? (
               <RecordingListSkeleton />
             ) : (
@@ -185,7 +184,7 @@ export const ViewRecordingsDialog = (props: IViewRecordingsDialog) => {
                 <ViewRecordingsList hasTeamPlan={!!hasTeamPlan} roomName={roomName} />
               </Suspense>
             )}
-          </LicenseRequired>
+          </>
         ) : (
           <p className="font-semibold">{t("no_recordings_found")}</p>
         )}

@@ -58,7 +58,7 @@ export const purchaseTeamSubscription = async (input: {
       address: "auto",
     },
     automatic_tax: {
-      enabled: true,
+      enabled: false,
     },
     metadata: {
       teamId,

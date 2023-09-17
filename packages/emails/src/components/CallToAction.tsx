@@ -28,7 +28,7 @@ export const CallToAction = (props: {
     <p
       style={{
         display: "inline-block",
-        background: secondary ? "#FFFFFF" : "#292929",
+        background: secondary ? "#FFFFFF" : "#007ee5",
         border: secondary ? "1px solid #d1d5db" : "",
         color: "#ffffff",
         fontFamily: "Roboto, Helvetica, sans-serif",
@@ -48,7 +48,7 @@ export const CallToAction = (props: {
       }}>
       <a
         style={{
-          color: secondary ? "#292929" : "#FFFFFF",
+          color: secondary ? "#007ee5" : "#FFFFFF",
           textDecoration: "none",
           display: "flex",
           alignItems: "center",

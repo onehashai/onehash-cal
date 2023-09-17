@@ -63,7 +63,7 @@ const AppearanceView = () => {
   const formMethods = useForm({
     defaultValues: {
       theme: user?.theme,
-      brandColor: user?.brandColor || "#292929",
+      brandColor: user?.brandColor || "#007ee5",
       darkBrandColor: user?.darkBrandColor || "#fafafa",
       hideBranding: user?.hideBranding,
       metadata: user?.metadata as z.infer<typeof userMetadata>,
@@ -175,7 +175,7 @@ const AppearanceView = () => {
               <p className="text-default mb-2 block text-sm font-medium">{t("light_brand_color")}</p>
               <ColorPicker
                 defaultValue={user.brandColor}
-                resetDefaultValue="#292929"
+                resetDefaultValue="#007ee5"
                 onChange={(value) => {
                   if (!checkWCAGContrastColor("#ffffff", value)) {
                     setLightModeError(true);

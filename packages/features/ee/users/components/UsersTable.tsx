@@ -15,8 +15,6 @@ import {
 } from "@calcom/ui";
 import { Edit, Trash, Lock } from "@calcom/ui/components/icon";
 
-import { withLicenseRequired } from "../../common/components/LicenseRequired";
-
 const { Cell, ColumnTitle, Header, Row } = Table;
 
 const FETCH_LIMIT = 25;
@@ -220,4 +218,4 @@ const DeleteUserDialog = ({
   );
 };
 
-export const UsersTable = withLicenseRequired(UsersTableBare);
+export const UsersTable = UsersTableBare;

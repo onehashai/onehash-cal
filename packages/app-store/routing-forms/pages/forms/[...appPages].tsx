@@ -2,7 +2,6 @@
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import SkeletonLoaderTeamList from "@calcom/features/ee/teams/components/SkeletonloaderTeamList";
 import { FilterResults } from "@calcom/features/filters/components/FilterResults";
 import { TeamsFilter } from "@calcom/features/filters/components/TeamsFilter";
@@ -129,7 +128,7 @@ export default function RoutingForms({
   ];
 
   return (
-    <LicenseRequired>
+    <>
       <ShellMain
         heading="Routing Forms"
         CTA={hasPaidPlan && forms?.length ? <NewFormButton /> : null}
@@ -307,7 +306,7 @@ export default function RoutingForms({
           </FormActionsProvider>
         </UpgradeTip>
       </ShellMain>
-    </LicenseRequired>
+    </>
   );
 }
 

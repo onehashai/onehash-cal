@@ -1,7 +1,6 @@
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { nameOfDay } from "@calcom/lib/weekday";
@@ -62,13 +61,13 @@ const OrgGeneralView = () => {
     currentOrg.user.role === MembershipRole.OWNER || currentOrg.user.role === MembershipRole.ADMIN;
 
   return (
-    <LicenseRequired>
+    <>
       <GeneralView
         currentOrg={currentOrg}
         isAdminOrOwner={isAdminOrOwner}
         localeProp={user?.locale ?? "en"}
       />
-    </LicenseRequired>
+    </>
   );
 };
 

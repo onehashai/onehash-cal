@@ -8,7 +8,6 @@ import { trpc } from "@calcom/trpc/react";
 import { Meta, showToast } from "@calcom/ui";
 
 import { getLayout } from "../../../settings/layouts/SettingsLayout";
-import LicenseRequired from "../../common/components/LicenseRequired";
 import { UserForm } from "../components/UserForm";
 import { userBodySchema } from "../schemas/userBodySchema";
 
@@ -41,7 +40,7 @@ const UsersEditView = ({ userId }: { userId: number }) => {
     },
   });
   return (
-    <LicenseRequired>
+    <>
       <Meta title={`Editing user: ${user.username}`} description="Here you can edit a current user." />
       <NoSSR>
         <UserForm
@@ -60,7 +59,7 @@ const UsersEditView = ({ userId }: { userId: number }) => {
           defaultValues={user}
         />
       </NoSSR>
-    </LicenseRequired>
+    </>
   );
 };
 
