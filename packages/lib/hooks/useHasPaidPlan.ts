@@ -1,10 +1,9 @@
 import { trpc } from "@calcom/trpc/react";
 
-import { IS_SELF_HOSTED } from "../constants";
 import hasKeyInMetadata from "../hasKeyInMetadata";
 
 export function useHasPaidPlan() {
-  if (IS_SELF_HOSTED) return { isLoading: false, hasPaidPlan: true };
+  // if (IS_SELF_HOSTED) return { isLoading: false, hasPaidPlan: true };
 
   const { data: hasTeamPlan, isLoading: isLoadingTeamQuery } = trpc.viewer.teams.hasTeamPlan.useQuery();
 
