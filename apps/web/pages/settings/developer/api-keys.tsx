@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import type { TApiKeys } from "@calcom/ee/api-keys/components/ApiKeyListItem";
-import LicenseRequired from "@calcom/ee/common/components/LicenseRequired";
 import ApiKeyDialogForm from "@calcom/features/ee/api-keys/components/ApiKeyDialogForm";
 import ApiKeyListItem from "@calcom/features/ee/api-keys/components/ApiKeyListItem";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
@@ -51,7 +50,7 @@ const ApiKeysView = () => {
         description={t("create_first_api_key_description", { appName: APP_NAME })}
       />
 
-      <LicenseRequired>
+      <>
         <>
           {isLoading && <SkeletonLoader />}
           <div>
@@ -82,7 +81,7 @@ const ApiKeysView = () => {
             )}
           </div>
         </>
-      </LicenseRequired>
+      </>
 
       <Dialog open={apiKeyModal} onOpenChange={setApiKeyModal}>
         <DialogContent type="creation">

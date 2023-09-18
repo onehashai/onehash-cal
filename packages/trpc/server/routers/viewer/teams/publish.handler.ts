@@ -41,7 +41,9 @@ const generateCheckoutSession = async ({
   seats: number;
   userId: number;
 }) => {
+  console.log("4 step");
   if (!IS_TEAM_BILLING_ENABLED) return;
+  console.log("5 step");
 
   const checkoutSession = await purchaseTeamSubscription({
     teamId,
@@ -109,6 +111,7 @@ const publishOrganizationTeamHandler = async ({ ctx, input }: PublishOptions) =>
 };
 
 export const publishHandler = async ({ ctx, input }: PublishOptions) => {
+  console.log("1 step");
   if (ctx.user.organizationId) return publishOrganizationTeamHandler({ ctx, input });
 
   if (!(await isTeamAdmin(ctx.user.id, input.teamId))) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -119,6 +122,7 @@ export const publishHandler = async ({ ctx, input }: PublishOptions) => {
   if (!prevTeam) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found." });
 
   const metadata = parseMetadataOrThrow(prevTeam.metadata);
+  console.log("2 step");
 
   // if payment needed, respond with checkout url
   const checkoutSession = await generateCheckoutSession({
@@ -126,8 +130,10 @@ export const publishHandler = async ({ ctx, input }: PublishOptions) => {
     seats: prevTeam.members.length,
     userId: ctx.user.id,
   });
+  console.log("3 step");
 
   if (checkoutSession) return checkoutSession;
+  console.log("6 step");
 
   if (!metadata?.requestedSlug) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Can't publish team without `requestedSlug`" });

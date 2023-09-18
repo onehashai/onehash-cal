@@ -1,5 +1,4 @@
 import NoSSR from "@calcom/core/components/NoSSR";
-import LicenseRequired from "@calcom/ee/common/components/LicenseRequired";
 import { extractDomainFromWebsiteUrl } from "@calcom/ee/organizations/lib/utils";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
@@ -131,12 +130,12 @@ function AdminOrgTable() {
 const AdminOrgList = () => {
   const { t } = useLocale();
   return (
-    <LicenseRequired>
+    <>
       <Meta title={t("organizations")} description={t("orgs_page_description")} />
       <NoSSR>
         <AdminOrgTable />
       </NoSSR>
-    </LicenseRequired>
+    </>
   );
 };
 

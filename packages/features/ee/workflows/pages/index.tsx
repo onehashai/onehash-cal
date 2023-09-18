@@ -16,7 +16,6 @@ import { AnimatedPopover, Avatar, CreateButtonWithTeamsList, showToast } from "@
 import { FilterResults } from "../../../filters/components/FilterResults";
 import { TeamsFilter } from "../../../filters/components/TeamsFilter";
 import { getTeamsFiltersFromQuery } from "../../../filters/lib/getTeamsFiltersFromQuery";
-import LicenseRequired from "../../common/components/LicenseRequired";
 import EmptyScreen from "../components/EmptyScreen";
 import SkeletonLoader from "../components/SkeletonLoaderList";
 import WorkflowList from "../components/WorkflowListPage";
@@ -68,7 +67,7 @@ function WorkflowsPage() {
           />
         ) : null
       }>
-      <LicenseRequired>
+      <>
         <>
           {queryRes.data?.totalCount ? (
             <div className="flex">
@@ -92,7 +91,7 @@ function WorkflowsPage() {
             <WorkflowList workflows={queryRes.data?.filtered} />
           </FilterResults>
         </>
-      </LicenseRequired>
+      </>
     </ShellMain>
   );
 }

@@ -44,7 +44,7 @@ export default function JoinCall(props: JoinCallPageProps) {
           background: "#111111",
           backgroundAccent: "#111111",
           baseText: "#FFF",
-          border: "#292929",
+          border: "#007ee5",
           mainAreaBg: "#111111",
           mainAreaBgAccent: "#111111",
           mainAreaText: "#FFF",

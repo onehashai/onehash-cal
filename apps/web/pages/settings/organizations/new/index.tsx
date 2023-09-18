@@ -1,6 +1,5 @@
 import type { GetServerSidePropsContext } from "next";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { CreateANewOrganizationForm } from "@calcom/features/ee/organizations/components";
 import { getFeatureFlagMap } from "@calcom/features/flags/server/utils";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -13,10 +12,10 @@ import PageWrapper from "@components/PageWrapper";
 const CreateNewOrganizationPage = ({ querySlug }: inferSSRProps<typeof getServerSideProps>) => {
   const { t } = useLocale();
   return (
-    <LicenseRequired>
+    <>
       <Meta title={t("set_up_your_organization")} description={t("organizations_description")} />
       <CreateANewOrganizationForm slug={querySlug} />
-    </LicenseRequired>
+    </>
   );
 };
 const LayoutWrapper = (page: React.ReactElement) => {

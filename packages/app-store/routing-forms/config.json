@@ -12,7 +12,7 @@
   "publisher": "OneHash",
   "simplePath": "/apps/routing-forms",
   "email": "support@onehash.ai",
-  "licenseRequired": true,
+  "licenseRequired": false,
   "teamsPlanRequired": {
     "upgradeUrl": "/routing-forms/forms"
   },

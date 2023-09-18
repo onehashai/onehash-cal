@@ -1,4 +1,3 @@
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import Shell from "@calcom/features/shell/Shell";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HeadSeo } from "@calcom/ui";
@@ -20,9 +19,9 @@ export default function WrappedApp(props: AppPageProps) {
         app={{ slug: props.logo, name: props.name, description: props.description }}
       />
       {props.licenseRequired ? (
-        <LicenseRequired>
+        <>
           <AppPage {...props} />
-        </LicenseRequired>
+        </>
       ) : (
         <AppPage {...props} />
       )}

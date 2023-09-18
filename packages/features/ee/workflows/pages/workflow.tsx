@@ -26,7 +26,6 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import type { MultiSelectCheckboxesOptionType as Option } from "@calcom/ui";
 import { Alert, Badge, Button, Form, showToast } from "@calcom/ui";
 
-import LicenseRequired from "../../common/components/LicenseRequired";
 import SkeletonLoader from "../components/SkeletonLoaderEdit";
 import WorkflowDetailsPage from "../components/WorkflowDetailsPage";
 import { isSMSAction, isSMSOrWhatsappAction } from "../lib/actionHelperFunctions";
@@ -295,7 +294,7 @@ function WorkflowPage() {
             </div>
           )
         }>
-        <LicenseRequired>
+        <>
           {!isError ? (
             <>
               {isAllDataLoaded && user ? (
@@ -318,7 +317,7 @@ function WorkflowPage() {
           ) : (
             <Alert severity="error" title="Something went wrong" message={error.message} />
           )}
-        </LicenseRequired>
+        </>
       </Shell>
     </Form>
   ) : (

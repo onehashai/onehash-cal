@@ -13,7 +13,6 @@ import { trpc } from "@calcom/trpc/react";
 import { Button, EmptyScreen, showToast, Switch, Tooltip, Alert } from "@calcom/ui";
 import { ExternalLink, Zap, Lock, Info } from "@calcom/ui/components/icon";
 
-import LicenseRequired from "../../common/components/LicenseRequired";
 import { getActionIcon } from "../lib/getActionIcon";
 import SkeletonLoader from "./SkeletonLoaderEventWorkflowsTab";
 import type { WorkflowType } from "./WorkflowListPage";
@@ -252,7 +251,7 @@ function EventWorkflowsTab(props: Props) {
   });
 
   return (
-    <LicenseRequired>
+    <>
       {!isLoading ? (
         <>
           {isManagedEventType && (
@@ -300,7 +299,7 @@ function EventWorkflowsTab(props: Props) {
       ) : (
         <SkeletonLoader />
       )}
-    </LicenseRequired>
+    </>
   );
 }
 

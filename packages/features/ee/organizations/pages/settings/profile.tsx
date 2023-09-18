@@ -6,7 +6,6 @@ import { useState, useLayoutEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -91,7 +90,7 @@ const OrgProfileView = () => {
   if (!orgBranding) return null;
 
   return (
-    <LicenseRequired>
+    <>
       <Meta title={t("profile")} description={t("profile_org_description")} />
       {!isLoading && (
         <>
@@ -237,7 +236,7 @@ const OrgProfileView = () => {
           {/* LEAVE ORG should go above here ^ */}
         </>
       )}
-    </LicenseRequired>
+    </>
   );
 };
 
