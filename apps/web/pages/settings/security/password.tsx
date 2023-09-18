@@ -107,7 +107,7 @@ const PasswordView = () => {
 
   const isDisabled = formMethods.formState.isSubmitting || !formMethods.formState.isDirty;
 
-  const passwordMinLength = data?.user.role === "USER" ? 7 : 15;
+  const passwordMinLength = data?.user.role === "USER" ? 7 : 7;
   const isUser = data?.user.role === "USER";
 
   return (
