@@ -153,7 +153,7 @@ const ProfileView = () => {
                   <p className="text-emphasis mb-2 block text-sm font-medium">{t("light_brand_color")}</p>
                   <ColorPicker
                     defaultValue={team.brandColor}
-                    resetDefaultValue="#292929"
+                    resetDefaultValue="#007ee5"
                     onChange={(value) => form.setValue("brandColor", value, { shouldDirty: true })}
                   />
                 </div>
