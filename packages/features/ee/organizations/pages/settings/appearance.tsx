@@ -145,8 +145,8 @@ const OrgAppearanceView = () => {
                 <div>
                   <p className="text-emphasis mb-2 block text-sm font-medium">{t("light_brand_color")}</p>
                   <ColorPicker
-                    defaultValue={currentOrg.brandColor || "#292929"}
-                    resetDefaultValue="#292929"
+                    defaultValue={currentOrg.brandColor || "#007ee5"}
+                    resetDefaultValue="#007ee5"
                     onChange={(value) => form.setValue("brandColor", value, { shouldDirty: true })}
                   />
                 </div>
