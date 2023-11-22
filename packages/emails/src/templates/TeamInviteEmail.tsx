@@ -27,9 +27,8 @@ export const TeamInviteEmail = (
       })}>
       <p style={{ fontSize: "24px", marginBottom: "16px", textAlign: "center" }}>
         <>
-          {props.language("email_no_user_invite_heading", {
+          {props.language(`email_no_user_invite_heading_${props.isOrg ? "org" : "team"}`, {
             appName: APP_NAME,
-            entity: props.language(props.isOrg ? "organization" : "team").toLowerCase(),
           })}
         </>
       </p>
@@ -43,7 +42,7 @@ export const TeamInviteEmail = (
         }}
         src={
           IS_PRODUCTION
-            ? WEBAPP_URL + "/emails/calendar-email-hero.png"
+            ? `${WEBAPP_URL}/emails/calendar-email-hero.png`
             : "http://localhost:3000/emails/calendar-email-hero.png"
         }
         alt=""
@@ -57,11 +56,10 @@ export const TeamInviteEmail = (
           lineHeightStep: "24px",
         }}>
         <>
-          {props.language("email_user_invite_subheading", {
+          {props.language(`email_user_invite_subheading_${props.isOrg ? "org" : "team"}`, {
             invitedBy: props.from,
             appName: APP_NAME,
             teamName: props.teamName,
-            entity: props.language(props.isOrg ? "organization" : "team").toLowerCase(),
           })}
         </>
       </p>
@@ -93,7 +91,7 @@ export const TeamInviteEmail = (
             translationString={props.language("email_no_user_step_one")}
             iconsrc={
               IS_PRODUCTION
-                ? WEBAPP_URL + "/emails/choose-username@2x.png"
+                ? `${WEBAPP_URL}/emails/choose-username@2x.png`
                 : "http://localhost:3000/emails/choose-username@2x.png"
             }
           />
@@ -101,7 +99,7 @@ export const TeamInviteEmail = (
             translationString={props.language("email_no_user_step_two")}
             iconsrc={
               IS_PRODUCTION
-                ? WEBAPP_URL + "/emails/calendar@2x.png"
+                ? `${WEBAPP_URL}/emails/calendar@2x.png`
                 : "http://localhost:3000/emails/calendar@2x.png"
             }
           />
@@ -109,7 +107,7 @@ export const TeamInviteEmail = (
             translationString={props.language("email_no_user_step_three")}
             iconsrc={
               IS_PRODUCTION
-                ? WEBAPP_URL + "/emails/clock@2x.png"
+                ? `${WEBAPP_URL}/emails/clock@2x.png`
                 : "http://localhost:3000/emails/clock@2x.png"
             }
           />
@@ -117,7 +115,7 @@ export const TeamInviteEmail = (
             translationString={props.language("email_no_user_step_four", { teamName: props.teamName })}
             iconsrc={
               IS_PRODUCTION
-                ? WEBAPP_URL + "/emails/user-check@2x.png"
+                ? `${WEBAPP_URL}/emails/user-check@2x.png`
                 : "http://localhost:3000/emails/user-check@2x.png"
             }
           />
@@ -163,8 +161,8 @@ const EmailStep = (props: { translationString: string; iconsrc: string }) => {
         style={{
           backgroundColor: "#E5E7EB",
           borderRadius: "48px",
-          height: "48px",
-          width: "48px",
+          minHeight: "48px",
+          minWidth: "48px",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",

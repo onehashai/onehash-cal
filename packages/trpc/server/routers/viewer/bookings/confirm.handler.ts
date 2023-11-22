@@ -172,7 +172,11 @@ export const confirmHandler = async ({ ctx, input }: ConfirmOptions) => {
     attendees: attendeesList,
     location: booking.location ?? "",
     uid: booking.uid,
-    destinationCalendar: booking?.destinationCalendar || user.destinationCalendar,
+    destinationCalendar: booking?.destinationCalendar
+      ? [booking.destinationCalendar]
+      : user.destinationCalendar
+      ? [user.destinationCalendar]
+      : [],
     requiresConfirmation: booking?.eventType?.requiresConfirmation ?? false,
     eventTypeId: booking.eventType?.id,
   };
@@ -360,7 +364,7 @@ export const confirmHandler = async ({ ctx, input }: ConfirmOptions) => {
     await handleWebhookTrigger({ subscriberOptions, eventTrigger, webhookData });
   }
 
-  const message = "Booking " + confirmed ? "confirmed" : "rejected";
+  const message = `Booking ${confirmed}` ? "confirmed" : "rejected";
   const status = confirmed ? BookingStatus.ACCEPTED : BookingStatus.REJECTED;
 
   return { message, status };

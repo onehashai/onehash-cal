@@ -1,7 +1,6 @@
-import { type PrismaClient } from "@prisma/client";
-
 import { isOrganization, withRoleCanCreateEntity } from "@calcom/lib/entityPermissionUtils";
 import { getBookerUrl } from "@calcom/lib/server/getBookerUrl";
+import type { PrismaClient } from "@calcom/prisma";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
 import { TRPCError } from "@trpc/server";
@@ -68,7 +67,7 @@ export const teamsAndUserProfilesQuery = async ({ ctx }: TeamsAndUserProfileOpti
     ...nonOrgTeams.map((membership) => ({
       teamId: membership.team.id,
       name: membership.team.name,
-      slug: membership.team.slug ? "team/" + membership.team.slug : null,
+      slug: membership.team.slug ? `team/${membership.team.slug}` : null,
       image: `${bookerUrl}${membership.team.slug ? "/team" : ""}/${membership.team.slug}/avatar.png`,
       role: membership.role,
       readOnly: !withRoleCanCreateEntity(membership.role),

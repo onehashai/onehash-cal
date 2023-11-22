@@ -16,7 +16,7 @@ import {
 } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 
-const log = logger.getChildLogger({ prefix: ["[api/logo]"] });
+const log = logger.getSubLogger({ prefix: ["[api/logo]"] });
 
 function removePort(url: string) {
   return url.replace(/:\d+$/, "");
@@ -154,7 +154,7 @@ async function getTeamLogos(subdomain: string, isValidOrgDomain: boolean) {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { query } = req;
   const parsedQuery = logoApiSchema.parse(query);
-  const { isValidOrgDomain } = orgDomainConfig(req.headers.host ?? "");
+  const { isValidOrgDomain } = orgDomainConfig(req);
 
   const hostname = req?.headers["host"];
   if (!hostname) throw new Error("No hostname");
@@ -187,7 +187,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     res.setHeader("Content-Type", response.headers.get("content-type") as string);
-    res.setHeader("Cache-Control", "s-maxage=86400");
+    res.setHeader("Cache-Control", "s-maxage=86400, stale-while-revalidate=60");
     res.send(buffer);
   } catch (error) {
     res.statusCode = 404;

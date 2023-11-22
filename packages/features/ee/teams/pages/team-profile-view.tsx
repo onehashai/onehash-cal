@@ -8,7 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
-import { getOrgFullDomain } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -16,6 +16,7 @@ import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
 import { md } from "@calcom/lib/markdownIt";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import objectKeys from "@calcom/lib/objectKeys";
+import slugify from "@calcom/lib/slugify";
 import turndown from "@calcom/lib/turndownService";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
@@ -83,7 +84,7 @@ const ProfileView = () => {
   });
 
   const { data: team, isLoading } = trpc.viewer.teams.get.useQuery(
-    { teamId },
+    { teamId, includeTeamLogo: true },
     {
       enabled: !!teamId,
       onError: () => {
@@ -93,8 +94,8 @@ const ProfileView = () => {
         if (team) {
           form.setValue("name", team.name || "");
           form.setValue("slug", team.slug || "");
-          form.setValue("logo", team.logo || "");
           form.setValue("bio", team.bio || "");
+          form.setValue("logo", team.logo || "");
           if (team.slug === null && (team?.metadata as Prisma.JsonObject)?.requestedSlug) {
             form.setValue("slug", ((team?.metadata as Prisma.JsonObject)?.requestedSlug as string) || "");
           }
@@ -164,10 +165,10 @@ const ProfileView = () => {
               handleSubmit={(values) => {
                 if (team) {
                   const variables = {
-                    logo: values.logo,
                     name: values.name,
                     slug: values.slug,
                     bio: values.bio,
+                    logo: values.logo,
                   };
                   objectKeys(variables).forEach((key) => {
                     if (variables[key as keyof typeof variables] === team?.[key]) delete variables[key];
@@ -175,30 +176,37 @@ const ProfileView = () => {
                   mutation.mutate({ id: team.id, ...variables });
                 }
               }}>
-              <div className="flex items-center">
-                <Controller
-                  control={form.control}
-                  name="logo"
-                  render={({ field: { value } }) => (
-                    <>
-                      <Avatar alt="" imageSrc={getPlaceholderAvatar(value, team?.name as string)} size="lg" />
-                      <div className="ms-4">
-                        <ImageUploader
-                          target="avatar"
-                          id="avatar-upload"
-                          buttonMsg={t("update")}
-                          handleAvatarChange={(newLogo) => {
-                            form.setValue("logo", newLogo);
-                          }}
-                          imageSrc={value}
-                        />
-                      </div>
-                    </>
-                  )}
-                />
-              </div>
-
-              <hr className="border-subtle my-8" />
+              {!team.parent && (
+                <>
+                  <div className="flex items-center">
+                    <Controller
+                      control={form.control}
+                      name="logo"
+                      render={({ field: { value } }) => (
+                        <>
+                          <Avatar
+                            alt=""
+                            imageSrc={getPlaceholderAvatar(value, team?.name as string)}
+                            size="lg"
+                          />
+                          <div className="ms-4">
+                            <ImageUploader
+                              target="avatar"
+                              id="avatar-upload"
+                              buttonMsg={t("update")}
+                              handleAvatarChange={(newLogo) => {
+                                form.setValue("logo", newLogo);
+                              }}
+                              imageSrc={value}
+                            />
+                          </div>
+                        </>
+                      )}
+                    />
+                  </div>
+                  <hr className="border-subtle my-8" />
+                </>
+              )}
 
               <Controller
                 control={form.control}
@@ -227,12 +235,12 @@ const ProfileView = () => {
                       value={value}
                       addOnLeading={
                         team.parent && orgBranding
-                          ? getOrgFullDomain(orgBranding?.slug, { protocol: false }) + "/"
+                          ? `${getOrgFullOrigin(orgBranding?.slug, { protocol: false })}/`
                           : `${WEBAPP_URL}/team/`
                       }
                       onChange={(e) => {
                         form.clearErrors("slug");
-                        form.setValue("slug", e?.target.value);
+                        form.setValue("slug", slugify(e?.target.value, true));
                       }}
                     />
                   </div>

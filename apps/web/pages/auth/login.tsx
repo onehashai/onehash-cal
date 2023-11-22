@@ -15,13 +15,14 @@ import { SAMLLogin } from "@calcom/features/auth/SAMLLogin";
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { isSAMLLoginEnabled, samlProductID, samlTenantID } from "@calcom/features/ee/sso/lib/saml";
-import { WEBAPP_URL, WEBSITE_URL } from "@calcom/lib/constants";
+import { WEBAPP_URL, WEBSITE_URL, HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import prisma from "@calcom/prisma";
+import { trpc } from "@calcom/trpc/react";
 import { Alert, Button, EmailField, PasswordField } from "@calcom/ui";
-import { ArrowLeft } from "@calcom/ui/components/icon";
+import { ArrowLeft, Lock } from "@calcom/ui/components/icon";
 
 import type { inferSSRProps } from "@lib/types/inferSSRProps";
 import type { WithNonceProps } from "@lib/withNonce";
@@ -29,6 +30,7 @@ import withNonce from "@lib/withNonce";
 
 import AddToHomescreen from "@components/AddToHomescreen";
 import PageWrapper from "@components/PageWrapper";
+import BackupCode from "@components/auth/BackupCode";
 import TwoFactor from "@components/auth/TwoFactor";
 import AuthContainer from "@components/ui/AuthContainer";
 
@@ -39,6 +41,7 @@ interface LoginValues {
   email: string;
   password: string;
   totpCode: string;
+  backupCode: string;
   csrfToken: string;
 }
 export default function Login({
@@ -48,7 +51,8 @@ export default function Login({
   samlTenantID,
   samlProductID,
   totpEmail,
-}: inferSSRProps<typeof _getServerSideProps> & WithNonceProps) {
+}: // eslint-disable-next-line @typescript-eslint/ban-types
+inferSSRProps<typeof _getServerSideProps> & WithNonceProps<{}>) {
   const searchParams = useSearchParams();
   const { t } = useLocale();
   const router = useRouter();
@@ -65,6 +69,7 @@ export default function Login({
   const methods = useForm<LoginValues>({ resolver: zodResolver(formSchema) });
   const { register, formState } = methods;
   const [twoFactorRequired, setTwoFactorRequired] = useState(!!totpEmail || false);
+  const [twoFactorLostAccess, setTwoFactorLostAccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const errorMessages: { [key: string]: string } = {
@@ -78,7 +83,7 @@ export default function Login({
 
   const telemetry = useTelemetry();
 
-  let callbackUrl = searchParams.get("callbackUrl") || "";
+  let callbackUrl = searchParams?.get("callbackUrl") || "";
 
   if (/"\//.test(callbackUrl)) callbackUrl = callbackUrl.substring(1);
 
@@ -98,15 +103,35 @@ export default function Login({
   );
 
   const TwoFactorFooter = (
-    <Button
-      onClick={() => {
-        setTwoFactorRequired(false);
-        methods.setValue("totpCode", "");
-      }}
-      StartIcon={ArrowLeft}
-      color="minimal">
-      {t("go_back")}
-    </Button>
+    <>
+      <Button
+        onClick={() => {
+          if (twoFactorLostAccess) {
+            setTwoFactorLostAccess(false);
+            methods.setValue("backupCode", "");
+          } else {
+            setTwoFactorRequired(false);
+            methods.setValue("totpCode", "");
+          }
+          setErrorMessage(null);
+        }}
+        StartIcon={ArrowLeft}
+        color="minimal">
+        {t("go_back")}
+      </Button>
+      {!twoFactorLostAccess ? (
+        <Button
+          onClick={() => {
+            setTwoFactorLostAccess(true);
+            setErrorMessage(null);
+            methods.setValue("totpCode", "");
+          }}
+          StartIcon={Lock}
+          color="minimal">
+          {t("lost_access")}
+        </Button>
+      ) : null}
+    </>
   );
 
   const ExternalTotpFooter = (
@@ -130,11 +155,22 @@ export default function Login({
     if (!res) setErrorMessage(errorMessages[ErrorCode.InternalServerError]);
     // we're logged in! let's do a hard refresh to the desired url
     else if (!res.error) router.push(callbackUrl);
-    // reveal two factor input if required
     else if (res.error === ErrorCode.SecondFactorRequired) setTwoFactorRequired(true);
+    else if (res.error === ErrorCode.IncorrectBackupCode) setErrorMessage(t("incorrect_backup_code"));
+    else if (res.error === ErrorCode.MissingBackupCodes) setErrorMessage(t("missing_backup_codes"));
     // fallback if error not found
     else setErrorMessage(errorMessages[res.error] || t("something_went_wrong"));
   };
+
+  const { data, isLoading } = trpc.viewer.public.ssoConnections.useQuery(undefined, {
+    onError: (err) => {
+      setErrorMessage(err.message);
+    },
+  });
+
+  const displaySSOLogin = HOSTED_CAL_FEATURES
+    ? true
+    : isSAMLLoginEnabled && !isLoading && data?.connectionExists;
 
   return (
     <div
@@ -194,21 +230,21 @@ export default function Login({
                 </div>
               </div>
 
-              {twoFactorRequired && <TwoFactor center />}
+              {twoFactorRequired ? !twoFactorLostAccess ? <TwoFactor center /> : <BackupCode center /> : null}
 
               {errorMessage && <Alert severity="error" title={errorMessage} />}
               <Button
                 type="submit"
                 color="primary"
                 disabled={formState.isSubmitting}
-                className="w-full justify-center">
+                className="w-full justify-center dark:bg-white dark:text-black">
                 {twoFactorRequired ? t("submit") : t("sign_in")}
               </Button>
             </div>
           </form>
           {!twoFactorRequired && (
             <>
-              {(isGoogleLoginEnabled || isSAMLLoginEnabled) && <hr className="border-subtle my-8" />}
+              {(isGoogleLoginEnabled || displaySSOLogin) && <hr className="border-subtle my-8" />}
               <div className="space-y-3">
                 {isGoogleLoginEnabled && (
                   <Button
@@ -223,7 +259,7 @@ export default function Login({
                     {t("signin_with_google")}
                   </Button>
                 )}
-                {isSAMLLoginEnabled && (
+                {displaySSOLogin && (
                   <SAMLLogin
                     samlTenantID={samlTenantID}
                     samlProductID={samlProductID}
@@ -313,7 +349,6 @@ const _getServerSideProps = async function getServerSideProps(context: GetServer
   };
 };
 
-Login.isThemeSupported = false;
 Login.PageWrapper = PageWrapper;
 
 export const getServerSideProps = withNonce(_getServerSideProps);

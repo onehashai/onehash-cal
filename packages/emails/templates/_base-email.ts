@@ -6,6 +6,7 @@ import dayjs from "@calcom/dayjs";
 import { getFeatureFlagMap } from "@calcom/features/flags/server/utils";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import { serverConfig } from "@calcom/lib/serverConfig";
+import { setTestEmail } from "@calcom/lib/testEmails";
 import prisma from "@calcom/prisma";
 
 export default class BaseEmail {
@@ -34,9 +35,30 @@ export default class BaseEmail {
       return new Promise((r) => r("Skipped Sending Email due to active Kill Switch"));
     }
 
+    if (process.env.INTEGRATION_TEST_MODE === "true") {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-expect-error
+      setTestEmail(this.getNodeMailerPayload());
+      console.log(
+        "Skipped Sending Email as process.env.NEXT_PUBLIC_UNIT_TESTS is set. Emails are available in globalThis.testEmails"
+      );
+      return new Promise((r) => r("Skipped sendEmail for Unit Tests"));
+    }
+
     const payload = this.getNodeMailerPayload();
     const parseSubject = z.string().safeParse(payload?.subject);
     const payloadWithUnEscapedSubject = {
+      headers: {
+        "X-SMTPAPI": JSON.stringify({
+          filters: {
+            bypass_list_management: {
+              settings: {
+                enable: 1,
+              },
+            },
+          },
+        }),
+      },
       ...payload,
       ...(parseSubject.success && { subject: decodeHTML(parseSubject.data) }),
     };

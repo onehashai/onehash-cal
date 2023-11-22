@@ -14,13 +14,15 @@ import { updateWebUser as syncServicesUpdateWebUser } from "@calcom/lib/sync/Syn
 import { validateBookerLayouts } from "@calcom/lib/validateBookerLayouts";
 import { prisma } from "@calcom/prisma";
 import { IdentityProvider } from "@calcom/prisma/enums";
-import { userMetadata } from "@calcom/prisma/zod-utils";
+import { userMetadata as userMetadataSchema } from "@calcom/prisma/zod-utils";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
 import { TRPCError } from "@trpc/server";
 
+import { getDefaultScheduleId } from "../viewer/availability/util";
 import { updateUserMetadataAllowedKeys, type TUpdateProfileInputSchema } from "./updateProfile.schema";
 
+const log = logger.getSubLogger({ prefix: ["updateProfile"] });
 type UpdateProfileOptions = {
   ctx: {
     user: NonNullable<TrpcSessionUser>;
@@ -31,11 +33,11 @@ type UpdateProfileOptions = {
 
 export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions) => {
   const { user } = ctx;
-  const { metadata: metadataFromInput } = input;
-  const cleanMetadata = cleanMetadataAllowedUpdateKeys(metadataFromInput);
+  const userMetadata = handleUserMetadata({ ctx, input });
   const data: Prisma.UserUpdateInput = {
     ...input,
-    metadata: cleanMetadata,
+    avatar: await getAvatarToSet(input.avatar),
+    metadata: userMetadata,
   };
 
   // some actions can invalidate a user session.
@@ -61,30 +63,10 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
       }
     }
   }
-  if (input.avatar) {
-    data.avatar = await resizeBase64Image(input.avatar);
-  }
 
-  const fetchUserCurrentMetadata = await prisma.user.findUnique({
-    where: {
-      id: user.id,
-    },
-    select: {
-      metadata: true,
-    },
-  });
-
-  const metadata = userMetadata.parse(fetchUserCurrentMetadata?.metadata);
-
-  // Required so we don't override and delete saved values
-  data.metadata = {
-    ...metadata,
-    cleanMetadata,
-  };
-
-  const isPremium = metadata?.isPremium;
   if (isPremiumUsername) {
-    const stripeCustomerId = metadata?.stripeCustomerId;
+    const stripeCustomerId = userMetadata?.stripeCustomerId;
+    const isPremium = userMetadata?.isPremium;
     if (!isPremium || !stripeCustomerId) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "User is not premium" });
     }
@@ -148,8 +130,39 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
       name: true,
       createdDate: true,
       locale: true,
+      schedules: {
+        select: {
+          id: true,
+        },
+      },
     },
   });
+
+  if (user.timeZone !== data.timeZone && updatedUser.schedules.length > 0) {
+    // on timezone change update timezone of default schedule
+    const defaultScheduleId = await getDefaultScheduleId(user.id, prisma);
+
+    if (!user.defaultScheduleId) {
+      // set default schedule if not already set
+      await prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          defaultScheduleId,
+        },
+      });
+    }
+
+    await prisma.schedule.updateMany({
+      where: {
+        id: defaultScheduleId,
+      },
+      data: {
+        timeZone: data.timeZone,
+      },
+    });
+  }
 
   if (hasEmailChangedOnNonCalProvider) {
     // Because the email has changed, we are now attempting to use the CAL provider-
@@ -199,12 +212,35 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
 
 const cleanMetadataAllowedUpdateKeys = (metadata: TUpdateProfileInputSchema["metadata"]) => {
   if (!metadata) {
-    return {} as Prisma.InputJsonValue;
+    return {};
   }
   const cleanedMetadata = updateUserMetadataAllowedKeys.safeParse(metadata);
   if (!cleanedMetadata.success) {
     logger.error("Error cleaning metadata", cleanedMetadata.error);
+    return {};
   }
 
-  return cleanedMetadata as Prisma.InputJsonValue;
+  return cleanedMetadata.data;
 };
+
+const handleUserMetadata = ({ ctx, input }: UpdateProfileOptions) => {
+  const { user } = ctx;
+  const cleanMetadata = cleanMetadataAllowedUpdateKeys(input.metadata);
+  const userMetadata = userMetadataSchema.parse(user.metadata);
+  // Required so we don't override and delete saved values
+  return { ...userMetadata, ...cleanMetadata };
+};
+
+async function getAvatarToSet(avatar: string | null | undefined) {
+  if (avatar === null || avatar === undefined) {
+    return avatar;
+  }
+
+  if (!avatar.startsWith("data:image")) {
+    // Non Base64 avatar currently could only be the dynamic avatar URL(i.e. /{USER}/avatar.png). If we allow setting that URL, we would get infinite redirects on /user/avatar.ts endpoint
+    log.warn("Non Base64 avatar, ignored it", { avatar });
+    // `undefined` would not ignore the avatar, but `null` would remove it. So, we return `undefined` here.
+    return undefined;
+  }
+  return await resizeBase64Image(avatar);
+}

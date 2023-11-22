@@ -173,7 +173,7 @@ export const ViewRecordingsDialog = (props: IViewRecordingsDialog) => {
 
   return (
     <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
-      <DialogContent>
+      <DialogContent enableOverflow>
         <DialogHeader title={t("recordings_title")} subtitle={subtitle} />
         {roomName ? (
           <>

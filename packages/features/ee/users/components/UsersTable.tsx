@@ -132,7 +132,6 @@ function UsersTableBare() {
                     <Avatar
                       size="md"
                       alt={`Avatar of ${user.username || "Nameless"}`}
-                      gravatarFallbackMd5=""
                       imageSrc={`${WEBAPP_URL}/${user.username}/avatar.png?orgId=${user.organizationId}`}
                     />
 

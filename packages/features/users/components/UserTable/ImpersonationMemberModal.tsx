@@ -9,7 +9,7 @@ import type { Action, State } from "./UserListTable";
 export function ImpersonationMemberModal(props: { state: State; dispatch: Dispatch<Action> }) {
   const { t } = useLocale();
   const { data: session } = useSession();
-  const teamId = session?.user.organizationId;
+  const teamId = session?.user.org?.id;
   const user = props.state.impersonateMember.user;
 
   if (!user || !teamId) return null;
@@ -27,7 +27,7 @@ export function ImpersonationMemberModal(props: { state: State; dispatch: Dispat
           onSubmit={async (e) => {
             e.preventDefault();
             await signIn("impersonation-auth", {
-              username: user.username || user.email,
+              username: user.email,
               teamId: teamId,
             });
             props.dispatch({

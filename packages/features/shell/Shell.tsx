@@ -12,7 +12,7 @@ import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookingBadge";
 import ImpersonatingBanner from "@calcom/features/ee/impersonation/components/ImpersonatingBanner";
 import { OrgUpgradeBanner } from "@calcom/features/ee/organizations/components/OrgUpgradeBanner";
-import { getOrgFullDomain } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
 import { TeamsUpgradeBanner } from "@calcom/features/ee/teams/components";
 import { useFlagMap } from "@calcom/features/flags/context/provider";
@@ -22,7 +22,6 @@ import AdminPasswordBanner from "@calcom/features/users/components/AdminPassword
 import VerifyEmailBanner from "@calcom/features/users/components/VerifyEmailBanner";
 import classNames from "@calcom/lib/classNames";
 import { APP_NAME, DESKTOP_APP_LINK, JOIN_DISCORD, ROADMAP, WEBAPP_URL } from "@calcom/lib/constants";
-import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import getBrandColours from "@calcom/lib/getBrandColours";
 import { useBookerUrl } from "@calcom/lib/hooks/useBookerUrl";
 import { useIsomorphicLayoutEffect } from "@calcom/lib/hooks/useIsomorphicLayoutEffect";
@@ -77,6 +76,7 @@ import {
   Zap,
 } from "@calcom/ui/components/icon";
 import { Discord } from "@calcom/ui/components/icon/Discord";
+import { IS_VISUAL_REGRESSION_TESTING } from "@calcom/web/constants";
 
 import { useOrgBranding } from "../ee/organizations/context/provider";
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
@@ -368,11 +368,11 @@ function UserDropdown({ small }: UserDropdownProps) {
           <span
             className={classNames(
               small ? "h-4 w-4" : "h-5 w-5 ltr:mr-2 rtl:ml-2",
-              "relative flex-shrink-0 rounded-full bg-gray-300"
+              "relative flex-shrink-0 rounded-full "
             )}>
             <Avatar
               size={small ? "xs" : "xsm"}
-              imageSrc={bookerUrl + "/" + user.username + "/avatar.png"}
+              imageSrc={`${bookerUrl}/${user.username}/avatar.png`}
               alt={user.username || "Nameless User"}
               className="overflow-hidden"
             />
@@ -509,7 +509,7 @@ export type NavigationItemType = {
   }: {
     item: Pick<NavigationItemType, "href">;
     isChild?: boolean;
-    pathname: string;
+    pathname: string | null;
   }) => boolean;
 };
 
@@ -527,7 +527,7 @@ const navigation: NavigationItemType[] = [
     href: "/bookings/upcoming",
     icon: Calendar,
     badge: <UnconfirmedBookingBadge />,
-    isCurrent: ({ pathname }) => pathname?.startsWith("/bookings"),
+    isCurrent: ({ pathname }) => pathname?.startsWith("/bookings") ?? false,
   },
   {
     name: "availability",
@@ -547,7 +547,7 @@ const navigation: NavigationItemType[] = [
     icon: Grid,
     isCurrent: ({ pathname: path, item }) => {
       // During Server rendering path is /v2/apps but on client it becomes /apps(weird..)
-      return path?.startsWith(item.href) && !path?.includes("routing-forms/");
+      return (path?.startsWith(item.href) ?? false) && !(path?.includes("routing-forms/") ?? false);
     },
     child: [
       {
@@ -556,7 +556,9 @@ const navigation: NavigationItemType[] = [
         isCurrent: ({ pathname: path, item }) => {
           // During Server rendering path is /v2/apps but on client it becomes /apps(weird..)
           return (
-            path?.startsWith(item.href) && !path?.includes("routing-forms/") && !path?.includes("/installed")
+            (path?.startsWith(item.href) ?? false) &&
+            !(path?.includes("routing-forms/") ?? false) &&
+            !(path?.includes("/installed") ?? false)
           );
         },
       },
@@ -564,7 +566,8 @@ const navigation: NavigationItemType[] = [
         name: "installed_apps",
         href: "/apps/installed/calendar",
         isCurrent: ({ pathname: path }) =>
-          path?.startsWith("/apps/installed/") || path?.startsWith("/v2/apps/installed/"),
+          (path?.startsWith("/apps/installed/") ?? false) ||
+          (path?.startsWith("/v2/apps/installed/") ?? false),
       },
     ],
   },
@@ -577,7 +580,7 @@ const navigation: NavigationItemType[] = [
     name: "Routing Forms",
     href: "/apps/routing-forms/forms",
     icon: FileText,
-    isCurrent: ({ pathname }) => pathname?.startsWith("/apps/routing-forms/"),
+    isCurrent: ({ pathname }) => pathname?.startsWith("/apps/routing-forms/") ?? false,
   },
   {
     name: "workflows",
@@ -631,7 +634,7 @@ function useShouldDisplayNavigationItem(item: NavigationItemType) {
 }
 
 const defaultIsCurrent: NavigationItemType["isCurrent"] = ({ isChild, item, pathname }) => {
-  return isChild ? item.href === pathname : item.href ? pathname?.startsWith(item.href) : false;
+  return isChild ? item.href === pathname : item.href ? pathname?.startsWith(item.href) ?? false : false;
 };
 
 const NavigationItem: React.FC<{
@@ -667,7 +670,7 @@ const NavigationItem: React.FC<{
           aria-current={current ? "page" : undefined}>
           {item.icon && (
             <item.icon
-              className="mr-2 h-4 w-4 flex-shrink-0 ltr:mr-2 rtl:ml-2 [&[aria-current='page']]:text-inherit"
+              className="mr-2 h-4 w-4 flex-shrink-0 rtl:ml-2 md:ltr:mx-auto lg:ltr:mr-2 [&[aria-current='page']]:text-inherit"
               aria-hidden="true"
               aria-current={current ? "page" : undefined}
             />
@@ -678,7 +681,7 @@ const NavigationItem: React.FC<{
               {item.badge && item.badge}
             </span>
           ) : (
-            <SkeletonText style={{ width: `${item.name.length * 10}px` }} className="h-[20px]" />
+            <SkeletonText className="h-[20px] w-full" />
           )}
         </Link>
       </Tooltip>
@@ -702,7 +705,7 @@ const MobileNavigation = () => {
     <>
       <nav
         className={classNames(
-          "pwa:pb-2.5 bg-muted border-subtle fixed bottom-0 z-30 -mx-4 flex w-full border-t bg-opacity-40 px-1 shadow backdrop-blur-md md:hidden",
+          "pwa:pb-[max(0.625rem,env(safe-area-inset-bottom))] pwa:-mx-2 bg-muted border-subtle fixed bottom-0 z-30 -mx-4 flex w-full border-t bg-opacity-40 px-1 shadow backdrop-blur-md md:hidden",
           isEmbed && "hidden"
         )}>
         {mobileNavigationBottomItems.map((item) => (
@@ -791,13 +794,12 @@ function SideBarContainer({ bannersHeight }: SideBarContainerProps) {
 function SideBar({ bannersHeight, user }: SideBarProps) {
   const { t, isLocaleReady } = useLocale();
   const orgBranding = useOrgBranding();
-  const isOrgBrandingDataFetched = orgBranding !== undefined;
 
   const publicPageUrl = useMemo(() => {
-    if (!user?.organizationId) return `${process.env.NEXT_PUBLIC_WEBSITE_URL}/${user?.username}`;
-    const publicPageUrl = orgBranding?.slug ? getOrgFullDomain(orgBranding.slug) : "";
+    if (!user?.org?.id) return `${process.env.NEXT_PUBLIC_WEBSITE_URL}/${user?.username}`;
+    const publicPageUrl = orgBranding?.slug ? getOrgFullOrigin(orgBranding.slug) : "";
     return publicPageUrl;
-  }, [orgBranding?.slug, user?.organizationId, user?.username]);
+  }, [orgBranding?.slug, user?.username, user?.org?.id]);
 
   const bottomNavItems: NavigationItemType[] = [
     {
@@ -818,7 +820,7 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
     },
     {
       name: "settings",
-      href: user?.organizationId ? `/settings/organizations/profile` : "/settings/my-account/profile",
+      href: user?.org ? `/settings/organizations/profile` : "/settings/my-account/profile",
       icon: Settings,
     },
   ];
@@ -829,12 +831,12 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
         className="desktop-transparent bg-muted border-muted fixed left-0 hidden h-full max-h-screen w-14 flex-col overflow-y-auto overflow-x-hidden border-r dark:bg-gradient-to-tr dark:from-[#2a2a2a] dark:to-[#1c1c1c] md:sticky md:flex lg:w-56 lg:px-3">
         <div className="flex h-full flex-col justify-between py-3 lg:pt-4">
           <header className="items-center justify-between md:hidden lg:flex">
-            {!isOrgBrandingDataFetched ? null : orgBranding ? (
+            {orgBranding ? (
               <Link href="/settings/organizations/profile" className="px-1.5">
                 <div className="flex items-center gap-2 font-medium">
                   <Avatar
                     alt={`${orgBranding.name} logo`}
-                    imageSrc={getPlaceholderAvatar(orgBranding.logo, orgBranding.name)}
+                    imageSrc={`${orgBranding.fullDomain}/org/${orgBranding.slug}/avatar.png`}
                     size="xsm"
                   />
                   <p className="text line-clamp-1 text-sm">
@@ -905,7 +907,7 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
                   <Icon
                     className={classNames(
                       "h-4 w-4 flex-shrink-0 [&[aria-current='page']]:text-inherit",
-                      "me-3 md:ltr:mr-2 md:rtl:ml-2"
+                      "me-3 md:mx-auto lg:ltr:mr-2 lg:rtl:ml-2"
                     )}
                     aria-hidden="true"
                   />
@@ -920,7 +922,7 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
               </ButtonOrLink>
             </Tooltip>
           ))}
-          <Credits />
+          {!IS_VISUAL_REGRESSION_TESTING && <Credits />}
         </div>
       </aside>
     </div>
@@ -981,7 +983,7 @@ export function ShellMain(props: LayoutProps) {
                   className={classNames(
                     props.backPath
                       ? "relative"
-                      : "pwa:bottom-24 fixed bottom-20 z-40 ltr:right-4 rtl:left-4 md:z-auto md:ltr:right-0 md:rtl:left-0",
+                      : "pwa:bottom-[max(7rem,_calc(5rem_+_env(safe-area-inset-bottom)))] fixed bottom-20 z-40 ltr:right-4 rtl:left-4 md:z-auto md:ltr:right-0 md:rtl:left-0",
                     "flex-shrink-0 md:relative md:bottom-auto md:right-auto"
                   )}>
                   {isLocaleReady && props.CTA}
@@ -1009,7 +1011,7 @@ function MainContainer({
     <main className="bg-default relative z-0 flex-1 focus:outline-none">
       {/* show top navigation for md and smaller (tablet and phones) */}
       {TopNavContainerProp}
-      <div className="max-w-full px-4 py-4 md:py-8 lg:px-12">
+      <div className="max-w-full px-2 py-4 lg:px-6">
         <ErrorBoundary>
           {!props.withoutMain ? <ShellMain {...props}>{props.children}</ShellMain> : props.children}
         </ErrorBoundary>

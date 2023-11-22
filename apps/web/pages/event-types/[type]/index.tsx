@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import type { GetServerSidePropsContext } from "next";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
@@ -86,6 +87,7 @@ export type FormValues = {
   offsetStart: number;
   description: string;
   disableGuests: boolean;
+  lockTimeZoneToggleOnBookingPage: boolean;
   requiresConfirmation: boolean;
   requiresBookerEmailVerification: boolean;
   recurringEvent: RecurringEvent | null;
@@ -113,6 +115,7 @@ export type FormValues = {
   periodDates: { startDate: Date; endDate: Date };
   seatsPerTimeSlot: number | null;
   seatsShowAttendees: boolean | null;
+  seatsShowAvailabilityCount: boolean | null;
   seatsPerTimeSlotEnabled: boolean;
   minimumBookingNotice: number;
   minimumBookingNoticeInDurationType: number;
@@ -183,12 +186,7 @@ const EventTypePage = (props: EventTypeSetupProps) => {
           created: true,
         }))
       );
-      showToast(
-        t("event_type_updated_successfully", {
-          eventTypeTitle: eventType.title,
-        }),
-        "success"
-      );
+      showToast(t("event_type_updated_successfully", { eventTypeTitle: eventType.title }), "success");
     },
     async onSettled() {
       await utils.viewer.eventTypes.get.invalidate();
@@ -303,6 +301,28 @@ const EventTypePage = (props: EventTypeSetupProps) => {
           length: z.union([z.string().transform((val) => +val), z.number()]).optional(),
           offsetStart: z.union([z.string().transform((val) => +val), z.number()]).optional(),
           bookingFields: eventTypeBookingFields,
+          locations: z
+            .array(
+              z
+                .object({
+                  type: z.string(),
+                  address: z.string().optional(),
+                  link: z.string().url().optional(),
+                  phone: z
+                    .string()
+                    .refine((val) => isValidPhoneNumber(val))
+                    .optional(),
+                  hostPhoneNumber: z
+                    .string()
+                    .refine((val) => isValidPhoneNumber(val))
+                    .optional(),
+                  displayLocationPublicly: z.boolean().optional(),
+                  credentialId: z.number().optional(),
+                  teamName: z.string().optional(),
+                })
+                .passthrough()
+            )
+            .optional(),
         })
         // TODO: Add schema for other fields later.
         .passthrough()
@@ -365,6 +385,7 @@ const EventTypePage = (props: EventTypeSetupProps) => {
       afterBufferTime,
       seatsPerTimeSlot,
       seatsShowAttendees,
+      seatsShowAvailabilityCount,
       bookingLimits,
       durationLimits,
       recurringEvent,
@@ -381,8 +402,11 @@ const EventTypePage = (props: EventTypeSetupProps) => {
       bookerLayouts,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       multipleDurationEnabled,
+      length,
       ...input
     } = values;
+
+    if (!Number(length)) throw new Error(t("event_setup_length_error"));
 
     if (bookingLimits) {
       const isValid = validateIntervalLimitOrder(bookingLimits);
@@ -401,7 +425,7 @@ const EventTypePage = (props: EventTypeSetupProps) => {
       if (metadata?.multipleDuration.length < 1) {
         throw new Error(t("event_setup_multiple_duration_error"));
       } else {
-        if (!input.length && !metadata?.multipleDuration?.includes(input.length)) {
+        if (!length && !metadata?.multipleDuration?.includes(length)) {
           throw new Error(t("event_setup_multiple_duration_default_error"));
         }
       }
@@ -411,9 +435,11 @@ const EventTypePage = (props: EventTypeSetupProps) => {
       throw new Error(t("seats_and_no_show_fee_error"));
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { availability, ...rest } = input;
     updateMutation.mutate({
       ...rest,
+      length,
       locations,
       recurringEvent,
       periodStartDate: periodDates.startDate,
@@ -426,6 +452,7 @@ const EventTypePage = (props: EventTypeSetupProps) => {
       durationLimits,
       seatsPerTimeSlot,
       seatsShowAttendees,
+      seatsShowAvailabilityCount,
       metadata,
       customInputs,
       children,
@@ -446,8 +473,10 @@ const EventTypePage = (props: EventTypeSetupProps) => {
         availability={availability}
         isUpdateMutationLoading={updateMutation.isLoading}
         formMethods={formMethods}
-        disableBorder={tabName === "apps" || tabName === "workflows" || tabName === "webhooks"}
-        currentUserMembership={currentUserMembership}>
+        // disableBorder={tabName === "apps" || tabName === "workflows" || tabName === "webhooks"}
+        disableBorder={true}
+        currentUserMembership={currentUserMembership}
+        isUserOrganizationAdmin={props.isUserOrganizationAdmin}>
         <Form
           form={formMethods}
           id="event-type-form"
@@ -459,6 +488,7 @@ const EventTypePage = (props: EventTypeSetupProps) => {
               afterBufferTime,
               seatsPerTimeSlot,
               seatsShowAttendees,
+              seatsShowAvailabilityCount,
               bookingLimits,
               durationLimits,
               recurringEvent,
@@ -470,8 +500,11 @@ const EventTypePage = (props: EventTypeSetupProps) => {
               seatsPerTimeSlotEnabled,
               // eslint-disable-next-line @typescript-eslint/no-unused-vars
               multipleDurationEnabled,
+              length,
               ...input
             } = values;
+
+            if (!Number(length)) throw new Error(t("event_setup_length_error"));
 
             if (bookingLimits) {
               const isValid = validateIntervalLimitOrder(bookingLimits);
@@ -490,14 +523,16 @@ const EventTypePage = (props: EventTypeSetupProps) => {
               if (metadata?.multipleDuration.length < 1) {
                 throw new Error(t("event_setup_multiple_duration_error"));
               } else {
-                if (!input.length && !metadata?.multipleDuration?.includes(input.length)) {
+                if (!length && !metadata?.multipleDuration?.includes(length)) {
                   throw new Error(t("event_setup_multiple_duration_default_error"));
                 }
               }
             }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { availability, ...rest } = input;
             updateMutation.mutate({
               ...rest,
+              length,
               locations,
               recurringEvent,
               periodStartDate: periodDates.startDate,
@@ -510,6 +545,7 @@ const EventTypePage = (props: EventTypeSetupProps) => {
               durationLimits,
               seatsPerTimeSlot,
               seatsShowAttendees,
+              seatsShowAvailabilityCount,
               metadata,
               customInputs,
             });

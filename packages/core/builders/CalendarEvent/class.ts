@@ -9,6 +9,7 @@ import type {
 } from "@calcom/types/Calendar";
 
 class CalendarEventClass implements CalendarEvent {
+  bookerUrl?: string | undefined;
   type!: string;
   title!: string;
   startTime!: string;
@@ -23,7 +24,7 @@ class CalendarEventClass implements CalendarEvent {
   uid?: string | null;
   videoCallData?: VideoCallData;
   paymentInfo?: any;
-  destinationCalendar?: DestinationCalendar | null;
+  destinationCalendar?: DestinationCalendar[] | null;
   cancellationReason?: string | null;
   rejectionReason?: string | null;
   hideCalendarNotes?: boolean;

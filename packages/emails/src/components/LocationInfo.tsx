@@ -2,10 +2,8 @@ import type { TFunction } from "next-i18next";
 
 import { guessEventLocationType } from "@calcom/app-store/locations";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
-import logger from "@calcom/lib/logger";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
-import { CallToActionIcon } from "./CallToActionIcon";
 import { Info } from "./Info";
 
 export function LocationInfo(props: { calEvent: CalendarEvent; t: TFunction }) {
@@ -13,7 +11,6 @@ export function LocationInfo(props: { calEvent: CalendarEvent; t: TFunction }) {
 
   // We would not be able to determine provider name for DefaultEventLocationTypes
   const providerName = guessEventLocationType(props.calEvent.location)?.label;
-  logger.debug(`LocationInfo: ${JSON.stringify(props.calEvent)} ${providerName}`);
 
   const location = props.calEvent.location;
   let meetingUrl = location?.search(/^https?:/) !== -1 ? location : undefined;
@@ -65,7 +62,7 @@ export function LocationInfo(props: { calEvent: CalendarEvent; t: TFunction }) {
         label={t("where")}
         withSpacer
         description={
-          <a href={"tel:" + location} title="Phone" style={{ color: "#3E3E3E" }}>
+          <a href={`tel:${location}`} title="Phone" style={{ color: "#3E3E3E" }}>
             {location}
           </a>
         }

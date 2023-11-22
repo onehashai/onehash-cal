@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { z } from "zod";
 
 import dayjs from "@calcom/dayjs";
 import { checkPremiumUsername } from "@calcom/ee/common/lib/checkPremiumUsername";
@@ -11,17 +10,9 @@ import { closeComUpsertTeamUser } from "@calcom/lib/sync/SyncServiceManager";
 import { validateUsernameInTeam, validateUsername } from "@calcom/lib/validateUsername";
 import prisma from "@calcom/prisma";
 import { IdentityProvider } from "@calcom/prisma/enums";
+import { MembershipRole } from "@calcom/prisma/enums";
+import { signupSchema } from "@calcom/prisma/zod-utils";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
-
-const signupSchema = z.object({
-  username: z.string().refine((value) => !value.includes("+"), {
-    message: "String should not contain a plus symbol (+).",
-  }),
-  email: z.string().email(),
-  password: z.string().min(7),
-  language: z.string().optional(),
-  token: z.string().optional(),
-});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -61,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return validation_check;
   }
 
-  let foundToken: { id: number; teamId: number | null; expires: Date } | null = null;
+  const foundToken: { id: number; teamId: number | null; expires: Date } | null = null;
   const hashedPassword = await hashPassword(password);
 
   await prisma.user.upsert({
@@ -87,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   if (token) {
-    foundToken = await prisma.verificationToken.findFirst({
+    const foundToken = await prisma.verificationToken.findFirst({
       where: {
         token,
       },
@@ -107,7 +98,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (foundToken?.teamId) {
       const teamUserValidation = await validateUsernameInTeam(username, userEmail, foundToken?.teamId);
-      return validationResponse(userEmail, teamUserValidation);
+      if (!teamUserValidation.isValid) {
+        return res.status(409).json({ message: "Username or email is already taken" });
+      }
     }
   }
 
@@ -117,7 +110,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: foundToken.teamId,
       },
     });
-
     if (team) {
       const teamMetadata = teamMetadataSchema.parse(team?.metadata);
 
@@ -132,6 +124,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
+      // Identify the org id in an org context signup, either the invited team is an org
+      // or has a parentId, otherwise parentId will be null, making orgId null
+      const orgId = teamMetadata?.isOrganization ? team.id : team.parentId;
+
       const user = await prisma.user.upsert({
         where: { email: userEmail },
         update: {
@@ -139,49 +135,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           password: hashedPassword,
           emailVerified: new Date(Date.now()),
           identityProvider: IdentityProvider.CAL,
+          organizationId: orgId,
         },
         create: {
           username,
           email: userEmail,
           password: hashedPassword,
           identityProvider: IdentityProvider.CAL,
+          organizationId: orgId,
         },
       });
 
-      if (teamMetadata?.isOrganization) {
-        await prisma.user.update({
-          where: {
-            id: user.id,
-          },
-          data: {
-            organizationId: team.id,
-          },
-        });
-      }
-
-      const membership = await prisma.membership.update({
+      const membership = await prisma.membership.upsert({
         where: {
           userId_teamId: { userId: user.id, teamId: team.id },
         },
-        data: {
+        update: {
           accepted: true,
+        },
+        create: {
+          userId: user.id,
+          teamId: team.id,
+          accepted: true,
+          role: MembershipRole.MEMBER,
         },
       });
       closeComUpsertTeamUser(team, user, membership.role);
 
-      // Accept any child team invites for orgs.
+      // Accept any child team invites for orgs and create a membership for the org itself
       if (team.parentId) {
-        // Join ORG
-        await prisma.user.update({
+        // Create (when invite link is used) or Update (when regular email invitation is used) membership for the organization itself
+        await prisma.membership.upsert({
           where: {
-            id: user.id,
+            userId_teamId: { userId: user.id, teamId: team.parentId },
           },
-          data: {
-            organizationId: team.parentId,
+          update: {
+            accepted: true,
+          },
+          create: {
+            userId: user.id,
+            teamId: team.parentId,
+            accepted: true,
+            role: MembershipRole.MEMBER,
           },
         });
 
-        /** We do a membership update twice so we can join the ORG invite if the user is invited to a team witin a ORG. */
+        // We do a membership update twice so we can join the ORG invite if the user is invited to a team witin a ORG
         await prisma.membership.updateMany({
           where: {
             userId: user.id,

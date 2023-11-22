@@ -45,6 +45,7 @@ export const useScheduleForEvent = ({
   eventId,
   month,
   duration,
+  monthCount,
 }: {
   prefetchNextMonth?: boolean;
   username?: string | null;
@@ -52,6 +53,7 @@ export const useScheduleForEvent = ({
   eventId?: number | null;
   month?: string | null;
   duration?: number | null;
+  monthCount?: number;
 } = {}) => {
   const { timezone } = useTimePreferences();
   const event = useEvent();
@@ -60,9 +62,11 @@ export const useScheduleForEvent = ({
     shallow
   );
   const searchParams = useSearchParams();
-  const rescheduleUid = searchParams.get("rescheduleUid");
+  const rescheduleUid = searchParams?.get("rescheduleUid");
 
   const pathname = usePathname();
+
+  const isTeam = !!event.data?.team?.parentId;
 
   return useSchedule({
     username: usernameFromStore ?? username,
@@ -70,9 +74,10 @@ export const useScheduleForEvent = ({
     eventId: event.data?.id ?? eventId,
     timezone,
     prefetchNextMonth,
+    monthCount,
     rescheduleUid,
     month: monthFromStore ?? month,
     duration: durationFromStore ?? duration,
-    isTeamEvent: pathname.indexOf("/team/") !== -1,
+    isTeamEvent: pathname?.indexOf("/team/") !== -1 || isTeam,
   });
 };

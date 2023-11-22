@@ -5,13 +5,14 @@ import dayjs from "@calcom/dayjs";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Dialog, DialogClose, DialogContent, DialogFooter, showToast } from "@calcom/ui";
+import { IS_VISUAL_REGRESSION_TESTING } from "@calcom/web/constants";
 
 export default function TimezoneChangeDialog() {
   const { t } = useLocale();
   const { data: user, isLoading } = trpc.viewer.me.useQuery();
   const utils = trpc.useContext();
   const userTz = user?.timeZone;
-  const currentTz = dayjs.tz.guess();
+  const currentTz = dayjs.tz.guess() || "Europe/London";
   const formattedCurrentTz = currentTz?.replace("_", " ");
 
   // update user settings
@@ -43,7 +44,7 @@ export default function TimezoneChangeDialog() {
     const tzDifferent =
       !isLoading && dayjs.tz(undefined, currentTz).utcOffset() !== dayjs.tz(undefined, userTz).utcOffset();
     const showDialog = tzDifferent && !document.cookie.includes("calcom-timezone-dialog=1");
-    setOpen(showDialog);
+    setOpen(!IS_VISUAL_REGRESSION_TESTING && showDialog);
   }, [currentTz, isLoading, userTz]);
 
   // save cookie to not show again

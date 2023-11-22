@@ -1,13 +1,12 @@
-import type { PrismaClient } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import type { NextApiResponse, GetServerSidePropsContext } from "next";
 
-import { stripeDataSchema } from "@calcom/app-store/stripepayment/lib/server";
 import updateChildrenEventTypes from "@calcom/features/ee/managed-event-types/lib/handleChildrenEventTypes";
 import { validateIntervalLimitOrder } from "@calcom/lib";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server";
 import { validateBookerLayouts } from "@calcom/lib/validateBookerLayouts";
+import type { PrismaClient } from "@calcom/prisma";
 import { WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/client";
 import { SchedulingType } from "@calcom/prisma/enums";
 
@@ -241,25 +240,31 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     }
   }
 
-  if (input?.price || input.metadata?.apps?.stripe?.price) {
-    data.price = input.price || input.metadata?.apps?.stripe?.price;
-    const paymentCredential = await ctx.prisma.credential.findFirst({
-      where: {
-        userId: ctx.user.id,
-        type: {
-          contains: "_payment",
-        },
-      },
-      select: {
-        type: true,
-        key: true,
-      },
-    });
+  /**
+   * Since you can have multiple payment apps we will honor the first one to save in eventType
+   * but the real detail will be inside app metadata, so with this you can have different prices in different apps
+   * So the price and currency inside eventType will be deprecated soon or just keep as reference.
+   */
+  if (
+    input.metadata?.apps?.alby?.price ||
+    input?.metadata?.apps?.paypal?.price ||
+    input?.metadata?.apps?.stripe?.price
+  ) {
+    data.price =
+      input.metadata?.apps?.alby?.price ||
+      input.metadata.apps.paypal?.price ||
+      input.metadata.apps.stripe?.price;
+  }
 
-    if (paymentCredential?.type === "stripe_payment") {
-      const { default_currency } = stripeDataSchema.parse(paymentCredential.key);
-      data.currency = default_currency;
-    }
+  if (
+    input.metadata?.apps?.alby?.currency ||
+    input?.metadata?.apps?.paypal?.currency ||
+    input?.metadata?.apps?.stripe?.currency
+  ) {
+    data.currency =
+      input.metadata?.apps?.alby?.currency ||
+      input.metadata.apps.paypal?.currency ||
+      input.metadata.apps.stripe?.currency;
   }
 
   const connectedLink = await ctx.prisma.hashedLink.findFirst({

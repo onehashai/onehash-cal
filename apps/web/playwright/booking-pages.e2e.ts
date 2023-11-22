@@ -53,7 +53,7 @@ test.describe("free user", () => {
     // book same time spot again
     await bookTimeSlot(page);
 
-    await expect(page.locator("[data-testid=booking-fail]")).toBeVisible({ timeout: 1000 });
+    await page.locator("[data-testid=booking-fail]").waitFor({ state: "visible" });
   });
 });
 
@@ -158,9 +158,10 @@ test.describe("pro user", () => {
 
     await expect(page.locator("[data-testid=success-page]")).toBeVisible();
 
-    additionalGuests.forEach(async (email) => {
+    const promises = additionalGuests.map(async (email) => {
       await expect(page.locator(`[data-testid="attendee-email-${email}"]`)).toHaveText(email);
     });
+    await Promise.all(promises);
   });
 
   test("Time slots should be reserved when selected", async ({ context, page }) => {
@@ -251,6 +252,23 @@ test.describe("prefill", () => {
     });
   });
 
+  test("Persist the field values when going back and coming back to the booking form", async ({
+    page,
+    users,
+  }) => {
+    await page.goto("/pro/30min");
+    await selectFirstAvailableTimeSlotNextMonth(page);
+    await page.fill('[name="name"]', "John Doe");
+    await page.fill('[name="email"]', "john@example.com");
+    await page.fill('[name="notes"]', "Test notes");
+    await page.click('[data-testid="back"]');
+
+    await selectFirstAvailableTimeSlotNextMonth(page);
+    await expect(page.locator('[name="name"]')).toHaveValue("John Doe");
+    await expect(page.locator('[name="email"]')).toHaveValue("john@example.com");
+    await expect(page.locator('[name="notes"]')).toHaveValue("Test notes");
+  });
+
   test("logged out", async ({ page, users }) => {
     await page.goto("/pro/30min");
 
@@ -265,5 +283,62 @@ test.describe("prefill", () => {
       await expect(page.locator('[name="name"]')).toHaveValue(testName);
       await expect(page.locator('[name="email"]')).toHaveValue(testEmail);
     });
+  });
+});
+
+test.describe("Booking on different layouts", () => {
+  test.beforeEach(async ({ page, users }) => {
+    const user = await users.create();
+    await page.goto(`/${user.username}`);
+  });
+
+  test("Book on week layout", async ({ page }) => {
+    // Click first event type
+    await page.click('[data-testid="event-type-link"]');
+
+    await page.click('[data-testid="toggle-group-item-week_view"]');
+
+    await page.click('[data-testid="incrementMonth"]');
+
+    await page.locator('[data-testid="calendar-empty-cell"]').nth(0).click();
+
+    // Fill what is this meeting about? name email and notes
+    await page.locator('[name="name"]').fill("Test name");
+    await page.locator('[name="email"]').fill(`${randomString(4)}@example.com`);
+    await page.locator('[name="notes"]').fill("Test notes");
+
+    await page.click('[data-testid="confirm-book-button"]');
+
+    await page.waitForURL((url) => {
+      return url.pathname.startsWith("/booking");
+    });
+
+    // expect page to be booking page
+    await expect(page.locator("[data-testid=success-page]")).toBeVisible();
+  });
+
+  test("Book on column layout", async ({ page }) => {
+    // Click first event type
+    await page.click('[data-testid="event-type-link"]');
+
+    await page.click('[data-testid="toggle-group-item-column_view"]');
+
+    await page.click('[data-testid="incrementMonth"]');
+
+    await page.locator('[data-testid="time"]').nth(0).click();
+
+    // Fill what is this meeting about? name email and notes
+    await page.locator('[name="name"]').fill("Test name");
+    await page.locator('[name="email"]').fill(`${randomString(4)}@example.com`);
+    await page.locator('[name="notes"]').fill("Test notes");
+
+    await page.click('[data-testid="confirm-book-button"]');
+
+    await page.waitForURL((url) => {
+      return url.pathname.startsWith("/booking");
+    });
+
+    // expect page to be booking page
+    await expect(page.locator("[data-testid=success-page]")).toBeVisible();
   });
 });

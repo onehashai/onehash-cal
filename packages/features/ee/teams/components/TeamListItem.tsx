@@ -67,7 +67,10 @@ export default function TeamListItem(props: Props) {
 
   const acceptOrLeaveMutation = trpc.viewer.teams.acceptOrLeave.useMutation({
     onSuccess: () => {
+      showToast(t("success"), "success");
+      utils.viewer.teams.get.invalidate();
       utils.viewer.teams.list.invalidate();
+      utils.viewer.teams.hasTeamPlan.invalidate();
       utils.viewer.teams.listInvites.invalidate();
     },
   });
@@ -180,7 +183,8 @@ export default function TeamListItem(props: Props) {
       <div className={classNames("flex items-center  justify-between", !isInvitee && "hover:bg-muted group")}>
         {!isInvitee ? (
           <Link
-            href={"/settings/teams/" + team.id + "/profile"}
+            data-testid="team-list-item-link"
+            href={`/settings/teams/${team.id}/profile`}
             className="flex-grow cursor-pointer truncate text-sm"
             title={`${team.name}`}>
             {teamInfo}
@@ -238,7 +242,7 @@ export default function TeamListItem(props: Props) {
                           `${
                             orgBranding
                               ? `${orgBranding.fullDomain}`
-                              : process.env.NEXT_PUBLIC_WEBSITE_URL + "/team"
+                              : `${process.env.NEXT_PUBLIC_WEBSITE_URL}/team`
                           }/${team.slug}`
                         );
                         showToast(t("link_copied"), "success");
@@ -263,7 +267,7 @@ export default function TeamListItem(props: Props) {
                       <DropdownMenuItem>
                         <DropdownItem
                           type="button"
-                          href={"/settings/teams/" + team.id + "/profile"}
+                          href={`/settings/teams/${team.id}/profile`}
                           StartIcon={Edit2}>
                           {t("edit_team") as string}
                         </DropdownItem>

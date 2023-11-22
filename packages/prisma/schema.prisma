@@ -56,6 +56,7 @@ model EventType {
   position                        Int                     @default(0)
   /// @zod.custom(imports.eventTypeLocations)
   locations                       Json?
+  /// @zod.min(1)
   length                          Int
   offsetStart                     Int                     @default(0)
   hidden                          Boolean                 @default(false)
@@ -79,10 +80,13 @@ model EventType {
   bookingFields                   Json?
   timeZone                        String?
   periodType                      PeriodType              @default(UNLIMITED)
+  /// @zod.custom(imports.coerceToDate)
   periodStartDate                 DateTime?
+  /// @zod.custom(imports.coerceToDate)
   periodEndDate                   DateTime?
   periodDays                      Int?
   periodCountCalendarDays         Boolean?
+  lockTimeZoneToggleOnBookingPage Boolean                 @default(false)
   requiresConfirmation            Boolean                 @default(false)
   requiresBookerEmailVerification Boolean                 @default(false)
   /// @zod.custom(imports.recurringEventType)
@@ -95,6 +99,7 @@ model EventType {
   afterEventBuffer                Int                     @default(0)
   seatsPerTimeSlot                Int?
   seatsShowAttendees              Boolean?                @default(false)
+  seatsShowAvailabilityCount      Boolean?                @default(true)
   schedulingType                  SchedulingType?
   schedule                        Schedule?               @relation(fields: [scheduleId], references: [id])
   scheduleId                      Int?
@@ -133,7 +138,9 @@ model Credential {
   // How to make it a required column?
   appId                String?
   destinationCalendars DestinationCalendar[]
+  selectedCalendars    SelectedCalendar[]
   invalid              Boolean?              @default(false)
+  CalendarCache        CalendarCache[]
 
   @@index([userId])
   @@index([appId])
@@ -200,6 +207,7 @@ model User {
   timeFormat          Int?                 @default(12)
   twoFactorSecret     String?
   twoFactorEnabled    Boolean              @default(false)
+  backupCodes         String?
   identityProvider    IdentityProvider     @default(CAL)
   identityProviderId  String?
   availability        Availability[]
@@ -215,6 +223,9 @@ model User {
 
   // participate in SEO indexing or not
   allowSEOIndexing Boolean? @default(true)
+
+  // receive monthly digest email for teams or not
+  receiveMonthlyDigestEmail Boolean? @default(true)
 
   /// @zod.custom(imports.userMetadata)
   metadata             Json?
@@ -234,6 +245,7 @@ model User {
   hosts                Host[]
   organizationId       Int?
   organization         Team?                   @relation("scope", fields: [organizationId], references: [id], onDelete: SetNull)
+  accessCodes          AccessCode[]
   // Linking account code for orgs v2
   //linkedByUserId       Int?
   //linkedBy             User?                   @relation("linked_account", fields: [linkedByUserId], references: [id], onDelete: Cascade)
@@ -242,6 +254,7 @@ model User {
   @@unique([email])
   @@unique([email, username])
   @@unique([username, organizationId])
+  @@index([username])
   @@index([emailVerified])
   @@index([identityProvider])
   @@index([identityProviderId])
@@ -283,6 +296,7 @@ model Team {
   routingForms        App_RoutingForms_Form[]
   apiKeys             ApiKey[]
   credentials         Credential[]
+  accessCodes         AccessCode[]
 
   @@unique([slug, parentId])
 }
@@ -410,6 +424,7 @@ model Booking {
   @@index([recurringEventId])
   @@index([uid])
   @@index([status])
+  @@index([startTime, endTime, status])
 }
 
 model Schedule {
@@ -443,10 +458,12 @@ model Availability {
 }
 
 model SelectedCalendar {
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  integration String
-  externalId  String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  integration  String
+  externalId   String
+  credential   Credential? @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  credentialId Int?
 
   @@id([userId, integration, externalId])
   @@index([userId])
@@ -527,6 +544,7 @@ enum PaymentOption {
 
 enum WebhookTriggerEvents {
   BOOKING_CREATED
+  BOOKING_PAYMENT_INITIATED
   BOOKING_PAID
   BOOKING_RESCHEDULED
   BOOKING_REQUESTED
@@ -659,6 +677,7 @@ model App {
 model App_RoutingForms_Form {
   id          String                          @id @default(cuid())
   description String?
+  position    Int                             @default(0)
   routes      Json?
   createdAt   DateTime                        @default(now())
   updatedAt   DateTime                        @updatedAt
@@ -736,12 +755,14 @@ model WorkflowStep {
   numberRequired            Boolean?
   sender                    String?
   numberVerificationPending Boolean            @default(true)
+  includeCalendarEvent      Boolean            @default(false)
 
   @@index([workflowId])
 }
 
 model Workflow {
   id       Int                     @id @default(autoincrement())
+  position Int                     @default(0)
   name     String
   userId   Int?
   user     User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -801,6 +822,18 @@ model WorkflowReminder {
   @@index([bookingUid])
   @@index([workflowStepId])
   @@index([seatReferenceId])
+  @@index([method, scheduled, scheduledDate])
+  @@index([cancelled, scheduledDate])
+}
+
+model WebhookScheduledTriggers {
+  id            Int       @id @default(autoincrement())
+  jobName       String
+  subscriberUrl String
+  payload       String
+  startAfter    DateTime
+  retryCount    Int       @default(0)
+  createdAt     DateTime? @default(now())
 }
 
 enum WorkflowTemplates {
@@ -883,6 +916,33 @@ model SelectedSlots {
   @@unique(fields: [userId, slotUtcStartDate, slotUtcEndDate, uid], name: "selectedSlotUnique")
 }
 
+model OAuthClient {
+  clientId     String       @id @unique
+  redirectUri  String
+  clientSecret String
+  name         String
+  logo         String?
+  accessCodes  AccessCode[]
+}
+
+model AccessCode {
+  id        Int           @id @default(autoincrement())
+  code      String
+  clientId  String?
+  client    OAuthClient?  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  expiresAt DateTime
+  scopes    AccessScope[]
+  userId    Int?
+  user      User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId    Int?
+  team      Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+enum AccessScope {
+  READ_BOOKING
+  READ_PROFILE
+}
+
 view BookingTimeStatus {
   id            Int            @unique
   uid           String?
@@ -901,4 +961,41 @@ view BookingTimeStatus {
   eventLength   Int?
   timeStatus    String?
   eventParentId Int?
+  userEmail     String?
+  username      String?
+}
+
+model CalendarCache {
+  // The key would be the unique URL that is requested by the user
+  key          String
+  value        Json
+  expiresAt    DateTime
+  credentialId Int
+  credential   Credential? @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@id([credentialId, key])
+  @@unique([credentialId, key])
+}
+
+enum RedirectType {
+  UserEventType @map("user-event-type")
+  TeamEventType @map("team-event-type")
+  User          @map("user")
+  Team          @map("team")
+}
+
+model TempOrgRedirect {
+  id        Int          @id @default(autoincrement())
+  // Better would be to have fromOrgId and toOrgId as well and then we should have just to instead toUrl
+  from      String
+  // 0 would mean it is non org
+  fromOrgId Int
+  type      RedirectType
+  // It doesn't have any query params
+  toUrl     String
+  enabled   Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([from, type, fromOrgId])
 }

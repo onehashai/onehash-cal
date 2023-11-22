@@ -23,9 +23,9 @@ const otherNonExistingRoutePrefixes = ["forms", "router", "success", "cancel"];
 // book$ ensures that only /book is excluded from rewrite(which is at the end always) and not /booked
 
 let subdomainRegExp = (exports.subdomainRegExp = getSubdomainRegExp(
-  process.env.NEXT_PUBLIC_WEBAPP_URL || "https://" + process.env.VERCEL_URL
+  process.env.NEXT_PUBLIC_WEBAPP_URL || `https://${process.env.VERCEL_URL}`
 ));
-exports.orgHostPath = `^(?<orgSlug>${subdomainRegExp})\\..*`;
+exports.orgHostPath = `^(?<orgSlug>${subdomainRegExp})\\.(?!vercel\.app).*`;
 
 let beforeRewriteExcludePages = pages.concat(otherNonExistingRoutePrefixes);
 exports.orgUserRoutePath = `/:user((?!${beforeRewriteExcludePages.join("|")}|_next|public)[a-zA-Z0-9\-_]+)`;

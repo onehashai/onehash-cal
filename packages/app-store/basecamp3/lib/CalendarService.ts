@@ -63,7 +63,7 @@ export default class BasecampCalendarService implements Calendar {
       this.userAgent = user_agent as string;
     });
     this.auth = this.basecampAuth(credential).then((c) => c);
-    this.log = logger.getChildLogger({ prefix: [`[[lib] ${this.integrationName}`] });
+    this.log = logger.getSubLogger({ prefix: [`[[lib] ${this.integrationName}`] });
   }
 
   private basecampAuth = async (credential: CredentialPayload) => {
@@ -104,15 +104,10 @@ export default class BasecampCalendarService implements Calendar {
       hour12: true,
       minute: "numeric",
     });
-    const baseString = `<div>Event title: ${event.title}<br/>Date and time: ${date}, ${startTime} - ${endTime} ${timeZone}<br/>View on OneHash: <a target="_blank" rel="noreferrer" class="autolinked" data-behavior="truncate" href="https://app.cal.com/booking/${event.uid}">https://app.cal.com/booking/${event.uid}</a> `;
-    const guestString =
-      "<br/>Guests: " +
-      event.attendees.reduce((acc, attendee) => {
-        return (
-          acc +
-          `<br/><a target=\"_blank\" rel=\"noreferrer\" class=\"autolinked\" data-behavior=\"truncate\" href=\"mailto:${attendee.email}\">${attendee.email}</a>`
-        );
-      }, "");
+    const baseString = `<div>Event title: ${event.title}<br/>Date and time: ${date}, ${startTime} - ${endTime} ${timeZone}<br/>View on Cal.id: <a target="_blank" rel="noreferrer" class="autolinked" data-behavior="truncate" href="https://app.cal.id/booking/${event.uid}">https://app.cal.id/booking/${event.uid}</a> `;
+    const guestString = `<br/>Guests: ${event.attendees.reduce((acc, attendee) => {
+      return `${acc}<br/><a target=\"_blank\" rel=\"noreferrer\" class=\"autolinked\" data-behavior=\"truncate\" href=\"mailto:${attendee.email}\">${attendee.email}</a>`;
+    }, "")}`;
 
     const videoString = event.videoCallData
       ? `<br/>Join on video: ${event.videoCallData.url}</div>`

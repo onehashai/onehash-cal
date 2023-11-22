@@ -38,6 +38,11 @@ function MembersList(props: MembersListProps) {
           })}
         </ul>
       ) : null}
+      {members?.length === 0 && (
+        <div className="flex flex-col items-center justify-center">
+          <p className="text-default text-sm font-bold">{t("no_members_found")}</p>
+        </div>
+      )}
       {displayLoadMore && (
         <button
           className="text-primary-500 hover:text-primary-600"
@@ -53,7 +58,7 @@ const MembersView = () => {
   const { t, i18n } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const teamId = Number(searchParams.get("id"));
+  const teamId = Number(searchParams?.get("id"));
   const session = useSession();
   const utils = trpc.useContext();
   const [offset, setOffset] = useState<number>(1);
@@ -64,11 +69,12 @@ const MembersView = () => {
   const [showMemberInvitationModal, setShowMemberInvitationModal] = useState<boolean>(false);
   const [members, setMembers] = useState<Members>([]);
   const { data: currentOrg } = trpc.viewer.organizations.listCurrent.useQuery(undefined, {
-    enabled: !!session.data?.user?.organizationId,
+    enabled: !!session.data?.user?.org,
   });
   const { data: team, isLoading: isTeamLoading } = trpc.viewer.organizations.getOtherTeam.useQuery(
     { teamId },
     {
+      enabled: !Number.isNaN(teamId),
       onError: () => {
         router.push("/settings");
       },
@@ -81,13 +87,14 @@ const MembersView = () => {
         distinctUser: true,
       },
       {
-        enabled: searchParams !== null,
+        enabled: !Number.isNaN(teamId),
       }
     );
   const { data: membersFetch, isLoading: isLoadingMembers } =
     trpc.viewer.organizations.listOtherTeamMembers.useQuery(
       { teamId, limit, offset: (offset - 1) * limit },
       {
+        enabled: !Number.isNaN(teamId),
         onError: () => {
           router.push("/settings");
         },
@@ -96,18 +103,20 @@ const MembersView = () => {
 
   useEffect(() => {
     if (membersFetch) {
-      if (membersFetch.length < limit) {
-        setLoadMore(false);
-      } else {
-        setLoadMore(true);
-      }
-      setMembers(members.concat(membersFetch));
+      setLoadMore(membersFetch.length >= limit);
+      setMembers((m) => m.concat(membersFetch));
     }
   }, [membersFetch]);
 
   const isLoading = isTeamLoading || isLoadingMembers || isOrgListLoading;
 
-  const inviteMemberMutation = trpc.viewer.teams.inviteMember.useMutation();
+  const inviteMemberMutation = trpc.viewer.teams.inviteMember.useMutation({
+    onSuccess: () => {
+      utils.viewer.organizations.listOtherTeams.invalidate();
+      utils.viewer.teams.list.invalidate();
+      utils.viewer.organizations.listOtherTeamMembers.invalidate();
+    },
+  });
 
   const isOrgAdminOrOwner =
     currentOrg &&

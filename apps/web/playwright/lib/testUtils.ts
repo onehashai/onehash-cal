@@ -1,11 +1,16 @@
-import type { Page } from "@playwright/test";
+import type { Frame, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
+import EventEmitter from "events";
 import type { IncomingMessage, ServerResponse } from "http";
 import { createServer } from "http";
 // eslint-disable-next-line no-restricted-imports
 import { noop } from "lodash";
 import type { API, Messages } from "mailhog";
 
+import type { Prisma } from "@calcom/prisma/client";
+import { BookingStatus } from "@calcom/prisma/enums";
+
+import type { Fixtures } from "./fixtures";
 import { test } from "./fixtures";
 
 export function todo(title: string) {
@@ -31,7 +36,27 @@ export function createHttpServer(opts: { requestHandler?: RequestHandler } = {})
       res.end();
     },
   } = opts;
+  const eventEmitter = new EventEmitter();
   const requestList: Request[] = [];
+
+  const waitForRequestCount = (count: number) =>
+    new Promise<void>((resolve) => {
+      if (requestList.length === count) {
+        resolve();
+        return;
+      }
+
+      const pushHandler = () => {
+        if (requestList.length !== count) {
+          return;
+        }
+        eventEmitter.off("push", pushHandler);
+        resolve();
+      };
+
+      eventEmitter.on("push", pushHandler);
+    });
+
   const server = createServer((req, res) => {
     const buffer: unknown[] = [];
 
@@ -45,6 +70,7 @@ export function createHttpServer(opts: { requestHandler?: RequestHandler } = {})
 
       _req.body = json;
       requestList.push(_req);
+      eventEmitter.emit("push");
       requestHandler({ req: _req, res });
     });
   });
@@ -54,35 +80,17 @@ export function createHttpServer(opts: { requestHandler?: RequestHandler } = {})
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const port: number = (server.address() as any).port;
   const url = `http://localhost:${port}`;
+
   return {
     port,
     close: () => server.close(),
     requestList,
     url,
+    waitForRequestCount,
   };
 }
 
-/**
- * When in need to wait for any period of time you can use waitFor, to wait for your expectations to pass.
- */
-export async function waitFor(fn: () => Promise<unknown> | unknown, opts: { timeout?: number } = {}) {
-  let finished = false;
-  const timeout = opts.timeout ?? 5000; // 5s
-  const timeStart = Date.now();
-  while (!finished) {
-    try {
-      await fn();
-      finished = true;
-    } catch {
-      if (Date.now() - timeStart >= timeout) {
-        throw new Error("waitFor timed out");
-      }
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
-  }
-}
-
-export async function selectFirstAvailableTimeSlotNextMonth(page: Page) {
+export async function selectFirstAvailableTimeSlotNextMonth(page: Page | Frame) {
   // Let current month dates fully render.
   await page.click('[data-testid="incrementMonth"]');
 
@@ -192,6 +200,7 @@ export async function installAppleCalendar(page: Page) {
   await page.waitForURL("/apps/apple-calendar");
   await page.click('[data-testid="install-app-button"]');
 }
+
 export async function getEmailsReceivedByUser({
   emails,
   userEmail,
@@ -227,4 +236,45 @@ export async function expectEmailsToHaveSubject({
 
   expect(organizerFirstEmail.subject).toBe(emailSubject);
   expect(bookerFirstEmail.subject).toBe(emailSubject);
+}
+
+// this method is not used anywhere else
+// but I'm keeping it here in case we need in the future
+async function createUserWithSeatedEvent(users: Fixtures["users"]) {
+  const slug = "seats";
+  const user = await users.create({
+    eventTypes: [
+      {
+        title: "Seated event",
+        slug,
+        seatsPerTimeSlot: 10,
+        requiresConfirmation: true,
+        length: 30,
+        disableGuests: true, // should always be true for seated events
+      },
+    ],
+  });
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const eventType = user.eventTypes.find((e) => e.slug === slug)!;
+  return { user, eventType };
+}
+
+export async function createUserWithSeatedEventAndAttendees(
+  fixtures: Pick<Fixtures, "users" | "bookings">,
+  attendees: Prisma.AttendeeCreateManyBookingInput[]
+) {
+  const { user, eventType } = await createUserWithSeatedEvent(fixtures.users);
+
+  const booking = await fixtures.bookings.create(user.id, user.username, eventType.id, {
+    status: BookingStatus.ACCEPTED,
+    // startTime with 1 day from now and endTime half hour after
+    startTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+    attendees: {
+      createMany: {
+        data: attendees,
+      },
+    },
+  });
+  return { user, eventType, booking };
 }

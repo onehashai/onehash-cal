@@ -12,7 +12,7 @@ import { subscriberUrlReserved } from "../lib/subscriberUrlReserved";
 
 const EditWebhook = () => {
   const searchParams = useSearchParams();
-  const id = searchParams.get("id");
+  const id = searchParams?.get("id");
 
   if (!id) return <SkeletonContainer />;
 
@@ -60,11 +60,12 @@ function Component({ webhookId }: { webhookId: string }) {
       <Meta
         title={t("edit_webhook")}
         description={t("add_webhook_description", { appName: APP_NAME })}
+        borderInShellHeader={true}
         backButton
       />
       <WebhookForm
+        noRoutingFormTriggers={false}
         webhook={webhook}
-        noRoutingFormTriggers={!!webhook.teamId}
         onSubmit={(values: WebhookFormSubmitData) => {
           if (
             subscriberUrlReserved({
@@ -80,7 +81,7 @@ function Component({ webhookId }: { webhookId: string }) {
           }
 
           if (values.changeSecret) {
-            values.secret = values.newSecret.length ? values.newSecret : null;
+            values.secret = values.newSecret.trim().length ? values.newSecret : null;
           }
 
           if (!values.payloadTemplate) {

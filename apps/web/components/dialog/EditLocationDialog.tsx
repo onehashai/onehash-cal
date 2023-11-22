@@ -121,7 +121,7 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: `Invalid URL for ${eventLocationType.label}. ${
-                sampleUrl ? "Sample URL: " + sampleUrl : ""
+                sampleUrl ? `Sample URL: ${sampleUrl}` : ""
               }`,
             });
           }
@@ -382,24 +382,22 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
                 }}
               />
               {selectedLocation && LocationOptions}
-              <DialogFooter>
-                <div className="mt-4 flex justify-end space-x-2 rtl:space-x-reverse">
-                  <Button
-                    onClick={() => {
-                      setShowLocationModal(false);
-                      setSelectedLocation?.(undefined);
-                      setEditingLocationType?.("");
-                      locationFormMethods.unregister(["locationType", "locationLink"]);
-                    }}
-                    type="button"
-                    color="secondary">
-                    {t("cancel")}
-                  </Button>
+              <DialogFooter className="mt-4">
+                <Button
+                  onClick={() => {
+                    setShowLocationModal(false);
+                    setSelectedLocation?.(undefined);
+                    setEditingLocationType?.("");
+                    locationFormMethods.unregister(["locationType", "locationLink"]);
+                  }}
+                  type="button"
+                  color="secondary">
+                  {t("cancel")}
+                </Button>
 
-                  <Button data-testid="update-location" type="submit">
-                    {t("update")}
-                  </Button>
-                </div>
+                <Button data-testid="update-location" type="submit">
+                  {t("update")}
+                </Button>
               </DialogFooter>
             </Form>
           </div>
