@@ -339,7 +339,7 @@ const BookerComponent = ({
         <m.span
           key="logo"
           className={classNames(
-            "-z-10 mb-6 mt-auto pt-6 [&_img]:h-[15px]",
+            "-z-10 mb-6 mt-auto pt-6 [&_img]:h-[30px]",
             hasDarkBackground ? "dark" : "",
             layout === BookerLayouts.MONTH_VIEW ? "block" : "hidden"
           )}>

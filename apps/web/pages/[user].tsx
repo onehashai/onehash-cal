@@ -27,6 +27,7 @@ import { RedirectType, type EventType, type User } from "@calcom/prisma/client";
 import { baseEventTypeSelect } from "@calcom/prisma/selects";
 import { EventTypeMetaDataSchema, teamMetadataSchema } from "@calcom/prisma/zod-utils";
 import { HeadSeo, UnpublishedEntity } from "@calcom/ui";
+import { Logo } from "@calcom/ui";
 import { Verified, ArrowRight } from "@calcom/ui/components/icon";
 
 import type { EmbedProps } from "@lib/withEmbedSsr";
@@ -82,7 +83,7 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
         description={markdownStrippedBio}
         meeting={{
           title: markdownStrippedBio,
-          profile: { name: `${profile.name}`, image: null },
+          profile: { name: `${profile.name}`, image: user.avatarUrl || null },
           users: [{ username: `${user.username}`, name: `${user.name}` }],
         }}
         nextSeoProps={{
@@ -98,6 +99,7 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
             isEmbed ? "border-booker border-booker-width  bg-default rounded-md border" : "",
             "max-w-3xl px-4 py-24"
           )}>
+          <Logo small inline={false} className="mx-auto mb-4 flex justify-center" />
           <div className="mb-8 text-center">
             <OrganizationMemberAvatar
               size="xl"
@@ -245,7 +247,7 @@ export type UserPageProps = {
     allowSEOIndexing: boolean;
     username: string | null;
   };
-  users: Pick<User, "away" | "name" | "username" | "bio" | "verified">[];
+  users: Pick<User, "away" | "name" | "username" | "bio" | "verified" | "avatarUrl">[];
   themeBasis: string | null;
   markdownStrippedBio: string;
   safeBio: string;
@@ -295,6 +297,7 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
       metadata: true,
       brandColor: true,
       darkBrandColor: true,
+      avatarUrl: true,
       organizationId: true,
       organization: {
         select: {
@@ -363,6 +366,7 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
     image: user.avatar,
     theme: user.theme,
     brandColor: user.brandColor,
+    avatarUrl: user.avatarUrl,
     darkBrandColor: user.darkBrandColor,
     allowSEOIndexing: user.allowSEOIndexing ?? true,
     username: user.username,
@@ -397,6 +401,7 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
         name: user.name,
         username: user.username,
         bio: user.bio,
+        avatarUrl: user.avatarUrl,
         away: user.away,
         verified: user.verified,
       })),

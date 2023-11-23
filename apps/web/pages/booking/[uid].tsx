@@ -4,7 +4,7 @@ import { createEvent } from "ics";
 import type { GetServerSidePropsContext } from "next";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { RRule } from "rrule";
 import { z } from "zod";
@@ -36,6 +36,7 @@ import {
 } from "@calcom/lib/date-fns";
 import { getDefaultEvent } from "@calcom/lib/defaultEvents";
 import useGetBrandingColours from "@calcom/lib/getBrandColours";
+import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import useTheme from "@calcom/lib/hooks/useTheme";
@@ -48,6 +49,7 @@ import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { bookingMetadataSchema, customInputSchema, EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 import { Alert, Badge, Button, EmailInput, HeadSeo, useCalcomTheme } from "@calcom/ui";
+import { Logo } from "@calcom/ui";
 import { AlertCircle, Calendar, Check, ChevronLeft, ExternalLink, X } from "@calcom/ui/components/icon";
 
 import { timeZone } from "@lib/clock";
@@ -98,7 +100,7 @@ export default function Success(props: SuccessProps) {
   const router = useRouter();
   const routerQuery = useRouterQuery();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const searchParams = useCompatSearchParams();
   const {
     allRemainingBookings,
     isSuccessBookingPage,
@@ -825,6 +827,7 @@ export default function Success(props: SuccessProps) {
           </div>
         </div>
       </main>
+      <Logo small inline={false} className="mx-auto mb-4 flex justify-center" />
     </div>
   );
 }
