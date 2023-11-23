@@ -9,7 +9,6 @@ import Script from "next/script";
 import type { ReactNode } from "react";
 
 import "@calcom/embed-core/src/embed-iframe";
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { trpc } from "@calcom/trpc/react";
 
 import type { AppProps } from "@lib/app-providers-app-dir";
@@ -78,7 +77,8 @@ function PageWrapper(props: PageWrapperProps) {
         `}</style>
 
         {getLayout(
-          props.requiresLicense ? <LicenseRequired>{props.children}</LicenseRequired> : props.children
+          // props.requiresLicense ? <LicenseRequired>{props.children}</LicenseRequired> : props.children
+          props.children
         )}
       </>
     </AppProviders>

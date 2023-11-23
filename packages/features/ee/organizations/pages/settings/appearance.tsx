@@ -2,7 +2,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import BrandColorsForm from "@calcom/features/ee/components/BrandColorsForm";
 import { AppearanceSkeletonLoader } from "@calcom/features/ee/components/CommonSkeletonLoaders";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
@@ -75,7 +74,7 @@ const OrgAppearanceView = ({
   };
 
   return (
-    <LicenseRequired>
+    <>
       <Meta
         title={t("appearance")}
         description={t("appearance_org_description")}
@@ -160,7 +159,7 @@ const OrgAppearanceView = ({
           <span className="text-default text-sm">{t("only_owner_change")}</span>
         </div>
       )}
-    </LicenseRequired>
+    </>
   );
 };
 

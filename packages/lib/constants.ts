@@ -21,10 +21,10 @@ export const WEBAPP_URL_FOR_OAUTH = IS_PRODUCTION ? WEBAPP_URL : "http://localho
 
 /** @deprecated use `WEBAPP_URL` */
 export const BASE_URL = WEBAPP_URL;
-export const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://cal.onehash.ai";
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "OneHash Cal";
-export const SUPPORT_MAIL_ADDRESS = process.env.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS || "support@onehash.ai";
-export const COMPANY_NAME = process.env.NEXT_PUBLIC_COMPANY_NAME || "OneHash";
+export const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://cal.com";
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Cal.com";
+export const SUPPORT_MAIL_ADDRESS = process.env.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS || "help@cal.com";
+export const COMPANY_NAME = process.env.NEXT_PUBLIC_COMPANY_NAME || "Cal.com, Inc.";
 export const SENDER_ID = process.env.NEXT_PUBLIC_SENDER_ID || "Cal";
 export const SENDER_NAME = process.env.NEXT_PUBLIC_SENDGRID_SENDER_NAME || "Cal.com";
 
@@ -50,6 +50,7 @@ export const CONSOLE_URL =
 export const IS_SELF_HOSTED = !(
   new URL(WEBAPP_URL).hostname.endsWith(".cal.dev") || new URL(WEBAPP_URL).hostname.endsWith(".cal.com")
 );
+export const IS_ONEHASH_HOSTED = !new URL(WEBAPP_URL).hostname.endsWith(".cal.id");
 export const EMBED_LIB_URL = process.env.NEXT_PUBLIC_EMBED_LIB_URL || `${WEBAPP_URL}/embed/embed.js`;
 export const TRIAL_LIMIT_DAYS = 14;
 
@@ -87,7 +88,7 @@ export const IS_STRIPE_ENABLED = !!(
   process.env.STRIPE_PRIVATE_KEY
 );
 /** Self hosted shouldn't checkout when creating teams unless required */
-export const IS_TEAM_BILLING_ENABLED = IS_STRIPE_ENABLED;
+export const IS_TEAM_BILLING_ENABLED = IS_STRIPE_ENABLED && (!IS_ONEHASH_HOSTED || HOSTED_CAL_FEATURES);
 export const FULL_NAME_LENGTH_MAX_LIMIT = 50;
 export const MINUTES_TO_BOOK = process.env.NEXT_PUBLIC_MINUTES_TO_BOOK || "5";
 
