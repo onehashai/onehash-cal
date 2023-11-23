@@ -23,22 +23,21 @@ export function InviteMemberModal(props: Props) {
       // loaded a bunch of data and idk how pagination works with invalidation. We may need to use
       // Optimistic updates here instead.
       await utils.viewer.organizations.listMembers.invalidate();
-      if (data.sendEmailInvitation) {
-        if (Array.isArray(data.usernameOrEmail)) {
-          showToast(
-            t("email_invite_team_bulk", {
-              userCount: data.usernameOrEmail.length,
-            }),
-            "success"
-          );
-        } else {
-          showToast(
-            t("email_invite_team", {
-              email: data.usernameOrEmail,
-            }),
-            "success"
-          );
-        }
+
+      if (Array.isArray(data.usernameOrEmail)) {
+        showToast(
+          t("email_invite_team_bulk", {
+            userCount: data.usernameOrEmail.length,
+          }),
+          "success"
+        );
+      } else {
+        showToast(
+          t("email_invite_team", {
+            email: data.usernameOrEmail,
+          }),
+          "success"
+        );
       }
     },
     onError: (error) => {
@@ -46,9 +45,9 @@ export function InviteMemberModal(props: Props) {
     },
   });
 
-  if (!session?.user.organizationId) return null;
+  if (!session?.user.org?.id) return null;
 
-  const orgId = session.user.organizationId;
+  const orgId = session.user.org.id;
 
   return (
     <MemberInvitationModal
@@ -60,6 +59,8 @@ export function InviteMemberModal(props: Props) {
         });
       }}
       teamId={orgId}
+      isOrg={true}
+      justEmailInvites={!!orgId}
       isLoading={inviteMemberMutation.isLoading}
       onSubmit={(values) => {
         inviteMemberMutation.mutate({
@@ -67,7 +68,6 @@ export function InviteMemberModal(props: Props) {
           language: i18n.language,
           role: values.role,
           usernameOrEmail: values.emailOrUsername,
-          sendEmailInvitation: values.sendInviteEmail,
           isOrg: true,
         });
       }}

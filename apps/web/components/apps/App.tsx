@@ -18,13 +18,14 @@ export default function WrappedApp(props: AppPageProps) {
         description={props.description}
         app={{ slug: props.logo, name: props.name, description: props.description }}
       />
-      {props.licenseRequired ? (
+      {/* {props.licenseRequired ? (
         <>
           <AppPage {...props} />
         </>
       ) : (
         <AppPage {...props} />
-      )}
+      )} */}
+      <AppPage {...props} />
     </Shell>
   );
 }

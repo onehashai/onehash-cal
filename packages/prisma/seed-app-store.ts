@@ -316,6 +316,7 @@ export default async function main() {
       client_secret: process.env.ZOHOCRM_CLIENT_SECRET,
     });
   }
+
   await createApp("wipe-my-cal", "wipemycalother", ["automation"], "wipemycal_other");
   if (process.env.GIPHY_API_KEY) {
     await createApp("giphy", "giphy", ["other"], "giphy_other", {
@@ -337,7 +338,9 @@ export default async function main() {
       invite_link: process.env.ZAPIER_INVITE_LINK,
     });
   }
-
+  await createApp("make", "make", ["automation"], "make_automation", {
+    invite_link: "https://make.com/en/hq/app-invitation/6cb2772b61966508dd8f414ba3b44510",
+  });
   await createApp("huddle01", "huddle01video", ["conferencing"], "huddle01_video");
 
   // Payment apps

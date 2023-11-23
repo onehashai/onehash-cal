@@ -2,7 +2,7 @@ import type { NextApiRequest } from "next";
 
 import { HttpError } from "@calcom/lib/http-error";
 import { defaultResponder } from "@calcom/lib/server";
-import type { PrismaClient } from "@calcom/prisma/client";
+import type { PrismaClient } from "@calcom/prisma";
 
 import { schemaEventTypeReadPublic } from "~/lib/validations/event-type";
 import { schemaQuerySingleOrMultipleUserIds } from "~/lib/validations/shared/queryUserId";
@@ -45,7 +45,9 @@ async function getHandler(req: NextApiRequest) {
       customInputs: true,
       team: { select: { slug: true } },
       users: true,
+      hosts: { select: { userId: true, isFixed: true } },
       owner: { select: { username: true, id: true } },
+      children: { select: { id: true, userId: true } },
     },
   });
   // this really should return [], but backwards compatibility..

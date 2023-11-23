@@ -3,12 +3,15 @@ import type { Booking, Prisma } from "@prisma/client";
 import short from "short-uuid";
 import { v5 as uuidv5 } from "uuid";
 
-import dayjs from "@calcom/dayjs";
+import _dayjs from "@calcom/dayjs";
 import { prisma } from "@calcom/prisma";
 
 const translator = short();
 
 type BookingFixture = ReturnType<typeof createBookingFixture>;
+
+// We default all dayjs calls to use Europe/London timezone
+const dayjs = (...args: Parameters<typeof _dayjs>) => _dayjs(...args).tz("Europe/London");
 
 // creates a user fixture instance and stores the collection
 export const createBookingsFixture = (page: Page) => {
@@ -19,9 +22,12 @@ export const createBookingsFixture = (page: Page) => {
       username: string | null,
       eventTypeId = -1,
       {
+        title = "",
         rescheduled = false,
         paid = false,
         status = "ACCEPTED",
+        startTime,
+        endTime,
         attendees = {
           create: {
             email: "attendee@example.com",
@@ -39,9 +45,9 @@ export const createBookingsFixture = (page: Page) => {
       const booking = await prisma.booking.create({
         data: {
           uid: uid,
-          title: "30min",
-          startTime: startDate,
-          endTime: endDateParam || dayjs().add(1, "day").add(30, "minutes").toDate(),
+          title: title || "30min",
+          startTime: startTime || startDate,
+          endTime: endTime || endDateParam || dayjs().add(1, "day").add(30, "minutes").toDate(),
           user: {
             connect: {
               id: userId,

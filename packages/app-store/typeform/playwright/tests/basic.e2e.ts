@@ -4,7 +4,7 @@ import { expect } from "@playwright/test";
 import {
   addForm as addRoutingForm,
   addOneFieldAndDescriptionAndSaveForm,
-} from "@calcom/app-store/routing-forms/playwright/tests/basic.e2e";
+} from "@calcom/app-store/routing-forms/playwright/tests/testUtils";
 import { CAL_URL } from "@calcom/lib/constants";
 import type { Fixtures } from "@calcom/web/playwright/lib/fixtures";
 import { test } from "@calcom/web/playwright/lib/fixtures";
@@ -16,7 +16,7 @@ const installApps = async (page: Page, users: Fixtures["users"]) => {
       hasTeam: true,
     }
   );
-  await user.login();
+  await user.apiLogin();
   await page.goto(`/apps/typeform`);
   await page.click('[data-testid="install-app-button"]');
   (await page.waitForSelector('[data-testid="install-app-button-personal"]')).click();

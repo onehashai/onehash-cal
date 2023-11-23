@@ -3,6 +3,7 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const os = require("os");
 const englishTranslation = require("./public/static/locales/en/common.json");
 const { withAxiom } = require("next-axiom");
+const { withSentryConfig } = require("@sentry/nextjs");
 const { version } = require("./package.json");
 const { i18n } = require("./next-i18next.config");
 const {
@@ -14,17 +15,18 @@ const {
 
 if (!process.env.NEXTAUTH_SECRET) throw new Error("Please set NEXTAUTH_SECRET");
 if (!process.env.CALENDSO_ENCRYPTION_KEY) throw new Error("Please set CALENDSO_ENCRYPTION_KEY");
-
+const isOrganizationsEnabled =
+  process.env.ORGANIZATIONS_ENABLED === "1" || process.env.ORGANIZATIONS_ENABLED === "true";
 // To be able to use the version in the app without having to import package.json
 process.env.NEXT_PUBLIC_CALCOM_VERSION = version;
 
 // So we can test deploy previews preview
 if (process.env.VERCEL_URL && !process.env.NEXT_PUBLIC_WEBAPP_URL) {
-  process.env.NEXT_PUBLIC_WEBAPP_URL = "https://" + process.env.VERCEL_URL;
+  process.env.NEXT_PUBLIC_WEBAPP_URL = `https://${process.env.VERCEL_URL}`;
 }
 // Check for configuration of NEXTAUTH_URL before overriding
 if (!process.env.NEXTAUTH_URL && process.env.NEXT_PUBLIC_WEBAPP_URL) {
-  process.env.NEXTAUTH_URL = process.env.NEXT_PUBLIC_WEBAPP_URL + "/api/auth";
+  process.env.NEXTAUTH_URL = `${process.env.NEXT_PUBLIC_WEBAPP_URL}/api/auth`;
 }
 if (!process.env.NEXT_PUBLIC_WEBSITE_URL) {
   process.env.NEXT_PUBLIC_WEBSITE_URL = process.env.NEXT_PUBLIC_WEBAPP_URL;
@@ -91,6 +93,7 @@ if (process.env.ANALYZE === "true") {
 }
 
 plugins.push(withAxiom);
+
 const matcherConfigRootPath = {
   has: [
     {
@@ -99,6 +102,16 @@ const matcherConfigRootPath = {
     },
   ],
   source: "/",
+};
+
+const matcherConfigRootPathEmbed = {
+  has: [
+    {
+      type: "host",
+      value: orgHostPath,
+    },
+  ],
+  source: "/embed",
 };
 
 const matcherConfigUserRoute = {
@@ -225,12 +238,28 @@ const nextConfig = {
   },
   async rewrites() {
     const beforeFiles = [
+      {
+        /**
+         * Needed due to the introduction of dotted usernames
+         * @see https://github.com/calcom/cal.com/pull/11706
+         */
+        source: "/embed.js",
+        destination: "/embed/embed.js",
+      },
+      {
+        source: "/login",
+        destination: "/auth/login",
+      },
       // These rewrites are other than booking pages rewrites and so that they aren't redirected to org pages ensure that they happen in beforeFiles
-      ...(process.env.ORGANIZATIONS_ENABLED
+      ...(isOrganizationsEnabled
         ? [
             {
               ...matcherConfigRootPath,
-              destination: "/team/:orgSlug",
+              destination: "/team/:orgSlug?isOrgProfile=1",
+            },
+            {
+              ...matcherConfigRootPathEmbed,
+              destination: "/team/:orgSlug/embed?isOrgProfile=1",
             },
             {
               ...matcherConfigUserRoute,
@@ -252,6 +281,10 @@ const nextConfig = {
       {
         source: "/org/:slug",
         destination: "/team/:slug",
+      },
+      {
+        source: "/org/:orgSlug/avatar.png",
+        destination: "/api/user/avatar?orgSlug=:orgSlug",
       },
       {
         source: "/team/:teamname/avatar.png",
@@ -333,44 +366,46 @@ const nextConfig = {
           },
         ],
       },
-      ...[
-        {
-          ...matcherConfigRootPath,
-          headers: [
+      ...(isOrganizationsEnabled
+        ? [
             {
-              key: "X-Cal-Org-path",
-              value: "/team/:orgSlug",
+              ...matcherConfigRootPath,
+              headers: [
+                {
+                  key: "X-Cal-Org-path",
+                  value: "/team/:orgSlug",
+                },
+              ],
             },
-          ],
-        },
-        {
-          ...matcherConfigUserRoute,
-          headers: [
             {
-              key: "X-Cal-Org-path",
-              value: "/org/:orgSlug/:user",
+              ...matcherConfigUserRoute,
+              headers: [
+                {
+                  key: "X-Cal-Org-path",
+                  value: "/org/:orgSlug/:user",
+                },
+              ],
             },
-          ],
-        },
-        {
-          ...matcherConfigUserTypeRoute,
-          headers: [
             {
-              key: "X-Cal-Org-path",
-              value: "/org/:orgSlug/:user/:type",
+              ...matcherConfigUserTypeRoute,
+              headers: [
+                {
+                  key: "X-Cal-Org-path",
+                  value: "/org/:orgSlug/:user/:type",
+                },
+              ],
             },
-          ],
-        },
-        {
-          ...matcherConfigUserTypeEmbedRoute,
-          headers: [
             {
-              key: "X-Cal-Org-path",
-              value: "/org/:orgSlug/:user/:type/embed",
+              ...matcherConfigUserTypeEmbedRoute,
+              headers: [
+                {
+                  key: "X-Cal-Org-path",
+                  value: "/org/:orgSlug/:user/:type/embed",
+                },
+              ],
             },
-          ],
-        },
-      ],
+          ]
+        : []),
     ];
   },
   async redirects() {
@@ -447,6 +482,13 @@ const nextConfig = {
       },
       {
         source: "/support",
+        missing: [
+          {
+            type: "header",
+            key: "host",
+            value: orgHostPath,
+          },
+        ],
         destination: "/event-types?openIntercom=true",
         permanent: true,
       },
@@ -463,7 +505,7 @@ const nextConfig = {
       // OAuth callbacks when sent to localhost:3000(w would be expected) should be redirected to corresponding to WEBAPP_URL
       ...(process.env.NODE_ENV === "development" &&
       // Safer to enable the redirect only when the user is opting to test out organizations
-      process.env.ORGANIZATIONS_ENABLED &&
+      isOrganizationsEnabled &&
       // Prevent infinite redirect by checking that we aren't already on localhost
       process.env.NEXT_PUBLIC_WEBAPP_URL !== "http://localhost:3000"
         ? [
@@ -506,5 +548,14 @@ const nextConfig = {
     return redirects;
   },
 };
+
+if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  nextConfig["sentry"] = {
+    autoInstrumentServerFunctions: true,
+    hideSourceMaps: true,
+  };
+
+  plugins.push(withSentryConfig);
+}
 
 module.exports = () => plugins.reduce((acc, next) => next(acc), nextConfig);

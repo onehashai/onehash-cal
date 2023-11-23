@@ -6,6 +6,7 @@ export const CALCOM_ENV = process.env.CALCOM_ENV || process.env.NODE_ENV;
 export const IS_PRODUCTION = CALCOM_ENV === "production";
 export const IS_PRODUCTION_BUILD = process.env.NODE_ENV === "production";
 
+/** https://app.cal.com */
 export const WEBAPP_URL =
   process.env.NEXT_PUBLIC_WEBAPP_URL ||
   VERCEL_URL ||
@@ -20,10 +21,10 @@ export const WEBAPP_URL_FOR_OAUTH = IS_PRODUCTION ? WEBAPP_URL : "http://localho
 
 /** @deprecated use `WEBAPP_URL` */
 export const BASE_URL = WEBAPP_URL;
-export const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://cal.onehash.ai";
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "OneHash Cal";
-export const SUPPORT_MAIL_ADDRESS = process.env.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS || "support@onehash.ai";
-export const COMPANY_NAME = process.env.NEXT_PUBLIC_COMPANY_NAME || "OneHash";
+export const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://cal.com";
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Cal.com";
+export const SUPPORT_MAIL_ADDRESS = process.env.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS || "help@cal.com";
+export const COMPANY_NAME = process.env.NEXT_PUBLIC_COMPANY_NAME || "Cal.com, Inc.";
 export const SENDER_ID = process.env.NEXT_PUBLIC_SENDER_ID || "Cal";
 export const SENDER_NAME = process.env.NEXT_PUBLIC_SENDGRID_SENDER_NAME || "Cal.com";
 
@@ -49,6 +50,7 @@ export const CONSOLE_URL =
 export const IS_SELF_HOSTED = !(
   new URL(WEBAPP_URL).hostname.endsWith(".cal.dev") || new URL(WEBAPP_URL).hostname.endsWith(".cal.com")
 );
+export const IS_ONEHASH_HOSTED = !new URL(WEBAPP_URL).hostname.endsWith(".cal.id");
 export const EMBED_LIB_URL = process.env.NEXT_PUBLIC_EMBED_LIB_URL || `${WEBAPP_URL}/embed/embed.js`;
 export const TRIAL_LIMIT_DAYS = 14;
 
@@ -58,6 +60,7 @@ export const HOSTED_CAL_FEATURES = process.env.NEXT_PUBLIC_HOSTED_CAL_FEATURES |
 export const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_WEBAPP_URL || `https://${process.env.VERCEL_URL}`;
 export const LOGO = "/onehash_logo.svg";
 export const LOGO_ICON = "/onehash_logo_icon.svg";
+export const AVATAR_FALLBACK = "/avatar.svg";
 export const FAVICON_16 = "/onehash-16x16.png";
 export const FAVICON_32 = "/onehash-32x32.png";
 export const APPLE_TOUCH_ICON = "/onehash_logo_icon.png";
@@ -85,7 +88,7 @@ export const IS_STRIPE_ENABLED = !!(
   process.env.STRIPE_PRIVATE_KEY
 );
 /** Self hosted shouldn't checkout when creating teams unless required */
-export const IS_TEAM_BILLING_ENABLED = IS_STRIPE_ENABLED;
+export const IS_TEAM_BILLING_ENABLED = IS_STRIPE_ENABLED && (!IS_ONEHASH_HOSTED || HOSTED_CAL_FEATURES);
 export const FULL_NAME_LENGTH_MAX_LIMIT = 50;
 export const MINUTES_TO_BOOK = process.env.NEXT_PUBLIC_MINUTES_TO_BOOK || "5";
 
@@ -98,3 +101,11 @@ export const ORGANIZATION_MIN_SEATS = 30;
 // Needed for emails in E2E
 export const IS_MAILHOG_ENABLED = process.env.E2E_TEST_MAILHOG_ENABLED === "1";
 export const CALCOM_VERSION = process.env.NEXT_PUBLIC_CALCOM_VERSION as string;
+
+export const APP_CREDENTIAL_SHARING_ENABLED =
+  process.env.CALCOM_WEBHOOK_SECRET && process.env.CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY;
+
+// OneHash default brand color
+export const DEFAULT_LIGHT_BRAND_COLOR = "#007ee5";
+export const DEFAULT_DARK_BRAND_COLOR = "#fafafa";
+export const AB_TEST_BUCKET_PROBABILITY = Number(process.env.AB_TEST_BUCKET_PROBABILITY ?? "10");

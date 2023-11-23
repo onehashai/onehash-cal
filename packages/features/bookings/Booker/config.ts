@@ -28,6 +28,17 @@ export const fadeInUp = {
   transition: { ease: "easeInOut", delay: 0.1 },
 };
 
+export const fadeInRight = {
+  variants: {
+    visible: { opacity: 1, x: 0 },
+    hidden: { opacity: 0, x: -20 },
+  },
+  initial: "hidden",
+  exit: "hidden",
+  animate: "visible",
+  transition: { ease: "easeInOut", delay: 0.1 },
+};
+
 type ResizeAnimationConfig = {
   [key in BookerLayout]: {
     [key in BookerState | "default"]?: React.CSSProperties;
@@ -224,7 +235,7 @@ export const extraDaysConfig = {
     tablet: 4,
   },
   [BookerLayouts.COLUMN_VIEW]: {
-    desktop: 4,
+    desktop: 6,
     tablet: 2,
   },
 };

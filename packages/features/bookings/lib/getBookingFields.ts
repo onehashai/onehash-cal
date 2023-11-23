@@ -44,7 +44,7 @@ export const getSmsReminderNumberSource = ({
   workflowId: Workflow["id"];
   isSmsReminderNumberRequired: boolean;
 }) => ({
-  id: "" + workflowId,
+  id: `${workflowId}`,
   type: "workflow",
   label: "Workflow",
   fieldRequired: isSmsReminderNumberRequired,
@@ -251,6 +251,7 @@ export const ensureBookingInputsHaveSystemFields = ({
       type: "multiemail",
       editable: "system-but-optional",
       name: "guests",
+      defaultPlaceholder: "email",
       required: false,
       hidden: disableGuests,
       sources: [

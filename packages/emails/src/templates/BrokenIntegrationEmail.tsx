@@ -65,7 +65,7 @@ export const BrokenIntegrationEmail = (
       location = "Cal Video";
     }
     if (location === "GoogleMeet") {
-      location = location.slice(0, 5) + " " + location.slice(5);
+      location = `${location.slice(0, 5)} ${location.slice(5)}`;
     }
 
     return (
@@ -85,13 +85,14 @@ export const BrokenIntegrationEmail = (
 
   if (type === "calendar") {
     // The calendar name is stored as name_calendar
-    let calendar = calEvent.destinationCalendar
-      ? calEvent.destinationCalendar?.integration.split("_")
+    const [mainHostDestinationCalendar] = calEvent.destinationCalendar ?? [];
+    let calendar = mainHostDestinationCalendar
+      ? mainHostDestinationCalendar?.integration.split("_")
       : "calendar";
 
     if (Array.isArray(calendar)) {
       const calendarCap = calendar.map((name) => name.charAt(0).toUpperCase() + name.slice(1));
-      calendar = calendarCap[0] + " " + calendarCap[1];
+      calendar = `${calendarCap[0]} ${calendarCap[1]}`;
     }
 
     return (

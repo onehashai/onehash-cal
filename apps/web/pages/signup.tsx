@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { GetServerSidePropsContext } from "next";
 import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
 import type { CSSProperties } from "react";
 import type { SubmitHandler } from "react-hook-form";
 import { FormProvider, useForm } from "react-hook-form";
@@ -9,17 +8,20 @@ import { z } from "zod";
 
 import { isPasswordValid } from "@calcom/features/auth/lib/isPasswordValid";
 import { checkPremiumUsername } from "@calcom/features/ee/common/lib/checkPremiumUsername";
-import { getOrgFullDomain } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
 import { useFlagMap } from "@calcom/features/flags/context/provider";
 import { getFeatureFlagMap } from "@calcom/features/flags/server/utils";
 import { IS_SELF_HOSTED, WEBAPP_URL } from "@calcom/lib/constants";
+import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import slugify from "@calcom/lib/slugify";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 import type { inferSSRProps } from "@calcom/types/inferSSRProps";
 import { Alert, Button, EmailField, HeadSeo, PasswordField, TextField } from "@calcom/ui";
+// Logo for Signup Page
+import { Logo } from "@calcom/ui";
 
 import PageWrapper from "@components/PageWrapper";
 
@@ -37,19 +39,37 @@ const signupSchema = z.object({
   }),
   language: z.string().optional(),
   token: z.string().optional(),
-  apiError: z.string().optional(), // Needed to display API errors doesnt get passed to the API
 });
 
 type FormValues = z.infer<typeof signupSchema>;
 
 type SignupProps = inferSSRProps<typeof getServerSideProps>;
 
-export default function Signup({ prepopulateFormValues, token, orgSlug }: SignupProps) {
-  const searchParams = useSearchParams();
+const checkValidEmail = (email: string) => z.string().email().safeParse(email).success;
+
+const getOrgUsernameFromEmail = (email: string, autoAcceptEmailDomain: string) => {
+  const [emailUser, emailDomain = ""] = email.split("@");
+  const username =
+    emailDomain === autoAcceptEmailDomain
+      ? slugify(emailUser)
+      : slugify(`${emailUser}-${emailDomain.split(".")[0]}`);
+
+  return username;
+};
+
+function addOrUpdateQueryParam(url: string, key: string, value: string) {
+  const separator = url.includes("?") ? "&" : "?";
+  const param = `${key}=${encodeURIComponent(value)}`;
+  return `${url}${separator}${param}`;
+}
+
+export default function Signup({ prepopulateFormValues, token, orgSlug, orgAutoAcceptEmail }: SignupProps) {
+  const searchParams = useCompatSearchParams();
   const telemetry = useTelemetry();
   const { t, i18n } = useLocale();
   const flags = useFlagMap();
   const methods = useForm<FormValues>({
+    mode: "onChange",
     resolver: zodResolver(signupSchema),
     defaultValues: prepopulateFormValues,
   });
@@ -64,6 +84,8 @@ export default function Signup({ prepopulateFormValues, token, orgSlug }: Signup
       throw new Error(err.message);
     }
   };
+
+  const isOrgInviteByLink = orgSlug && !prepopulateFormValues?.username;
 
   const signUp: SubmitHandler<FormValues> = async (data) => {
     await fetch("/api/auth/signup", {
@@ -81,13 +103,17 @@ export default function Signup({ prepopulateFormValues, token, orgSlug }: Signup
       .then(async () => {
         telemetry.event(telemetryEventTypes.signup, collectPageParameters());
         const verifyOrGettingStarted = flags["email-verification"] ? "auth/verify-email" : "getting-started";
+        const callBackUrl = `${
+          searchParams?.get("callbackUrl")
+            ? isOrgInviteByLink
+              ? `${WEBAPP_URL}/${searchParams.get("callbackUrl")}`
+              : addOrUpdateQueryParam(`${WEBAPP_URL}/${searchParams.get("callbackUrl")}`, "from", "signup")
+            : `${WEBAPP_URL}/${verifyOrGettingStarted}?from=signup`
+        }`;
+
         await signIn<"credentials">("credentials", {
           ...data,
-          callbackUrl: `${
-            searchParams?.get("callbackUrl")
-              ? `${WEBAPP_URL}/${searchParams.get("callbackUrl")}`
-              : `${WEBAPP_URL}/${verifyOrGettingStarted}`
-          }?from=signup`,
+          callbackUrl: callBackUrl,
         });
       })
       .catch((err) => {
@@ -111,6 +137,7 @@ export default function Signup({ prepopulateFormValues, token, orgSlug }: Signup
         role="dialog"
         aria-modal="true">
         <HeadSeo title={t("sign_up")} description={t("sign_up")} />
+        <Logo small inline={false} className="mx-auto mb-4" />
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <h2 className="font-cal text-emphasis text-center text-3xl font-extrabold">
             {t("create_your_account")}
@@ -127,21 +154,31 @@ export default function Signup({ prepopulateFormValues, token, orgSlug }: Signup
                   if (methods.formState?.errors?.apiError) {
                     methods.clearErrors("apiError");
                   }
+
+                  if (!methods.getValues().username && isOrgInviteByLink && orgAutoAcceptEmail) {
+                    methods.setValue(
+                      "username",
+                      getOrgUsernameFromEmail(methods.getValues().email, orgAutoAcceptEmail)
+                    );
+                  }
                   methods.handleSubmit(signUp)(event);
                 }}
                 className="bg-default space-y-6">
                 {errors.apiError && <Alert severity="error" message={errors.apiError?.message} />}
+                {}
                 <div className="space-y-4">
-                  <TextField
-                    addOnLeading={
-                      orgSlug
-                        ? getOrgFullDomain(orgSlug, { protocol: true })
-                        : `${process.env.NEXT_PUBLIC_WEBSITE_URL}/`
-                    }
-                    {...register("username")}
-                    disabled={!!orgSlug}
-                    required
-                  />
+                  {!isOrgInviteByLink && (
+                    <TextField
+                      addOnLeading={
+                        orgSlug
+                          ? `${getOrgFullOrigin(orgSlug, { protocol: true })}/`
+                          : `${process.env.NEXT_PUBLIC_WEBSITE_URL}/`
+                      }
+                      {...register("username")}
+                      disabled={!!orgSlug}
+                      required
+                    />
+                  )}
                   <EmailField
                     {...register("email")}
                     disabled={prepopulateFormValues?.email}
@@ -221,6 +258,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
           parent: {
             select: {
               slug: true,
+              metadata: true,
             },
           },
           slug: true,
@@ -254,7 +292,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     return {
       redirect: {
         permanent: false,
-        destination: "/auth/login?callbackUrl=" + `${WEBAPP_URL}/${ctx.query.callbackUrl}`,
+        destination: `/auth/login?callbackUrl=${WEBAPP_URL}/${ctx.query.callbackUrl}`,
       },
     };
   }
@@ -275,7 +313,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const isOrganization = tokenTeam.metadata?.isOrganization || tokenTeam?.parentId !== null;
   // If we are dealing with an org, the slug may come from the team itself or its parent
   const orgSlug = isOrganization
-    ? tokenTeam.slug || tokenTeam.metadata?.requestedSlug || tokenTeam.parent?.slug
+    ? tokenTeam.metadata?.requestedSlug || tokenTeam.parent?.slug || tokenTeam.slug
     : null;
 
   // Org context shouldn't check if a username is premium
@@ -286,15 +324,26 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     username = available ? username : suggestion || username;
   }
 
+  const isValidEmail = checkValidEmail(verificationToken.identifier);
+  const isOrgInviteByLink = isOrganization && !isValidEmail;
+  const parentMetaDataForSubteam = tokenTeam?.parent?.metadata
+    ? teamMetadataSchema.parse(tokenTeam.parent.metadata)
+    : null;
+
   return {
     props: {
       ...props,
       token,
-      prepopulateFormValues: {
-        email: verificationToken.identifier,
-        username: slugify(username),
-      },
+      prepopulateFormValues: !isOrgInviteByLink
+        ? {
+            email: verificationToken.identifier,
+            username: slugify(username),
+          }
+        : null,
       orgSlug,
+      orgAutoAcceptEmail: isOrgInviteByLink
+        ? tokenTeam?.metadata?.orgAutoAcceptEmail ?? parentMetaDataForSubteam?.orgAutoAcceptEmail ?? null
+        : null,
     },
   };
 };

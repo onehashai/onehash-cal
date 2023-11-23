@@ -8,10 +8,13 @@ export enum ErrorCode {
   TwoFactorSetupRequired = "two-factor-setup-required",
   SecondFactorRequired = "second-factor-required",
   IncorrectTwoFactorCode = "incorrect-two-factor-code",
+  IncorrectBackupCode = "incorrect-backup-code",
+  MissingBackupCodes = "missing-backup-codes",
   IncorrectEmailVerificationCode = "incorrect_email_verification_code",
   InternalServerError = "internal-server-error",
   NewPasswordMatchesOld = "new-password-matches-old",
   ThirdPartyIdentityProviderEnabled = "third-party-identity-provider-enabled",
   RateLimitExceeded = "rate-limit-exceeded",
   SocialIdentityProviderRequired = "social-identity-provider-required",
+  UserAccountLocked = "user-account-locked",
 }

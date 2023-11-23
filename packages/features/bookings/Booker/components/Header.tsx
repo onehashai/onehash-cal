@@ -11,15 +11,18 @@ import { Calendar, Columns, Grid } from "@calcom/ui/components/icon";
 import { TimeFormatToggle } from "../../components/TimeFormatToggle";
 import { useBookerStore } from "../store";
 import type { BookerLayout } from "../types";
+import { OverlayCalendarContainer } from "./OverlayCalendar/OverlayCalendarContainer";
 
 export function Header({
   extraDays,
   isMobile,
   enabledLayouts,
+  nextSlots,
 }: {
   extraDays: number;
   isMobile: boolean;
   enabledLayouts: BookerLayouts[];
+  nextSlots: number;
 }) {
   const { t, i18n } = useLocale();
   const [layout, setLayout] = useBookerStore((state) => [state.layout, state.setLayout], shallow);
@@ -54,10 +57,14 @@ export function Header({
 
   // In month view we only show the layout toggle.
   if (isMonthView) {
-    return <LayoutToggleWithData />;
+    return (
+      <div className="flex gap-2">
+        <OverlayCalendarContainer />
+        <LayoutToggleWithData />
+      </div>
+    );
   }
-
-  const endDate = selectedDate.add(extraDays - 1, "days");
+  const endDate = selectedDate.add(layout === BookerLayouts.COLUMN_VIEW ? extraDays : extraDays - 1, "days");
 
   const isSameMonth = () => {
     return selectedDate.format("MMM") === endDate.format("MMM");
@@ -91,7 +98,7 @@ export function Header({
             color="minimal"
             StartIcon={ChevronLeft}
             aria-label="Previous Day"
-            onClick={() => addToSelectedDate(-extraDays)}
+            onClick={() => addToSelectedDate(layout === BookerLayouts.COLUMN_VIEW ? -nextSlots : -extraDays)}
           />
           <Button
             className="group rtl:mr-1 rtl:rotate-180"
@@ -99,7 +106,7 @@ export function Header({
             color="minimal"
             StartIcon={ChevronRight}
             aria-label="Next Day"
-            onClick={() => addToSelectedDate(extraDays)}
+            onClick={() => addToSelectedDate(layout === BookerLayouts.COLUMN_VIEW ? nextSlots : extraDays)}
           />
           {selectedDateMin3DaysDifference && (
             <Button
@@ -112,6 +119,7 @@ export function Header({
         </ButtonGroup>
       </div>
       <div className="ml-auto flex gap-2">
+        <OverlayCalendarContainer />
         <TimeFormatToggle />
         <div className="fixed top-4 ltr:right-4 rtl:left-4">
           <LayoutToggleWithData />

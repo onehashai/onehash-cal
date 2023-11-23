@@ -93,6 +93,14 @@ export const tips = [
     description: "Get a better understanding of your business",
     href: "https://go.cal.com/insights",
   },
+  {
+    id: 12,
+    thumbnailUrl: "https://cal.com/og-image-cal-ai.jpg",
+    mediaLink: "https://go.cal.com/cal-ai",
+    title: "Cal.ai",
+    description: "Your personal AI scheduling assistant",
+    href: "https://go.cal.com/cal-ai",
+  },
 ];
 
 const reversedTips = tips.slice(0).reverse();

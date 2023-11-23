@@ -8,10 +8,12 @@ describe("slugify", () => {
     expect(slugify("HELLO")).toEqual("hello");
   });
 
-  it("should convert spaces, _, and any other special character to -", () => {
+  it("should convert spaces, _, +, # and any other special character to -", () => {
     expect(slugify("hello there")).toEqual("hello-there");
     expect(slugify("hello_there")).toEqual("hello-there");
     expect(slugify("hello$there")).toEqual("hello-there");
+    expect(slugify("hello+there")).toEqual("hello-there");
+    expect(slugify("#hellothere")).toEqual("hellothere");
   });
 
   it("should keep numbers as is", () => {
@@ -26,6 +28,21 @@ describe("slugify", () => {
     expect(slugify("hello-there_")).toEqual("hello-there");
     expect(slugify("_hello-there_")).toEqual("hello-there");
     expect(slugify("$hello-there_")).toEqual("hello-there");
+  });
+
+  it("should keep periods as is except the start and end", () => {
+    expect(slugify("hello.there")).toEqual("hello.there");
+    expect(slugify("h.e.l.l.o.t.h.e.r.e")).toEqual("h.e.l.l.o.t.h.e.r.e");
+  });
+  it("should remove consecutive periods", () => {
+    expect(slugify("hello...there")).toEqual("hello.there");
+    expect(slugify("hello....there")).toEqual("hello.there");
+    expect(slugify("hello..there")).toEqual("hello.there");
+  });
+  it("should remove periods from start and end", () => {
+    expect(slugify(".hello.there")).toEqual("hello.there");
+    expect(slugify(".hello.there.")).toEqual("hello.there");
+    expect(slugify("hellothere.")).toEqual("hellothere");
   });
 
   // This is failing, if we want to fix it, one approach is as used in getValidRhfFieldName

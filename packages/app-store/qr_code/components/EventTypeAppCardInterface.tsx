@@ -11,7 +11,7 @@ import type { appDataSchema } from "../zod";
 
 const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({ eventType, app }) {
   const { t } = useLocale();
-  const [getAppData, setAppData, LockedIcon, disabled] = useAppContextWithSchema<typeof appDataSchema>();
+  const { disabled } = useAppContextWithSchema<typeof appDataSchema>();
   const [additionalParameters, setAdditionalParameters] = useState("");
   const { enabled, updateEnabled } = useIsAppEnabled(app);
 
@@ -19,7 +19,7 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({ 
   const eventTypeURL = eventType.URL + query;
 
   function QRCode({ size, data }: { size: number; data: string }) {
-    const QR_URL = "https://api.qrserver.com/v1/create-qr-code/?size=" + size + "&data=" + data;
+    const QR_URL = `https://api.qrserver.com/v1/create-qr-code/?size=${size}&data=${data}`;
     return (
       <Tooltip content={eventTypeURL}>
         <a download href={QR_URL} target="_blank" rel="noreferrer">
@@ -37,10 +37,7 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({ 
 
   return (
     <AppCard
-      setAppData={setAppData}
       app={app}
-      disableSwitch={disabled}
-      LockedIcon={LockedIcon}
       switchOnClick={(e) => {
         updateEnabled(e);
       }}

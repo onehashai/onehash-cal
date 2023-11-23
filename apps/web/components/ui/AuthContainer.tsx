@@ -15,9 +15,9 @@ interface Props {
 
 export default function AuthContainer(props: React.PropsWithChildren<Props>) {
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-[#f3f4f6] py-12 sm:px-6 lg:px-8">
+    <div className="bg-subtle dark:bg-darkgray-50 flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8">
       <HeadSeo title={props.title} description={props.description} />
-      {props.showLogo && <Logo small inline={false} className="mx-auto mb-auto" />}
+      {props.showLogo && <Logo small inline={false} className="mx-auto mb-4 mt-auto" />}
 
       <div className={classNames(props.showLogo ? "text-center" : "", "sm:mx-auto sm:w-full sm:max-w-md")}>
         {props.heading && <h2 className="font-cal text-emphasis text-center text-3xl">{props.heading}</h2>}
@@ -28,7 +28,7 @@ export default function AuthContainer(props: React.PropsWithChildren<Props>) {
         </div>
       )}
       <div className="mb-auto mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-default border-subtle mx-2 rounded-md border px-4 py-10 sm:px-10">
+        <div className="bg-default dark:bg-muted border-subtle mx-2 rounded-md border px-4 py-10 sm:px-10">
           {props.children}
         </div>
         <div className="text-default mt-8 text-center text-sm">{props.footerText}</div>

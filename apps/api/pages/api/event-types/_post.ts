@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { NextApiRequest } from "next";
 
 import { HttpError } from "@calcom/lib/http-error";
@@ -6,7 +6,9 @@ import { defaultResponder } from "@calcom/lib/server";
 
 import { schemaEventTypeCreateBodyParams, schemaEventTypeReadPublic } from "~/lib/validations/event-type";
 
+import checkParentEventOwnership from "./_utils/checkParentEventOwnership";
 import checkTeamEventEditPermission from "./_utils/checkTeamEventEditPermission";
+import checkUserMembership from "./_utils/checkUserMembership";
 import ensureOnlyMembersAsHosts from "./_utils/ensureOnlyMembersAsHosts";
 
 /**
@@ -118,10 +120,13 @@ import ensureOnlyMembersAsHosts from "./_utils/ensureOnlyMembersAsHosts";
  *               schedulingType:
  *                 type: string
  *                 description: The type of scheduling if a Team event. Required for team events only
- *                 enum: [ROUND_ROBIN, COLLECTIVE]
+ *                 enum: [ROUND_ROBIN, COLLECTIVE, MANAGED]
  *               price:
  *                 type: integer
  *                 description: Price of the event type booking
+ *               parentId:
+ *                 type: integer
+ *                 description: EventTypeId of the parent managed event
  *               currency:
  *                 type: string
  *                 description: Currency acronym. Eg- usd, eur, gbp, etc.
@@ -259,15 +264,29 @@ import ensureOnlyMembersAsHosts from "./_utils/ensureOnlyMembersAsHosts";
 async function postHandler(req: NextApiRequest) {
   const { userId, isAdmin, prisma, body } = req;
 
-  const { hosts = [], ...parsedBody } = schemaEventTypeCreateBodyParams.parse(body || {});
+  const {
+    hosts = [],
+    bookingLimits,
+    durationLimits,
+    /** FIXME: Adding event-type children from API not supported for now  */
+    children: _,
+    ...parsedBody
+  } = schemaEventTypeCreateBodyParams.parse(body || {});
 
   let data: Prisma.EventTypeCreateArgs["data"] = {
     ...parsedBody,
     userId,
     users: { connect: { id: userId } },
+    bookingLimits: bookingLimits === null ? Prisma.DbNull : bookingLimits,
+    durationLimits: durationLimits === null ? Prisma.DbNull : durationLimits,
   };
 
   await checkPermissions(req);
+
+  if (parsedBody.parentId) {
+    await checkParentEventOwnership(req);
+    await checkUserMembership(req);
+  }
 
   if (isAdmin && parsedBody.userId) {
     data = { ...parsedBody, users: { connect: { id: parsedBody.userId } } };
@@ -297,8 +316,14 @@ async function checkPermissions(req: NextApiRequest) {
       statusCode: 401,
       message: "ADMIN required for `userId`",
     });
-  /* Admin users are required to pass in a userId */
-  if (isAdmin && !body.userId) throw new HttpError({ statusCode: 400, message: "`userId` required" });
+  if (!isAdmin && body.teamId)
+    throw new HttpError({
+      statusCode: 401,
+      message: "ADMIN required for `teamId`",
+    });
+  /* Admin users are required to pass in a userId or teamId */
+  if (isAdmin && !body.userId && !body.teamId)
+    throw new HttpError({ statusCode: 400, message: "`userId` or `teamId` required" });
 }
 
 export default defaultResponder(postHandler);

@@ -28,25 +28,34 @@ import { useBookingSuccessRedirect } from "@calcom/lib/bookingSuccessRedirect";
 import { MINUTES_TO_BOOK } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
-import { HttpError } from "@calcom/lib/http-error";
 import { trpc } from "@calcom/trpc";
 import { Alert, Button, EmptyScreen, Form, showToast } from "@calcom/ui";
 import { Calendar } from "@calcom/ui/components/icon";
 
 import { useBookerStore } from "../../store";
+import { useSlotReservationId } from "../../useSlotReservationId";
 import { useEvent } from "../../utils/event";
 import { BookingFields } from "./BookingFields";
 import { FormSkeleton } from "./Skeleton";
 
 type BookEventFormProps = {
   onCancel?: () => void;
+  hashedLink?: string | null;
 };
 
 type DefaultValues = Record<string, unknown>;
 
-export const BookEventForm = ({ onCancel }: BookEventFormProps) => {
+export const BookEventForm = ({ onCancel, hashedLink }: BookEventFormProps) => {
+  const [slotReservationId, setSlotReservationId] = useSlotReservationId();
   const reserveSlotMutation = trpc.viewer.public.slots.reserveSlot.useMutation({
-    trpc: { context: { skipBatch: true } },
+    trpc: {
+      context: {
+        skipBatch: true,
+      },
+    },
+    onSuccess: (data) => {
+      setSlotReservationId(data.uid);
+    },
   });
   const removeSelectedSlot = trpc.viewer.public.slots.removeSelectedSlotMark.useMutation({
     trpc: { context: { skipBatch: true } },
@@ -82,7 +91,7 @@ export const BookEventForm = ({ onCancel }: BookEventFormProps) => {
 
     return () => {
       if (eventType) {
-        removeSelectedSlot.mutate();
+        removeSelectedSlot.mutate({ uid: slotReservationId });
       }
       clearInterval(interval);
     };
@@ -105,6 +114,7 @@ export const BookEventForm = ({ onCancel }: BookEventFormProps) => {
       isRescheduling={isRescheduling}
       eventQuery={eventQuery}
       rescheduleUid={rescheduleUid}
+      hashedLink={hashedLink}
     />
   );
 };
@@ -115,11 +125,13 @@ export const BookEventFormChild = ({
   isRescheduling,
   eventQuery,
   rescheduleUid,
+  hashedLink,
 }: BookEventFormProps & {
   initialValues: DefaultValues;
   isRescheduling: boolean;
   eventQuery: ReturnType<typeof useEvent>;
   rescheduleUid: string | null;
+  hashedLink?: string | null;
 }) => {
   const eventType = eventQuery.data;
   const bookingFormSchema = z
@@ -140,6 +152,7 @@ export const BookEventFormChild = ({
   const verifiedEmail = useBookerStore((state) => state.verifiedEmail);
   const setVerifiedEmail = useBookerStore((state) => state.setVerifiedEmail);
   const bookingSuccessRedirect = useBookingSuccessRedirect();
+  const [responseVercelIdHeader, setResponseVercelIdHeader] = useState<string | null>(null);
 
   const router = useRouter();
   const { t, i18n } = useLocale();
@@ -207,7 +220,12 @@ export const BookEventFormChild = ({
         booking: responseData,
       });
     },
-    onError: () => {
+    onError: (err, _, ctx) => {
+      // TODO:
+      // const vercelId = ctx?.meta?.headers?.get("x-vercel-id");
+      // if (vercelId) {
+      //   setResponseVercelIdHeader(vercelId);
+      // }
       errorRef && errorRef.current?.scrollIntoView({ behavior: "smooth" });
     },
   });
@@ -323,6 +341,7 @@ export const BookEventFormChild = ({
           }),
           {}
         ),
+      hashedLink,
     };
 
     if (eventQuery.data?.recurringEvent?.freq && recurringEventCount) {
@@ -361,6 +380,7 @@ export const BookEventFormChild = ({
           fields={eventType.bookingFields}
           locations={eventType.locations}
           rescheduleUid={rescheduleUid || undefined}
+          bookingData={bookingData}
         />
         {(createBookingMutation.isError ||
           createRecurringBookingMutation.isError ||
@@ -375,7 +395,8 @@ export const BookEventFormChild = ({
                 bookingForm.formState.errors["globalError"],
                 createBookingMutation,
                 createRecurringBookingMutation,
-                t
+                t,
+                responseVercelIdHeader
               )}
             />
           </div>
@@ -390,8 +411,8 @@ export const BookEventFormChild = ({
             type="submit"
             color="primary"
             loading={createBookingMutation.isLoading || createRecurringBookingMutation.isLoading}
-            data-testid={rescheduleUid ? "confirm-reschedule-button" : "confirm-book-button"}>
-            {rescheduleUid
+            data-testid={rescheduleUid && bookingData ? "confirm-reschedule-button" : "confirm-book-button"}>
+            {rescheduleUid && bookingData
               ? t("reschedule")
               : renderConfirmNotVerifyEmailButtonCond
               ? t("confirm")
@@ -406,6 +427,7 @@ export const BookEventFormChild = ({
         onSuccess={() => {
           setVerifiedEmail(email);
           setEmailVerificationModalVisible(false);
+          bookEvent(bookingForm.getValues());
         }}
         isUserSessionRequiredToVerify={false}
       />
@@ -422,16 +444,19 @@ const getError = (
   bookingMutation: UseMutationResult<any, any, any, any>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   recurringBookingMutation: UseMutationResult<any, any, any, any>,
-  t: TFunction
+  t: TFunction,
+  responseVercelIdHeader: string | null
 ) => {
   if (globalError) return globalError.message;
 
   const error = bookingMutation.error || recurringBookingMutation.error;
 
-  return error instanceof HttpError || error instanceof Error ? (
-    <>{t("can_you_try_again")}</>
+  return error.message ? (
+    <>
+      {responseVercelIdHeader ?? ""} {t(error.message)}
+    </>
   ) : (
-    "Unknown error"
+    <>{t("can_you_try_again")}</>
   );
 };
 
@@ -452,7 +477,10 @@ function useInitialFormValues({
   const session = useSession();
   useEffect(() => {
     (async function () {
-      if (Object.keys(formValues).length) return formValues;
+      if (Object.keys(formValues).length) {
+        setDefaultValues(formValues);
+        return;
+      }
 
       if (!eventType?.bookingFields) {
         return {};
@@ -464,20 +492,34 @@ function useInitialFormValues({
         view: rescheduleUid ? "reschedule" : "booking",
       });
 
+      // Routing Forms don't support Split full name(because no Form Builder in there), so user needs to create two fields in there themselves. If they name these fields, `firstName` and `lastName`, we can prefill the Booking Form with them
+      // Once we support formBuilder in Routing Forms, we should be able to forward JSON form of name field value to Booking Form and prefill it there without having these two query params separately.
+      const firstNameQueryParam = searchParams?.get("firstName");
+      const lastNameQueryParam = searchParams?.get("lastName");
+
       const parsedQuery = await querySchema.parseAsync({
         ...routerQuery,
+        name:
+          searchParams?.get("name") ||
+          (firstNameQueryParam ? `${firstNameQueryParam} ${lastNameQueryParam}` : null),
         // `guest` because we need to support legacy URL with `guest` query param support
         // `guests` because the `name` of the corresponding bookingField is `guests`
         guests: searchParams?.getAll("guests") || searchParams?.getAll("guest"),
       });
 
       const defaultUserValues = {
-        email: rescheduleUid
-          ? bookingData?.attendees[0].email
-          : parsedQuery["email"] || session.data?.user?.email || "",
-        name: rescheduleUid
-          ? bookingData?.attendees[0].name
-          : parsedQuery["name"] || session.data?.user?.name || "",
+        email:
+          rescheduleUid && bookingData && bookingData.attendees.length > 0
+            ? bookingData?.attendees[0].email
+            : !!parsedQuery["email"]
+            ? parsedQuery["email"]
+            : session.data?.user?.email ?? "",
+        name:
+          rescheduleUid && bookingData && bookingData.attendees.length > 0
+            ? bookingData?.attendees[0].name
+            : !!parsedQuery["name"]
+            ? parsedQuery["name"]
+            : session.data?.user?.name ?? session.data?.user?.username ?? "",
       };
 
       if (!isRescheduling) {
@@ -501,13 +543,11 @@ function useInitialFormValues({
         setDefaultValues(defaults);
       }
 
-      if ((!rescheduleUid && !bookingData) || !bookingData?.attendees.length) {
+      if (!rescheduleUid && !bookingData) {
         return {};
       }
-      const primaryAttendee = bookingData.attendees[0];
-      if (!primaryAttendee) {
-        return {};
-      }
+
+      // We should allow current session user as default values for booking form
 
       const defaults = {
         responses: {} as Partial<z.infer<ReturnType<typeof getBookingResponsesSchema>>>,
@@ -516,7 +556,7 @@ function useInitialFormValues({
       const responses = eventType.bookingFields.reduce((responses, field) => {
         return {
           ...responses,
-          [field.name]: bookingData.responses[field.name],
+          [field.name]: bookingData?.responses[field.name],
         };
       }, {});
       defaults.responses = {

@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
 import { getLocationGroupedOptions } from "@calcom/app-store/server";
@@ -7,10 +6,11 @@ import { getEventTypeAppData } from "@calcom/app-store/utils";
 import type { LocationObject } from "@calcom/core/location";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
 import { parseBookingLimit, parseDurationLimit, parseRecurringEvent } from "@calcom/lib";
-import { CAL_URL } from "@calcom/lib/constants";
-import getPaymentAppData from "@calcom/lib/getPaymentAppData";
+import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { getTranslation } from "@calcom/lib/server/i18n";
-import { SchedulingType, MembershipRole, AppCategories } from "@calcom/prisma/enums";
+import type { PrismaClient } from "@calcom/prisma";
+import type { Credential } from "@calcom/prisma/client";
+import { SchedulingType, MembershipRole } from "@calcom/prisma/enums";
 import { customInputSchema, EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 
 import { TRPCError } from "@trpc/server";
@@ -20,6 +20,7 @@ interface getEventTypeByIdProps {
   userId: number;
   prisma: PrismaClient;
   isTrpcCall?: boolean;
+  isUserOrganizationAdmin: boolean;
 }
 
 export default async function getEventTypeById({
@@ -27,12 +28,14 @@ export default async function getEventTypeById({
   userId,
   prisma,
   isTrpcCall = false,
+  isUserOrganizationAdmin,
 }: getEventTypeByIdProps) {
   const userSelect = Prisma.validator<Prisma.UserSelect>()({
     name: true,
     username: true,
     id: true,
     email: true,
+    organizationId: true,
     locale: true,
     defaultScheduleId: true,
   });
@@ -86,6 +89,7 @@ export default async function getEventTypeById({
       periodStartDate: true,
       periodEndDate: true,
       periodCountCalendarDays: true,
+      lockTimeZoneToggleOnBookingPage: true,
       requiresConfirmation: true,
       requiresBookerEmailVerification: true,
       recurringEvent: true,
@@ -113,6 +117,11 @@ export default async function getEventTypeById({
           name: true,
           slug: true,
           parentId: true,
+          parent: {
+            select: {
+              slug: true,
+            },
+          },
           members: {
             select: {
               role: true,
@@ -166,6 +175,7 @@ export default async function getEventTypeById({
       destinationCalendar: true,
       seatsPerTimeSlot: true,
       seatsShowAttendees: true,
+      seatsShowAvailabilityCount: true,
       webhooks: {
         select: {
           id: true,
@@ -221,43 +231,13 @@ export default async function getEventTypeById({
     }
   }
 
-  const credentials = await prisma.credential.findMany({
-    where: {
-      userId,
-      app: {
-        enabled: true,
-        categories: {
-          hasSome: [AppCategories.conferencing, AppCategories.video, AppCategories.payment],
-        },
-      },
-    },
-    select: {
-      id: true,
-      type: true,
-      key: true,
-      userId: true,
-      teamId: true,
-      appId: true,
-      invalid: true,
-    },
-  });
-
   const { locations, metadata, ...restEventType } = rawEventType;
   const newMetadata = EventTypeMetaDataSchema.parse(metadata || {}) || {};
   const apps = newMetadata?.apps || {};
   const eventTypeWithParsedMetadata = { ...rawEventType, metadata: newMetadata };
-  const stripeMetaData = getPaymentAppData(eventTypeWithParsedMetadata, true);
+
   newMetadata.apps = {
     ...apps,
-    stripe: {
-      ...stripeMetaData,
-      paymentOption: stripeMetaData.paymentOption as string,
-      currency:
-        (
-          credentials.find((integration) => integration.type === "stripe_payment")
-            ?.key as unknown as StripeData
-        )?.default_currency || "usd",
-    },
     giphy: getEventTypeAppData(eventTypeWithParsedMetadata, "giphy", true),
   };
 
@@ -319,7 +299,7 @@ export default async function getEventTypeById({
   const eventTypeUsers: ((typeof eventType.users)[number] & { avatar: string })[] = eventType.users.map(
     (user) => ({
       ...user,
-      avatar: `${CAL_URL}/${user.username}/avatar.png`,
+      avatar: getUserAvatarUrl(user),
     })
   );
 
@@ -365,7 +345,7 @@ export default async function getEventTypeById({
         .map((member) => {
           const user: typeof member.user & { avatar: string } = {
             ...member.user,
-            avatar: `${CAL_URL}/${member.user.username}/avatar.png`,
+            avatar: getUserAvatarUrl(member.user),
           };
           return {
             ...user,
@@ -396,6 +376,23 @@ export default async function getEventTypeById({
     team: eventTypeObject.team || null,
     teamMembers,
     currentUserMembership,
+    isUserOrganizationAdmin,
   };
   return finalObj;
 }
+
+const getStripeCurrency = (stripeMetadata: { currency: string }, credentials: Credential[]) => {
+  // Favor the currency from the metadata as EventType.currency was not always set and should be deprecated
+  if (stripeMetadata.currency) {
+    return stripeMetadata.currency;
+  }
+
+  // Legacy support for EventType.currency
+  const stripeCredential = credentials.find((integration) => integration.type === "stripe_payment");
+  if (stripeCredential) {
+    return (stripeCredential.key as unknown as StripeData)?.default_currency || "usd";
+  }
+
+  // Fallback to USD but should not happen
+  return "usd";
+};

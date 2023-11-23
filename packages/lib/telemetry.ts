@@ -19,9 +19,6 @@ export const telemetryEventTypes = {
   onboardingStarted: "onboarding_started",
   signup: "signup",
   team_created: "team_created",
-  website: {
-    pageView: "website_page_view",
-  },
   slugReplacementAction: "slug_replacement_action",
   org_created: "org_created",
 };
@@ -35,7 +32,7 @@ export function collectPageParameters(
   return {
     page_url: route,
     doc_encoding: document.characterSet,
-    url: document.location.protocol + "//" + host + (docPath ?? ""),
+    url: `${document.location.protocol}//${host}${docPath ?? ""}`,
     ...extraData,
   };
 }

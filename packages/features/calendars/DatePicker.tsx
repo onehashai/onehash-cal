@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { shallow } from "zustand/shallow";
 
 import type { Dayjs } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";
 import { useEmbedStyles } from "@calcom/embed-core/embed-iframe";
 import { useBookerStore } from "@calcom/features/bookings/Booker/store";
+import { getAvailableDatesInMonth } from "@calcom/features/calendars/lib/getAvailableDatesInMonth";
 import classNames from "@calcom/lib/classNames";
 import { daysInMonth, yyyymmdd } from "@calcom/lib/date-fns";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -16,15 +18,15 @@ export type DatePickerProps = {
   /** which day of the week to render the calendar. Usually Sunday (=0) or Monday (=1) - default: Sunday */
   weekStart?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   /** Fires whenever a selected date is changed. */
-  onChange: (date: Dayjs) => void;
+  onChange: (date: Dayjs | null) => void;
   /** Fires when the month is changed. */
   onMonthChange?: (date: Dayjs) => void;
   /** which date or dates are currently selected (not tracked from here) */
   selected?: Dayjs | Dayjs[] | null;
   /** defaults to current date. */
-  minDate?: Dayjs;
+  minDate?: Date;
   /** Furthest date selectable in the future, default = UNLIMITED */
-  maxDate?: Dayjs;
+  maxDate?: Date;
   /** locale, any IETF language tag, e.g. "hu-HU" - defaults to Browser settings */
   locale: string;
   /** Defaults to [], which dates are not bookable. Array of valid dates like: ["2022-04-23", "2022-04-24"] */
@@ -91,9 +93,9 @@ const NoAvailabilityOverlay = ({
   const { t } = useLocale();
 
   return (
-    <div className=" bg-muted border-subtle absolute left-1/2 top-40 -mt-10 w-max -translate-x-1/2 -translate-y-1/2 transform rounded-md border p-8 shadow-sm">
-      <h4 className="text-emphasis  mb-4 font-medium">{t("no_availability_in_month", { month: month })}</h4>
-      <Button onClick={nextMonthButton} color="primary" EndIcon={ArrowRight}>
+    <div className="bg-muted border-subtle absolute left-1/2 top-40 -mt-10 w-max -translate-x-1/2 -translate-y-1/2 transform rounded-md border p-8 shadow-sm">
+      <h4 className="text-emphasis mb-4 font-medium">{t("no_availability_in_month", { month: month })}</h4>
+      <Button onClick={nextMonthButton} color="primary" EndIcon={ArrowRight} data-testid="view_next_month">
         {t("view_next_month")}
       </Button>
     </div>
@@ -101,7 +103,7 @@ const NoAvailabilityOverlay = ({
 };
 
 const Days = ({
-  minDate = dayjs.utc(),
+  minDate,
   excludedDates = [],
   browsingDate,
   weekStart,
@@ -120,27 +122,12 @@ const Days = ({
 }) => {
   // Create placeholder elements for empty days in first week
   const weekdayOfFirst = browsingDate.date(1).day();
-  const currentDate = minDate.utcOffset(browsingDate.utcOffset());
-  const availableDates = (includedDates: string[] | undefined) => {
-    const dates = [];
-    const lastDateOfMonth = browsingDate.date(daysInMonth(browsingDate));
-    for (
-      let date = currentDate;
-      date.isBefore(lastDateOfMonth) || date.isSame(lastDateOfMonth, "day");
-      date = date.add(1, "day")
-    ) {
-      // even if availableDates is given, filter out the passed included dates
-      if (includedDates && !includedDates.includes(yyyymmdd(date))) {
-        continue;
-      }
-      dates.push(yyyymmdd(date));
-    }
-    return dates;
-  };
 
-  const includedDates = currentDate.isSame(browsingDate, "month")
-    ? availableDates(props.includedDates)
-    : props.includedDates;
+  const includedDates = getAvailableDatesInMonth({
+    browsingDate: browsingDate.toDate(),
+    minDate,
+    includedDates: props.includedDates,
+  });
 
   const days: (Dayjs | null)[] = Array((weekdayOfFirst - weekStart + 7) % 7).fill(null);
   for (let day = 1, dayCount = daysInMonth(browsingDate); day <= dayCount; day++) {
@@ -175,9 +162,47 @@ const Days = ({
     return false;
   };
 
+  const daysToRenderForTheMonth = days.map((day) => {
+    if (!day) return { day: null, disabled: true };
+    return {
+      day: day,
+      disabled:
+        (includedDates && !includedDates.includes(yyyymmdd(day))) || excludedDates.includes(yyyymmdd(day)),
+    };
+  });
+
+  /**
+   * Takes care of selecting a valid date in the month if the selected date is not available in the month
+   */
+
+  const useHandleInitialDateSelection = () => {
+    // Let's not do something for now in case of multiple selected dates as behaviour is unclear and it's not needed at the moment
+    if (selected instanceof Array) {
+      return;
+    }
+    const firstAvailableDateOfTheMonth = daysToRenderForTheMonth.find((day) => !day.disabled)?.day;
+
+    const isSelectedDateAvailable = selected
+      ? daysToRenderForTheMonth.some(({ day, disabled }) => {
+          if (day && yyyymmdd(day) === yyyymmdd(selected) && !disabled) return true;
+        })
+      : false;
+
+    if (!isSelectedDateAvailable && firstAvailableDateOfTheMonth) {
+      // If selected date not available in the month, select the first available date of the month
+      props.onChange(firstAvailableDateOfTheMonth);
+    }
+
+    if (!firstAvailableDateOfTheMonth) {
+      props.onChange(null);
+    }
+  };
+
+  useEffect(useHandleInitialDateSelection);
+
   return (
     <>
-      {days.map((day, idx) => (
+      {daysToRenderForTheMonth.map(({ day, disabled }, idx) => (
         <div key={day === null ? `e-${idx}` : `day-${day.format()}`} className="relative w-full pt-[100%]">
           {day === null ? (
             <div key={`e-${idx}`} />
@@ -194,10 +219,7 @@ const Days = ({
               onClick={() => {
                 props.onChange(day);
               }}
-              disabled={
-                (includedDates && !includedDates.includes(yyyymmdd(day))) ||
-                excludedDates.includes(yyyymmdd(day))
-              }
+              disabled={disabled}
               active={isActive(day)}
             />
           )}

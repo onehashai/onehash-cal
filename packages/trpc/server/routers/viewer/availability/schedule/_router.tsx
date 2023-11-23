@@ -4,6 +4,8 @@ import { ZCreateInputSchema } from "./create.schema";
 import { ZDeleteInputSchema } from "./delete.schema";
 import { ZScheduleDuplicateSchema } from "./duplicate.schema";
 import { ZGetInputSchema } from "./get.schema";
+import { ZGetByEventSlugInputSchema } from "./getScheduleByEventTypeSlug.schema";
+import { ZGetByUserIdInputSchema } from "./getScheduleByUserId.schema";
 import { ZUpdateInputSchema } from "./update.schema";
 
 type ScheduleRouterHandlerCache = {
@@ -12,6 +14,8 @@ type ScheduleRouterHandlerCache = {
   delete?: typeof import("./delete.handler").deleteHandler;
   update?: typeof import("./update.handler").updateHandler;
   duplicate?: typeof import("./duplicate.handler").duplicateHandler;
+  getScheduleByUserId?: typeof import("./getScheduleByUserId.handler").getScheduleByUserIdHandler;
+  getScheduleByEventSlug?: typeof import("./getScheduleByEventTypeSlug.handler").getScheduleByEventSlugHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: ScheduleRouterHandlerCache = {};
@@ -94,6 +98,41 @@ export const scheduleRouter = router({
     }
 
     return UNSTABLE_HANDLER_CACHE.duplicate({
+      ctx,
+      input,
+    });
+  }),
+
+  getScheduleByUserId: authedProcedure.input(ZGetByUserIdInputSchema).query(async ({ input, ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.getScheduleByUserId) {
+      UNSTABLE_HANDLER_CACHE.getScheduleByUserId = await import("./getScheduleByUserId.handler").then(
+        (mod) => mod.getScheduleByUserIdHandler
+      );
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.getScheduleByUserId) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.getScheduleByUserId({
+      ctx,
+      input,
+    });
+  }),
+  getScheduleByEventSlug: authedProcedure.input(ZGetByEventSlugInputSchema).query(async ({ input, ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.getScheduleByEventSlug) {
+      UNSTABLE_HANDLER_CACHE.getScheduleByEventSlug = await import(
+        "./getScheduleByEventTypeSlug.handler"
+      ).then((mod) => mod.getScheduleByEventSlugHandler);
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.getScheduleByEventSlug) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.getScheduleByEventSlug({
       ctx,
       input,
     });
