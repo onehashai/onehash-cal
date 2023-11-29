@@ -18,7 +18,7 @@ export default function Credits() {
   return (
     <small className="text-default mx-3 mb-2 mt-1 hidden text-[0.5rem] opacity-50 lg:block">
       &copy; {new Date().getFullYear()}{" "}
-      <Link href="https://onehash.ai" target="_blank" className="hover:underline">
+      <Link href="https://www.onehash.ai" target="_blank" className="hover:underline">
         {COMPANY_NAME}
       </Link>{" "}
       {hasMounted && (

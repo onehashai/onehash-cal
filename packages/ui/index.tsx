@@ -84,6 +84,7 @@ export { Logo } from "./components/logo";
 export { Alert } from "./components/alert";
 export type { AlertProps } from "./components/alert";
 export { Credits } from "./components/credits";
+export { PrivacyPolicy } from "./components/privacy-policy";
 export { Divider, VerticalDivider } from "./components/divider";
 export { EmptyScreen } from "./components/empty-screen";
 export { UnpublishedEntity } from "./components/unpublished-entity";
