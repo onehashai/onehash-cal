@@ -142,7 +142,7 @@ export const AddNewTeamsForm = () => {
         <Button
           EndIcon={ArrowRight}
           color="primary"
-          className="mt-6 w-full justify-center"
+          className="mt-6 w-full justify-center bg-blue-500 hover:bg-blue-600"
           disabled={!formState.isValid || createTeamsMutation.isLoading || createTeamsMutation.isSuccess}
           onClick={handleFormSubmit}>
           {t("continue")}

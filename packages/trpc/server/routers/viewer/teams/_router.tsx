@@ -281,12 +281,10 @@ export const viewerTeamsRouter = router({
 
   publish: authedProcedure.input(ZPublishInputSchema).mutation(async ({ ctx, input }) => {
     if (!UNSTABLE_HANDLER_CACHE.publish) {
-      console.log("here2");
       UNSTABLE_HANDLER_CACHE.publish = await import("./publish.handler").then((mod) => mod.publishHandler);
     }
     // Unreachable code but required for type safety
     if (!UNSTABLE_HANDLER_CACHE.publish) {
-      console.log("here4");
       throw new Error("Failed to load handler");
     }
     return UNSTABLE_HANDLER_CACHE.publish({

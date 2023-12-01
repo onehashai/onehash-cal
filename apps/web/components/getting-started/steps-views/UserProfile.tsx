@@ -158,7 +158,7 @@ const UserProfile = () => {
       </fieldset>
       <Button
         type="submit"
-        className="text-inverted mt-8 flex w-full flex-row justify-center rounded-md border border-black bg-black p-2 text-center text-sm">
+        className="text-inverted mt-8 flex w-full flex-row justify-center rounded-md border bg-blue-500 p-2 text-center text-sm hover:bg-blue-600">
         {t("finish")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>

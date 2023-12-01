@@ -194,7 +194,7 @@ export const CreateANewOrganizationForm = ({ slug }: { slug?: string }) => {
             EndIcon={ArrowRight}
             type="submit"
             form="createOrg"
-            className="w-full justify-center">
+            className="w-full justify-center bg-blue-500 hover:bg-blue-600">
             {t("continue")}
           </Button>
         </div>

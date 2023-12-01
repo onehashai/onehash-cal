@@ -59,7 +59,7 @@ export function Logout(props: Props) {
       <Button
         data-testid="logout-btn"
         onClick={navigateToLogin}
-        className="flex w-full justify-center"
+        className="flex w-full justify-center bg-blue-500 hover:bg-blue-600"
         loading={btnLoading}>
         {t("go_back_login")}
       </Button>
