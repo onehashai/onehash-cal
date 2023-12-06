@@ -114,7 +114,7 @@ export const AboutOrganizationForm = () => {
             color="primary"
             EndIcon={ArrowRight}
             type="submit"
-            className="w-full justify-center">
+            className="w-full justify-center bg-blue-500 hover:bg-blue-600">
             {t("continue")}
           </Button>
         </div>

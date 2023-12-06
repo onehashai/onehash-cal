@@ -52,6 +52,7 @@ import {
   Tooltip,
   useCalcomTheme,
   PrivacyPolicy,
+  TermsOfUse,
 } from "@calcom/ui";
 import {
   ArrowLeft,
@@ -924,6 +925,7 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
             </Tooltip>
           ))}
           <PrivacyPolicy />
+          <TermsOfUse />
           {!IS_VISUAL_REGRESSION_TESTING && <Credits />}
         </div>
       </aside>

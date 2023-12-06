@@ -93,7 +93,7 @@ export const AddNewOrgAdminsForm = () => {
           EndIcon={ArrowRight}
           color="primary"
           type="submit"
-          className="mt-6 w-full justify-center"
+          className="mt-6 w-full justify-center bg-blue-500 hover:bg-blue-600"
           disabled={inviteMemberMutation.isLoading}>
           Continue
         </Button>

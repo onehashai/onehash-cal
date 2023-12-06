@@ -113,6 +113,7 @@ export const VerifyCodeDialog = ({
               <Button
                 loading={isLoading}
                 disabled={isLoading}
+                className="bg-blue-500 hover:bg-blue-600"
                 onClick={() => {
                   setError("");
                   if (value === "") {
