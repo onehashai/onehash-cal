@@ -3,7 +3,6 @@ import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 
 import type { AuthOptions, Session } from "next-auth";
 import { getToken } from "next-auth/jwt";
 
-import checkLicense from "@calcom/features/ee/common/server/checkLicense";
 import { CAL_URL } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 
@@ -58,10 +57,10 @@ export async function getServerSession(options: {
     return null;
   }
 
-  const hasValidLicense = await checkLicense(prisma);
+  // const hasValidLicense = await checkLicense(prisma);
 
   const session: Session = {
-    hasValidLicense,
+    // hasValidLicense,
     expires: new Date(typeof token.exp === "number" ? token.exp * 1000 : Date.now()).toISOString(),
     user: {
       id: user.id,
@@ -76,6 +75,7 @@ export async function getServerSession(options: {
       belongsToActiveTeam: token.belongsToActiveTeam,
       org: token.org,
       locale: user.locale ?? undefined,
+      trialEndsAt: user.trialEndsAt,
     },
   };
 

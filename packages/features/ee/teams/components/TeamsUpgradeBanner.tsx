@@ -23,7 +23,7 @@ export function TeamsUpgradeBanner() {
 
   return (
     <TopBanner
-      text={t("team_upgrade_banner_description", { teamName: membership.team.name })}
+      text={t("team_upgrade_banner_description")}
       variant="warning"
       actions={
         <button

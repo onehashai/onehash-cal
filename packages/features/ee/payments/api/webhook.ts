@@ -14,6 +14,7 @@ import { HttpError as HttpCode } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { getBooking } from "@calcom/lib/payment/getBooking";
 import { handlePaymentSuccess } from "@calcom/lib/payment/handlePaymentSuccess";
+import { teamsOwnedByAdmin } from "@calcom/lib/server/queries/teams";
 import { prisma } from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/enums";
 
@@ -111,11 +112,99 @@ const handleSetupSuccess = async (event: Stripe.Event) => {
   }
 };
 
+const handleSubscriptionUpdated = async (event: Stripe.Event) => {
+  const subscription = event.data.object as Stripe.Subscription;
+  if (!subscription.id) throw new HttpCode({ statusCode: 400, message: "Subscription ID not found" });
+
+  console.log(subscription);
+  const userId = parseInt(subscription.metadata.userId);
+  const userWithSubscription = await prisma.user.findFirst({
+    where: { id: userId, metadata: { path: ["subscriptionId"], equals: subscription.id } },
+  });
+  if (!userWithSubscription) {
+    throw new HttpCode({ statusCode: 404, message: "User with subscription ID not found" });
+  }
+
+  const status = subscription.status as string;
+  if (status === "paused") {
+    // find all admin teams and make their subsciption status as paused
+    const allTeams = await teamsOwnedByAdmin(userId);
+    allTeams.forEach(async (team) => {
+      const teamId = team.id;
+      await prisma.team.update({
+        where: { id: teamId },
+        data: {
+          metadata: {
+            paidForByUserId: userId,
+            subscriptionStatus: "paused",
+          },
+        },
+      });
+    });
+  }
+
+  if (status === "active") {
+    // find all admin teams and make their subsciption status as active
+    const allTeams = await teamsOwnedByAdmin(userId);
+    allTeams.forEach(async (team) => {
+      const teamId = team.id;
+      await prisma.team.update({
+        where: { id: teamId },
+        data: {
+          metadata: {
+            paidForByUserId: userId,
+            subscriptionStatus: "active",
+          },
+        },
+      });
+    });
+  }
+};
+
+const handleSubscriptionDeleted = async (event: Stripe.Event) => {
+  const subscription = event.data.object as Stripe.Subscription;
+  if (!subscription.id) throw new HttpCode({ statusCode: 400, message: "Subscription ID not found" });
+
+  const userId = parseInt(subscription.metadata.userId);
+  const userWithSubscription = await prisma.user.findFirst({
+    where: { id: userId, metadata: { path: ["subscriptionId"], equals: subscription.id } },
+  });
+  if (!userWithSubscription) {
+    throw new HttpCode({ statusCode: 404, message: "User with subscription ID not found" });
+  }
+
+  const status = subscription.status as string;
+
+  if (status === "cancel") {
+    // find all admin teams and make their subsciption status as cancelled
+    const allTeams = await teamsOwnedByAdmin(userId);
+    allTeams.forEach(async (team) => {
+      const teamId = team.id;
+      await prisma.team.update({
+        where: { id: teamId },
+        data: {
+          metadata: {
+            paidForByUserId: userId,
+            subscriptionStatus: "cancelled",
+          },
+        },
+      });
+    });
+  }
+};
+const openBillingPortal = async (event: Stripe.Event) => {
+  const subscription = event.data.object as Stripe.Subscription;
+  if (!subscription.id) throw new HttpCode({ statusCode: 400, message: "Subscription ID not found" });
+};
+
 type WebhookHandler = (event: Stripe.Event) => Promise<void>;
 
 const webhookHandlers: Record<string, WebhookHandler | undefined> = {
   "payment_intent.succeeded": handleStripePaymentSuccess,
   "setup_intent.succeeded": handleSetupSuccess,
+  "customer.subscription.updated": handleSubscriptionUpdated,
+  "customer.subscription.deleted": handleSubscriptionDeleted,
+  "billing_portal.session.created": openBillingPortal,
 };
 
 /**
@@ -138,14 +227,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const requestBuffer = await buffer(req);
     const payload = requestBuffer.toString();
-
     const event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
-
-    // bypassing this validation for e2e tests
-    // in order to successfully confirm the payment
-    if (!event.account && !process.env.NEXT_PUBLIC_IS_E2E) {
-      throw new HttpCode({ statusCode: 202, message: "Incoming connected account" });
-    }
 
     const handler = webhookHandlers[event.type];
     if (handler) {

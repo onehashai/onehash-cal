@@ -162,6 +162,7 @@ function AppTop({ setBannersHeight }: { setBannersHeight: Dispatch<SetStateActio
       <ImpersonatingBanner />
       <AdminPasswordBanner />
       <VerifyEmailBanner />
+      {/* <AddPaymentMethodBanner /> */}
     </div>
   );
 }

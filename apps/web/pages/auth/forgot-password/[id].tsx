@@ -126,7 +126,7 @@ export default function Page({ requestId, isRequestExpired, csrfToken }: Props) 
                 color="primary"
                 type="submit"
                 disabled={loading || isEmpty}
-                className="w-full justify-center">
+                className="w-full justify-center bg-blue-500 hover:bg-blue-600">
                 {t("reset_password")}
               </Button>
             </div>

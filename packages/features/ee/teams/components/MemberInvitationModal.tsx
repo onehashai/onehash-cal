@@ -179,6 +179,29 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
     setModalInputMode("INDIVIDUAL");
   };
 
+  const handleSubmitFunc = async (values: NewMemberForm) => {
+    // Add your license validation logic here
+    const res = await fetch("/api/user/checkUserLicenses", {
+      method: "POST",
+      body: JSON.stringify({ members: props?.members, input: values }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const json = await res.json();
+    const hasLicense = json.message;
+    if (hasLicense === "Enough Licenses") {
+      // Proceed with form submission
+      await props.onSubmit(values, resetFields);
+    } else if (hasLicense === "Make Team") {
+      await props.onSubmit(values, resetFields);
+    } else {
+      // Redirect to billing or show a message indicating the need for more licenses
+      const billingHref = `/api/integrations/stripepayment/portal?returnTo=${WEBAPP_URL}/teams`;
+      window.open(billingHref, "_blank");
+    }
+  };
+
   const importRef = useRef<HTMLInputElement | null>(null);
 
   return (
@@ -215,7 +238,7 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
           />
         </div>
 
-        <Form form={newMemberFormMethods} handleSubmit={(values) => props.onSubmit(values, resetFields)}>
+        <Form form={newMemberFormMethods} handleSubmit={(values) => handleSubmitFunc(values)}>
           <div className="mb-10 mt-6 space-y-6">
             {/* Indivdual Invite */}
             {modalImportMode === "INDIVIDUAL" && (
@@ -398,7 +421,7 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
               loading={props.isLoading || createInviteMutation.isLoading}
               type="submit"
               color="primary"
-              className="me-2 ms-2"
+              className="me-2 ms-2 bg-blue-500 hover:bg-blue-600"
               data-testid="invite-new-member-button">
               {t("send_invite")}
             </Button>

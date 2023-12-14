@@ -699,14 +699,14 @@ const EventTypeListHeading = ({
   const router = useRouter();
   const orgBranding = useOrgBranding();
 
-  const publishTeamMutation = trpc.viewer.teams.publish.useMutation({
-    onSuccess(data) {
-      router.push(data.url);
-    },
-    onError: (error) => {
-      showToast(error.message, "error");
-    },
-  });
+  // const publishTeamMutation = trpc.viewer.teams.publish.useMutation({
+  //   onSuccess(data) {
+  //     router.push(data.url);
+  //   },
+  //   onError: (error) => {
+  //     showToast(error.message, "error");
+  //   },
+  // });
   const bookerUrl = useBookerUrl();
 
   return (
@@ -746,13 +746,13 @@ const EventTypeListHeading = ({
           </Link>
         )}
       </div>
-      {!profile?.slug && !!teamId && (
+      {/* {!profile?.slug && !!teamId && (
         <button onClick={() => publishTeamMutation.mutate({ teamId })}>
           <Badge variant="gray" className="-ml-2 mb-1">
             {t("upgrade")}
           </Badge>
         </button>
-      )}
+      )} */}
     </div>
   );
 };
