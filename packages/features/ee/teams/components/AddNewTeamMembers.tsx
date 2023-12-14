@@ -172,7 +172,7 @@ export const AddNewTeamMembersForm = ({
       <Button
         EndIcon={!orgBranding ? ArrowRight : undefined}
         color="primary"
-        className="w-full justify-center"
+        className="w-full justify-center bg-blue-500 hover:bg-blue-600"
         disabled={publishTeamMutation.isLoading}
         onClick={() => {
           if (orgBranding) {

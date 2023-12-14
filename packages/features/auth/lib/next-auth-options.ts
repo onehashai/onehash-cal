@@ -53,7 +53,7 @@ export const checkIfUserBelongsToActiveTeam = <T extends UserTeams>(user: T) =>
 
     const metadata = teamMetadataSchema.safeParse(m.team.metadata);
 
-    return metadata.success && metadata.data?.subscriptionId;
+    return metadata.success;
   });
 
 const checkIfUserShouldBelongToOrg = async (idP: IdentityProvider, email: string) => {

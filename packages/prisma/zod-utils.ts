@@ -320,15 +320,22 @@ export const userMetadata = z
       })
       .optional(),
     defaultBookerLayouts: bookerLayouts.optional(),
+    // Billing is done on only team owners or admin
+    paymentId: z.string().optional(),
+    subscriptionId: z.string().optional(),
+    subscriptionItemId: z.string().optional(),
   })
   .nullable();
 
 export const teamMetadataSchema = z
   .object({
     requestedSlug: z.string(),
-    paymentId: z.string(),
-    subscriptionId: z.string().nullable(),
-    subscriptionItemId: z.string().nullable(),
+    paidForByUserId: z.number().optional(),
+    subscriptionStatus: z.string().optional(),
+    // This is defualt cal.com schema where they take payments for teams
+    // paymentId: z.string(),
+    // subscriptionId: z.string().nullable(),
+    // subscriptionItemId: z.string().nullable(),
     isOrganization: z.boolean().nullable(),
     isOrganizationVerified: z.boolean().nullable(),
     isOrganizationConfigured: z.boolean().nullable(),

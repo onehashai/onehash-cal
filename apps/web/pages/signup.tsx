@@ -193,7 +193,10 @@ export default function Signup({ prepopulateFormValues, token, orgSlug, orgAutoA
                   />
                 </div>
                 <div className="flex space-x-2 rtl:space-x-reverse">
-                  <Button type="submit" loading={isSubmitting} className="w-full justify-center">
+                  <Button
+                    type="submit"
+                    loading={isSubmitting}
+                    className="w-full justify-center bg-blue-500 hover:bg-blue-600">
                     {t("create_account")}
                   </Button>
                   {!token && (

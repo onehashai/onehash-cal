@@ -2,8 +2,7 @@ import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
-
-import type { TrpcSessionUser } from "../../../trpc";
+import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
 type GetUpgradeableOptions = {
   ctx: {
@@ -11,7 +10,7 @@ type GetUpgradeableOptions = {
   };
 };
 
-export async function checkIfOrgNeedsUpgradeHandler({ ctx }: GetUpgradeableOptions) {
+export const addPaymentMethodHandler = async ({ ctx }: GetUpgradeableOptions) => {
   if (!IS_TEAM_BILLING_ENABLED) return [];
 
   // Get all teams/orgs where the user is an owner
@@ -26,19 +25,21 @@ export async function checkIfOrgNeedsUpgradeHandler({ ctx }: GetUpgradeableOptio
       },
     },
     include: {
-      team: true,
+      team: {
+        include: {
+          children: true,
+        },
+      },
     },
   });
 
-  /** We only need to return teams that don't have a `subscriptionId` on their metadata */
+  /** We only need to return teams that have trial on their metadata */
   teams = teams.filter((m) => {
     const metadata = teamMetadataSchema.safeParse(m.team.metadata);
-    if (metadata.success && !metadata.data?.isOrganization) return false;
-    if (metadata.success) return false;
+    if (metadata.success && metadata.data?.subscriptionStatus === "trial") return false;
+    if (metadata.success && metadata.data?.isOrganization) return false; // We also dont return ORGs as it will be handled in OrgUpgradeBanner    if (metadata.success) return false; // We also dont return ORGs as it will be handled in OrgUpgradeBanner
+    if (m.team.children.length > 0) return false; // We also dont return ORGs as it will be handled in OrgUpgradeBanner
     return true;
   });
-
   return teams;
-}
-
-export default checkIfOrgNeedsUpgradeHandler;
+};

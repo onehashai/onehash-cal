@@ -1,12 +1,10 @@
 import type { Prisma } from "@prisma/client";
 import type { NextApiRequest } from "next";
 
-import { purchaseTeamSubscription } from "@calcom/features/ee/teams/lib/payments";
+// import { purchaseTeamSubscription } from "@calcom/features/ee/teams/lib/payments";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { HttpError } from "@calcom/lib/http-error";
 import { defaultResponder } from "@calcom/lib/server";
-
-import { TRPCError } from "@trpc/server";
 
 import { schemaQueryTeamId } from "~/lib/validations/shared/queryTeamId";
 import { schemaTeamReadPublic, schemaTeamUpdateBodyParams } from "~/lib/validations/team";
@@ -72,17 +70,17 @@ export async function patchHandler(req: NextApiRequest) {
     };
     delete data.slug;
     if (IS_TEAM_BILLING_ENABLED) {
-      const checkoutSession = await purchaseTeamSubscription({
-        teamId: _team.id,
-        seats: _team.members.length,
-        userId,
-      });
-      if (!checkoutSession.url)
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed retrieving a checkout session URL.",
-        });
-      paymentUrl = checkoutSession.url;
+      // const checkoutSession = await purchaseTeamSubscription({
+      //   teamId: _team.id,
+      //   seats: _team.members.length,
+      //   userId,
+      // });
+      // if (!checkoutSession.url)
+      //   throw new TRPCError({
+      //     code: "INTERNAL_SERVER_ERROR",
+      //     message: "Failed retrieving a checkout session URL.",
+      //   });
+      // paymentUrl = checkoutSession.url;
     }
   }
 

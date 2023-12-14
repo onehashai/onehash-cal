@@ -36,6 +36,7 @@ type TeamsRouterHandlerCache = {
   updateMembership?: typeof import("./updateMembership.handler").updateMembershipHandler;
   publish?: typeof import("./publish.handler").publishHandler;
   getUpgradeable?: typeof import("./getUpgradeable.handler").getUpgradeableHandler;
+  addPaymentMethod?: typeof import("./addPaymentMethod.handler").addPaymentMethod;
   listMembers?: typeof import("./listMembers.handler").listMembersHandler;
   hasTeamPlan?: typeof import("./hasTeamPlan.handler").hasTeamPlanHandler;
   listInvites?: typeof import("./listInvites.handler").listInvitesHandler;
@@ -45,6 +46,7 @@ type TeamsRouterHandlerCache = {
   inviteMemberByToken?: typeof import("./inviteMemberByToken.handler").inviteMemberByTokenHandler;
   hasEditPermissionForUser?: typeof import("./hasEditPermissionForUser.handler").hasEditPermissionForUser;
   resendInvitation?: typeof import("./resendInvitation.handler").resendInvitationHandler;
+  getUserLicenses?: typeof import("./getUserLicenses.handler").getUserLicensesHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: TeamsRouterHandlerCache = {};
@@ -307,6 +309,23 @@ export const viewerTeamsRouter = router({
     }
 
     return UNSTABLE_HANDLER_CACHE.getUpgradeable({
+      ctx,
+    });
+  }),
+
+  addPaymentMethod: authedProcedure.query(async ({ ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.addPaymentMethod) {
+      UNSTABLE_HANDLER_CACHE.addPaymentMethod = await import("./addPaymentMethod.handler").then(
+        (mod) => mod.addPaymentMethodHandler
+      );
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.addPaymentMethod) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.addPaymentMethod({
       ctx,
     });
   }),

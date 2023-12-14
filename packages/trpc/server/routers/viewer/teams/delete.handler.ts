@@ -1,7 +1,10 @@
+//On merge conflict always use the present changes
 import { subdomainSuffix } from "@calcom/ee/organizations/lib/orgDomains";
-import { cancelTeamSubscriptionFromStripe } from "@calcom/features/ee/teams/lib/payments";
-import { IS_PRODUCTION, IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
+import { updateTrialSubscription } from "@calcom/ee/teams/lib/payments";
+import { IS_PRODUCTION } from "@calcom/lib/constants";
+import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { isTeamOwner } from "@calcom/lib/server/queries/teams";
+import { adminTeamMembers } from "@calcom/lib/server/queries/teams";
 import { closeComDeleteTeam } from "@calcom/lib/sync/SyncServiceManager";
 import { prisma } from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -10,6 +13,7 @@ import { TRPCError } from "@trpc/server";
 
 import type { TrpcSessionUser } from "../../../trpc";
 import type { TDeleteInputSchema } from "./delete.schema";
+import { checkIfUserUnderTrial } from "./publish.handler";
 
 type DeleteOptions = {
   ctx: {
@@ -56,8 +60,6 @@ const deleteVercelDomain = async ({
 export const deleteHandler = async ({ ctx, input }: DeleteOptions) => {
   if (!(await isTeamOwner(ctx.user?.id, input.teamId))) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-  if (IS_TEAM_BILLING_ENABLED) await cancelTeamSubscriptionFromStripe(input.teamId);
-
   // delete all memberships
   await prisma.membership.deleteMany({
     where: {
@@ -78,6 +80,18 @@ export const deleteHandler = async ({ ctx, input }: DeleteOptions) => {
       slug: deletedTeam.slug,
       isOrganization: deletedTeamMetadata?.isOrganization,
     });
+
+  const isUserUnderTrial = await checkIfUserUnderTrial(ctx.user.id);
+  if (isUserUnderTrial) {
+    const remainingSeats = await adminTeamMembers(ctx.user.id);
+    if (IS_TEAM_BILLING_ENABLED) await updateTrialSubscription(ctx.user.id, remainingSeats.length);
+  } else {
+    //Todo
+    const totalSeats = await adminTeamMembers(ctx.user.id);
+    if (totalSeats.length !== 0) {
+      // await updatePaidSubscription(ctx.user.id, totalSeats.length);
+    }
+  }
 
   // Sync Services: Close.cm
   closeComDeleteTeam(deletedTeam);

@@ -1,10 +1,6 @@
 import { trpc } from "@calcom/trpc/react";
 
-import hasKeyInMetadata from "../hasKeyInMetadata";
-
 export function useHasPaidPlan() {
-  // if (IS_SELF_HOSTED) return { isLoading: false, hasPaidPlan: true };
-
   const { data: hasTeamPlan, isLoading: isLoadingTeamQuery } = trpc.viewer.teams.hasTeamPlan.useQuery();
 
   const { data: user, isLoading: isLoadingUserQuery } = trpc.viewer.me.useQuery();
@@ -15,7 +11,6 @@ export function useHasPaidPlan() {
     user && hasKeyInMetadata(user, "isPremium") ? !!user.metadata.isPremium : false;
 
   const hasPaidPlan = hasTeamPlan?.hasTeamPlan || isCurrentUsernamePremium;
-
   return { isLoading, hasPaidPlan };
 }
 
@@ -32,10 +27,12 @@ export function useHasTeamPlan() {
 }
 
 export function useHasEnterprisePlan() {
-  // TODO: figure out how to get "has Enterprise / has Org" from the backend
-  const { data: hasTeamPlan, isLoading } = trpc.viewer.teams.hasTeamPlan.useQuery();
+  return { isLoading: false, hasTeamPlan: true };
 
-  return { isLoading, hasTeamPlan: hasTeamPlan?.hasTeamPlan };
+  // TODO: figure out how to get "has Enterprise / has Org" from the backend
+  // const { data: hasTeamPlan, isLoading } = trpc.viewer.teams.hasTeamPlan.useQuery();
+
+  // return { isLoading, hasTeamPlan: hasTeamPlan?.hasTeamPlan };
 }
 
 export default useHasPaidPlan;
