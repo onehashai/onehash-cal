@@ -7,10 +7,10 @@ export function useHasPaidPlan() {
 
   const isLoading = isLoadingTeamQuery || isLoadingUserQuery;
 
-  const isCurrentUsernamePremium =
-    user && hasKeyInMetadata(user, "isPremium") ? !!user.metadata.isPremium : false;
+  // const isCurrentUsernamePremium =
+  //   user && hasKeyInMetadata(user, "isPremium") ? !!user.metadata.isPremium : false;
 
-  const hasPaidPlan = hasTeamPlan?.hasTeamPlan || isCurrentUsernamePremium;
+  const hasPaidPlan = hasTeamPlan?.hasTeamPlan;
   return { isLoading, hasPaidPlan };
 }
 
