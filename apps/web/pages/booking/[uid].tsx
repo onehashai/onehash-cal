@@ -813,7 +813,7 @@ export default function Success(props: SuccessProps) {
                       <span className="underline">
                         <a
                           target="_blank"
-                          href="https://cal.com/blog/google-s-new-spam-policy-may-be-affecting-your-invitations">
+                          href="https://www.onehash.ai/blogs/google-s-new-spam-policy-may-be-affecting-your-invitations">
                           {t("resolve")}
                         </a>
                       </span>

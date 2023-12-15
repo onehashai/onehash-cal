@@ -58,9 +58,10 @@ export async function getServerSession(options: {
   }
 
   // const hasValidLicense = await checkLicense(prisma);
+  const hasValidLicense = true;
 
   const session: Session = {
-    // hasValidLicense,
+    hasValidLicense,
     expires: new Date(typeof token.exp === "number" ? token.exp * 1000 : Date.now()).toISOString(),
     user: {
       id: user.id,
@@ -75,7 +76,6 @@ export async function getServerSession(options: {
       belongsToActiveTeam: token.belongsToActiveTeam,
       org: token.org,
       locale: user.locale ?? undefined,
-      trialEndsAt: user.trialEndsAt,
     },
   };
 
