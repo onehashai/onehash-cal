@@ -17,7 +17,7 @@ import { Edit, Trash, Lock } from "@calcom/ui/components/icon";
 
 const { Cell, ColumnTitle, Header, Row } = Table;
 
-const FETCH_LIMIT = 100;
+const FETCH_LIMIT = 25;
 
 function UsersTableBare() {
   const tableContainerRef = useRef<HTMLDivElement>(null);
