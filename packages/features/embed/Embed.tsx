@@ -484,7 +484,7 @@ const EmailEmbedPreview = ({
             }}>
             <span>{t("powered_by")}</span>{" "}
             <b style={{ color: "black" }}>
-              <span> OneHash</span>
+              <span> OneHash Cal</span>
             </b>
           </div>
         </div>
