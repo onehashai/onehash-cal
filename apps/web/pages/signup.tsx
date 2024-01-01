@@ -30,9 +30,8 @@ import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@calco
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 import type { inferSSRProps } from "@calcom/types/inferSSRProps";
 import { Button, HeadSeo, PasswordField, TextField, Form, Alert, showToast } from "@calcom/ui";
-// For Signup Page
-import { Logo } from "@calcom/ui";
 
+// For Signup Page
 import PageWrapper from "@components/PageWrapper";
 
 import { IS_GOOGLE_LOGIN_ENABLED } from "../server/lib/constants";
@@ -261,7 +260,6 @@ export default function Signup({
         "[--cal-brand-text:#FFFFFF] dark:[--cal-brand-text:#000000]",
         "[--cal-brand-emphasis:#101010] dark:[--cal-brand-emphasis:#e1e1e1] "
       )}>
-      <Logo small inline={false} className="mx-auto mb-4" />
       <div className="bg-muted 2xl:border-subtle grid w-full max-w-[1440px] grid-cols-1 grid-rows-1 overflow-hidden lg:grid-cols-2 2xl:rounded-[20px] 2xl:border 2xl:py-6">
         <HeadSeo title={t("sign_up")} description={t("sign_up")} />
         {/* Left side */}

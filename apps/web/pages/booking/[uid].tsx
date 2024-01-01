@@ -49,7 +49,6 @@ import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { bookingMetadataSchema, customInputSchema, EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 import { Alert, Badge, Button, EmailInput, HeadSeo, useCalcomTheme } from "@calcom/ui";
-import { Logo } from "@calcom/ui";
 import { AlertCircle, Calendar, Check, ChevronLeft, ExternalLink, X } from "@calcom/ui/components/icon";
 
 import { timeZone } from "@lib/clock";
@@ -827,7 +826,6 @@ export default function Success(props: SuccessProps) {
           </div>
         </div>
       </main>
-      <Logo small inline={false} className="mx-auto mb-4 flex justify-center" />
     </div>
   );
 }
