@@ -1,13 +1,106 @@
 <!-- PROJECT LOGO -->
 <p align="center">
-  <h3 align="center">OneHash Cal</h3>
+  <a href="https://github.com/calcom/cal.com">
+   <img src="https://user-images.githubusercontent.com/8019099/210054112-5955e812-a76e-4160-9ddd-58f2c72f1cce.png" alt="Logo">
+  </a>
+
+  <h3 align="center">Cal.com (formerly Calendso)</h3>
+
+  <p align="center">
+    The open-source Calendly successor.
+    <br />
+    <a href="https://cal.com"><strong>Learn more »</strong></a>
+    <br />
+    <br />
+    <a href="https://go.cal.com/discord">Discord</a>
+    ·
+    <a href="https://cal.com">Website</a>
+    ·
+    <a href="https://github.com/calcom/cal.com/issues">Issues</a>
+    ·
+    <a href="https://cal.com/roadmap">Roadmap</a>
+  </p>
+</p>
+
+<p align="center">
+   <a href="https://go.cal.com/discord"><img src="https://img.shields.io/badge/Discord-go.cal.com%2Fdiscord-%234A154B" alt="Join Cal.com Discord"></a>
+   <a href="https://producthunt.com/posts/calendso"><img src="https://img.shields.io/badge/Product%20Hunt-%231%20Product%20of%20the%20Month-%23DA552E" alt="Product Hunt"></a>
+   <a href="https://status.cal.com"><img height="20px" src="https://betteruptime.com/status-badges/v1/monitor/a9kf.svg" alt="Uptime"></a>
+   <a href="https://github.com/calcom/cal.com/stargazers"><img src="https://img.shields.io/github/stars/calcom/cal.com" alt="Github Stars"></a>
+   <a href="https://news.ycombinator.com/item?id=34507672"><img src="https://img.shields.io/badge/Hacker%20News-%231-%23FF6600" alt="Hacker News"></a>
+   <a href="https://github.com/calcom/cal.com/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPLv3-purple" alt="License"></a>
+   <a href="https://github.com/calcom/cal.com/pulse"><img src="https://img.shields.io/github/commit-activity/m/calcom/cal.com" alt="Commits-per-month"></a>
+   <a href="https://cal.com/pricing"><img src="https://img.shields.io/badge/Pricing-Free-brightgreen" alt="Pricing"></a>
+   <a href="https://jitsu.com?utm_source=github/calcom/cal.com"><img src="https://img.shields.io/badge/Metrics_tracked_by-JITSU-AA00FF?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAACKSURBVHgBrZDRCYAwDEQv6gCOoKO4hOCXI9QVnEZwiY5iF5GaVClaBNtioCSUvCR3tMJaxIfZgW4AGUoEPVwgPZoS0Dmgg3NBVDFNbMIsmYCak3J1jDk9iCQvsKJvkzr71N81Gj6vDT/LU2P6RhY63jcafk3YJEbgeZpiFyc/5HJKv8Ef273NSfABGbQfUZhnOSAAAAAASUVORK5CYII=" alt="Jitsu Tracked"></a>
+   <img src="https://api.checklyhq.com/v1/badges/checks/5e048048-1b51-47ba-9209-60607507622e?responseTime=true" alt="Checkly Availability" />
+   <a href="https://hub.docker.com/r/calendso/calendso"><img src="https://img.shields.io/docker/pulls/calendso/calendso"></a>
+   <a href="https://twitch.tv/calcomtv"><img src="https://img.shields.io/twitch/status/calcomtv?style=flat"></a>
+   <a href="https://github.com/calcom/cal.com/issues?q=is:issue+is:open+label:%22%F0%9F%99%8B%F0%9F%8F%BB%E2%80%8D%E2%99%82%EF%B8%8Fhelp+wanted%22"><img src="https://img.shields.io/badge/Help%20Wanted-Contribute-blue"></a>
+   <a href="https://cal.com/figma"><img src="https://img.shields.io/badge/Figma-Design%20System-blueviolet"></a>
+   <a href="https://discord.com/channels/1125390093386010654/1125398231585661040"><img src="https://img.shields.io/badge/translations-contribute-brightgreen" /></a>
+   <a href="https://contributor-covenant.org/version/1/4/code-of-conduct/ "><img src="https://img.shields.io/badge/Contributor%20Covenant-1.4-purple" /></a>
+   <a href="https://console.algora.io/org/cal/bounties?status=open"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fconsole.algora.io%2Fapi%2Fshields%2Fcal%2Fbounties%3Fstatus%3Dopen" /></a>
 </p>
 
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project
 
-<img width="100%" alt="booking-screen" src="https://user-images.githubusercontent.com/8019099/176390354-f1bc7069-0341-437a-9bb8-eb41092b4016.gif">
+<img width="100%" alt="booking-screen" src="https://github.com/calcom/cal.com/assets/8019099/407e727e-ff19-4ca4-bcae-049dca05cf02">
+
+# Scheduling infrastructure for absolutely everyone
+
+The open source Calendly successor. You are in charge
+of your own data, workflow, and appearance.
+
+Calendly and other scheduling tools are awesome. It made our lives massively easier. We're using it for business meetings, seminars, yoga classes, and even calls with our families. However, most tools are very limited in terms of control and customization.
+
+That's where Cal.com comes in. Self-hosted or hosted by us. White-label by design. API-driven and ready to be deployed on your own domain. Full control of your events and data.
+
+## Recognition
+
+#### [Hacker News](https://news.ycombinator.com/from?site=cal.com)
+
+<a href="https://news.ycombinator.com/item?id=34507672">
+  <img
+    style="width: 250px; height: 54px;" width="250" height="54"
+    alt="Featured on Hacker News"
+    src="https://hackernews-badge.vercel.app/api?id=34507672"
+  />
+</a>
+
+<a href="https://news.ycombinator.com/item?id=26817795">
+  <img
+    style="width: 250px; height: 54px;" width="250" height="54"
+    alt="Featured on Hacker News"
+    src="https://hackernews-badge.vercel.app/api?id=26817795"
+  />
+</a>
+
+#### [Product Hunt](https://producthunt.com/products/cal-com?utm_source=badge-top-post-badge&utm_medium=badge)
+
+<a href="https://producthunt.com/posts/calendso?utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-calendso" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=291910&theme=light&period=monthly" alt="Cal.com - The open source Calendly alternative | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a> <a href="https://producthunt.com/posts/calendso?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-calendso" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=291910&theme=light" alt="Cal.com - The open source Calendly alternative | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a> <a href="https://producthunt.com/stories/how-this-open-source-calendly-alternative-rocketed-to-product-of-the-day" target="_blank"><img src="https://cal.com/maker-grant.svg" alt="Cal.com - The open source Calendly alternative | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
+### Built With
+
+- [Next.js](https://nextjs.org/?ref=cal.com)
+- [tRPC](https://trpc.io/?ref=cal.com)
+- [React.js](https://reactjs.org/?ref=cal.com)
+- [Tailwind CSS](https://tailwindcss.com/?ref=cal.com)
+- [Prisma.io](https://prisma.io/?ref=cal.com)
+- [Daily.co](https://go.cal.com/daily)
+
+## Contact us
+
+Meet our sales team for any commercial inquiries.
+
+<a href="https://cal.com/sales"><img src="https://cal.com/book-with-cal-dark.svg" alt="Book us with Cal.com"></a>
+
+## Stay Up-to-Date
+
+Cal.com officially launched as v.1.0 on the 15th of September 2021 and we've come a long way so far. Watch **releases** of this repository to be notified of future updates:
+
+![cal-star-github](https://user-images.githubusercontent.com/8019099/154853944-a9e3c999-3da3-4048-b149-b4f73893c6fb.gif)
 
 <!-- GETTING STARTED -->
 
@@ -53,7 +146,7 @@ Here is what you need to be able to run Cal.
 
    - Duplicate `.env.example` to `.env`
    - Use `openssl rand -base64 32` to generate a key and add it under `NEXTAUTH_SECRET` in the `.env` file.
-   - Use `openssl rand -base64 24` to generate a key and add it under `CALENDSO_ENCRYPTION_KEY` in the `.env` file.
+   - Use `openssl rand -base64 32` to generate a key and add it under `CALENDSO_ENCRYPTION_KEY` in the `.env` file.
 
 5. Setup Node
    If your Node version does not meet the project's requirements as instructed by the docs, "nvm" (Node Version Manager) allows using Node at the version required by the project:
@@ -122,12 +215,11 @@ echo 'NEXT_PUBLIC_DEBUG=1' >> .env
 
    If you don't want to create a local DB. Then you can also consider using services like railway.app or render.
 
-   - [Setup postgres DB with railway.app](https://arctype.com/postgres/setup/railway-postgres)
+   - [Setup postgres DB with railway.app](https://docs.railway.app/guides/postgresql)
    - [Setup postgres DB with render](https://render.com/docs/databases)
 
 1. Copy and paste your `DATABASE_URL` from `.env` to `.env.appStore`.
 
-1. Set a 24 character random string in your `.env` file for the `CALENDSO_ENCRYPTION_KEY` (You can use a command like `openssl rand -base64 24` to generate one).
 1. Set up the database using the Prisma schema (found in `packages/prisma/schema.prisma`)
 
    In a development environment, run:

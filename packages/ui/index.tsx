@@ -166,3 +166,5 @@ export {
 } from "./components/command";
 
 export { Popover, PopoverContent, PopoverTrigger } from "./components/popover";
+
+export { StorybookTrpcProvider } from "./components/mocks/trpc";

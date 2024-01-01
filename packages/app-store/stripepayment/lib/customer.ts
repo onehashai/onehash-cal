@@ -25,6 +25,26 @@ export async function getStripeCustomerIdFromUserId(userId: number) {
   return customerId;
 }
 
+export async function createStripeCustomerIdFromUserId(userId: number) {
+  // Get user
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      email: true,
+      name: true,
+      metadata: true,
+    },
+  });
+
+  if (!user?.email) throw new HttpCode({ statusCode: 404, message: "User email not found" });
+
+  const customerId = await createStripeCustomerId(user);
+
+  return customerId;
+}
+
 const userType = Prisma.validator<Prisma.UserArgs>()({
   select: {
     email: true,
@@ -65,6 +85,26 @@ export async function getStripeCustomerId(user: UserType): Promise<string> {
       },
     });
   }
+
+  return customerId;
+}
+
+export async function createStripeCustomerId(user: UserType): Promise<string> {
+  let customerId: string | null = null;
+  const customer = await stripe.customers.create({ email: user.email });
+  customerId = customer.id;
+
+  await prisma.user.update({
+    where: {
+      email: user.email,
+    },
+    data: {
+      metadata: {
+        ...(user.metadata as Prisma.JsonObject),
+        stripeCustomerId: customerId,
+      },
+    },
+  });
 
   return customerId;
 }

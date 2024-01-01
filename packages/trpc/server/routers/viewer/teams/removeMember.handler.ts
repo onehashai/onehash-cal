@@ -1,5 +1,6 @@
-//On merge conflict always use the present changes
+//Merge Conflict Properly in regards to OneHash Billing
 import { updateTrialSubscription, updatePaidSubscription } from "@calcom/ee/teams/lib/payments";
+import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { isTeamAdmin, isTeamOwner } from "@calcom/lib/server/queries/teams";
 import { adminTeamMembers, checkPartOfHowManyPaidTeam } from "@calcom/lib/server/queries/teams";
@@ -17,11 +18,16 @@ type RemoveMemberOptions = {
   ctx: {
     user: NonNullable<TrpcSessionUser>;
     prisma: PrismaClient;
+    sourceIp?: string;
   };
   input: TRemoveMemberInputSchema;
 };
 
 export const removeMemberHandler = async ({ ctx, input }: RemoveMemberOptions) => {
+  await checkRateLimitAndThrowError({
+    identifier: `removeMember.${ctx.sourceIp}`,
+  });
+
   const isAdmin = await isTeamAdmin(ctx.user.id, input.teamId);
   const isOrgAdmin = ctx.user.organizationId
     ? await isTeamAdmin(ctx.user.id, ctx.user.organizationId)
@@ -124,15 +130,17 @@ export const removeMemberHandler = async ({ ctx, input }: RemoveMemberOptions) =
   // Sync Services
   closeComDeleteTeamMembership(membership.user);
 
-  // if (IS_TEAM_BILLING_ENABLED) await updateQuantitySubscriptionFromStripe(input.teamId);
-  const isUserUnderTrial = await checkIfUserUnderTrial(ctx.user.id);
-  const remainingSeats = await adminTeamMembers(ctx.user.id);
-  if (isUserUnderTrial) {
-    if (IS_TEAM_BILLING_ENABLED) await updateTrialSubscription(ctx.user.id, remainingSeats.length);
-  } else {
-    //Todo
-    if (countBeforeDeletingMember === 1) {
-      await updatePaidSubscription(ctx.user.id, remainingSeats.length);
+  if (IS_TEAM_BILLING_ENABLED) {
+    const isUserUnderTrial = await checkIfUserUnderTrial(ctx.user.id);
+    const remainingUsers = await adminTeamMembers(ctx.user.id);
+    if (isUserUnderTrial) {
+      await updateTrialSubscription(ctx.user.id, remainingUsers.length);
+    } else {
+      if (countBeforeDeletingMember === 1) {
+        await updatePaidSubscription(ctx.user.id, remainingUsers.length);
+      }
     }
   }
 };
+
+export default removeMemberHandler;

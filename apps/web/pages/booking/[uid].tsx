@@ -576,7 +576,7 @@ export default function Success(props: SuccessProps) {
                             className="text-default break-words"
                             data-testid="field-response"
                             data-fob-field={field.name}>
-                            {response.toString()}
+                            {field.type === "boolean" ? (response ? t("yes") : t("no")) : response.toString()}
                           </p>
                         </>
                       );
@@ -1246,6 +1246,7 @@ async function getRecurringBookings(recurringEventId: string | null) {
   const recurringBookings = await prisma.booking.findMany({
     where: {
       recurringEventId,
+      status: BookingStatus.ACCEPTED,
     },
     select: {
       startTime: true,
