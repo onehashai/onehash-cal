@@ -62,15 +62,17 @@ export const inviteMemberByTokenHandler = async ({ ctx, input }: InviteMemberByT
       }
     } else throw e;
   }
-
-  // if (IS_TEAM_BILLING_ENABLED) await updateQuantitySubscriptionFromStripe(verificationToken.teamId);
-  const isUserUnderTrial = await checkIfUserUnderTrial(ctx.user.id);
-  if (isUserUnderTrial) {
+  if (IS_TEAM_BILLING_ENABLED) {
+    const isUserUnderTrial = await checkIfUserUnderTrial(ctx.user.id);
     const totalSeats = await adminTeamMembers(ctx.user.id);
-    if (totalSeats.length !== 0) {
-      if (IS_TEAM_BILLING_ENABLED) await updateTrialSubscription(ctx.user.id, totalSeats.length);
+    if (isUserUnderTrial) {
+      if (totalSeats.length !== 0) {
+        await updateTrialSubscription(ctx.user.id, totalSeats.length);
+      }
     }
   }
 
   return verificationToken.team.name;
 };
+
+export default inviteMemberByTokenHandler;

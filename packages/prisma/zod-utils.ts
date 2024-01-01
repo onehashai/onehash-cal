@@ -320,7 +320,7 @@ export const userMetadata = z
       })
       .optional(),
     defaultBookerLayouts: bookerLayouts.optional(),
-    // Billing is done on only team owners or admin
+    // Billing is done on team owners
     paymentId: z.string().optional(),
     subscriptionId: z.string().optional(),
     subscriptionItemId: z.string().optional(),
@@ -559,6 +559,7 @@ export const downloadLinkSchema = z.object({
 export const allManagedEventTypeProps: { [k in keyof Omit<Prisma.EventTypeSelect, "id">]: true } = {
   title: true,
   description: true,
+  isInstantEvent: true,
   currency: true,
   periodDays: true,
   position: true,
@@ -592,6 +593,7 @@ export const allManagedEventTypeProps: { [k in keyof Omit<Prisma.EventTypeSelect
   destinationCalendar: true,
   periodCountCalendarDays: true,
   bookingLimits: true,
+  onlyShowFirstAvailableSlot: true,
   slotInterval: true,
   scheduleId: true,
   workflows: true,
@@ -616,9 +618,9 @@ export const emailSchemaRefinement = (value: string) => {
 };
 
 export const signupSchema = z.object({
-  username: z.string().refine((value) => !value.includes("+"), {
-    message: "String should not contain a plus symbol (+).",
-  }),
+  // Username is marked optional here because it's requirement depends on if it's the Organization invite or a team invite which isn't easily done in zod
+  // It's better handled beyond zod in `validateAndGetCorrectedUsernameAndEmail`
+  username: z.string().optional(),
   email: z.string().email(),
   password: z.string().superRefine((data, ctx) => {
     const isStrict = false;

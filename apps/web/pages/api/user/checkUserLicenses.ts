@@ -1,12 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { getSubscriptionQuatity } from "@calcom/features/ee/teams/lib/payments";
-import { adminTeamMembers, checkIfUserIsPartOfPaidTeam } from "@calcom/lib/server/queries";
+import { getSubscriptionQuatity } from "@calcom/ee/teams/lib/payments";
+import { userHasPaidTeam, adminTeamMembers, checkIfUserIsPartOfPaidTeam } from "@calcom/lib/server/queries";
 import prisma from "@calcom/prisma";
 import { checkIfUserUnderTrial } from "@calcom/trpc/server/routers/viewer/teams/publish.handler";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { members, input } = req.body;
+  console.log(members);
   const adminId = members[0].id;
   if (!adminId) throw Error("Missing adminId");
   const adminUser = await prisma.user.findUnique({
@@ -15,23 +16,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     },
   });
   if (!adminUser) throw Error("Missing adminUser");
-  if (adminUser.trialEndsAt === null) {
-    return res.status(200).json({ message: "Make Team" });
-  }
   const isUserUnderTrial = await checkIfUserUnderTrial(adminId);
   if (isUserUnderTrial) {
-    return res.status(200).json({ message: "Make Team" });
+    return res.status(200).json({ message: "Can send invitation to team members" });
   }
 
-  // Check if the input user is in paid team and how many licenses admin has
+  const isPaidUser = await userHasPaidTeam(adminId);
+  console.log(isPaidUser);
+  if (!isPaidUser) {
+    return res.status(200).json({ message: "Cannot send invitation to team members" });
+  }
+
   const licenses = await getSubscriptionQuatity(adminId);
   const totalSeats = await adminTeamMembers(adminId);
   if (licenses > totalSeats.length) {
-    return res.status(200).json({ message: "Enough Licenses" });
+    return res.status(200).json({ message: "Can send invitation to team members" });
   }
-  const paidUser = await checkIfUserIsPartOfPaidTeam(adminId, input.emailOrUsername);
-  if (!paidUser) {
-    return res.status(200).json({ message: "Require More Licenses" });
+
+  const paidMember = await checkIfUserIsPartOfPaidTeam(adminId, input.emailOrUsername);
+  if (!paidMember) {
+    return res.status(200).json({ message: "Cannot send invitation to team members" });
   }
-  return res.status(200).json({ message: "Enough Licenses" });
+
+  return res.status(200).json({ message: "Can send invitation to team members" });
 }

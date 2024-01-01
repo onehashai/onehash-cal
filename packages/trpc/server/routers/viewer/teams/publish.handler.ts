@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 
 import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-billing";
 import {
-  purchaseTrialSubscription,
+  startTrialCheckoutSession,
   purchasePaidSubscription,
   updateTrialSubscription,
 } from "@calcom/features/ee/teams/lib/payments";
@@ -48,7 +48,7 @@ export const parseTeamMetadataOrThrow = (metadata: Prisma.JsonValue) => {
 const generateTrialCheckoutSession = async ({ seats, userId }: { seats: number; userId: number }) => {
   if (!IS_TEAM_BILLING_ENABLED) return;
 
-  const checkoutSession = await purchaseTrialSubscription({
+  const checkoutSession = await startTrialCheckoutSession({
     seats,
     userId,
   });
@@ -238,3 +238,5 @@ export const publishHandler = async ({ ctx, input }: PublishOptions) => {
     message: "Published successfully",
   };
 };
+
+export default publishHandler;
