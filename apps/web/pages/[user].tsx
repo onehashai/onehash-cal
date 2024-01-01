@@ -28,7 +28,6 @@ import { RedirectType, type EventType, type User } from "@calcom/prisma/client";
 import { baseEventTypeSelect } from "@calcom/prisma/selects";
 import { EventTypeMetaDataSchema, teamMetadataSchema } from "@calcom/prisma/zod-utils";
 import { HeadSeo, UnpublishedEntity } from "@calcom/ui";
-import { Logo } from "@calcom/ui";
 import { Verified, ArrowRight } from "@calcom/ui/components/icon";
 
 import type { EmbedProps } from "@lib/withEmbedSsr";
@@ -101,7 +100,6 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
             isEmbed ? "border-booker border-booker-width  bg-default rounded-md border" : "",
             "max-w-3xl px-4 py-24"
           )}>
-          <Logo small inline={false} className="mx-auto mb-4 flex justify-center" />
           <div className="mb-8 text-center">
             <OrganizationMemberAvatar
               size="xl"
