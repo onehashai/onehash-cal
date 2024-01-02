@@ -1,5 +1,5 @@
 //Merge Conflict Properly in regards to OneHash Billing
-import { updateTrialSubscription, updatePaidSubscription } from "@calcom/ee/teams/lib/payments";
+import { updateTrialSubscription } from "@calcom/ee/teams/lib/payments";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { isTeamAdmin, isTeamOwner } from "@calcom/lib/server/queries/teams";
@@ -135,10 +135,6 @@ export const removeMemberHandler = async ({ ctx, input }: RemoveMemberOptions) =
     const remainingUsers = await adminTeamMembers(ctx.user.id);
     if (isUserUnderTrial) {
       await updateTrialSubscription(ctx.user.id, remainingUsers.length);
-    } else {
-      if (countBeforeDeletingMember === 1) {
-        await updatePaidSubscription(ctx.user.id, remainingUsers.length);
-      }
     }
   }
 };
