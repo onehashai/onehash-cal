@@ -934,7 +934,7 @@ const EventTypesPage = () => {
   }, []);
 
   useEffect(() => {
-    // Add Chatwoot Settings
+    // OneHash Chat Settings
     window.chatwootSettings = {
       hideMessageBubble: false,
       position: "right", // This can be left or right
@@ -942,7 +942,6 @@ const EventTypesPage = () => {
       type: "standard", // [standard, expanded_bubble]
     };
 
-    // Paste the script from inbox settings except the <script> tag
     (function (d, t) {
       const BASE_URL = "https://chat.onehash.ai";
       const g = d.createElement(t),
