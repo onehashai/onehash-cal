@@ -941,7 +941,6 @@ const EventTypesPage = () => {
       locale: "en", // Language to be set
       type: "standard", // [standard, expanded_bubble]
     };
-
     (function (d, t) {
       const BASE_URL = "https://chat.onehash.ai";
       const g = d.createElement(t),
