@@ -57,7 +57,7 @@ export default function InsightsPage() {
                 <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
                   {t("create_team")}
                 </Button>
-                <Button color="minimal" href="https://go.cal.com/insights" target="_blank">
+                <Button color="minimal" href="https://www.onehash.ai" target="_blank">
                   {t("learn_more")}
                 </Button>
               </ButtonGroup>
@@ -87,7 +87,7 @@ export default function InsightsPage() {
                   {t("looking_for_more_insights")}{" "}
                   <a
                     className="text-blue-500 hover:underline"
-                    href="mailto:updates@cal.com?subject=Feature%20Request%3A%20More%20Analytics&body=Hey%20Cal.com%20Team%2C%20I%20love%20the%20analytics%20page%20but%20I%20am%20looking%20for%20...">
+                    href="mailto:support@onehash.ai?subject=Feature%20Request%3A%20More%20Analytics&body=Hey%20OneHash%20Team%2C%20I%20love%20the%20analytics%20page%20but%20I%20am%20looking%20for%20...">
                     {" "}
                     {t("contact_support")}
                   </a>

@@ -934,31 +934,6 @@ const EventTypesPage = () => {
   }, []);
 
   useEffect(() => {
-    // OneHash Chat Settings
-    window.chatwootSettings = {
-      hideMessageBubble: false,
-      position: "right", // This can be left or right
-      locale: "en", // Language to be set
-      type: "standard", // [standard, expanded_bubble]
-    };
-    (function (d, t) {
-      const BASE_URL = "https://chat.onehash.ai";
-      const g = d.createElement(t),
-        s = d.getElementsByTagName(t)[0];
-      g.src = `${BASE_URL}/packs/js/sdk.js`;
-      g.defer = true;
-      g.async = true;
-      s.parentNode.insertBefore(g, s);
-      g.onload = function () {
-        window.chatwootSDK.run({
-          websiteToken: "wDbXNafmeJPxJPAimstLMpZQ",
-          baseUrl: BASE_URL,
-        });
-      };
-    })(document, "script");
-  }, []);
-
-  useEffect(() => {
     setShowProfileBanner(
       !!orgBranding && !document.cookie.includes("calcom-profile-banner=1") && !user?.completedOnboarding
     );

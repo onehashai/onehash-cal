@@ -70,7 +70,7 @@ export const ANDROID_CHROME_ICON_192 = "/android-chrome-192x192.png";
 export const ANDROID_CHROME_ICON_256 = "/android-chrome-256x256.png";
 export const ROADMAP = "https://github.com/onehashai/onehash-cal/milestones";
 export const DESKTOP_APP_LINK = "https://www.onehash.ai";
-export const JOIN_DISCORD = "https://go.cal.com/discord";
+export const JOIN_DISCORD = "https://www.onehash.ai";
 export const POWERED_BY_URL = `${WEBSITE_URL}/?utm_source=embed&utm_medium=powered-by-button`;
 export const DOCS_URL = "https://help.onehash.ai/en/";
 export const DEVELOPER_DOCS = "https://help.onehash.ai/en/";
