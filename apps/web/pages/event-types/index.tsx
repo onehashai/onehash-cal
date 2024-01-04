@@ -70,7 +70,6 @@ import {
 
 import useMeQuery from "@lib/hooks/useMeQuery";
 
-import OneHashChatWidget from "@components/OneHashChatWidget";
 import PageWrapper from "@components/PageWrapper";
 import SkeletonLoader from "@components/eventtype/SkeletonLoader";
 import { UserAvatarGroup } from "@components/ui/avatar/UserAvatarGroup";
@@ -953,7 +952,6 @@ const EventTypesPage = () => {
         description="Create events to share for people to book on your calendar."
       />
       <Main data={data} status={status} errorMessage={error?.message} filters={filters} />
-      <OneHashChatWidget />
     </ShellMain>
   );
 };

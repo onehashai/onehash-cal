@@ -47,7 +47,7 @@ export default function Custom404() {
       title: t("blog"),
       description: t("blog_description"),
       icon: BookOpen,
-      href: `${WEBSITE_URL}/blog`,
+      href: "https://www.onehash.ai/blog",
     },
   ];
 
