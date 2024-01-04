@@ -85,7 +85,6 @@ import {
   Moon,
   MoreHorizontal,
   Settings,
-  MessageCircle,
   User as UserIcon,
   Users,
   Zap,
@@ -96,7 +95,6 @@ import { IS_VISUAL_REGRESSION_TESTING } from "@calcom/web/constants";
 import { useOrgBranding } from "../ee/organizations/context/provider";
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
 import OneHashChatProvider from "../ee/support/lib/onehashchat/OneHashChatProvider";
-import { useOneHashChat } from "../ee/support/lib/onehashchat/OneHashChatProvider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
 // need to import without ssr to prevent hydration errors
@@ -877,9 +875,6 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
     return publicPageUrl;
   }, [orgBranding?.slug, user?.username, user?.org?.id]);
 
-  const [active, setActive] = useState(false);
-  const { setActive: setOneHashChat } = useOneHashChat();
-
   const bottomNavItems: NavigationItemType[] = [
     {
       name: "view_public_page",
@@ -901,16 +896,6 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
       name: "settings",
       href: user?.org ? `/settings/organizations/profile` : "/settings/my-account/profile",
       icon: Settings,
-    },
-    {
-      name: "Support",
-      href: "",
-      onClick: (e: { preventDefault: () => void }) => {
-        e.preventDefault();
-        setActive(true);
-        setOneHashChat(true);
-      },
-      icon: MessageCircle,
     },
   ];
   return (

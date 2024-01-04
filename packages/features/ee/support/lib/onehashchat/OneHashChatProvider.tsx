@@ -17,7 +17,6 @@ interface OneHashChatProviderProps {
 export const useOneHashChat = () => useContext(OneHashChatContext);
 
 export default function OneHashChatProvider(props: OneHashChatProviderProps) {
-  console.log("In provider");
   const [active, setActive] = useState(true);
   return (
     <OneHashChatContext.Provider value={{ active, setActive }}>
