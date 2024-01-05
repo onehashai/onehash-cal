@@ -11,6 +11,7 @@ import { z } from "zod";
 import { getLayout } from "@calcom/features/MainLayout";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import useIntercom from "@calcom/features/ee/support/lib/intercom/useIntercom";
+import OneHashChatProvider from "@calcom/features/ee/support/lib/onehashchat/OneHashChatProvider";
 import { EventTypeEmbedButton, EventTypeEmbedDialog } from "@calcom/features/embed/EventTypeEmbed";
 import { EventTypeDescription } from "@calcom/features/eventtypes/components";
 import CreateEventTypeDialog from "@calcom/features/eventtypes/components/CreateEventTypeDialog";
@@ -951,7 +952,9 @@ const EventTypesPage = () => {
         title="Event Types"
         description="Create events to share for people to book on your calendar."
       />
-      <Main data={data} status={status} errorMessage={error?.message} filters={filters} />
+      <OneHashChatProvider>
+        <Main data={data} status={status} errorMessage={error?.message} filters={filters} />
+      </OneHashChatProvider>
     </ShellMain>
   );
 };

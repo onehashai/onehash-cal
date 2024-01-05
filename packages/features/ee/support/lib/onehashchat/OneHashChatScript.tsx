@@ -1,21 +1,25 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Script from "next/script";
+import { useEffect } from "react";
 
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chatwootSDK: any;
-    chatwootSettings: object;
+    chatwootSettings: any;
   }
 }
 
 export default function OneHashChatScript() {
   // const { data } = trpc.viewer.me.useQuery();
-  window.chatwootSettings = {
-    hideMessageBubble: false,
-    position: "right",
-    locale: "en",
-    type: "standard",
-  };
+
+  useEffect(() => {
+    window.chatwootSettings = {
+      hideMessageBubble: false,
+      position: "right",
+      locale: "en",
+      type: "standard",
+    };
+  }, []);
 
   return (
     <Script

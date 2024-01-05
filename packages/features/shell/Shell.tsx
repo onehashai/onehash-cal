@@ -94,7 +94,6 @@ import { IS_VISUAL_REGRESSION_TESTING } from "@calcom/web/constants";
 
 import { useOrgBranding } from "../ee/organizations/context/provider";
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
-import OneHashChatProvider from "../ee/support/lib/onehashchat/OneHashChatProvider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
 // need to import without ssr to prevent hydration errors
@@ -462,103 +461,91 @@ function UserDropdown({ small }: UserDropdownProps) {
 
       <DropdownMenuPortal>
         <FreshChatProvider>
-          <OneHashChatProvider>
-            <DropdownMenuContent
-              align="start"
-              onInteractOutside={() => {
-                setMenuOpen(false);
-                setHelpOpen(false);
-              }}
-              className="group overflow-hidden rounded-md">
-              {helpOpen ? (
-                <HelpMenuItem onHelpItemSelect={() => onHelpItemSelect()} />
-              ) : (
-                <>
-                  <DropdownMenuItem>
-                    <DropdownItem
-                      type="button"
-                      StartIcon={(props) => (
-                        <UserIcon
-                          className={classNames("text-default", props.className)}
-                          aria-hidden="true"
-                        />
-                      )}
-                      href="/settings/my-account/profile">
-                      {t("my_profile")}
-                    </DropdownItem>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <DropdownItem
-                      type="button"
-                      StartIcon={(props) => (
-                        <Settings
-                          className={classNames("text-default", props.className)}
-                          aria-hidden="true"
-                        />
-                      )}
-                      href="/settings/my-account/general">
-                      {t("my_settings")}
-                    </DropdownItem>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <DropdownItem
-                      type="button"
-                      StartIcon={(props) => (
-                        <Moon className={classNames("text-default", props.className)} aria-hidden="true" />
-                      )}
-                      onClick={() => {
-                        mutation.mutate({ away: !user.away });
-                      }}>
-                      {user.away ? t("set_as_free") : t("set_as_away")}
-                    </DropdownItem>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <DropdownItem
-                      StartIcon={() => <Discord className="text-default h-4 w-4" />}
-                      target="_blank"
-                      rel="noreferrer"
-                      href={JOIN_DISCORD}>
-                      {t("join_our_discord")}
-                    </DropdownItem>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <DropdownItem StartIcon={Map} target="_blank" href={ROADMAP}>
-                      {t("visit_roadmap")}
-                    </DropdownItem>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <DropdownItem
-                      type="button"
-                      StartIcon={(props) => <HelpCircle aria-hidden="true" {...props} />}
-                      onClick={() => setHelpOpen(true)}>
-                      {t("help")}
-                    </DropdownItem>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="desktop-hidden hidden lg:flex">
-                    <DropdownItem
-                      StartIcon={Download}
-                      target="_blank"
-                      rel="noreferrer"
-                      href={DESKTOP_APP_LINK}>
-                      {t("download_desktop_app")}
-                    </DropdownItem>
-                  </DropdownMenuItem>
+          <DropdownMenuContent
+            align="start"
+            onInteractOutside={() => {
+              setMenuOpen(false);
+              setHelpOpen(false);
+            }}
+            className="group overflow-hidden rounded-md">
+            {helpOpen ? (
+              <HelpMenuItem onHelpItemSelect={() => onHelpItemSelect()} />
+            ) : (
+              <>
+                <DropdownMenuItem>
+                  <DropdownItem
+                    type="button"
+                    StartIcon={(props) => (
+                      <UserIcon className={classNames("text-default", props.className)} aria-hidden="true" />
+                    )}
+                    href="/settings/my-account/profile">
+                    {t("my_profile")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <DropdownItem
+                    type="button"
+                    StartIcon={(props) => (
+                      <Settings className={classNames("text-default", props.className)} aria-hidden="true" />
+                    )}
+                    href="/settings/my-account/general">
+                    {t("my_settings")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <DropdownItem
+                    type="button"
+                    StartIcon={(props) => (
+                      <Moon className={classNames("text-default", props.className)} aria-hidden="true" />
+                    )}
+                    onClick={() => {
+                      mutation.mutate({ away: !user.away });
+                    }}>
+                    {user.away ? t("set_as_free") : t("set_as_away")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <DropdownItem
+                    StartIcon={() => <Discord className="text-default h-4 w-4" />}
+                    target="_blank"
+                    rel="noreferrer"
+                    href={JOIN_DISCORD}>
+                    {t("join_our_discord")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <DropdownItem StartIcon={Map} target="_blank" href={ROADMAP}>
+                    {t("visit_roadmap")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <DropdownItem
+                    type="button"
+                    StartIcon={(props) => <HelpCircle aria-hidden="true" {...props} />}
+                    onClick={() => setHelpOpen(true)}>
+                    {t("help")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="desktop-hidden hidden lg:flex">
+                  <DropdownItem StartIcon={Download} target="_blank" rel="noreferrer" href={DESKTOP_APP_LINK}>
+                    {t("download_desktop_app")}
+                  </DropdownItem>
+                </DropdownMenuItem>
 
-                  <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
 
-                  <DropdownMenuItem>
-                    <DropdownItem
-                      type="button"
-                      StartIcon={(props) => <LogOut aria-hidden="true" {...props} />}
-                      onClick={() => signOut({ callbackUrl: "/auth/logout" })}>
-                      {t("sign_out")}
-                    </DropdownItem>
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </OneHashChatProvider>
+                <DropdownMenuItem>
+                  <DropdownItem
+                    type="button"
+                    StartIcon={(props) => <LogOut aria-hidden="true" {...props} />}
+                    onClick={() => signOut({ callbackUrl: "/auth/logout" })}>
+                    {t("sign_out")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
         </FreshChatProvider>
       </DropdownMenuPortal>
     </Dropdown>
