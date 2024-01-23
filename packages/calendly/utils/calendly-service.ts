@@ -1,35 +1,68 @@
-import type { AxiosInstance, AxiosRequestConfig } from "axios";
+// calendly-service.ts
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axios from "axios";
 
-const { CALENDLY_CLIENT_ID, CALENDLY_CLIENT_SECRET, CALENDLY_AUTHORIZE_URL, CALENDLY_API_BASE_URL } =
-  process.env;
+import type { UserSuccessResponse, UserErrorResponse } from "./calendly";
 
-class CalendlyService {
-  accessToken: string;
-  refreshToken: string;
-  request: AxiosInstance;
-  requestInterceptor: number;
-  constructor(accessToken: string, refreshToken: string) {
-    this.accessToken = accessToken;
-    this.refreshToken = refreshToken;
+export default class CalendlyAPIService {
+  private apiConfig: {
+    accessToken: string;
+    refreshToken: string;
+    clientSecret: string;
+    clientID: string;
+    authorizeUrl: string;
+  };
+  private request: AxiosInstance;
+  private requestInterceptor: number;
+
+  constructor(apiConfig: {
+    accessToken: string;
+    refreshToken: string;
+    clientSecret: string;
+    clientID: string;
+    authorizeUrl: string;
+  }) {
+    const { accessToken, refreshToken, clientSecret, clientID, authorizeUrl } = apiConfig;
+    if (!accessToken || !refreshToken || !clientSecret || !clientID || !authorizeUrl)
+      throw new Error("Missing Calendly API configuration");
+    this.apiConfig = {
+      accessToken,
+      refreshToken,
+      clientSecret,
+      clientID,
+      authorizeUrl,
+    };
     this.request = axios.create({
-      baseURL: CALENDLY_API_BASE_URL,
+      baseURL: "https://api.calendly.com", // Adjust the base URL if needed
     });
 
     this.requestInterceptor = this.request.interceptors.response.use((res) => res, this._onCalendlyError);
   }
 
+  // Rest of the CalendlyService code remains unchanged
+  // ...
+
   requestConfiguration() {
+    const { accessToken } = this.apiConfig;
     return {
       headers: {
-        Authorization: `Bearer ${this.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     };
   }
 
-  getUserInfo = async () => {
-    const { data } = await this.request.get("/users/me", this.requestConfiguration());
-
+  /**
+   * Fetches  Calendly's user info via "/users/me" endpoint using current user's access_token.
+   * @returns {Promise<UserSuccessResponse | UserErrorResponse>} An object containing the access token .
+   * @throws {Error} If there is an error fetching the access token or if the response is not successful.
+   */
+  getUserInfo = async (): Promise<UserSuccessResponse | UserErrorResponse> => {
+    const res = await this.request.get("/users/me", this.requestConfiguration());
+    if (!this._isRequestResponseOk(res)) {
+      const errorData: UserErrorResponse = res.data;
+      console.error("Error fetching user info:", errorData.title, errorData.message);
+    }
+    const data: UserSuccessResponse = res.data;
     return data;
   };
 
@@ -152,11 +185,13 @@ class CalendlyService {
   };
 
   requestNewAccessToken = () => {
-    return axios.post(`${CALENDLY_AUTHORIZE_URL}/oauth/token`, {
-      client_id: CALENDLY_CLIENT_ID,
-      client_secret: CALENDLY_CLIENT_SECRET,
+    const { authorizeUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
+
+    return axios.post(`${authorizeUrl}/oauth/token`, {
+      client_id: clientID,
+      client_secret: clientSecret,
       grant_type: "refresh_token",
-      refresh_token: this.refreshToken,
+      refresh_token: refreshToken,
     });
   };
 
@@ -176,8 +211,11 @@ class CalendlyService {
       //     refreshToken: refresh_token,
       //   });
 
-      this.accessToken = access_token;
-      this.refreshToken = refresh_token;
+      this.apiConfig = {
+        ...this.apiConfig,
+        accessToken: access_token,
+        refreshToken: refresh_token,
+      };
 
       if (!error.response.config.headers) error.response.config.headers = {};
 
@@ -189,6 +227,8 @@ class CalendlyService {
       return Promise.reject(e);
     }
   };
-}
 
-module.exports = CalendlyService;
+  _isRequestResponseOk(response: AxiosResponse) {
+    return response.status >= 200 && response.status < 300;
+  }
+}

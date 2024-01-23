@@ -76,7 +76,7 @@ const ApiKeysView = () => {
 
       <>
         <>
-          {isLoading && <SkeletonLoader />}
+          {isLoading && <SkeletonLoader title="" description="" />}
           <div>
             {isLoading ? null : data?.length ? (
               <>

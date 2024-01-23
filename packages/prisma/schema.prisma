@@ -263,7 +263,8 @@ model User {
   //linkedUsers          User[]                  @relation("linked_account")*/
 
   // Used to lock the user account
-  locked Boolean @default(false)
+  locked              Boolean               @default(false)
+  integrationAccounts IntegrationAccounts[]
 
   @@unique([email])
   @@unique([email, username])
@@ -646,6 +647,28 @@ model HashedLink {
   link        String    @unique()
   eventType   EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   eventTypeId Int       @unique
+}
+
+model IntegrationAccounts {
+  // id           Int                 @id @default(autoincrement())
+  tokenType           String?
+  expiresIn           Int?
+  createdAt           Int?
+  refreshToken        String
+  accessToken         String
+  scope               String?
+  ownerUniqIdentifier String?
+  provider            IntegrationProvider
+  user                User                @relation(fields: [userId], references: [id])
+  userId              Int
+
+  @@id([userId, provider])
+  //a user can only have one integration account per provider
+  @@unique([userId, provider])
+}
+
+enum IntegrationProvider {
+  CALENDLY
 }
 
 model Account {

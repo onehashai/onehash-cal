@@ -5,6 +5,7 @@
       "cache": false,
       "dependsOn": ["post-install"]
     },
+
     "@calcom/prisma#db-migrate": {
       "cache": false,
       "dependsOn": ["@calcom/prisma#db-up"],
@@ -37,7 +38,8 @@
         "STRIPE_PREMIUM_PLAN_PRODUCT_ID",
         "STRIPE_TEAM_MONTHLY_PRICE_ID",
         "STRIPE_TEAM_PRODUCT_ID",
-        "STRIPE_ORG_MONTHLY_PRICE_ID"
+        "STRIPE_ORG_MONTHLY_PRICE_ID",
+        "NEXT_PUBLIC_CALENDLY_CLIENT_ID"
       ]
     },
     "@calcom/web#dx": {
@@ -89,12 +91,13 @@
         "MOTIFLAND_REST_ENDPOINT",
         "MOTIFLAND_DOCS_API_KEY",
         "MOTIFLAND_DOCS_PROJECT_ID",
-        "CALENDLY_CLIENT_ID",
-        "CALENDLY_CLIENT_SECRET",
-        "CALENDLY_REDIRECT_URI",
-        "CALENDLY_AUTHORIZE_URL",
-        "CALENDLY_TOKEN_URL",
-        "CALENDLY_API_BASE_URL"
+        "NEXT_PUBLIC_CALENDLY_API_BASE_URL",
+        "NEXT_PUBLIC_CALENDLY_TOKEN_URL",
+        "NEXT_PUBLIC_CALENDLY_AUTHORIZE_URL",
+        "NEXT_PUBLIC_CALENDLY_REDIRECT_URI",
+        "NEXT_PUBLIC_CALENDLY_WEBHOOK_SIGNING_KEY",
+        "NEXT_PUBLIC_CALENDLY_CLIENT_SECRET",
+        "NEXT_PUBLIC_CALENDLY_CLIENT_ID"
       ]
     },
     "build": {
