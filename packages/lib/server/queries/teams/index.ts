@@ -357,8 +357,26 @@ export async function userHasPaidTeam(userId: number) {
     },
     select: { metadata: true },
   });
-  console.log(teams);
   const hasTeamWithActiveSubscription = teams.some((team) => team.metadata?.subscriptionStatus === "active");
 
   return hasTeamWithActiveSubscription;
+}
+
+export async function userHasActiveTeam(userId: number) {
+  const teams = await prisma.team.findMany({
+    where: {
+      members: {
+        some: {
+          userId,
+          OR: [{ role: "ADMIN" }, { role: "OWNER" }],
+        },
+      },
+    },
+    select: { metadata: true },
+  });
+  const hasActiveTeam = teams.some(
+    (team) => team.metadata?.subscriptionStatus === "active" || team.metadata?.subscriptionStatus === "trial"
+  );
+
+  return hasActiveTeam;
 }

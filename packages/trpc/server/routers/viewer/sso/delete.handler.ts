@@ -16,9 +16,9 @@ type DeleteOptions = {
 export const deleteHandler = async ({ ctx, input }: DeleteOptions) => {
   const { connectionController } = await jackson();
 
-  const { teamId } = input;
+  const { userId } = input;
 
-  const { message, access } = await canAccess(ctx.user, teamId);
+  const { message, access } = await canAccess(ctx.user);
 
   if (!access) {
     throw new TRPCError({
@@ -29,7 +29,7 @@ export const deleteHandler = async ({ ctx, input }: DeleteOptions) => {
 
   try {
     return await connectionController.deleteConnections({
-      tenant: teamId ? tenantPrefix + teamId : samlTenantID,
+      tenant: userId ? tenantPrefix + userId : samlTenantID,
       product: samlProductID,
     });
   } catch (err) {

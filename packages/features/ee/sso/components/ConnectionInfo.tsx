@@ -14,10 +14,10 @@ import {
 import { Clipboard } from "@calcom/ui/components/icon";
 
 export default function ConnectionInfo({
-  teamId,
+  userId,
   connection,
 }: {
-  teamId: number | null;
+  userId: number | null;
   connection: SSOConnection;
 }) {
   const { t } = useLocale();
@@ -40,7 +40,7 @@ export default function ConnectionInfo({
 
   const deleteConnection = async () => {
     mutation.mutate({
-      teamId,
+      userId,
     });
   };
 

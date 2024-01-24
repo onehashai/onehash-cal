@@ -10,7 +10,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
-import { HOSTED_CAL_FEATURES, WEBAPP_URL } from "@calcom/lib/constants";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
@@ -128,7 +128,7 @@ const tabs: VerticalTabItemProps[] = [
 
 tabs.find((tab) => {
   // Add "SAML SSO" to the tab
-  if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
+  if (tab.name === "security") {
     tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
   }
 });
@@ -431,7 +431,7 @@ const SettingsSidebarContainer = ({
                                     {/* Hide if there is a parent ID */}
                                     {!team.parentId ? (
                                       <>
-                                        <VerticalTabItem
+                                        {/* <VerticalTabItem
                                           name={t("billing")}
                                           href={`/settings/teams/${team.id}/billing`}
                                           textClassNames="px-3 text-emphasis font-medium text-sm"
@@ -444,7 +444,7 @@ const SettingsSidebarContainer = ({
                                             textClassNames="px-3 text-emphasis font-medium text-sm"
                                             disableChevron
                                           />
-                                        )}
+                                        )} */}
                                       </>
                                     ) : null}
                                   </>

@@ -11,10 +11,10 @@ interface FormValues {
 }
 
 export default function SAMLConnection({
-  teamId,
+  userId,
   connection,
 }: {
-  teamId: number | null;
+  userId: number | null;
   connection: SSOConnection | null;
 }) {
   const { t } = useLocale();
@@ -37,17 +37,17 @@ export default function SAMLConnection({
           </div>
         )}
       </div>
-      <CreateConnectionDialog teamId={teamId} openModal={openModal} setOpenModal={setOpenModal} />
+      <CreateConnectionDialog userId={userId} openModal={openModal} setOpenModal={setOpenModal} />
     </div>
   );
 }
 
 const CreateConnectionDialog = ({
-  teamId,
+  userId,
   openModal,
   setOpenModal,
 }: {
-  teamId: number | null;
+  userId: number | null;
   openModal: boolean;
   setOpenModal: (open: boolean) => void;
 }) => {
@@ -78,7 +78,7 @@ const CreateConnectionDialog = ({
           form={form}
           handleSubmit={(values) => {
             mutation.mutate({
-              teamId,
+              userId,
               encodedRawMetadata: Buffer.from(values.metadata).toString("base64"),
             });
           }}>

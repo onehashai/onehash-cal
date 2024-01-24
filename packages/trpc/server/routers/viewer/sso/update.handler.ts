@@ -16,9 +16,9 @@ type UpdateOptions = {
 export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
   const { connectionController } = await jackson();
 
-  const { encodedRawMetadata, teamId } = input;
+  const { encodedRawMetadata, userId } = input;
 
-  const { message, access } = await canAccess(ctx.user, teamId);
+  const { message, access } = await canAccess(ctx.user);
 
   if (!access) {
     throw new TRPCError({
@@ -32,7 +32,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
       encodedRawMetadata,
       defaultRedirectUrl: `${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/saml-idp`,
       redirectUrl: JSON.stringify([`${process.env.NEXT_PUBLIC_WEBAPP_URL}/*`]),
-      tenant: teamId ? tenantPrefix + teamId : samlTenantID,
+      tenant: userId ? tenantPrefix + userId : samlTenantID,
       product: samlProductID,
     });
   } catch (err) {

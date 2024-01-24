@@ -5,6 +5,7 @@ import OIDCConnection from "@calcom/features/ee/sso/components/OIDCConnection";
 import SAMLConnection from "@calcom/features/ee/sso/components/SAMLConnection";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
+import type { RouterOutputs } from "@calcom/trpc/react";
 import { Meta, Alert, SkeletonContainer, SkeletonText } from "@calcom/ui";
 
 const SkeletonLoader = ({ title, description }: { title: string; description: string }) => {
@@ -20,12 +21,13 @@ const SkeletonLoader = ({ title, description }: { title: string; description: st
   );
 };
 
-export default function SSOConfiguration({ teamId }: { teamId: number | null }) {
+export default function SSOConfiguration({ user }: { user: RouterOutputs["viewer"]["me"] }) {
   const [errorMessage, setErrorMessage] = useState("");
+  const userId = user.id;
   const { t } = useLocale();
 
   const { data: connection, isLoading } = trpc.viewer.saml.get.useQuery(
-    { teamId },
+    { userId },
     {
       onError: (err) => {
         setErrorMessage(err.message);
@@ -55,8 +57,8 @@ export default function SSOConfiguration({ teamId }: { teamId: number | null }) 
     return (
       <>
         <div className="[&>*]:border-subtle flex flex-col [&>*:last-child]:rounded-b-xl [&>*]:border [&>*]:border-t-0 [&>*]:px-4 [&>*]:py-6 [&>*]:sm:px-6">
-          <SAMLConnection teamId={teamId} connection={null} />
-          <OIDCConnection teamId={teamId} connection={null} />
+          <SAMLConnection userId={userId} connection={null} />
+          {/* <OIDCConnection userId={userId} connection={null} /> */}
         </div>
       </>
     );
@@ -66,11 +68,11 @@ export default function SSOConfiguration({ teamId }: { teamId: number | null }) 
     <>
       <div className="[&>*]:border-subtle flex flex-col [&>*:last-child]:rounded-b-xl [&>*]:border [&>*]:border-t-0 [&>*]:px-4 [&>*]:py-6 [&>*]:sm:px-6">
         {connection.type === "saml" ? (
-          <SAMLConnection teamId={teamId} connection={connection} />
+          <SAMLConnection userId={userId} connection={connection} />
         ) : (
-          <OIDCConnection teamId={teamId} connection={connection} />
+          <OIDCConnection userId={userId} connection={connection} />
         )}
-        <ConnectionInfo teamId={teamId} connection={connection} />
+        <ConnectionInfo userId={userId} connection={connection} />
       </div>
     </>
   );
