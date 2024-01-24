@@ -10,28 +10,33 @@ export default class CalendlyAPIService {
     refreshToken: string;
     clientSecret: string;
     clientID: string;
-    authorizeUrl: string;
+    oauthUrl: string;
   };
   private request: AxiosInstance;
   private requestInterceptor: number;
+  updateTokensinDBCallback?: (newAccessToken: string, newRefreshToken: string) => Promise<void>;
 
-  constructor(apiConfig: {
-    accessToken: string;
-    refreshToken: string;
-    clientSecret: string;
-    clientID: string;
-    authorizeUrl: string;
-  }) {
-    const { accessToken, refreshToken, clientSecret, clientID, authorizeUrl } = apiConfig;
-    if (!accessToken || !refreshToken || !clientSecret || !clientID || !authorizeUrl)
+  constructor(
+    apiConfig: {
+      accessToken: string;
+      refreshToken: string;
+      clientSecret: string;
+      clientID: string;
+      oauthUrl: string;
+    },
+    updateTokensinDBCallback?: (newAccessToken: string, newRefreshToken: string) => Promise<void>
+  ) {
+    const { accessToken, refreshToken, clientSecret, clientID, oauthUrl } = apiConfig;
+    if (!accessToken || !refreshToken || !clientSecret || !clientID || !oauthUrl)
       throw new Error("Missing Calendly API configuration");
     this.apiConfig = {
       accessToken,
       refreshToken,
       clientSecret,
       clientID,
-      authorizeUrl,
+      oauthUrl,
     };
+    this.updateTokensinDBCallback = updateTokensinDBCallback;
     this.request = axios.create({
       baseURL: "https://api.calendly.com", // Adjust the base URL if needed
     });
@@ -185,9 +190,9 @@ export default class CalendlyAPIService {
   };
 
   requestNewAccessToken = () => {
-    const { authorizeUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
+    const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
 
-    return axios.post(`${authorizeUrl}/oauth/token`, {
+    return axios.post(`${oauthUrl}/token`, {
       client_id: clientID,
       client_secret: clientSecret,
       grant_type: "refresh_token",
@@ -195,6 +200,7 @@ export default class CalendlyAPIService {
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _onCalendlyError = async (error: { response: { status: number; config: AxiosRequestConfig<any> } }) => {
     if (error.response.status !== 401) return Promise.reject(error);
 
@@ -203,13 +209,6 @@ export default class CalendlyAPIService {
     try {
       const response = await this.requestNewAccessToken();
       const { access_token, refresh_token } = response.data;
-
-      //   const user = await User.findByAccessToken(this.accessToken);
-
-      //   await User.update(user.id, {
-      //     accessToken: access_token,
-      //     refreshToken: refresh_token,
-      //   });
 
       this.apiConfig = {
         ...this.apiConfig,
@@ -220,6 +219,11 @@ export default class CalendlyAPIService {
       if (!error.response.config.headers) error.response.config.headers = {};
 
       error.response.config.headers.Authorization = `Bearer ${access_token}`;
+
+      // Call the callback function to update tokens in the database
+      if (this.updateTokensinDBCallback) {
+        await this.updateTokensinDBCallback(access_token, refresh_token);
+      }
 
       // retry original request with new access token
       return this.request(error.response.config);

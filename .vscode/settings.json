@@ -9,6 +9,6 @@
   },
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "spellright.language": ["en"],
-  "spellright.documentTypes": ["markdown"],
+  "spellright.documentTypes": [],
   "tailwindCSS.experimental.classRegex": [["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]]
 }

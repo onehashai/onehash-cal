@@ -7279,6 +7279,9 @@ __metadata:
 "@onehash/calendly@*, @onehash/calendly@workspace:packages/calendly":
   version: 0.0.0-use.local
   resolution: "@onehash/calendly@workspace:packages/calendly"
+  dependencies:
+    "@types/axios": ^0.14.0
+    axios: ^1.6.5
   languageName: unknown
   linkType: soft
 
@@ -11146,6 +11149,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/axios@npm:^0.14.0":
+  version: 0.14.0
+  resolution: "@types/axios@npm:0.14.0"
+  dependencies:
+    axios: "*"
+  checksum: 12a230b9404055d81804cb57fe4739b2317111b28a39e2477b2513250e8b85725e6f6ce509fc2a9494a6da60facb8d80df875fcd747f62f6c3abebc7db60ae66
+  languageName: node
+  linkType: hard
+
 "@types/babel__core@npm:^7.0.0, @types/babel__core@npm:^7.18.0":
   version: 7.20.5
   resolution: "@types/babel__core@npm:7.20.5"
@@ -13707,6 +13719,17 @@ __metadata:
     "@babel/runtime": ^7.15.4
     is-retry-allowed: ^2.2.0
   checksum: fae18aeef220cfde22f93ed663d644e1a913a5cfc9760904ffd7a7e5ec8c7fbd53a58e1be461b6b30de19dce178823630655bcb77a487e17000f5e977ef94a2e
+  languageName: node
+  linkType: hard
+
+"axios@npm:*, axios@npm:^1.6.5":
+  version: 1.6.5
+  resolution: "axios@npm:1.6.5"
+  dependencies:
+    follow-redirects: ^1.15.4
+    form-data: ^4.0.0
+    proxy-from-env: ^1.1.0
+  checksum: e28d67b2d9134cb4608c44d8068b0678cfdccc652742e619006f27264a30c7aba13b2cd19c6f1f52ae195b5232734925928fb192d5c85feea7edd2f273df206d
   languageName: node
   linkType: hard
 
@@ -18977,6 +19000,16 @@ __metadata:
     debug:
       optional: true
   checksum: faa66059b66358ba65c234c2f2a37fcec029dc22775f35d9ad6abac56003268baf41e55f9ee645957b32c7d9f62baf1f0b906e68267276f54ec4b4c597c2b190
+  languageName: node
+  linkType: hard
+
+"follow-redirects@npm:^1.15.4":
+  version: 1.15.5
+  resolution: "follow-redirects@npm:1.15.5"
+  peerDependenciesMeta:
+    debug:
+      optional: true
+  checksum: 5ca49b5ce6f44338cbfc3546823357e7a70813cecc9b7b768158a1d32c1e62e7407c944402a918ea8c38ae2e78266312d617dc68783fac502cbb55e1047b34ec
   languageName: node
   linkType: hard
 
