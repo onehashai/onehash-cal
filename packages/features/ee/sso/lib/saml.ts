@@ -6,8 +6,8 @@ import { userHasActiveTeam } from "@calcom/lib/server/queries/teams";
 export const samlDatabaseUrl = process.env.SAML_DATABASE_URL || "";
 export const isSAMLLoginEnabled = samlDatabaseUrl.length > 0;
 
-export const samlTenantID = "testsaml";
-export const samlProductID = "testsaml";
+export const samlTenantID = "OneHash";
+export const samlProductID = "cal";
 export const samlAudience = "https://saml.cal.id";
 export const samlPath = "/api/auth/saml/callback";
 export const oidcPath = "/api/auth/oidc";
