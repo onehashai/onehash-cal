@@ -1,17 +1,24 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { trpc } from "@calcom/trpc/react";
-import { AppSkeletonLoader as SkeletonLoader, Meta } from "@calcom/ui";
+import { Meta } from "@calcom/ui";
 
 import { getLayout } from "../../../settings/layouts/SettingsLayout";
 import SSOConfiguration from "../components/SSOConfiguration";
 
 const SAMLSSO = () => {
   const { t } = useLocale();
-  const { data: user, isLoading } = trpc.viewer.me.useQuery();
+  const router = useRouter();
 
-  if (isLoading) {
-    return <SkeletonLoader />;
-  }
+  useEffect(() => {
+    if (HOSTED_CAL_FEATURES) {
+      router.push("/404");
+    }
+  }, []);
 
   return (
     <div className="bg-default w-full sm:mx-0">
@@ -20,7 +27,7 @@ const SAMLSSO = () => {
         description={t("sso_configuration_description")}
         borderInShellHeader={true}
       />
-      <SSOConfiguration user={user} />
+      <SSOConfiguration teamId={null} />
     </div>
   );
 };

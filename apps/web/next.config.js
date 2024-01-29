@@ -155,7 +155,57 @@ const matcherConfigUserTypeEmbedRoute = {
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ["next-i18next"],
+    // externalize server-side node_modules with size > 1mb, to improve dev mode performance/RAM usage
+    serverComponentsExternalPackages: [
+      "next-i18next",
+      "googleapis",
+      "twilio",
+      "@hubspot",
+      "ews-javascript-api",
+      "typeorm",
+      "cli-highlight",
+      "tedious",
+      "@azure",
+      "date-fns",
+      "react-awesome-query-builder",
+      "node-forge",
+      "@boxyhq",
+      "@redis",
+      "svix",
+      "@tryvital",
+      "handlebars",
+      "libphonenumber-js",
+      "auth0",
+      "mysql2",
+      "city-timezones",
+      "nodemailer",
+      "@js-joda",
+      "prisma",
+      "mongodb",
+      "jsforce",
+      "@aws-sdk",
+      "lodash",
+      "superagent",
+      "openid-client",
+      "@sentry",
+      "@upstash",
+      "utif",
+      "ical.js",
+      "@jimp",
+      "har-validator",
+      "sshpk",
+      "jose",
+      "entities",
+      "google-auth-library",
+      "fetch",
+      "markdown-it",
+      "stripe",
+      "bluebird",
+      "request",
+      "raw-body",
+      "iconv-lite",
+      "xml2js",
+    ],
   },
   i18n: {
     ...i18n,
@@ -572,6 +622,8 @@ if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
   nextConfig["sentry"] = {
     autoInstrumentServerFunctions: true,
     hideSourceMaps: true,
+    // disable source map generation for the server code
+    disableServerWebpackPlugin: !!process.env.SENTRY_DISABLE_SERVER_WEBPACK_PLUGIN,
   };
 
   plugins.push(withSentryConfig);

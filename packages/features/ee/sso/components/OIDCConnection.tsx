@@ -13,10 +13,10 @@ type FormValues = {
 };
 
 export default function OIDCConnection({
-  userId,
+  teamId,
   connection,
 }: {
-  userId: number | null;
+  teamId: number | null;
   connection: SSOConnection | null;
 }) {
   const { t } = useLocale();
@@ -39,17 +39,17 @@ export default function OIDCConnection({
           </div>
         )}
       </div>
-      <CreateConnectionDialog userId={userId} openModal={openModal} setOpenModal={setOpenModal} />
+      <CreateConnectionDialog teamId={teamId} openModal={openModal} setOpenModal={setOpenModal} />
     </div>
   );
 }
 
 const CreateConnectionDialog = ({
-  userId,
+  teamId,
   openModal,
   setOpenModal,
 }: {
-  userId: number | null;
+  teamId: number | null;
   openModal: boolean;
   setOpenModal: (open: boolean) => void;
 }) => {
@@ -82,7 +82,7 @@ const CreateConnectionDialog = ({
             const { clientId, clientSecret, wellKnownUrl } = values;
 
             mutation.mutate({
-              userId,
+              teamId,
               clientId,
               clientSecret,
               wellKnownUrl,

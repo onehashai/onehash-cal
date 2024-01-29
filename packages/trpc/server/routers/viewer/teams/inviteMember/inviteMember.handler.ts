@@ -2,6 +2,7 @@ import { updateTrialSubscription } from "@calcom/ee/teams/lib/payments";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { getTranslation } from "@calcom/lib/server/i18n";
+import { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
 import { isOrganisationOwner } from "@calcom/lib/server/queries/organisations";
 import { adminTeamMembers } from "@calcom/lib/server/queries/teams";
 import { prisma } from "@calcom/prisma";
@@ -131,6 +132,22 @@ export const inviteMemberHandler = async ({ ctx, input }: InviteMemberOptions) =
                 : input.role,
           };
         }),
+      });
+
+      await Promise.all(
+        autoJoinUsers.map(async (userToAutoJoin) => {
+          await updateNewTeamMemberEventTypes(userToAutoJoin.id, team.id);
+        })
+      );
+
+      await sendTeamInviteEmails({
+        currentUserName: ctx?.user?.name,
+        currentUserTeamName: team?.name,
+        existingUsersWithMembersips: autoJoinUsers,
+        language: translation,
+        isOrg: input.isOrg,
+        teamId: team.id,
+        currentUserParentTeamName: team?.parent?.name,
       });
     }
 

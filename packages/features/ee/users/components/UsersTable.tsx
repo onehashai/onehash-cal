@@ -1,29 +1,43 @@
-import { useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useDebounce } from "@calcom/lib/hooks/useDebounce";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import {
+  Avatar,
   Badge,
+  Button,
   ConfirmationDialogContent,
   Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
   DropdownActions,
   showToast,
   Table,
   TextField,
-  Avatar,
 } from "@calcom/ui";
-import { Edit, Trash, Lock } from "@calcom/ui/components/icon";
+import { Edit, Lock, Trash, User, VenetianMask } from "@calcom/ui/components/icon";
+
+import { withLicenseRequired } from "../../common/components/LicenseRequired";
 
 const { Cell, ColumnTitle, Header, Row } = Table;
 
 const FETCH_LIMIT = 25;
 
 function UsersTableBare() {
+  const { t } = useLocale();
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useContext();
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [showImpersonateModal, setShowImpersonateModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const router = useRouter();
 
   const mutation = trpc.viewer.users.delete.useMutation({
     onSuccess: async () => {
@@ -63,7 +77,7 @@ function UsersTableBare() {
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-      keepPreviousData: true,
+      placeholderData: keepPreviousData,
       refetchOnWindowFocus: false,
     }
   );
@@ -98,6 +112,11 @@ function UsersTableBare() {
       });
     },
   });
+
+  const handleImpersonateUser = async (username: string | null) => {
+    await signIn("impersonation-auth", { redirect: false, username: username });
+    router.push(`/event-types`);
+  };
 
   //we must flatten the array of arrays from the useInfiniteQuery hook
   const flatData = useMemo(() => data?.pages?.flatMap((page) => page.rows) ?? [], [data]);
@@ -134,7 +153,7 @@ function UsersTableBare() {
       <div
         className="border-subtle rounded-md border"
         ref={tableContainerRef}
-        onScroll={() => fetchMoreOnBottomReached(tableContainerRef.current)}
+        onScroll={() => fetchMoreOnBottomReached()}
         style={{
           height: "calc(100vh - 30vh)",
           overflow: "auto",
@@ -196,10 +215,25 @@ function UsersTableBare() {
                           icon: Lock,
                         },
                         {
+                          id: "impersonate-user",
+                          label: "Impersonate User",
+                          onClick: () => handleImpersonateUser(user?.username),
+                          icon: User,
+                        },
+                        {
                           id: "lock-user",
                           label: user.locked ? "Unlock User Account" : "Lock User Account",
                           onClick: () => lockUserAccount.mutate({ userId: user.id, locked: !user.locked }),
                           icon: Lock,
+                        },
+                        {
+                          id: "impersonation",
+                          label: "Impersonate",
+                          onClick: () => {
+                            setSelectedUser(user.username);
+                            setShowImpersonateModal(true);
+                          },
+                          icon: VenetianMask,
                         },
                         {
                           id: "delete",
@@ -225,6 +259,26 @@ function UsersTableBare() {
           }}
         />
       </div>
+      {showImpersonateModal && selectedUser && (
+        <Dialog open={showImpersonateModal} onOpenChange={() => setShowImpersonateModal(false)}>
+          <DialogContent type="creation" title={t("impersonate")} description={t("impersonation_user_tip")}>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await signIn("impersonation-auth", { redirect: false, username: selectedUser });
+                setShowImpersonateModal(false);
+                router.replace("/settings/my-account/profile");
+              }}>
+              <DialogFooter showDivider className="mt-8">
+                <DialogClose color="secondary">{t("cancel")}</DialogClose>
+                <Button color="primary" type="submit">
+                  {t("impersonate")}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
@@ -253,4 +307,4 @@ const DeleteUserDialog = ({
   );
 };
 
-export const UsersTable = UsersTableBare;
+export const UsersTable = withLicenseRequired(UsersTableBare);

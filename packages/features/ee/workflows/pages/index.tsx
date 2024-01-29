@@ -1,3 +1,5 @@
+"use client";
+
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
@@ -16,6 +18,7 @@ import { AnimatedPopover, Avatar, CreateButtonWithTeamsList, showToast } from "@
 import { FilterResults } from "../../../filters/components/FilterResults";
 import { TeamsFilter } from "../../../filters/components/TeamsFilter";
 import { getTeamsFiltersFromQuery } from "../../../filters/lib/getTeamsFiltersFromQuery";
+import LicenseRequired from "../../common/components/LicenseRequired";
 import EmptyScreen from "../components/EmptyScreen";
 import SkeletonLoader from "../components/SkeletonLoaderList";
 import WorkflowList from "../components/WorkflowListPage";
@@ -61,13 +64,13 @@ function WorkflowsPage() {
             createFunction={(teamId?: number) => {
               createMutation.mutate({ teamId });
             }}
-            isLoading={createMutation.isLoading}
+            isPending={createMutation.isPending}
             disableMobileButton={true}
             onlyShowWithNoTeams={true}
           />
         ) : null
       }>
-      <>
+      <LicenseRequired>
         <>
           {queryRes.data?.totalCount ? (
             <div className="flex">
@@ -76,7 +79,7 @@ function WorkflowsPage() {
                 <CreateButtonWithTeamsList
                   subtitle={t("new_workflow_subtitle").toUpperCase()}
                   createFunction={(teamId?: number) => createMutation.mutate({ teamId })}
-                  isLoading={createMutation.isLoading}
+                  isPending={createMutation.isPending}
                   disableMobileButton={true}
                   onlyShowWithTeams={true}
                 />
@@ -91,7 +94,7 @@ function WorkflowsPage() {
             <WorkflowList workflows={queryRes.data?.filtered} />
           </FilterResults>
         </>
-      </>
+      </LicenseRequired>
     </ShellMain>
   );
 }

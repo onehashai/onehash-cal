@@ -29,7 +29,7 @@ export const AboutOrganizationForm = () => {
   const updateOrganizationMutation = trpc.viewer.organizations.update.useMutation({
     onSuccess: (data) => {
       if (data.update) {
-        router.push(`/settings/organizations/${orgId}/onboard-admins`);
+        router.push(`/settings/organizations/${orgId}/onboard-members`);
       }
     },
     onError: (err) => {
@@ -43,7 +43,7 @@ export const AboutOrganizationForm = () => {
         form={aboutOrganizationFormMethods}
         className="space-y-5"
         handleSubmit={(v) => {
-          if (!updateOrganizationMutation.isLoading) {
+          if (!updateOrganizationMutation.isPending) {
             setServerErrorMessage(null);
             updateOrganizationMutation.mutate({ ...v, orgId });
           }
@@ -109,12 +109,12 @@ export const AboutOrganizationForm = () => {
         <div className="flex">
           <Button
             disabled={
-              aboutOrganizationFormMethods.formState.isSubmitting || updateOrganizationMutation.isLoading
+              aboutOrganizationFormMethods.formState.isSubmitting || updateOrganizationMutation.isPending
             }
             color="primary"
             EndIcon={ArrowRight}
             type="submit"
-            className="w-full justify-center bg-blue-500 hover:bg-blue-600">
+            className="w-full justify-center">
             {t("continue")}
           </Button>
         </div>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
@@ -21,11 +22,11 @@ const querySchema = z.object({
   slug: z.string().optional(),
 });
 
-const isTeamBillingEnabledClient = !!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
+const isTeamBillingEnabledClient = !!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY && HOSTED_CAL_FEATURES;
 const flag = isTeamBillingEnabledClient
   ? {
       telemetryEvent: telemetryEventTypes.team_checkout_session_created,
-      submitLabel: "continue",
+      submitLabel: "checkout",
     }
   : {
       telemetryEvent: telemetryEventTypes.team_created,
@@ -70,7 +71,7 @@ export const CreateANewTeamForm = () => {
       <Form
         form={newTeamFormMethods}
         handleSubmit={(v) => {
-          if (!createTeamMutation.isLoading) {
+          if (!createTeamMutation.isPending) {
             setServerErrorMessage(null);
             createTeamMutation.mutate(v);
           }
@@ -94,7 +95,7 @@ export const CreateANewTeamForm = () => {
                 <TextField
                   disabled={
                     /* E2e is too fast and it tries to fill this way before the form is ready */
-                    !isLocaleReady || createTeamMutation.isLoading
+                    !isLocaleReady || createTeamMutation.isPending
                   }
                   className="mt-2"
                   placeholder="Acme Inc."
@@ -108,6 +109,7 @@ export const CreateANewTeamForm = () => {
                     }
                   }}
                   autoComplete="off"
+                  data-testid="team-name"
                 />
               </>
             )}
@@ -145,18 +147,19 @@ export const CreateANewTeamForm = () => {
 
         <div className="flex space-x-2 rtl:space-x-reverse">
           <Button
-            disabled={createTeamMutation.isLoading}
+            disabled={createTeamMutation.isPending}
             color="secondary"
             href={returnToParam}
             className="w-full justify-center">
             {t("cancel")}
           </Button>
           <Button
-            disabled={newTeamFormMethods.formState.isSubmitting || createTeamMutation.isLoading}
+            disabled={newTeamFormMethods.formState.isSubmitting || createTeamMutation.isPending}
             color="primary"
             EndIcon={ArrowRight}
             type="submit"
-            className="w-full justify-center bg-blue-500 hover:bg-blue-600">
+            className="w-full justify-center"
+            data-testid="continue-button">
             {t(flag.submitLabel)}
           </Button>
         </div>
