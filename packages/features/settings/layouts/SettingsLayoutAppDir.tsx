@@ -10,6 +10,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
+import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
@@ -128,7 +129,7 @@ const tabs: VerticalTabItemProps[] = [
 
 tabs.find((tab) => {
   // Add "SAML SSO" to the tab
-  if (tab.name === "security") {
+  if (tab.name === "security" && HOSTED_CAL_FEATURES) {
     tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
   }
 });

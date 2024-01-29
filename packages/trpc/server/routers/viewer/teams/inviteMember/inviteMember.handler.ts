@@ -1,17 +1,15 @@
-import { updateTrialSubscription } from "@calcom/ee/teams/lib/payments";
+import { updateQuantitySubscriptionFromStripe } from "@calcom/features/ee/teams/lib/payments";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
 import { isOrganisationOwner } from "@calcom/lib/server/queries/organisations";
-import { adminTeamMembers } from "@calcom/lib/server/queries/teams";
 import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
 import { TRPCError } from "@trpc/server";
 
-import { checkIfUserUnderTrial } from "../publish.handler";
 import type { TInviteMemberInputSchema } from "./inviteMember.schema";
 import {
   checkPermissions,
@@ -170,24 +168,13 @@ export const inviteMemberHandler = async ({ ctx, input }: InviteMemberOptions) =
   }
 
   if (IS_TEAM_BILLING_ENABLED) {
-    const isUserUnderTrial = await checkIfUserUnderTrial(ctx.user.id);
     if (team.parentId) {
-      if (isUserUnderTrial) {
-        const totalSeats = await adminTeamMembers(ctx.user.id);
-        if (totalSeats.length !== 0) {
-          await updateTrialSubscription(ctx.user.id, totalSeats.length);
-        }
-      }
+      await updateQuantitySubscriptionFromStripe(team.parentId);
     } else {
-      const totalSeats = await adminTeamMembers(ctx.user.id);
-      if (isUserUnderTrial) {
-        if (totalSeats.length !== 0) {
-          await updateTrialSubscription(ctx.user.id, totalSeats.length);
-        }
-      }
+      await updateQuantitySubscriptionFromStripe(input.teamId);
     }
-    return input;
   }
+  return input;
 };
 
 export default inviteMemberHandler;

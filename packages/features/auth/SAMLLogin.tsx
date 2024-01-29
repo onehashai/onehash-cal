@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useFormContext } from "react-hook-form";
 import z from "zod";
 
+import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui";
@@ -40,10 +41,10 @@ export function SAMLLogin({ samlTenantID, samlProductID, setErrorMessage }: Prop
       onClick={async (event) => {
         event.preventDefault();
 
-        // if (!HOSTED_CAL_FEATURES) {
-        //   await signIn("saml", {}, { tenant: samlTenantID, product: samlProductID });
-        //   return;
-        // }
+        if (!HOSTED_CAL_FEATURES) {
+          await signIn("saml", {}, { tenant: samlTenantID, product: samlProductID });
+          return;
+        }
 
         // Hosted solution, fetch tenant and product from the backend
         const email = methods.getValues("email");
