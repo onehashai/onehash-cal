@@ -330,9 +330,9 @@ export const userMetadata = z
       .optional(),
     defaultBookerLayouts: bookerLayouts.optional(),
     // Billing is done on team owners
-    paymentId: z.string().optional(),
-    subscriptionId: z.string().optional(),
-    subscriptionItemId: z.string().optional(),
+    // paymentId: z.string().optional(),
+    // subscriptionId: z.string().optional(),
+    // subscriptionItemId: z.string().optional(),
   })
   .nullable();
 
@@ -341,12 +341,12 @@ export type userMetadataType = z.infer<typeof userMetadata>;
 export const teamMetadataSchema = z
   .object({
     requestedSlug: z.string(),
-    paidForByUserId: z.number().optional(),
-    subscriptionStatus: z.string().optional(),
+    // paidForByUserId: z.number().optional(),
+    // subscriptionStatus: z.string().optional(),
     // This is defualt cal.com schema where they take payments for teams
-    // paymentId: z.string(),
-    // subscriptionId: z.string().nullable(),
-    // subscriptionItemId: z.string().nullable(),
+    paymentId: z.string(),
+    subscriptionId: z.string().nullable(),
+    subscriptionItemId: z.string().nullable(),
     isOrganization: z.boolean().nullable(),
     isOrganizationVerified: z.boolean().nullable(),
     isOrganizationConfigured: z.boolean().nullable(),
