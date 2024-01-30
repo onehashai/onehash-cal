@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Sua conta é gerenciada por {{provider}}",
   "account_managed_by_identity_provider_description": "Para alterar o seu endereço de email, senha, ativar a autenticação de dois fatores e outras alterações, por favor utilize as configurações de seu provedor de identidade {{provider}}.",
   "signin_with_google": "Entrar com Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Entrar com SAML",
   "signin_with_saml_oidc": "Entrar com SAML/OIDC",
   "you_will_need_to_generate": "Você precisa gerar um token de acesso na ferramenta de agendamento antiga.",

@@ -166,12 +166,14 @@ export default function Signup({
   token,
   orgSlug,
   isGoogleLoginEnabled,
+  isOIDCLoginEnabled,
   isSAMLLoginEnabled,
   orgAutoAcceptEmail,
 }: SignupProps) {
   const [premiumUsername, setPremiumUsername] = useState(false);
   const [usernameTaken, setUsernameTaken] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isOIDCLoading, setIsOIDCLoading] = useState(false);
 
   const searchParams = useCompatSearchParams();
   const telemetry = useTelemetry();
@@ -394,6 +396,45 @@ export default function Signup({
                       router.push(GOOGLE_AUTH_URL);
                     }}>
                     Google
+                  </Button>
+                ) : null}
+                {isOIDCLoginEnabled ? (
+                  <Button
+                    color="secondary"
+                    disabled={!!formMethods.formState.errors.username || premiumUsername}
+                    loading={isOIDCLoading}
+                    StartIcon={() => (
+                      <>
+                        <img
+                          className={classNames(
+                            "text-subtle  mr-2 h-4 w-4 dark:invert",
+                            premiumUsername && "opacity-50"
+                          )}
+                          src="/sso.svg"
+                          alt=""
+                        />
+                      </>
+                    )}
+                    className={classNames(
+                      "w-full justify-center rounded-md text-center",
+                      formMethods.formState.errors.username ? "opacity-50" : ""
+                    )}
+                    onClick={async () => {
+                      setIsOIDCLoading(true);
+                      const username = formMethods.getValues("username");
+                      const baseUrl = process.env.NEXT_PUBLIC_WEBAPP_URL;
+                      const KEYCLOAK_URL = `${baseUrl}/auth/sso/keycloak`;
+                      if (username) {
+                        // If username is present we save it in query params to check for premium
+                        const searchQueryParams = new URLSearchParams();
+                        searchQueryParams.set("username", username);
+                        localStorage.setItem("username", username);
+                        router.push(`${KEYCLOAK_URL}?${searchQueryParams.toString()}`);
+                        return;
+                      }
+                      router.push(KEYCLOAK_URL);
+                    }}>
+                    Sign up with OIDC
                   </Button>
                 ) : null}
                 {isSAMLLoginEnabled ? (

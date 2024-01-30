@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "帳號歸 {{provider}} 管轄",
   "account_managed_by_identity_provider_description": "要更改電子郵件、密碼、兩階段認證⋯⋯等，請造訪 {{provider}} 的帳號設定。",
   "signin_with_google": "透過 Google 登入",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "透過 SAML 登入",
   "signin_with_saml_oidc": "透過 SAML/OIDC 登入",
   "you_will_need_to_generate": "得要從先前的預定工具產生連結 Token。",

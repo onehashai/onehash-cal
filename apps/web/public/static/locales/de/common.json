@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Ihr Konto wird verwaltet von {{provider}}",
   "account_managed_by_identity_provider_description": "Um Ihre E-Mail-Adresse, Ihr Passwort, die Zwei-Faktor-Authentifizierung und sonstiges zu ändern, besuchen Sie bitte Ihre {{provider}} -Kontoeinstellungen.",
   "signin_with_google": "Mit Google anmelden",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Anmelden mit SAML",
   "signin_with_saml_oidc": "Anmelden mit SAML/OIDC",
   "you_will_need_to_generate": "Sie müssen ein Zugriffstoken in ihrem alten Kalender-Tool erzeugen.",

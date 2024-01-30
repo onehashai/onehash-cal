@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Vašim nalogom upravlja {{provider}}",
   "account_managed_by_identity_provider_description": "Da biste promenili svoju adresu e-pošte, lozinku, omogućili dvofaktorsku autentifikaciju itd., molimo vas posetite vaša {{provider}} podešavanja naloga.",
   "signin_with_google": "Ulogujte sa pomoću Google-a",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Ulogujte se pomoću SAML",
   "signin_with_saml_oidc": "Prijavite se pomoću SAML/OIDC",
   "you_will_need_to_generate": "Morate generisati token pristupnosti iz svog prošlog softvera za zakazivanje.",

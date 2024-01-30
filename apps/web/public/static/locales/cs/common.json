@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Váš účet spravuje {{provider}}",
   "account_managed_by_identity_provider_description": "Pro změnu e-mailu, hesla, dvoufázového ověřování apod. prosím přejděte do nastavení účtu {{provider}}.",
   "signin_with_google": "Přihlásit se pomocí Googlu",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Přihlásit se pomocí SAML",
   "signin_with_saml_oidc": "Přihlášení pomocí SAML/OIDC",
   "you_will_need_to_generate": "Budete muset vygenerovat přístupový token ve vašem dřívějším plánovacím nástroji.",

@@ -750,6 +750,7 @@
   "account_managed_by_identity_provider": "Din konto administreres af {{provider}}",
   "account_managed_by_identity_provider_description": "For at ændre din e-mail, adgangskode, aktivere to-faktor autentificering og mere, besøg venligst dine {{provider}} kontoindstillinger.",
   "signin_with_google": "Log ind med Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Log ind med SAML",
   "you_will_need_to_generate": "Du skal generere et adgangs token fra dit gamle planlægningsværktøj.",
   "import": "Importér",

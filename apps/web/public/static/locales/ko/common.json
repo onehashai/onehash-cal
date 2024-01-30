@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "귀하의 계정 관리자는 {{provider}}입니다",
   "account_managed_by_identity_provider_description": "이메일, 비밀번호를 변경하고 이중 인증을 활성화하려면 {{provider}} 계정 설정을 방문하세요.",
   "signin_with_google": "Google로 로그인",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "SAML로 로그인",
   "signin_with_saml_oidc": "SAML/OIDC로 로그인",
   "you_will_need_to_generate": "이전 일정 관리 도구에서 액세스 토큰을 생성해야 합니다.",

@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Ditt konto hanteras av {{provider}}",
   "account_managed_by_identity_provider_description": "Besök dina {{provider}} -kontoinställningar för att ändra din e-post, lösenord, aktivera tvåfaktorsautentisering mm.",
   "signin_with_google": "Logga in med Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Logga in med SAML",
   "signin_with_saml_oidc": "Logga in med SAML/OIDC",
   "you_will_need_to_generate": "Du måste generera en åtkomsttoken från ditt gamla schemaläggningsverktyg.",

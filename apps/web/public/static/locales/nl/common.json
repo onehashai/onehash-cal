@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Uw account wordt beheerd door {{provider}}",
   "account_managed_by_identity_provider_description": "Ga naar uw accountinstellingen bij {{provider}} om uw e-mailadres en wachtwoord te wijzigen, tweestapsverificatie in te schakelen en meer.",
   "signin_with_google": "Aanmelden met Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Aanmelden met SAML",
   "signin_with_saml_oidc": "Aanmelden met SAML/OIDC",
   "you_will_need_to_generate": "U moet een toegangstoken genereren van uw oude planningstool.",

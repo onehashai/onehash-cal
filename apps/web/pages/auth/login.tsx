@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { FaGoogle } from "react-icons/fa";
+import { FaGoogle, FaKey } from "react-icons/fa";
 import { z } from "zod";
 
 import { SAMLLogin } from "@calcom/features/auth/SAMLLogin";
@@ -42,6 +42,7 @@ interface LoginValues {
 export default function Login({
   csrfToken,
   isGoogleLoginEnabled,
+  isOIDCLoginEnabled,
   isSAMLLoginEnabled,
   samlTenantID,
   samlProductID,
@@ -250,6 +251,20 @@ inferSSRProps<typeof getServerSideProps> & WithNonceProps<{}>) {
                       await signIn("google");
                     }}>
                     {t("signin_with_google")}
+                  </Button>
+                )}
+                {isOIDCLoginEnabled && (
+                  <Button
+                    color="secondary"
+                    className="mt-2 w-full justify-center"
+                    disabled={formState.isSubmitting}
+                    data-testid="keycloak"
+                    StartIcon={FaKey}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await signIn("keycloak");
+                    }}>
+                    {t("signin_with_oidc")}
                   </Button>
                 )}
                 {displaySSOLogin && (

@@ -915,6 +915,7 @@
   "account_managed_by_identity_provider": "החשבון שלך מנוהל על ידי {{provider}}",
   "account_managed_by_identity_provider_description": "כדי לשנות את כתובת הדוא\"ל ואת הסיסמה, לאפשר אימות דו-גורמי ועוד, יש לעבור אל הגדרות החשבון אצל {{provider}}.",
   "signin_with_google": "כניסה עם Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "כניסה עם SAML",
   "signin_with_saml_oidc": "כניסה עם SAML/OIDC",
   "you_will_need_to_generate": "תצטרך ליצור טוקן גישה מהכלי הישן שבו השתמשת לקביעת מועדים.",

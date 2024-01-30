@@ -880,6 +880,7 @@
   "account_managed_by_identity_provider": "Tu cuenta es administrada por {{provider}}",
   "account_managed_by_identity_provider_description": "Para cambiar tu correo electrónico, contraseña, habilitar la autenticación de doble factor y más, por favor visita la configuración de tu cuenta de {{provider}}.",
   "signin_with_google": "Iniciar sesión con Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Iniciar sesión con SAML",
   "signin_with_saml_oidc": "Inicie sesión con SAML/OIDC",
   "you_will_need_to_generate": "Necesitarás generar un token de acceso desde tu antigua herramienta de programación.",

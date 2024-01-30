@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Hesabınız {{provider}} tarafından yönetiliyor",
   "account_managed_by_identity_provider_description": "E-posta adresinizi ve şifrenizi değiştirmek, iki adımlı kimlik doğrulamayı etkinleştirmek ve daha fazlası için lütfen {{provider}} hesap ayarlarınızı ziyaret edin.",
   "signin_with_google": "Google ile giriş yap",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "SAML ile giriş yap",
   "signin_with_saml_oidc": "SAML/OIDC ile giriş yapın",
   "you_will_need_to_generate": "Entegrasyon sayfasında bir erişim token'ı oluşturmanız gerekir.",

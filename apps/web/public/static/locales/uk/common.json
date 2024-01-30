@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Вашим обліковим записом керує {{provider}}",
   "account_managed_by_identity_provider_description": "Щоб змінити електронну адресу чи пароль, увімкнути двоетапну автентифікацію тощо, перейдіть до налаштувань свого облікового запису {{provider}}.",
   "signin_with_google": "Увійдіть через Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Увійдіть через SAML",
   "signin_with_saml_oidc": "Увійдіть через SAML/OIDC",
   "you_will_need_to_generate": "Вам потрібно буде згенерувати токен доступу зі старого інструменту планування.",

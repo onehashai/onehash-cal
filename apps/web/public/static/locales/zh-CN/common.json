@@ -882,6 +882,7 @@
   "account_managed_by_identity_provider": "您的账户由 {{provider}} 管理",
   "account_managed_by_identity_provider_description": "要更改您的电子邮件，密码，启用两步验证及更多功能，请访问您的 {{provider}} 账户设置。",
   "signin_with_google": "使用Google登录",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "使用 SAML 登录",
   "signin_with_saml_oidc": "使用 SAML/OIDC 登录",
   "you_will_need_to_generate": "您需要从从您的旧工具上生成访问令牌",

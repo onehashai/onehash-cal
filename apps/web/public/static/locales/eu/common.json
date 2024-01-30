@@ -516,6 +516,7 @@
   "error_required_field": "Eremu hau nahitaezkoa da.",
   "status": "Egoera",
   "signin_with_google": "Hasi saioa Googlerekin",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Hasi saioa SAMLrekin",
   "signin_with_saml_oidc": "Hasi saioa SAML/OIDCrekin",
   "import": "Inportatu",

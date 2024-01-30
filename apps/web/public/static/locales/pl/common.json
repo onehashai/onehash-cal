@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "Twoje konto jest zarządzane przez {{provider}}",
   "account_managed_by_identity_provider_description": "Aby zmienić swój adres e-mail, hasło, włącz uwierzytelnianie dwuetapowe i więcej, odwiedź swoje ustawienia konta {{provider}}.",
   "signin_with_google": "Zaloguj się przez Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Zaloguj się za pomocą SAML",
   "signin_with_saml_oidc": "Zaloguj się za pomocą SAML/OIDC",
   "you_will_need_to_generate": "Będziesz musiał wygenerować token dostępu ze strony integracji.",

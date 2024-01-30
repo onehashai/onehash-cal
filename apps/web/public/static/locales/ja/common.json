@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "あなたのアカウントは {{provider}} によって管理されています",
   "account_managed_by_identity_provider_description": "メールアドレスやパスワードを変更したり、二段階認証を有効にしたりするには、{{provider}} のアカウント設定をご確認ください。",
   "signin_with_google": "Google アカウントを使用してサインイン",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "SAML を使用してサインイン",
   "signin_with_saml_oidc": "SAML/OIDCでサインイン",
   "you_will_need_to_generate": "従来のスケジュールツールからアクセストークンを生成する必要があります。",

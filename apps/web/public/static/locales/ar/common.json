@@ -881,6 +881,7 @@
   "account_managed_by_identity_provider": "تجري إدارة حسابك بواسطة {{provider}}",
   "account_managed_by_identity_provider_description": "لتغيير بريدك الإلكتروني وكلمة المرور وتمكين المصادقة من عاملين والمزيد، يُرجى زيارة إعدادات حساب {{provider}} لديك.",
   "signin_with_google": "تسجيل الدخول عبر Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "تسجيل الدخول عبر SAML",
   "signin_with_saml_oidc": "تسجيل الدخول عبر SAML/OIDC",
   "you_will_need_to_generate": "ستحتاج إلى إنشاء access token من أداة الجدولة القديمة لديك.",

@@ -739,6 +739,7 @@
   "account_managed_by_identity_provider": "Kontoen din administreres av {{provider}}",
   "account_managed_by_identity_provider_description": "For å endre e-post, passord, aktivere to-faktor autentisering og mer, gå til kontoinnstillingene dine hos {{provider}}.",
   "signin_with_google": "Logg på med Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Logg på med SAML",
   "you_will_need_to_generate": "Du må generere et tilgangstoken fra ditt gamle planleggingsverktøy.",
   "import": "Importer",

@@ -882,6 +882,7 @@
   "account_managed_by_identity_provider": "Ваш аккаунт управляется {{provider}}",
   "account_managed_by_identity_provider_description": "Чтобы изменить адрес электронной почты, пароль, включить двухфакторную авторизацию, пожалуйста, посетите настройки учетной записи {{provider}}.",
   "signin_with_google": "Войти через Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Войти с помощью SAML",
   "signin_with_saml_oidc": "Войти с помощью SAML/OIDC",
   "you_will_need_to_generate": "Вам нужно сгенерировать токен доступа на странице интеграции.",

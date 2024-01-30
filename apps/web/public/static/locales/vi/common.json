@@ -884,6 +884,7 @@
   "account_managed_by_identity_provider": "Tài khoản của bạn do {{provider}} quản lý",
   "account_managed_by_identity_provider_description": "Để thay đổi email, mật khẩu, bật xác thực hai yếu tố và những thứ khác, vui lòng truy cập cài đặt tài khoản {{provider}} của bạn.",
   "signin_with_google": "Đăng nhập bằng Google",
+  "signin_with_oidc": "Sign in with OIDC",
   "signin_with_saml": "Đăng nhập bằng SAML",
   "signin_with_saml_oidc": "Đăng nhập bằng SAML/OIDC",
   "you_will_need_to_generate": "Bạn sẽ cần tạo mã access token từ công cụ lập lịch cũ của mình.",

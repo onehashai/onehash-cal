@@ -9,7 +9,7 @@ import { IS_SELF_HOSTED, WEBAPP_URL } from "@calcom/lib/constants";
 import slugify from "@calcom/lib/slugify";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
-import { IS_GOOGLE_LOGIN_ENABLED } from "@server/lib/constants";
+import { IS_GOOGLE_LOGIN_ENABLED, IS_OIDC_LOGIN_ENABLED } from "@server/lib/constants";
 import { ssrInit } from "@server/lib/ssr";
 
 const checkValidEmail = (email: string) => z.string().email().safeParse(email).success;
@@ -30,6 +30,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
   const props = {
     isGoogleLoginEnabled: IS_GOOGLE_LOGIN_ENABLED,
+    isOIDCLoginEnabled: IS_OIDC_LOGIN_ENABLED,
     isSAMLLoginEnabled,
     trpcState: ssr.dehydrate(),
     prepopulateFormValues: undefined,
