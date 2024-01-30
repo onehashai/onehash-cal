@@ -1,4 +1,4 @@
-import { TFunction } from "next-i18next";
+import type { TFunction } from "next-i18next";
 
 import { CAL_URL } from "@calcom/lib/constants";
 
