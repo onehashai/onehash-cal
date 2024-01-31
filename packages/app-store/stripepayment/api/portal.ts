@@ -36,8 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         proration_behavior: "always_invoice",
         products: [
           {
-            product: process.env.STRIPE_TEAM_PRODUCT_ID,
-            prices: [process.env.STRIPE_TEAM_MONTHLY_PRICE_ID],
+            product: process.env.STRIPE_TEAM_PRODUCT_ID as string,
+            prices: [process.env.STRIPE_TEAM_MONTHLY_PRICE_ID as string],
           },
         ],
       },

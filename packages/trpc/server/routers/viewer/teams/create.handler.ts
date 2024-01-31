@@ -48,8 +48,6 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
   const { user } = ctx;
   const { slug, name, logo } = input;
   const isOrgChildTeam = !!user.organizationId;
-  //To remove once teams will be live
-  throw new TRPCError({ code: "BAD_REQUEST", message: "The teams feature is currently being developed" });
 
   // For orgs we want to create teams under the org
   if (user.organizationId && !user.organization.isOrgAdmin) {
