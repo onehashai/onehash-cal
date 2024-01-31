@@ -14,7 +14,6 @@ import { z } from "zod";
 
 import getStripe from "@calcom/app-store/stripepayment/lib/client";
 import { getPremiumPlanPriceValue } from "@calcom/app-store/stripepayment/lib/utils";
-import { isPasswordValid } from "@calcom/features/auth/lib/isPasswordValid";
 import { getOrgUsernameFromEmail } from "@calcom/features/auth/signup/utils/getOrgUsernameFromEmail";
 import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { useFlagMap } from "@calcom/features/flags/context/provider";
@@ -25,6 +24,7 @@ import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
+import { signupSchema as apiSignupSchema } from "@calcom/prisma/zod-utils";
 import type { inferSSRProps } from "@calcom/types/inferSSRProps";
 import { Button, HeadSeo, PasswordField, TextField, Form, Alert, showToast } from "@calcom/ui";
 
@@ -32,17 +32,8 @@ import { getServerSideProps } from "@lib/signup/getServerSideProps";
 
 import PageWrapper from "@components/PageWrapper";
 
-const signupSchema = z.object({
-  username: z.string().refine((value) => !value.includes("+"), {
-    message: "String should not contain a plus symbol (+).",
-  }),
-  email: z.string().email(),
-  password: z.string().refine((val) => isPasswordValid(val.trim(), false, true), {
-    message:
-      "The password must be a minimum of 7 characters long containing at least one number and have a mixture of uppercase and lowercase letters",
-  }),
-  language: z.string().optional(),
-  token: z.string().optional(),
+const signupSchema = apiSignupSchema.extend({
+  apiError: z.string().optional(), // Needed to display API errors doesnt get passed to the API
 });
 
 type FormValues = z.infer<typeof signupSchema>;
