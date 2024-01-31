@@ -253,138 +253,138 @@ export async function isTeamMember(userId: number, teamId: number) {
   }));
 }
 
-export async function teamsOwnedByAdmin(userId: number) {
-  return (
-    (await prisma.team.findMany({
-      where: {
-        members: {
-          some: {
-            userId,
-            OR: [{ role: "ADMIN" }, { role: "OWNER" }],
-          },
-        },
-      },
-    })) || []
-  );
-}
+// export async function teamsOwnedByAdmin(userId: number) {
+//   return (
+//     (await prisma.team.findMany({
+//       where: {
+//         members: {
+//           some: {
+//             userId,
+//             OR: [{ role: "ADMIN" }, { role: "OWNER" }],
+//           },
+//         },
+//       },
+//     })) || []
+//   );
+// }
 
-export async function membersNotPartOfPrevAdminTeams(userId: number, teamId: number) {
-  const allMembersOfNewTeam = await prisma.membership.findMany({
-    where: {
-      teamId,
-    },
-  });
+// export async function membersNotPartOfPrevAdminTeams(userId: number, teamId: number) {
+//   const allMembersOfNewTeam = await prisma.membership.findMany({
+//     where: {
+//       teamId,
+//     },
+//   });
 
-  const allTeams = await teamsOwnedByAdmin(userId);
-  const allTeamsIdExceptNewTeam = allTeams.filter((team) => team.id !== teamId).map((team) => team.id);
+//   const allTeams = await teamsOwnedByAdmin(userId);
+//   const allTeamsIdExceptNewTeam = allTeams.filter((team) => team.id !== teamId).map((team) => team.id);
 
-  const allMembersOfPrevTeams = await prisma.membership.findMany({
-    where: {
-      teamId: {
-        in: allTeamsIdExceptNewTeam,
-      },
-    },
-  });
+//   const allMembersOfPrevTeams = await prisma.membership.findMany({
+//     where: {
+//       teamId: {
+//         in: allTeamsIdExceptNewTeam,
+//       },
+//     },
+//   });
 
-  const newMembersNotInPrevTeams = allMembersOfNewTeam.filter(
-    (newMember) => !allMembersOfPrevTeams.some((prevMember) => prevMember.userId === newMember.userId)
-  );
-  return newMembersNotInPrevTeams.length;
-}
+//   const newMembersNotInPrevTeams = allMembersOfNewTeam.filter(
+//     (newMember) => !allMembersOfPrevTeams.some((prevMember) => prevMember.userId === newMember.userId)
+//   );
+//   return newMembersNotInPrevTeams.length;
+// }
 
-export async function adminTeamMembers(userId: number) {
-  const allTeams = await teamsOwnedByAdmin(userId);
-  const allTeamsId = allTeams.map((team) => team.id);
+// export async function adminTeamMembers(userId: number) {
+//   const allTeams = await teamsOwnedByAdmin(userId);
+//   const allTeamsId = allTeams.map((team) => team.id);
 
-  const allMembers = await prisma.membership.findMany({
-    where: {
-      teamId: {
-        in: allTeamsId,
-      },
-    },
-  });
-  // Remove duplicates using Set
-  const uniqueMembers = Array.from(new Set(allMembers.map((member) => member.userId)));
-  return uniqueMembers;
-}
+//   const allMembers = await prisma.membership.findMany({
+//     where: {
+//       teamId: {
+//         in: allTeamsId,
+//       },
+//     },
+//   });
+//   // Remove duplicates using Set
+//   const uniqueMembers = Array.from(new Set(allMembers.map((member) => member.userId)));
+//   return uniqueMembers;
+// }
 
-export async function checkIfUserIsPartOfPaidTeam(adminId: number, emailId: string) {
-  const user = await prisma.user.findUnique({ where: { email: emailId } });
-  if (user) {
-    const userId = user.id;
-    const memberships = await prisma.membership.findMany({
-      where: {
-        userId: userId,
-      },
-    });
-    const teamIds = memberships.map((membership) => membership.teamId);
-    for (const teamId of teamIds) {
-      const team = await prisma.team.findUnique({
-        where: {
-          id: teamId,
-        },
-      });
-      // Check if the team exists and has the correct 'paidForByUserId'
-      if (team && team.metadata?.paidForByUserId === adminId) {
-        return true; // Return true if there's at least one paid team
-      }
-    }
+// export async function checkIfUserIsPartOfPaidTeam(adminId: number, emailId: string) {
+//   const user = await prisma.user.findUnique({ where: { email: emailId } });
+//   if (user) {
+//     const userId = user.id;
+//     const memberships = await prisma.membership.findMany({
+//       where: {
+//         userId: userId,
+//       },
+//     });
+//     const teamIds = memberships.map((membership) => membership.teamId);
+//     for (const teamId of teamIds) {
+//       const team = await prisma.team.findUnique({
+//         where: {
+//           id: teamId,
+//         },
+//       });
+//       // Check if the team exists and has the correct 'paidForByUserId'
+//       if (team && team.metadata?.paidForByUserId === adminId) {
+//         return true; // Return true if there's at least one paid team
+//       }
+//     }
 
-    return false; // Return false if no paid team is found
-  }
-  return false;
-}
+//     return false; // Return false if no paid team is found
+//   }
+//   return false;
+// }
 
-export async function checkPartOfHowManyPaidTeam(userId: number, memberUserId: number) {
-  const allTeams = await teamsOwnedByAdmin(userId);
-  const allTeamsId = allTeams.map((team) => team.id);
+// export async function checkPartOfHowManyPaidTeam(userId: number, memberUserId: number) {
+//   const allTeams = await teamsOwnedByAdmin(userId);
+//   const allTeamsId = allTeams.map((team) => team.id);
 
-  const allMembers = await prisma.membership.findMany({
-    where: {
-      teamId: {
-        in: allTeamsId,
-      },
-      userId: memberUserId,
-    },
-  });
-  return allMembers.length;
-}
+//   const allMembers = await prisma.membership.findMany({
+//     where: {
+//       teamId: {
+//         in: allTeamsId,
+//       },
+//       userId: memberUserId,
+//     },
+//   });
+//   return allMembers.length;
+// }
 
-export async function userHasPaidTeam(userId: number) {
-  const teams = await prisma.team.findMany({
-    where: {
-      members: {
-        some: {
-          userId,
-          OR: [{ role: "ADMIN" }, { role: "OWNER" }],
-        },
-      },
-    },
-    select: { metadata: true },
-  });
-  const hasTeamWithActiveSubscription = teams.some((team) => team.metadata?.subscriptionStatus === "active");
+// export async function userHasPaidTeam(userId: number) {
+//   const teams = await prisma.team.findMany({
+//     where: {
+//       members: {
+//         some: {
+//           userId,
+//           OR: [{ role: "ADMIN" }, { role: "OWNER" }],
+//         },
+//       },
+//     },
+//     select: { metadata: true },
+//   });
+//   const hasTeamWithActiveSubscription = teams.some((team) => team.metadata?.subscriptionStatus === "active");
 
-  return hasTeamWithActiveSubscription;
-}
+//   return hasTeamWithActiveSubscription;
+// }
 
-export async function userHasActiveTeam(userId: number) {
-  const teams = await prisma.team.findMany({
-    where: {
-      members: {
-        some: {
-          userId,
-          OR: [{ role: "ADMIN" }, { role: "OWNER" }],
-        },
-      },
-    },
-    select: { metadata: true },
-  });
-  const hasActiveTeam = teams.some(
-    (team) => team.metadata?.subscriptionStatus === "active" || team.metadata?.subscriptionStatus === "trial"
-  );
+// export async function userHasActiveTeam(userId: number) {
+//   const teams = await prisma.team.findMany({
+//     where: {
+//       members: {
+//         some: {
+//           userId,
+//           OR: [{ role: "ADMIN" }, { role: "OWNER" }],
+//         },
+//       },
+//     },
+//     select: { metadata: true },
+//   });
+//   const hasActiveTeam = teams.some(
+//     (team) => team.metadata?.subscriptionStatus === "active" || team.metadata?.subscriptionStatus === "trial"
+//   );
 
-  return hasActiveTeam;
-}
+//   return hasActiveTeam;
+// }
 
 export async function updateNewTeamMemberEventTypes(userId: number, teamId: number) {
   const eventTypesToAdd = await prisma.eventType.findMany({
