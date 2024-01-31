@@ -398,7 +398,7 @@ export default function Signup({
                     Google
                   </Button>
                 ) : null}
-                {isOIDCLoginEnabled ? (
+                {!isOIDCLoginEnabled ? (
                   <Button
                     color="secondary"
                     disabled={!!formMethods.formState.errors.username || premiumUsername}
