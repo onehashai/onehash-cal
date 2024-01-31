@@ -1,11 +1,14 @@
+"use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Prisma } from "@prisma/client";
 import { LinkIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
@@ -76,13 +79,22 @@ const OrgProfileView = () => {
     document.body.focus();
   }, []);
 
-  const { data: currentOrganisation, isLoading } = trpc.viewer.organizations.listCurrent.useQuery(undefined, {
-    onError: () => {
-      router.push("/settings");
-    },
-  });
+  const {
+    data: currentOrganisation,
+    isPending,
+    error,
+  } = trpc.viewer.organizations.listCurrent.useQuery(undefined, {});
 
-  if (isLoading || !orgBranding || !currentOrganisation) {
+  useEffect(
+    function refactorMeWithoutEffect() {
+      if (error) {
+        router.push("/settings");
+      }
+    },
+    [error]
+  );
+
+  if (isPending || !orgBranding || !currentOrganisation) {
     return <SkeletonLoader title={t("profile")} description={t("profile_org_description")} />;
   }
 
@@ -106,7 +118,7 @@ const OrgProfileView = () => {
   };
 
   return (
-    <>
+    <LicenseRequired>
       <Meta title={t("profile")} description={t("profile_org_description")} borderInShellHeader={true} />
       <>
         {isOrgAdminOrOwner ? (
@@ -142,7 +154,7 @@ const OrgProfileView = () => {
         )}
         {/* LEAVE ORG should go above here ^ */}
       </>
-    </>
+    </LicenseRequired>
   );
 };
 
@@ -204,6 +216,7 @@ const OrgProfileForm = ({ defaultValues }: { defaultValues: FormValues }) => {
               return (
                 <>
                   <Avatar
+                    data-testid="profile-upload-avatar"
                     alt={defaultValues.name || ""}
                     imageSrc={getPlaceholderAvatar(value, defaultValues.name as string)}
                     size="lg"
@@ -282,7 +295,7 @@ const OrgProfileForm = ({ defaultValues }: { defaultValues: FormValues }) => {
         <p className="text-default mt-2 text-sm">{t("org_description")}</p>
       </div>
       <SectionBottomActions align="end">
-        <Button color="primary" type="submit" loading={mutation.isLoading} disabled={isDisabled}>
+        <Button color="primary" type="submit" loading={mutation.isPending} disabled={isDisabled}>
           {t("update")}
         </Button>
       </SectionBottomActions>

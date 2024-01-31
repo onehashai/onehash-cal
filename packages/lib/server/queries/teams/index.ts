@@ -3,7 +3,12 @@ import { Prisma } from "@prisma/client";
 import { getAppFromSlug } from "@calcom/app-store/utils";
 import prisma, { baseEventTypeSelect } from "@calcom/prisma";
 import { SchedulingType } from "@calcom/prisma/enums";
-import { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
+import { _EventTypeModel } from "@calcom/prisma/zod";
+import {
+  EventTypeMetaDataSchema,
+  allManagedEventTypeProps,
+  unlockedManagedEventTypeProps,
+} from "@calcom/prisma/zod-utils";
 
 import { WEBAPP_URL } from "../../../constants";
 import { getBookerBaseUrlSync } from "../../../getBookerUrl/client";
@@ -248,117 +253,199 @@ export async function isTeamMember(userId: number, teamId: number) {
   }));
 }
 
-export async function teamsOwnedByAdmin(userId: number) {
-  return (
-    (await prisma.team.findMany({
-      where: {
-        members: {
-          some: {
-            userId,
-            OR: [{ role: "ADMIN" }, { role: "OWNER" }],
-          },
-        },
-      },
-    })) || []
-  );
-}
+// export async function teamsOwnedByAdmin(userId: number) {
+//   return (
+//     (await prisma.team.findMany({
+//       where: {
+//         members: {
+//           some: {
+//             userId,
+//             OR: [{ role: "ADMIN" }, { role: "OWNER" }],
+//           },
+//         },
+//       },
+//     })) || []
+//   );
+// }
 
-export async function membersNotPartOfPrevAdminTeams(userId: number, teamId: number) {
-  const allMembersOfNewTeam = await prisma.membership.findMany({
+// export async function membersNotPartOfPrevAdminTeams(userId: number, teamId: number) {
+//   const allMembersOfNewTeam = await prisma.membership.findMany({
+//     where: {
+//       teamId,
+//     },
+//   });
+
+//   const allTeams = await teamsOwnedByAdmin(userId);
+//   const allTeamsIdExceptNewTeam = allTeams.filter((team) => team.id !== teamId).map((team) => team.id);
+
+//   const allMembersOfPrevTeams = await prisma.membership.findMany({
+//     where: {
+//       teamId: {
+//         in: allTeamsIdExceptNewTeam,
+//       },
+//     },
+//   });
+
+//   const newMembersNotInPrevTeams = allMembersOfNewTeam.filter(
+//     (newMember) => !allMembersOfPrevTeams.some((prevMember) => prevMember.userId === newMember.userId)
+//   );
+//   return newMembersNotInPrevTeams.length;
+// }
+
+// export async function adminTeamMembers(userId: number) {
+//   const allTeams = await teamsOwnedByAdmin(userId);
+//   const allTeamsId = allTeams.map((team) => team.id);
+
+//   const allMembers = await prisma.membership.findMany({
+//     where: {
+//       teamId: {
+//         in: allTeamsId,
+//       },
+//     },
+//   });
+//   // Remove duplicates using Set
+//   const uniqueMembers = Array.from(new Set(allMembers.map((member) => member.userId)));
+//   return uniqueMembers;
+// }
+
+// export async function checkIfUserIsPartOfPaidTeam(adminId: number, emailId: string) {
+//   const user = await prisma.user.findUnique({ where: { email: emailId } });
+//   if (user) {
+//     const userId = user.id;
+//     const memberships = await prisma.membership.findMany({
+//       where: {
+//         userId: userId,
+//       },
+//     });
+//     const teamIds = memberships.map((membership) => membership.teamId);
+//     for (const teamId of teamIds) {
+//       const team = await prisma.team.findUnique({
+//         where: {
+//           id: teamId,
+//         },
+//       });
+//       // Check if the team exists and has the correct 'paidForByUserId'
+//       if (team && team.metadata?.paidForByUserId === adminId) {
+//         return true; // Return true if there's at least one paid team
+//       }
+//     }
+
+//     return false; // Return false if no paid team is found
+//   }
+//   return false;
+// }
+
+// export async function checkPartOfHowManyPaidTeam(userId: number, memberUserId: number) {
+//   const allTeams = await teamsOwnedByAdmin(userId);
+//   const allTeamsId = allTeams.map((team) => team.id);
+
+//   const allMembers = await prisma.membership.findMany({
+//     where: {
+//       teamId: {
+//         in: allTeamsId,
+//       },
+//       userId: memberUserId,
+//     },
+//   });
+//   return allMembers.length;
+// }
+
+// export async function userHasPaidTeam(userId: number) {
+//   const teams = await prisma.team.findMany({
+//     where: {
+//       members: {
+//         some: {
+//           userId,
+//           OR: [{ role: "ADMIN" }, { role: "OWNER" }],
+//         },
+//       },
+//     },
+//     select: { metadata: true },
+//   });
+//   const hasTeamWithActiveSubscription = teams.some((team) => team.metadata?.subscriptionStatus === "active");
+
+//   return hasTeamWithActiveSubscription;
+// }
+
+// export async function userHasActiveTeam(userId: number) {
+//   const teams = await prisma.team.findMany({
+//     where: {
+//       members: {
+//         some: {
+//           userId,
+//           OR: [{ role: "ADMIN" }, { role: "OWNER" }],
+//         },
+//       },
+//     },
+//     select: { metadata: true },
+//   });
+//   const hasActiveTeam = teams.some(
+//     (team) => team.metadata?.subscriptionStatus === "active" || team.metadata?.subscriptionStatus === "trial"
+//   );
+
+//   return hasActiveTeam;
+// }
+
+export async function updateNewTeamMemberEventTypes(userId: number, teamId: number) {
+  const eventTypesToAdd = await prisma.eventType.findMany({
     where: {
-      teamId,
+      team: { id: teamId },
+      assignAllTeamMembers: true,
+    },
+    select: {
+      ...allManagedEventTypeProps,
+      id: true,
+      schedulingType: true,
     },
   });
 
-  const allTeams = await teamsOwnedByAdmin(userId);
-  const allTeamsIdExceptNewTeam = allTeams.filter((team) => team.id !== teamId).map((team) => team.id);
+  const allManagedEventTypePropsZod = _EventTypeModel.pick(allManagedEventTypeProps);
 
-  const allMembersOfPrevTeams = await prisma.membership.findMany({
-    where: {
-      teamId: {
-        in: allTeamsIdExceptNewTeam,
-      },
-    },
-  });
+  eventTypesToAdd.length > 0 &&
+    (await prisma.$transaction(
+      eventTypesToAdd.map((eventType) => {
+        if (eventType.schedulingType === "MANAGED") {
+          const managedEventTypeValues = allManagedEventTypePropsZod
+            .omit(unlockedManagedEventTypeProps)
+            .parse(eventType);
 
-  const newMembersNotInPrevTeams = allMembersOfNewTeam.filter(
-    (newMember) => !allMembersOfPrevTeams.some((prevMember) => prevMember.userId === newMember.userId)
-  );
-  return newMembersNotInPrevTeams.length;
-}
+          // Define the values for unlocked properties to use on creation, not updation
+          const unlockedEventTypeValues = allManagedEventTypePropsZod
+            .pick(unlockedManagedEventTypeProps)
+            .parse(eventType);
 
-export async function adminTeamMembers(userId: number) {
-  const allTeams = await teamsOwnedByAdmin(userId);
-  const allTeamsId = allTeams.map((team) => team.id);
+          // Calculate if there are new workflows for which assigned members will get too
+          const currentWorkflowIds = eventType.workflows?.map((wf) => wf.workflowId);
 
-  const allMembers = await prisma.membership.findMany({
-    where: {
-      teamId: {
-        in: allTeamsId,
-      },
-    },
-  });
-  // Remove duplicates using Set
-  const uniqueMembers = Array.from(new Set(allMembers.map((member) => member.userId)));
-  return uniqueMembers;
-}
-
-export async function checkIfUserIsPartOfPaidTeam(adminId: number, emailId: string) {
-  const user = await prisma.user.findUnique({ where: { email: emailId } });
-  if (user) {
-    const userId = user.id;
-    const memberships = await prisma.membership.findMany({
-      where: {
-        userId: userId,
-      },
-    });
-    const teamIds = memberships.map((membership) => membership.teamId);
-    for (const teamId of teamIds) {
-      const team = await prisma.team.findUnique({
-        where: {
-          id: teamId,
-        },
-      });
-      // Check if the team exists and has the correct 'paidForByUserId'
-      if (team && team.metadata?.paidForByUserId === adminId) {
-        return true; // Return true if there's at least one paid team
-      }
-    }
-
-    return false; // Return false if no paid team is found
-  }
-  return false;
-}
-
-export async function checkPartOfHowManyPaidTeam(userId: number, memberUserId: number) {
-  const allTeams = await teamsOwnedByAdmin(userId);
-  const allTeamsId = allTeams.map((team) => team.id);
-
-  const allMembers = await prisma.membership.findMany({
-    where: {
-      teamId: {
-        in: allTeamsId,
-      },
-      userId: memberUserId,
-    },
-  });
-  return allMembers.length;
-}
-
-export async function userHasPaidTeam(userId: number) {
-  const teams = await prisma.team.findMany({
-    where: {
-      members: {
-        some: {
-          userId,
-          OR: [{ role: "ADMIN" }, { role: "OWNER" }],
-        },
-      },
-    },
-    select: { metadata: true },
-  });
-  console.log(teams);
-  const hasTeamWithActiveSubscription = teams.some((team) => team.metadata?.subscriptionStatus === "active");
-
-  return hasTeamWithActiveSubscription;
+          return prisma.eventType.create({
+            data: {
+              ...managedEventTypeValues,
+              ...unlockedEventTypeValues,
+              bookingLimits:
+                (managedEventTypeValues.bookingLimits as unknown as Prisma.InputJsonObject) ?? undefined,
+              recurringEvent:
+                (managedEventTypeValues.recurringEvent as unknown as Prisma.InputJsonValue) ?? undefined,
+              metadata: (managedEventTypeValues.metadata as Prisma.InputJsonValue) ?? undefined,
+              bookingFields: (managedEventTypeValues.bookingFields as Prisma.InputJsonValue) ?? undefined,
+              durationLimits: (managedEventTypeValues.durationLimits as Prisma.InputJsonValue) ?? undefined,
+              onlyShowFirstAvailableSlot: managedEventTypeValues.onlyShowFirstAvailableSlot ?? false,
+              userId,
+              users: {
+                connect: [{ id: userId }],
+              },
+              parentId: eventType.parentId,
+              hidden: false,
+              workflows: currentWorkflowIds && {
+                create: currentWorkflowIds.map((wfId) => ({ workflowId: wfId })),
+              },
+            },
+          });
+        } else {
+          return prisma.eventType.update({
+            where: { id: eventType.id },
+            data: { hosts: { create: [{ userId, isFixed: eventType.schedulingType === "COLLECTIVE" }] } },
+          });
+        }
+      })
+    ));
 }

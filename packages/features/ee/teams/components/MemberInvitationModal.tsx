@@ -7,7 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import TeamInviteFromOrg from "@calcom/ee/organizations/components/TeamInviteFromOrg";
 import { classNames } from "@calcom/lib";
-import { IS_TEAM_BILLING_ENABLED, MAX_NB_INVITES, WEBAPP_URL } from "@calcom/lib/constants";
+import { IS_TEAM_BILLING_ENABLED, MAX_NB_INVITES } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { MembershipRole } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc";
@@ -41,7 +41,7 @@ type MemberInvitationModalProps = {
   teamId: number;
   members?: PendingMember[];
   token?: string;
-  isLoading?: boolean;
+  isPending?: boolean;
   disableCopyLink?: boolean;
   isOrg?: boolean;
 };
@@ -170,28 +170,8 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
   const resetFields = () => {
     newMemberFormMethods.reset();
     newMemberFormMethods.setValue("emailOrUsername", "");
+    newMemberFormMethods.setValue("role", options[0].value);
     setModalInputMode("INDIVIDUAL");
-  };
-
-  const handleSubmitFunc = async (values: NewMemberForm) => {
-    // Add your license validation logic here
-    const res = await fetch("/api/user/checkUserLicenses", {
-      method: "POST",
-      body: JSON.stringify({ members: props?.members, input: values }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const json = await res.json();
-    const msg = json.message;
-    if (msg === "Can send invitation to team members") {
-      // Proceed with form submission
-      await props.onSubmit(values, resetFields);
-    } else {
-      // Commence subscription or Add more licenses
-      const billingHref = `/api/integrations/stripepayment/portal?returnTo=${WEBAPP_URL}/teams`;
-      window.open(billingHref, "_blank");
-    }
   };
 
   const importRef = useRef<HTMLInputElement | null>(null);
@@ -233,7 +213,7 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
           />
         </div>
 
-        <Form form={newMemberFormMethods} handleSubmit={(values) => handleSubmitFunc(values)}>
+        <Form form={newMemberFormMethods} handleSubmit={(values) => props.onSubmit(values, resetFields)}>
           <div className="mb-10 mt-6 space-y-6">
             {/* Indivdual Invite */}
             {modalImportMode === "INDIVIDUAL" && (
@@ -292,7 +272,7 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
                         required
                         value={value}
                         onChange={(e) => {
-                          const targetValues = e.target.value.split(",");
+                          const targetValues = e.target.value.split(/[\n,]/);
                           const emails =
                             targetValues.length === 1
                               ? targetValues[0].trim().toLocaleLowerCase()
@@ -448,10 +428,10 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
               {t("cancel")}
             </Button>
             <Button
-              loading={props.isLoading || createInviteMutation.isLoading}
+              loading={props.isPending || createInviteMutation.isPending}
               type="submit"
               color="primary"
-              className="me-2 ms-2 bg-blue-500 hover:bg-blue-600"
+              className="me-2 ms-2"
               data-testid="invite-new-member-button">
               {t("send_invite")}
             </Button>

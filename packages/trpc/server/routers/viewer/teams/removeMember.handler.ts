@@ -1,9 +1,7 @@
-//Merge Conflict Properly in regards to OneHash Billing
-import { updateTrialSubscription } from "@calcom/ee/teams/lib/payments";
+import { updateQuantitySubscriptionFromStripe } from "@calcom/features/ee/teams/lib/payments";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { isTeamAdmin, isTeamOwner } from "@calcom/lib/server/queries/teams";
-import { adminTeamMembers, checkPartOfHowManyPaidTeam } from "@calcom/lib/server/queries/teams";
 import { closeComDeleteTeamMembership } from "@calcom/lib/sync/SyncServiceManager";
 import type { PrismaClient } from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -11,7 +9,6 @@ import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
 import { TRPCError } from "@trpc/server";
 
-import { checkIfUserUnderTrial } from "./publish.handler";
 import type { TRemoveMemberInputSchema } from "./removeMember.schema";
 
 type RemoveMemberOptions = {
@@ -44,7 +41,6 @@ export const removeMemberHandler = async ({ ctx, input }: RemoveMemberOptions) =
       message: "You can not remove yourself from a team you own.",
     });
 
-  const countBeforeDeletingMember = await checkPartOfHowManyPaidTeam(ctx.user.id, input.memberId);
   const membership = await ctx.prisma.membership.delete({
     where: {
       userId_teamId: { userId: input.memberId, teamId: input.teamId },
@@ -129,14 +125,7 @@ export const removeMemberHandler = async ({ ctx, input }: RemoveMemberOptions) =
 
   // Sync Services
   closeComDeleteTeamMembership(membership.user);
-
-  if (IS_TEAM_BILLING_ENABLED) {
-    const isUserUnderTrial = await checkIfUserUnderTrial(ctx.user.id);
-    const remainingUsers = await adminTeamMembers(ctx.user.id);
-    if (isUserUnderTrial) {
-      await updateTrialSubscription(ctx.user.id, remainingUsers.length);
-    }
-  }
+  if (IS_TEAM_BILLING_ENABLED) await updateQuantitySubscriptionFromStripe(input.teamId);
 };
 
 export default removeMemberHandler;

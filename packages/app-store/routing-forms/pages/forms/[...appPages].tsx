@@ -1,3 +1,5 @@
+"use client";
+
 // TODO: i18n
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect } from "react";
@@ -15,12 +17,6 @@ import { useHasPaidPlan } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import { trpc } from "@calcom/trpc/react";
-import type {
-  AppGetServerSidePropsContext,
-  AppPrisma,
-  AppSsrInit,
-  AppUser,
-} from "@calcom/types/AppGetServerSideProps";
 import {
   Badge,
   Button,
@@ -60,6 +56,7 @@ import {
 } from "../../components/FormActions";
 import type { RoutingFormWithResponseCount } from "../../components/SingleForm";
 import { isFallbackRoute } from "../../lib/isFallbackRoute";
+import { getServerSideProps } from "./getServerSideProps";
 
 function NewFormButton() {
   const { t } = useLocale();
@@ -371,32 +368,4 @@ RoutingForms.getLayout = (page: React.ReactElement) => {
   );
 };
 
-export const getServerSideProps = async function getServerSideProps(
-  context: AppGetServerSidePropsContext,
-  prisma: AppPrisma,
-  user: AppUser,
-  ssrInit: AppSsrInit
-) {
-  if (!user) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/auth/login",
-      },
-    };
-  }
-  const ssr = await ssrInit(context);
-
-  const filters = getTeamsFiltersFromQuery(context.query);
-
-  await ssr.viewer.appRoutingForms.forms.prefetch({
-    filters,
-  });
-  // Prefetch this so that New Button is immediately available
-  await ssr.viewer.teamsAndUserProfilesQuery.prefetch();
-  return {
-    props: {
-      trpcState: ssr.dehydrate(),
-    },
-  };
-};
+export { getServerSideProps };

@@ -11,6 +11,7 @@ import { trpc } from "@calcom/trpc/react";
 import { Button, Form, Meta, TextField, showToast } from "@calcom/ui";
 
 import { getLayout } from "../../../../../settings/layouts/SettingsLayout";
+import LicenseRequired from "../../../../common/components/LicenseRequired";
 
 const paramsSchema = z.object({ id: z.coerce.number() });
 
@@ -27,7 +28,7 @@ const OrgEditView = ({ orgId }: { orgId: number }) => {
   const [org] = trpc.viewer.organizations.adminGet.useSuspenseQuery({ id: orgId });
 
   return (
-    <>
+    <LicenseRequired>
       <Meta
         title={`Editing organization: ${org.name}`}
         description="Here you can edit a current organization."
@@ -35,7 +36,7 @@ const OrgEditView = ({ orgId }: { orgId: number }) => {
       <NoSSR>
         <OrgForm org={org} />
       </NoSSR>
-    </>
+    </LicenseRequired>
   );
 };
 
@@ -97,7 +98,7 @@ const OrgForm = ({
         required
         {...form.register("metadata.orgAutoAcceptEmail")}
       />
-      <Button type="submit" color="primary" loading={mutation.isLoading}>
+      <Button type="submit" color="primary" loading={mutation.isPending}>
         {t("save")}
       </Button>
     </Form>

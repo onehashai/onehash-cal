@@ -1,6 +1,5 @@
-import { startTrialCheckoutSession } from "@calcom/features/ee/teams/lib/payments";
-import { WEBAPP_URL, IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
-import { userHasPaidTeam } from "@calcom/lib/server/queries";
+import { generateTeamCheckoutSession } from "@calcom/features/ee/teams/lib/payments";
+import { IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { closeComUpsertTeamUser } from "@calcom/lib/sync/SyncServiceManager";
 import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
@@ -17,24 +16,7 @@ type CreateOptions = {
   input: TCreateInputSchema;
 };
 
-export const checkIfUserUnderTrial = async (userId: number) => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { trialEndsAt: true },
-  });
-  if (user) {
-    const trialEndDate = user.trialEndsAt;
-    if (trialEndDate && new Date(trialEndDate) > new Date()) {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-};
-
-const generateTrialCheckoutSession = async ({
+const generateCheckoutSession = async ({
   teamSlug,
   teamName,
   userId,
@@ -48,7 +30,7 @@ const generateTrialCheckoutSession = async ({
     return;
   }
 
-  const checkoutSession = await startTrialCheckoutSession({
+  const checkoutSession = await generateTeamCheckoutSession({
     teamSlug,
     teamName,
     userId,
@@ -59,13 +41,15 @@ const generateTrialCheckoutSession = async ({
       code: "INTERNAL_SERVER_ERROR",
       message: "Failed retrieving a checkout session URL.",
     });
-  return { url: checkoutSession.url, message: "Subscribe to Trial Plan to publish Team" };
+  return { url: checkoutSession.url, message: "Payment required to publish team" };
 };
 
 export const createHandler = async ({ ctx, input }: CreateOptions) => {
   const { user } = ctx;
   const { slug, name, logo } = input;
   const isOrgChildTeam = !!user.organizationId;
+  //To remove once teams will be live
+  throw new TRPCError({ code: "BAD_REQUEST", message: "The teams feature is currently being developed" });
 
   // For orgs we want to create teams under the org
   if (user.organizationId && !user.organization.isOrgAdmin) {
@@ -93,33 +77,21 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
     if (nameCollisions) throw new TRPCError({ code: "BAD_REQUEST", message: "team_slug_exists_as_user" });
   }
 
-  const isUserUnderTrial = await checkIfUserUnderTrial(ctx.user.id);
-  const isPaidUser = await userHasPaidTeam(ctx.user.id);
   // If the user is not a part of an org, then make them pay before creating the team
   if (!isOrgChildTeam) {
-    if (ctx.user.trialEndsAt === null) {
-      const checkoutSession = await generateTrialCheckoutSession({
-        teamSlug: slug,
-        teamName: name,
-        userId: user.id,
-      });
+    const checkoutSession = await generateCheckoutSession({
+      teamSlug: slug,
+      teamName: name,
+      userId: user.id,
+    });
 
-      // If there is a checkout session, return it. Otherwise, it means it's disabled.
-      if (checkoutSession)
-        return {
-          url: checkoutSession.url,
-          message: checkoutSession.message,
-          team: null,
-        };
-    } else {
-      if (!isUserUnderTrial && !isPaidUser) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "To continue, kindly commence your subscription via the Billing Page, as your trial period has concluded.",
-        });
-      }
-    }
+    // If there is a checkout session, return it. Otherwise, it means it's disabled.
+    if (checkoutSession)
+      return {
+        url: checkoutSession.url,
+        message: checkoutSession.message,
+        team: null,
+      };
   }
 
   const createdTeam = await prisma.team.create({
@@ -134,10 +106,6 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
           accepted: true,
         },
       },
-      metadata: {
-        paidForByUserId: ctx.user.id,
-        subscriptionStatus: isUserUnderTrial ? "trial" : "active",
-      },
       ...(isOrgChildTeam && { parentId: user.organizationId }),
     },
   });
@@ -147,7 +115,7 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
 
   return {
     url: `${WEBAPP_URL}/settings/teams/${createdTeam.id}/onboard-members`,
-    message: "Team Created",
+    message: "Team billing is disabled, not generating a checkout session.",
     team: createdTeam,
   };
 };

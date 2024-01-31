@@ -9,7 +9,7 @@
 
 # Enterprise Edition
 
-Welcome to the Enterprise Edition ("/ee") of Cal.
+Welcome to the Enterprise Edition ("/ee") of Cal.com.
 
 The [/ee](https://github.com/calcom/cal.com/tree/main/packages/features/ee) subfolder is the place for all the **Enterprise Edition** features from our [hosted](https://cal.com/pricing) plan and enterprise-grade features for [Ultimate](https://cal.com/ultimate) such as SSO, SAML, OIDC, SCIM, SIEM and much more or [Platform](https://cal.com/platform) plan to build a marketplace.
 

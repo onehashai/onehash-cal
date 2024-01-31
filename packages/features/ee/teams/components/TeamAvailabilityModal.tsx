@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import dayjs from "@calcom/dayjs";
+import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
@@ -31,7 +32,7 @@ export default function TeamAvailabilityModal(props: Props) {
   }, [utils, selectedTimeZone, selectedDate]);
 
   return (
-    <>
+    <LicenseRequired>
       <>
         <div className="grid h-[400px] grid-cols-2 space-x-11 rtl:space-x-reverse">
           <div className="col-span-1">
@@ -97,6 +98,6 @@ export default function TeamAvailabilityModal(props: Props) {
           </div>
         </div>
       </>
-    </>
+    </LicenseRequired>
   );
 }

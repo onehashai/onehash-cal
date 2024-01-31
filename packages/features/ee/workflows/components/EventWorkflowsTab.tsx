@@ -13,6 +13,7 @@ import { trpc } from "@calcom/trpc/react";
 import { Button, EmptyScreen, showToast, Switch, Tooltip, Alert } from "@calcom/ui";
 import { ExternalLink, Zap, Lock, Info } from "@calcom/ui/components/icon";
 
+import LicenseRequired from "../../common/components/LicenseRequired";
 import { getActionIcon } from "../lib/getActionIcon";
 import SkeletonLoader from "./SkeletonLoaderEventWorkflowsTab";
 import type { WorkflowType } from "./WorkflowListPage";
@@ -204,7 +205,7 @@ function EventWorkflowsTab(props: Props) {
     t("locked_fields_admin_description"),
     t("locked_fields_member_description")
   );
-  const { data, isLoading } = trpc.viewer.workflows.list.useQuery({
+  const { data, isPending } = trpc.viewer.workflows.list.useQuery({
     teamId: eventType.team?.id,
     userId: !isChildrenManagedEventType ? eventType.userId || undefined : undefined,
   });
@@ -230,7 +231,7 @@ function EventWorkflowsTab(props: Props) {
       );
       setSortedWorkflows(activeWorkflows.concat(disabledWorkflows));
     }
-  }, [isLoading]);
+  }, [isPending]);
 
   const createMutation = trpc.viewer.workflows.create.useMutation({
     onSuccess: async ({ workflow }) => {
@@ -250,8 +251,8 @@ function EventWorkflowsTab(props: Props) {
   });
 
   return (
-    <>
-      {!isLoading ? (
+    <LicenseRequired>
+      {!isPending ? (
         <>
           {isManagedEventType && (
             <Alert
@@ -287,7 +288,7 @@ function EventWorkflowsTab(props: Props) {
                     target="_blank"
                     color="secondary"
                     onClick={() => createMutation.mutate({ teamId: eventType.team?.id })}
-                    loading={createMutation.isLoading}>
+                    loading={createMutation.isPending}>
                     {t("create_workflow")}
                   </Button>
                 }
@@ -298,7 +299,7 @@ function EventWorkflowsTab(props: Props) {
       ) : (
         <SkeletonLoader />
       )}
-    </>
+    </LicenseRequired>
   );
 }
 

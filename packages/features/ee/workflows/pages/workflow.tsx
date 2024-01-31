@@ -26,6 +26,7 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import type { MultiSelectCheckboxesOptionType as Option } from "@calcom/ui";
 import { Alert, Badge, Button, Form, showToast } from "@calcom/ui";
 
+import LicenseRequired from "../../common/components/LicenseRequired";
 import SkeletonLoader from "../components/SkeletonLoaderEdit";
 import WorkflowDetailsPage from "../components/WorkflowDetailsPage";
 import { isSMSAction, isSMSOrWhatsappAction } from "../lib/actionHelperFunctions";
@@ -108,7 +109,7 @@ function WorkflowPage() {
     data: workflow,
     isError,
     error,
-    isLoading,
+    isPending,
   } = trpc.viewer.workflows.get.useQuery(
     { id: +workflowId },
     {
@@ -128,7 +129,7 @@ function WorkflowPage() {
     MembershipRole.MEMBER;
 
   useEffect(() => {
-    if (workflow && !isLoading) {
+    if (workflow && !isPending) {
       if (workflow.userId && workflow.activeOn.find((active) => !!active.eventType.teamId)) {
         setIsMixedEventType(true);
       }
@@ -178,7 +179,7 @@ function WorkflowPage() {
       form.setValue("activeOn", activeOn || []);
       setIsAllDataLoaded(true);
     }
-  }, [isLoading]);
+  }, [isPending]);
 
   const updateMutation = trpc.viewer.workflows.update.useMutation({
     onSuccess: async ({ workflow }) => {
@@ -268,7 +269,7 @@ function WorkflowPage() {
         CTA={
           !readOnly && (
             <div>
-              <Button data-testid="save-workflow" type="submit" loading={updateMutation.isLoading}>
+              <Button data-testid="save-workflow" type="submit" loading={updateMutation.isPending}>
                 {t("save")}
               </Button>
             </div>
@@ -295,7 +296,7 @@ function WorkflowPage() {
             </div>
           )
         }>
-        <>
+        <LicenseRequired>
           {!isError ? (
             <>
               {isAllDataLoaded && user ? (
@@ -318,7 +319,7 @@ function WorkflowPage() {
           ) : (
             <Alert severity="error" title="Something went wrong" message={error.message} />
           )}
-        </>
+        </LicenseRequired>
       </Shell>
     </Form>
   ) : (

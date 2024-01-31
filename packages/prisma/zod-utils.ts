@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { UnitTypeLongPlural } from "dayjs";
+import type { TFunction } from "next-i18next";
 import z, { ZodNullable, ZodObject, ZodOptional } from "zod";
 
 /* eslint-disable no-underscore-dangle */
@@ -249,7 +250,14 @@ export const extendedBookingCreateBody = bookingCreateBodySchema.merge(
   z.object({
     noEmail: z.boolean().optional(),
     recurringCount: z.number().optional(),
-    allRecurringDates: z.string().array().optional(),
+    allRecurringDates: z
+      .array(
+        z.object({
+          start: z.string(),
+          end: z.string(),
+        })
+      )
+      .optional(),
     currentRecurringIndex: z.number().optional(),
     appsStatus: z
       .array(
@@ -300,6 +308,7 @@ export const vitalSettingsUpdateSchema = z.object({
 export const createdEventSchema = z
   .object({
     id: z.string(),
+    thirdPartyRecurringEventId: z.string(),
     password: z.union([z.string(), z.undefined()]),
     onlineMeetingUrl: z.string().nullable(),
     iCalUID: z.string().optional(),
@@ -321,25 +330,35 @@ export const userMetadata = z
       .optional(),
     defaultBookerLayouts: bookerLayouts.optional(),
     // Billing is done on team owners
-    paymentId: z.string().optional(),
-    subscriptionId: z.string().optional(),
-    subscriptionItemId: z.string().optional(),
+    // paymentId: z.string().optional(),
+    // subscriptionId: z.string().optional(),
+    // subscriptionItemId: z.string().optional(),
   })
   .nullable();
+
+export type userMetadataType = z.infer<typeof userMetadata>;
 
 export const teamMetadataSchema = z
   .object({
     requestedSlug: z.string(),
-    paidForByUserId: z.number().optional(),
-    subscriptionStatus: z.string().optional(),
+    // paidForByUserId: z.number().optional(),
+    // subscriptionStatus: z.string().optional(),
     // This is defualt cal.com schema where they take payments for teams
-    // paymentId: z.string(),
-    // subscriptionId: z.string().nullable(),
-    // subscriptionItemId: z.string().nullable(),
+    paymentId: z.string(),
+    subscriptionId: z.string().nullable(),
+    subscriptionItemId: z.string().nullable(),
     isOrganization: z.boolean().nullable(),
     isOrganizationVerified: z.boolean().nullable(),
     isOrganizationConfigured: z.boolean().nullable(),
     orgAutoAcceptEmail: z.string().nullable(),
+    migratedToOrgFrom: z
+      .object({
+        teamSlug: z.string().or(z.null()).optional(),
+        lastMigrationTime: z.string().optional(),
+        reverted: z.boolean().optional(),
+        lastRevertTime: z.string().optional(),
+      })
+      .optional(),
   })
   .partial()
   .nullable();
@@ -599,6 +618,7 @@ export const allManagedEventTypeProps: { [k in keyof Omit<Prisma.EventTypeSelect
   workflows: true,
   bookingFields: true,
   durationLimits: true,
+  assignAllTeamMembers: true,
 };
 
 // All properties that are defined as unlocked based on all managed props
@@ -647,3 +667,5 @@ export const ZVerifyCodeInputSchema = z.object({
 export type ZVerifyCodeInputSchema = z.infer<typeof ZVerifyCodeInputSchema>;
 
 export const coerceToDate = z.coerce.date();
+export const getStringAsNumberRequiredSchema = (t: TFunction) =>
+  z.string().min(1, t("error_required_field")).pipe(z.coerce.number());

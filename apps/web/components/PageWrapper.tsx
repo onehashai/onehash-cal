@@ -88,8 +88,7 @@ function PageWrapper(props: AppProps) {
           </>
         ) : (
           <Component {...pageProps} err={err} />
-        ),
-        router
+        )
       )}
     </AppProviders>
   );

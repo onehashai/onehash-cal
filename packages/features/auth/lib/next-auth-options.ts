@@ -5,6 +5,7 @@ import type { Provider } from "next-auth/providers";
 import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
+import KeyCloakProvider from "next-auth/providers/keycloak";
 
 import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/ImpersonationProvider";
 import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
@@ -32,6 +33,11 @@ const GOOGLE_LOGIN_ENABLED = process.env.GOOGLE_LOGIN_ENABLED === "true";
 const IS_GOOGLE_LOGIN_ENABLED = !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_LOGIN_ENABLED);
 const ORGANIZATIONS_AUTOLINK =
   process.env.ORGANIZATIONS_AUTOLINK === "1" || process.env.ORGANIZATIONS_AUTOLINK === "true";
+//keycloak credentials
+const IS_KEYCLOAK_LOGIN_ENABLED = true;
+const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "";
+const KEYCLOAK_CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || "";
+const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER || "";
 
 const usernameSlug = (username: string) => `${slugify(username)}-${randomString(6).toLowerCase()}`;
 
@@ -270,6 +276,17 @@ if (IS_GOOGLE_LOGIN_ENABLED) {
   );
 }
 
+if (IS_KEYCLOAK_LOGIN_ENABLED) {
+  providers.push(
+    KeyCloakProvider({
+      clientId: KEYCLOAK_CLIENT_ID,
+      clientSecret: KEYCLOAK_CLIENT_SECRET,
+      issuer: KEYCLOAK_ISSUER,
+      allowDangerousEmailAccountLinking: true,
+    })
+  );
+}
+
 if (isSAMLLoginEnabled) {
   providers.push({
     id: "saml",
@@ -384,6 +401,8 @@ const mapIdentityProvider = (providerName: string) => {
     case "saml-idp":
     case "saml":
       return IdentityProvider.SAML;
+    case "keycloak":
+      return IdentityProvider.KEYCLOAK;
     default:
       return IdentityProvider.GOOGLE;
   }
@@ -507,7 +526,7 @@ export const AUTH_OPTIONS: AuthOptions = {
           username: user.username,
           email: user.email,
           role: user.role,
-          impersonatedByUID: user?.impersonatedByUID,
+          impersonatedBy: user.impersonatedBy,
           belongsToActiveTeam: user?.belongsToActiveTeam,
           org: user?.org,
           locale: user?.locale,
@@ -520,7 +539,14 @@ export const AUTH_OPTIONS: AuthOptions = {
         if (!account.provider || !account.providerAccountId) {
           return token;
         }
-        const idP = account.provider === "saml" ? IdentityProvider.SAML : IdentityProvider.GOOGLE;
+        const idP =
+          account.provider === "saml"
+            ? IdentityProvider.SAML
+            : account.provider === "google"
+            ? IdentityProvider.GOOGLE
+            : account.provider === "keycloak"
+            ? IdentityProvider.KEYCLOAK
+            : IdentityProvider.GOOGLE;
 
         const existingUser = await prisma.user.findFirst({
           where: {
@@ -546,7 +572,7 @@ export const AUTH_OPTIONS: AuthOptions = {
           username: existingUser.username,
           email: existingUser.email,
           role: existingUser.role,
-          impersonatedByUID: token.impersonatedByUID as number,
+          impersonatedBy: token.impersonatedBy,
           belongsToActiveTeam: token?.belongsToActiveTeam as boolean,
           org: token?.org,
           locale: existingUser.locale,
@@ -567,7 +593,7 @@ export const AUTH_OPTIONS: AuthOptions = {
           name: token.name,
           username: token.username as string,
           role: token.role as UserPermissionRole,
-          impersonatedByUID: token.impersonatedByUID as number,
+          impersonatedBy: token.impersonatedBy,
           belongsToActiveTeam: token?.belongsToActiveTeam as boolean,
           org: token?.org,
           locale: token.locale,
@@ -754,7 +780,9 @@ export const AUTH_OPTIONS: AuthOptions = {
           // User signs up with email/password and then tries to login with Google/SAML using the same email
           if (
             existingUserWithEmail.identityProvider === IdentityProvider.CAL &&
-            (idP === IdentityProvider.GOOGLE || idP === IdentityProvider.SAML)
+            (idP === IdentityProvider.GOOGLE ||
+              idP === IdentityProvider.SAML ||
+              idP === IdentityProvider.KEYCLOAK)
           ) {
             await prisma.user.update({
               where: { email: existingUserWithEmail.email },
@@ -788,6 +816,7 @@ export const AUTH_OPTIONS: AuthOptions = {
             username: orgId ? slugify(orgUsername) : usernameSlug(user.name),
             emailVerified: new Date(Date.now()),
             name: user.name,
+            ...(user.image && { avatarUrl: user.image }),
             email: user.email,
             identityProvider: idP,
             identityProviderId: account.providerAccountId,
