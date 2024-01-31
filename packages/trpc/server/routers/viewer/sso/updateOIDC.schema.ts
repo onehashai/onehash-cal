@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ZUpdateOIDCInputSchema = z.object({
-  userId: z.union([z.number(), z.null()]),
+  teamId: z.union([z.number(), z.null()]),
   clientId: z.string(),
   clientSecret: z.string(),
   wellKnownUrl: z.string(),

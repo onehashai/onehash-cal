@@ -20,8 +20,9 @@ type GetOptions = {
 };
 
 export const getHandler = async ({ ctx, input }: GetOptions) => {
-  const { userId } = input;
-  const { message, access } = await canAccess(ctx.user);
+  const { teamId } = input;
+
+  const { message, access } = await canAccess(ctx.user, teamId);
 
   if (!access) {
     throw new TRPCError({
@@ -37,7 +38,7 @@ export const getHandler = async ({ ctx, input }: GetOptions) => {
 
   try {
     const connections = await connectionController.getConnections({
-      tenant: userId ? tenantPrefix + userId : samlTenantID,
+      tenant: teamId ? tenantPrefix + teamId : samlTenantID,
       product: samlProductID,
     });
 

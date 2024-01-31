@@ -14,9 +14,9 @@ type UpdateOIDCOptions = {
 };
 
 export const updateOIDCHandler = async ({ ctx, input }: UpdateOIDCOptions) => {
-  const { userId, clientId, clientSecret, wellKnownUrl } = input;
+  const { teamId, clientId, clientSecret, wellKnownUrl } = input;
 
-  const { message, access } = await canAccess(ctx.user);
+  const { message, access } = await canAccess(ctx.user, teamId);
 
   if (!access) {
     throw new TRPCError({
@@ -31,7 +31,7 @@ export const updateOIDCHandler = async ({ ctx, input }: UpdateOIDCOptions) => {
     return await connectionController.createOIDCConnection({
       defaultRedirectUrl: `${process.env.NEXT_PUBLIC_WEBAPP_URL}/api/auth/saml/idp`,
       redirectUrl: JSON.stringify([`${process.env.NEXT_PUBLIC_WEBAPP_URL}/*`]),
-      tenant: userId ? tenantPrefix + userId : samlTenantID,
+      tenant: teamId ? tenantPrefix + teamId : samlTenantID,
       product: samlProductID,
       oidcClientId: clientId,
       oidcClientSecret: clientSecret,
