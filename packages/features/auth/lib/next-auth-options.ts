@@ -688,6 +688,14 @@ export const AUTH_OPTIONS: AuthOptions = {
               // If old user without Account entry we link their google account
               if (existingUser.accounts.length === 0) {
                 const linkAccountWithUserData = { ...account, userId: existingUser.id };
+                if ("refresh_expires_in" in linkAccountWithUserData) {
+                  // Delete refresh_expires_in property
+                  delete linkAccountWithUserData.refresh_expires_in;
+                }
+                if ("not-before-policy" in linkAccountWithUserData) {
+                  // Delete not-before-policy property
+                  delete linkAccountWithUserData["not-before-policy"];
+                }
                 await calcomAdapter.linkAccount(linkAccountWithUserData);
               }
             } catch (error) {
@@ -831,6 +839,14 @@ export const AUTH_OPTIONS: AuthOptions = {
         });
 
         const linkAccountNewUserData = { ...account, userId: newUser.id };
+        if ("refresh_expires_in" in linkAccountNewUserData) {
+          // Delete refresh_expires_in property
+          delete linkAccountNewUserData.refresh_expires_in;
+        }
+        if ("not-before-policy" in linkAccountNewUserData) {
+          // Delete not-before-policy property
+          delete linkAccountNewUserData["not-before-policy"];
+        }
         await calcomAdapter.linkAccount(linkAccountNewUserData);
 
         if (account.twoFactorEnabled) {
