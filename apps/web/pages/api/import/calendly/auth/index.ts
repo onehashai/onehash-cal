@@ -1,4 +1,4 @@
-import CalendlyOAuthProvider from "@onehash/calendly/utils/calendly-oauth-provider";
+import { CalendlyOAuthProvider } from "@onehash/calendly";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { defaultHandler, defaultResponder } from "@calcom/lib/server";
@@ -26,7 +26,13 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     if (!userCalendlyIntegrationProvider) {
       return res.json({ authorized: false });
     }
-    return res.json({ authorized: true });
+    return res.json({
+      authorized: true,
+      authToken: {
+        accessToken: userCalendlyIntegrationProvider.accessToken,
+        refreshToken: userCalendlyIntegrationProvider.refreshToken,
+      },
+    });
   } catch (e) {
     console.error("Internal Server Error:", String(e));
     return res.status(500).json({ error: "Internal Server Error", message: String(e) });
@@ -34,7 +40,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 async function postHandler(req: NextApiRequest, res: NextApiResponse) {
-  const { code, userId } = req.body;
+  const { code, userId } = req.body as { code: string; userId: number };
   console.log("code :", code, "\n id : ", userId);
   if (!code) {
     return res.status(400).json({ error: "Authorization code not provided" });
@@ -103,7 +109,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
     //   `calendlyAccessToken=${access_token}; HttpOnly; Path=/; Max-Age=${expires_in}; SameSite=Lax`,
     //   `calendlyRefreshToken=${refresh_token}; HttpOnly; Path=/; Max-Age=${expires_in}; SameSite=Lax`,
     // ]);
-    return res.send("Success authenticated");
+    return res.json({ accessToken: access_token, refreshToken: refresh_token });
   } catch (error) {
     console.error("Internal Server Error:", String(error));
     return res.status(500).json({ error: "Internal Server Error", message: String(error) });

@@ -79,7 +79,7 @@ export default class CalendlyOAuthProvider {
     }
   };
 
-  public introspectToken = async (token: { accessToken: string; refreshToken: string }) => {
+  public introspectToken = async (token: { accessToken: string; refreshToken: string }): Promise<boolean> => {
     const { oauthUrl, clientId, clientSecret } = this.oauthConfig;
     const tokenData: Record<string, string> = {
       token: token.accessToken,
@@ -109,6 +109,32 @@ export default class CalendlyOAuthProvider {
         console.error("Error fetching access token:", String(error));
       }
       throw error;
+    }
+  };
+
+  public requestNewAccessToken = async (refreshToken: string) => {
+    try {
+      const { oauthUrl, clientId, clientSecret } = this.oauthConfig;
+      const url = `${oauthUrl}/token`;
+      const postData = {
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      };
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams(postData),
+      });
+
+      const data: AccessTokenSuccessResponse = await res.json();
+      return data;
+    } catch (e) {
+      console.error("Error fetching access token:", e);
+      throw e;
     }
   };
 }

@@ -651,16 +651,17 @@ model HashedLink {
 
 model IntegrationAccounts {
   // id           Int                 @id @default(autoincrement())
-  tokenType           String?
-  expiresIn           Int?
-  createdAt           Int?
-  refreshToken        String
-  accessToken         String
-  scope               String?
-  ownerUniqIdentifier String?
-  provider            IntegrationProvider
-  user                User                @relation(fields: [userId], references: [id])
-  userId              Int
+  tokenType              String?
+  expiresIn              Int?
+  createdAt              Int?
+  refreshToken           String
+  accessToken            String
+  scope                  String?
+  ownerUniqIdentifier    String?
+  provider               IntegrationProvider
+  user                   User                    @relation(fields: [userId], references: [id])
+  userId                 Int
+  integrationUserProfile IntegrationUserProfile?
 
   @@id([userId, provider])
   //a user can only have one integration account per provider
@@ -669,6 +670,20 @@ model IntegrationAccounts {
 
 enum IntegrationProvider {
   CALENDLY
+}
+
+model IntegrationUserProfile {
+  scheduling_url              String?
+  avatar_url                  String?
+  created_at                  DateTime?
+  updated_at                  DateTime?
+  current_organization        String?
+  integrationAccount          IntegrationAccounts @relation(fields: [integrationAccountsUserId, integrationAccountsProvider], references: [userId, provider])
+  integrationAccountsUserId   Int
+  integrationAccountsProvider IntegrationProvider
+
+  @@id([integrationAccountsUserId, integrationAccountsProvider])
+  @@unique([integrationAccountsUserId, integrationAccountsProvider])
 }
 
 model Account {

@@ -1,8 +1,20 @@
 // calendly-service.ts
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import type { AxiosInstance, AxiosResponse } from "axios";
 import axios from "axios";
 
-import type { UserSuccessResponse, UserErrorResponse } from "./calendly";
+import type {
+  UserSuccessResponse,
+  UserErrorResponse,
+  CalendlyEventType,
+  CalendlyEventTypeErrorResponse,
+  CalendlyEventTypeSuccessResponse,
+  CalendlyScheduledEvent,
+  CalendlyScheduledEventSuccessResponse,
+  CalendlyScheduledEventErrorResponse,
+  CalendlyScheduledEventInvitee,
+  CalendlyScheduledEventInviteeSuccessResponse,
+  CalendlyScheduledEventInviteeErrorResponse,
+} from "./calendly";
 
 export default class CalendlyAPIService {
   private apiConfig: {
@@ -13,19 +25,14 @@ export default class CalendlyAPIService {
     oauthUrl: string;
   };
   private request: AxiosInstance;
-  private requestInterceptor: number;
-  updateTokensinDBCallback?: (newAccessToken: string, newRefreshToken: string) => Promise<void>;
 
-  constructor(
-    apiConfig: {
-      accessToken: string;
-      refreshToken: string;
-      clientSecret: string;
-      clientID: string;
-      oauthUrl: string;
-    },
-    updateTokensinDBCallback?: (newAccessToken: string, newRefreshToken: string) => Promise<void>
-  ) {
+  constructor(apiConfig: {
+    accessToken: string;
+    refreshToken: string;
+    clientSecret: string;
+    clientID: string;
+    oauthUrl: string;
+  }) {
     const { accessToken, refreshToken, clientSecret, clientID, oauthUrl } = apiConfig;
     if (!accessToken || !refreshToken || !clientSecret || !clientID || !oauthUrl)
       throw new Error("Missing Calendly API configuration");
@@ -36,12 +43,9 @@ export default class CalendlyAPIService {
       clientID,
       oauthUrl,
     };
-    this.updateTokensinDBCallback = updateTokensinDBCallback;
     this.request = axios.create({
       baseURL: "https://api.calendly.com", // Adjust the base URL if needed
     });
-
-    this.requestInterceptor = this.request.interceptors.response.use((res) => res, this._onCalendlyError);
   }
 
   // Rest of the CalendlyService code remains unchanged
@@ -71,10 +75,40 @@ export default class CalendlyAPIService {
     return data;
   };
 
-  getUserEventTypes = async (userUri: string) => {
-    const { data } = await this.request.get(`/event_types?user=${userUri}`, this.requestConfiguration());
-
-    return data;
+  getUserEventTypes = async (userUri: string, active = true): Promise<CalendlyEventType[]> => {
+    let queryParams = `user=${userUri}`;
+    if (active) queryParams += `&active=${active}`;
+    const url = `/event_types?${queryParams}`;
+    const res = await this.request.get(url, this.requestConfiguration());
+    console.log("User event types: ", res.data);
+    if (this._isRequestResponseOk(res)) {
+      const data = res.data as CalendlyEventTypeSuccessResponse;
+      let allEventTypes: CalendlyEventType[] = [...data.collection];
+      let next_page = data.pagination.next_page;
+      while (next_page) {
+        try {
+          const res = await this.request.get(next_page, this.requestConfiguration());
+          if (!this._isRequestResponseOk(res)) {
+            const data = res.data as CalendlyEventTypeErrorResponse;
+            console.error("Error fetching user event types:", data.message);
+            break;
+          }
+          // Add the current collection to the list
+          allEventTypes = [...allEventTypes, ...data.collection];
+          // Update the API URL for the next page
+          next_page = data.pagination.next_page;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+          console.error("Error fetching data:", error.message);
+          break;
+        }
+      }
+      return allEventTypes;
+    } else {
+      const data = res.data as CalendlyEventTypeErrorResponse;
+      console.error("Error fetching user event types:", data.message);
+      return [];
+    }
   };
 
   getUserEventType = async (uuid: string) => {
@@ -85,12 +119,12 @@ export default class CalendlyAPIService {
 
   getUserScheduledEvents = async (
     userUri: string,
-    count: number,
+    count?: number,
     pageToken?: string,
     status?: string,
     maxStartTime?: string,
     minStartTime?: string
-  ) => {
+  ): Promise<CalendlyScheduledEvent[]> => {
     let queryParams = [`user=${userUri}`, `count=${count || 10}`, `sort=start_time:asc`].join("&");
 
     if (pageToken) queryParams += `&page_token=${pageToken}`;
@@ -99,10 +133,35 @@ export default class CalendlyAPIService {
     if (minStartTime) queryParams += `&min_start_time=${minStartTime}`;
 
     const url = `/scheduled_events?${queryParams}`;
-
-    const { data } = await this.request.get(url, this.requestConfiguration());
-
-    return data;
+    const res = await this.request.get(url, this.requestConfiguration());
+    if (this._isRequestResponseOk(res)) {
+      const data = res.data as CalendlyScheduledEventSuccessResponse;
+      let allScheduledEvents: CalendlyScheduledEvent[] = [...data.collection];
+      let next_page = data?.pagination?.next_page;
+      while (next_page) {
+        try {
+          const res = await this.request.get(next_page, this.requestConfiguration());
+          if (!this._isRequestResponseOk(res)) {
+            const data = res.data as CalendlyScheduledEventErrorResponse;
+            console.error("Error fetching user event types:", data.message);
+            break;
+          }
+          // Add the current collection to the list
+          allScheduledEvents = [...allScheduledEvents, ...data.collection];
+          // Update the API URL for the next page
+          next_page = data.pagination.next_page;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+          console.error("Error fetching data:", error.message);
+          break;
+        }
+      }
+      return allScheduledEvents;
+    } else {
+      const data = res.data as CalendlyEventTypeErrorResponse;
+      console.error("Error fetching user event types:", data.message);
+      return [];
+    }
   };
 
   getUserScheduledEvent = async (uuid: string) => {
@@ -111,16 +170,45 @@ export default class CalendlyAPIService {
     return data;
   };
 
-  getUserScheduledEventInvitees = async (uuid: string, count: number, pageToken?: string) => {
-    let queryParams = [`count=${count || 10}`].join("&");
+  getUserScheduledEventInvitees = async (
+    uuid: string,
+    count = 20,
+    pageToken?: string
+  ): Promise<CalendlyScheduledEventInvitee[]> => {
+    let queryParams = [`count=${count}`].join("&");
 
     if (pageToken) queryParams += `&page_token=${pageToken}`;
 
     const url = `/scheduled_events/${uuid}/invitees?${queryParams}`;
-
-    const { data } = await this.request.get(url, this.requestConfiguration());
-
-    return data;
+    const res = await this.request.get(url, this.requestConfiguration());
+    if (this._isRequestResponseOk(res)) {
+      const data = res.data as CalendlyScheduledEventInviteeSuccessResponse;
+      let allScheduledEventInvitees: CalendlyScheduledEventInvitee[] = [...data.collection];
+      let next_page = data?.pagination?.next_page;
+      while (next_page) {
+        try {
+          const res = await this.request.get(next_page, this.requestConfiguration());
+          if (!this._isRequestResponseOk(res)) {
+            const data = res.data as CalendlyScheduledEventInviteeErrorResponse;
+            console.error("Error fetching user event types:", data.message);
+            break;
+          }
+          // Add the current collection to the list
+          allScheduledEventInvitees = [...allScheduledEventInvitees, ...data.collection];
+          // Update the API URL for the next page
+          next_page = data.pagination.next_page;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+          console.error("Error fetching data:", error.message);
+          break;
+        }
+      }
+      return allScheduledEventInvitees;
+    } else {
+      const data = res.data as CalendlyScheduledEventInviteeErrorResponse;
+      console.error("Error fetching user event types:", data.message);
+      return [];
+    }
   };
 
   getUserEventTypeAvailTimes = async (eventUri: string, startTime: string, endTime: string) => {
@@ -156,9 +244,14 @@ export default class CalendlyAPIService {
   getUser = async (userUri: string) => {
     const url = `/users/${userUri}`;
 
-    const { data } = await this.request.get(url, this.requestConfiguration());
-
-    return data;
+    const res = await this.request.get(url, this.requestConfiguration());
+    if (this._isRequestResponseOk(res)) {
+      const data = res.data as UserSuccessResponse;
+      return data;
+    } else {
+      const data = res.data as UserErrorResponse;
+      console.error("Error fetching user info:", data.message);
+    }
   };
 
   markAsNoShow = async (uri: string) => {
@@ -199,39 +292,6 @@ export default class CalendlyAPIService {
       refresh_token: refreshToken,
     });
   };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _onCalendlyError = async (error: { response: { status: number; config: AxiosRequestConfig<any> } }) => {
-    if (error.response.status !== 401) return Promise.reject(error);
-
-    this.request.interceptors.response.eject(this.requestInterceptor);
-
-    try {
-      const response = await this.requestNewAccessToken();
-      const { access_token, refresh_token } = response.data;
-
-      this.apiConfig = {
-        ...this.apiConfig,
-        accessToken: access_token,
-        refreshToken: refresh_token,
-      };
-
-      if (!error.response.config.headers) error.response.config.headers = {};
-
-      error.response.config.headers.Authorization = `Bearer ${access_token}`;
-
-      // Call the callback function to update tokens in the database
-      if (this.updateTokensinDBCallback) {
-        await this.updateTokensinDBCallback(access_token, refresh_token);
-      }
-
-      // retry original request with new access token
-      return this.request(error.response.config);
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  };
-
   _isRequestResponseOk(response: AxiosResponse) {
     return response.status >= 200 && response.status < 300;
   }

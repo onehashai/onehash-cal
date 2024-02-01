@@ -65,10 +65,10 @@ const tabs: VerticalTabItemProps[] = [
     children: [{ name: "manage_billing", href: "/settings/billing" }],
   },
   {
-    name: "integration",
-    href: "/settings/integration",
+    name: "import",
+    href: "/settings/import",
     icon: CalendarPlus,
-    children: [{ name: "calendly_integration", href: "/settings/integration/calendly-integration" }],
+    children: [{ name: "calendly_integration", href: "/settings/import/calendly-import" }],
   },
   {
     name: "developer",
