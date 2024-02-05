@@ -1,4 +1,8 @@
 {
+  "integrate":"Integrate",
+  "integration":"Integration",
+  "calendly_integration":"Calendly",
+  "import_from_calendly_description":"Import configuration from third-party services",
   "identity_provider": "Identity provider",
   "trial_days_left": "You have $t(day, {\"count\": {{days}} }) left on your PRO trial",
   "day_one": "{{count}} day",
