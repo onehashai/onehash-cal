@@ -6,7 +6,7 @@ import OauthPopup from "react-oauth-popup";
 
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { Button, Meta, SkeletonContainer, SkeletonText, showToast } from "@calcom/ui";
+import { Button, Meta, SkeletonContainer, showToast } from "@calcom/ui";
 
 import PageWrapper from "@components/PageWrapper";
 
@@ -14,10 +14,6 @@ const SkeletonLoader = ({ title, description }: { title: string; description: st
   return (
     <SkeletonContainer>
       <Meta title={title} description={description} borderInShellHeader={true} />
-      <div className="divide-subtle border-subtle space-y-6 rounded-b-lg border border-t-0 px-6 py-4">
-        <SkeletonText className="h-8 w-full" />
-        <SkeletonText className="h-8 w-full" />
-      </div>
     </SkeletonContainer>
   );
 };
@@ -134,7 +130,6 @@ const ConferencingLayout = () => {
   const onClose = () => console.log("closed!");
   const calendlyOAuthProvider = new CalendlyOAuthProvider({
     clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-    clientSecret: process.env.CALENDLY_CLIENT_SECRET ?? "",
     redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
     oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
   });
