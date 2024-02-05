@@ -14,6 +14,9 @@ import type {
   CalendlyScheduledEventInvitee,
   CalendlyScheduledEventInviteeSuccessResponse,
   CalendlyScheduledEventInviteeErrorResponse,
+  CalendlyUserAvailabilitySchedulesErrorResponse,
+  CalendlyUserAvailabilitySchedulesSuccessResponse,
+  CalendlyUserAvailabilitySchedules,
 } from "./calendly";
 
 export default class CalendlyAPIService {
@@ -80,7 +83,6 @@ export default class CalendlyAPIService {
     if (active) queryParams += `&active=${active}`;
     const url = `/event_types?${queryParams}`;
     const res = await this.request.get(url, this.requestConfiguration());
-    console.log("User event types: ", res.data);
     if (this._isRequestResponseOk(res)) {
       const data = res.data as CalendlyEventTypeSuccessResponse;
       let allEventTypes: CalendlyEventType[] = [...data.collection];
@@ -233,12 +235,25 @@ export default class CalendlyAPIService {
     return data;
   };
 
-  getUserAvailabilitySchedules = async (userUri: string) => {
-    const url = `/user_availability_schedules?user=${userUri}`;
+  getUserAvailabilitySchedules = async (userUri: string): Promise<CalendlyUserAvailabilitySchedules[]> => {
+    try {
+      const url = `/user_availability_schedules?user=${userUri}`;
+      const res = await this.request.get(url, this.requestConfiguration());
+      if (!this._isRequestResponseOk(res)) {
+        const data = res.data as CalendlyUserAvailabilitySchedulesErrorResponse;
+        console.error("Error fetching user availability schedules:", data.message);
+        throw new Error(data.message);
+      }
+      const data = res.data as CalendlyUserAvailabilitySchedulesSuccessResponse;
+      console.log("User availability schedules:", data.collection);
 
-    const { data } = await this.request.get(url, this.requestConfiguration());
-
-    return data;
+      return data.collection;
+    } catch (e) {
+      e instanceof Error
+        ? console.error("Internal server error:", e.message)
+        : console.error("Internal server error:", String(e));
+      throw e;
+    }
   };
 
   getUser = async (userUri: string) => {

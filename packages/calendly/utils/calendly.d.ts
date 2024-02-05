@@ -17,7 +17,7 @@ type UserSuccessResponse = {
 type ErrorResponse = {
   title: string;
   message: string;
-  details: {
+  details?: {
     parameter: string;
     message: string;
   }[];
@@ -119,7 +119,7 @@ type ScheduledEventMembership = {
 };
 
 type ScheduledEventGuest = {
-  email?: string | null;
+  email: string;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -227,6 +227,33 @@ type CalendlyScheduledEventInviteeSuccessResponse = {
 };
 type CalendlyScheduledEventInviteeErrorResponse = ErrorResponse;
 
+//types for user availability schedules
+
+type CalendlyUserAvailabilityRules = {
+  type: "wday" | "date";
+  intervals?: {
+    from: string;
+    to: string;
+  }[];
+  wday?: wday;
+  date?: string;
+};
+
+type CalendlyUserAvailabilitySchedules = {
+  uri: string;
+  default: boolean;
+  name: string;
+  user: string;
+  timezone: string;
+  rules: CalendlyUserAvailabilityRules[];
+};
+
+type CalendlyUserAvailabilitySchedulesSuccessResponse = {
+  collection: CalendlyUserAvailabilitySchedules[];
+};
+
+type CalendlyUserAvailabilitySchedulesErrorResponse = ErrorResponse;
+
 export type {
   UserSuccessResponse,
   UserErrorResponse,
@@ -241,4 +268,8 @@ export type {
   CalendlyScheduledEventInvitee,
   CalendlyScheduledEventInviteeSuccessResponse,
   CalendlyScheduledEventInviteeErrorResponse,
+  CalendlyUserAvailabilityRules,
+  CalendlyUserAvailabilitySchedules,
+  CalendlyUserAvailabilitySchedulesSuccessResponse,
+  CalendlyUserAvailabilitySchedulesErrorResponse,
 };
