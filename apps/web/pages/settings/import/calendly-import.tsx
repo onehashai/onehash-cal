@@ -1,4 +1,4 @@
-import CalendlyOAuthProvider from "@onehash/calendly/utils/calendly-oauth-provider";
+import { CalendlyOAuthProvider } from "@onehash/calendly";
 import { Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
