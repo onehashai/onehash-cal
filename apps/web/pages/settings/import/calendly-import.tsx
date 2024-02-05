@@ -134,7 +134,7 @@ const ConferencingLayout = () => {
   const onClose = () => console.log("closed!");
   const calendlyOAuthProvider = new CalendlyOAuthProvider({
     clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-    clientSecret: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_SECRET ?? "",
+    clientSecret: process.env.CALENDLY_CLIENT_SECRET ?? "",
     redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
     oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
   });

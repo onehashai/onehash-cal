@@ -3,20 +3,19 @@ import type { AccessTokenErrorResponse, AccessTokenSuccessResponse } from "./cal
 export default class CalendlyOAuthProvider {
   private oauthConfig: {
     clientId: string;
-    clientSecret: string;
+    clientSecret?: string;
     redirectUri: string;
     oauthUrl: string;
   };
 
   constructor(_oauthConfig: {
     clientId: string;
-    clientSecret: string;
+    clientSecret?: string;
     redirectUri: string;
     oauthUrl: string;
   }) {
     const { clientId, clientSecret, redirectUri, oauthUrl } = _oauthConfig;
-    if (!clientId || !clientSecret || !redirectUri || !oauthUrl)
-      throw new Error("Missing Calendly OAuth configuration");
+    if (!clientId || !redirectUri || !oauthUrl) throw new Error("Missing Calendly OAuth configuration");
     this.oauthConfig = {
       clientId,
       clientSecret,
@@ -81,6 +80,9 @@ export default class CalendlyOAuthProvider {
 
   public introspectToken = async (token: { accessToken: string; refreshToken: string }): Promise<boolean> => {
     const { oauthUrl, clientId, clientSecret } = this.oauthConfig;
+    if (!clientSecret) {
+      throw new Error("Client Secret is required to introspect token");
+    }
     const tokenData: Record<string, string> = {
       token: token.accessToken,
       client_id: clientId,
@@ -115,6 +117,9 @@ export default class CalendlyOAuthProvider {
   public requestNewAccessToken = async (refreshToken: string) => {
     try {
       const { oauthUrl, clientId, clientSecret } = this.oauthConfig;
+      if (!clientSecret) {
+        throw new Error("Client Secret is required to introspect token");
+      }
       const url = `${oauthUrl}/token`;
       const postData = {
         client_id: clientId,

@@ -239,7 +239,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     //Initializing the CalendlyOAuthProvider with the required params
     const cOService = new CalendlyOAuthProvider({
       clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-      clientSecret: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_SECRET ?? "",
+      clientSecret: process.env.CALENDLY_CLIENT_SECRET ?? "",
       redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
       oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
     });
@@ -269,7 +269,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       accessToken: userCalendlyIntegrationProvider.accessToken,
       refreshToken: userCalendlyIntegrationProvider.refreshToken,
       clientID: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-      clientSecret: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_SECRET ?? "",
+      clientSecret: process.env.CALENDLY_CLIENT_SECRET ?? "",
       oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
     });
 
