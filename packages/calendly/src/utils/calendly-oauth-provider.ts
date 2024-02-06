@@ -1,4 +1,4 @@
-import type { AccessTokenErrorResponse, AccessTokenSuccessResponse } from "./calendly";
+import type { AccessTokenErrorResponse, AccessTokenSuccessResponse } from "../types";
 
 export default class CalendlyOAuthProvider {
   private oauthConfig: {

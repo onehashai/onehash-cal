@@ -142,7 +142,7 @@ type CalendlyScheduledEvent = {
   status: string;
   start_time: string;
   end_time: string;
-  event_type?: string | null;
+  event_type: string;
   location: ScheduledEventLocation;
   invitees_counter?: ScheduledEventInviteesCounter | null;
   created_at: string;
@@ -235,7 +235,7 @@ type CalendlyUserAvailabilityRules = {
     from: string;
     to: string;
   }[];
-  wday?: wday;
+  wday?: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
   date?: string;
 };
 
@@ -254,7 +254,7 @@ type CalendlyUserAvailabilitySchedulesSuccessResponse = {
 
 type CalendlyUserAvailabilitySchedulesErrorResponse = ErrorResponse;
 
-export type {
+export {
   UserSuccessResponse,
   UserErrorResponse,
   AccessTokenSuccessResponse,

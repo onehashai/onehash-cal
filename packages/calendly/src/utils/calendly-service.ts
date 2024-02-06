@@ -17,7 +17,7 @@ import type {
   CalendlyUserAvailabilitySchedulesErrorResponse,
   CalendlyUserAvailabilitySchedulesSuccessResponse,
   CalendlyUserAvailabilitySchedules,
-} from "./calendly";
+} from "../types";
 
 export default class CalendlyAPIService {
   private apiConfig: {

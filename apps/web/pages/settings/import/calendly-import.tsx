@@ -1,4 +1,4 @@
-import CalendlyOAuthProvider from "@onehash/calendly/utils/calendly-oauth-provider";
+import { CalendlyOAuthProvider } from "@onehash/calendly";
 import { Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -19,20 +19,17 @@ const SkeletonLoader = ({ title, description }: { title: string; description: st
 };
 
 //Component responsible for importing data from Calendly if user has already authorized Calendly
-const ImportFromCalendlyButton = ({ importFromCalendly }: { importFromCalendly: () => Promise<void> }) => {
+const ImportFromCalendlyButton = ({
+  importFromCalendly,
+  importing,
+}: {
+  importFromCalendly: () => Promise<void>;
+  importing: boolean | undefined;
+}) => {
   const { t } = useLocale();
-  const [loading, setLoading] = useState<boolean>(false);
-  const _importFromCalendly = async () => {
-    try {
-      setLoading(true);
-      await importFromCalendly();
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <Button color="secondary" StartIcon={Plus} onClick={_importFromCalendly} loading={loading}>
+    <Button color="secondary" StartIcon={Plus} onClick={importFromCalendly} loading={importing}>
       {t("import")}
     </Button>
   );
@@ -64,8 +61,10 @@ const ConferencingLayout = () => {
   const { t } = useLocale();
 
   const [userId, setUserId] = useState<number>();
-  const [isAuthorized, setIsAuthorized] = useState<boolean>();
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [importing, setImporting] = useState<boolean>(false);
+  const [didAuthorize, setDidAuthorize] = useState<boolean>(false);
 
   const session = useSession();
 
@@ -85,11 +84,10 @@ const ConferencingLayout = () => {
       });
       if (!res.ok) {
         const data = await res.json();
-        console.log("error", data);
+        console.error("error", data);
         return;
       }
       const data = await res.json();
-      console.log("data", data);
       setIsAuthorized(data.authorized);
     } catch (e) {
     } finally {
@@ -119,7 +117,7 @@ const ConferencingLayout = () => {
         return;
       }
       setIsAuthorized(true);
-      // await importFromCalendly();
+      setDidAuthorize(true);
     } catch (e) {
       console.error("Error retrieving tokens", e);
     }
@@ -137,7 +135,8 @@ const ConferencingLayout = () => {
   //responsible for the api call to import data from Calendly
   const importFromCalendly = async () => {
     try {
-      if (!isAuthorized) return;
+      if (!isAuthorized || importing) return;
+      setImporting(true);
       const uri = `/api/import/calendly?userId=${userId}`;
       const res = await fetch(uri, {
         headers: {
@@ -147,13 +146,14 @@ const ConferencingLayout = () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        console.log("error", data);
+        console.error("error", data);
         return;
       }
-      console.log("data", data);
       showToast("Data imported successfully", "success");
     } catch (e) {
       console.error("Error importing from Calendly", e);
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -164,6 +164,12 @@ const ConferencingLayout = () => {
     checkIfAuthorized(session.data.user.id);
   }, [session]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+  useEffect(() => {
+    if (didAuthorize) {
+      importFromCalendly();
+    }
+  }, [didAuthorize]);
 
   return (
     <>
@@ -176,7 +182,7 @@ const ConferencingLayout = () => {
             description={t("import_from_calendly_description")}
             CTA={
               isAuthorized ? (
-                <ImportFromCalendlyButton importFromCalendly={importFromCalendly} />
+                <ImportFromCalendlyButton importFromCalendly={importFromCalendly} importing={importing} />
               ) : (
                 <AuthorizeCalendlyButton
                   onClose={onClose}
