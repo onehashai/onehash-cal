@@ -311,10 +311,7 @@ const getAttendeesWithTimezone = (
 
 //Imports the user availability schedule from Calendly
 const importUserAvailability = async (
-  userAvailabilitySchedules:
-    | CalendlyEventType[]
-    | CalendlyUserAvailabilitySchedules[]
-    | CalendlyScheduledEvent[],
+  userAvailabilitySchedules: CalendlyUserAvailabilitySchedules[],
   userIntID: number
 ) => {
   const userAvailabilityTimesToBeInserted: Prisma.ScheduleCreateInput[] = (
@@ -332,6 +329,7 @@ const importUserAvailability = async (
             endTime: getDatetimeObjectFromTime(rule.interval.to, availabilitySchedule.timezone),
             days: rule.type === "wday" ? rule.wdays : undefined,
             date: rule.type === "date" ? rule.date : undefined,
+            userId: userIntID,
           };
         }),
       },
@@ -447,8 +445,8 @@ const getUniqueAvailabilityTimes = async (
 const importEventTypesAndBookings = async (
   userIntID: number,
   cAService: CalendlyAPIService,
-  userScheduledEvents: CalendlyEventType[] | CalendlyUserAvailabilitySchedules[] | CalendlyScheduledEvent[],
-  userEventTypes: CalendlyEventType[] | CalendlyUserAvailabilitySchedules[] | CalendlyScheduledEvent[]
+  userScheduledEvents: CalendlyScheduledEvent[],
+  userEventTypes: CalendlyEventType[]
 ) => {
   const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = await getEventScheduler(
     userScheduledEvents,
@@ -523,8 +521,13 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     );
 
     await Promise.all([
-      importUserAvailability(userAvailabilitySchedules, userIntID),
-      importEventTypesAndBookings(userIntID, cAService, userScheduledEvents, userEventTypes),
+      importUserAvailability(userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[], userIntID),
+      importEventTypesAndBookings(
+        userIntID,
+        cAService,
+        userScheduledEvents as CalendlyScheduledEvent[],
+        userEventTypes as CalendlyEventType[]
+      ),
     ]);
 
     return res.status(200).json({ message: "Success" });
