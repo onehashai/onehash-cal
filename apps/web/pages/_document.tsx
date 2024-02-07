@@ -9,8 +9,6 @@ import { IS_PRODUCTION } from "@calcom/lib/constants";
 
 import { csp } from "@lib/csp";
 
-import ClarityScript from "../scripts/ClarityScript";
-
 type Props = Record<string, unknown> & DocumentProps & { newLocale: string };
 function setHeader(ctx: NextPageContext, name: string, value: string) {
   try {
@@ -117,7 +115,6 @@ class MyDocument extends Document<Props> {
           }>
           <Main />
           <NextScript nonce={nonce} />
-          <ClarityScript />
         </body>
       </Html>
     );
