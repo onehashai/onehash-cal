@@ -9,6 +9,8 @@ import { IS_PRODUCTION } from "@calcom/lib/constants";
 
 import { csp } from "@lib/csp";
 
+import ClarityScript from "../scripts/ClarityScript";
+
 type Props = Record<string, unknown> & DocumentProps & { newLocale: string };
 function setHeader(ctx: NextPageContext, name: string, value: string) {
   try {
@@ -70,6 +72,7 @@ class MyDocument extends Document<Props> {
               __html: `window.calNewLocale = "${newLocale}";`,
             }}
           />
+          <ClarityScript />
           <link rel="apple-touch-icon" sizes="180x180" href="/api/logo?type=apple-touch-icon" />
           <link rel="icon" type="image/png" sizes="32x32" href="/api/logo?type=favicon-32" />
           <link rel="icon" type="image/png" sizes="16x16" href="/api/logo?type=favicon-16" />
