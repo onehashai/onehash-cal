@@ -42,7 +42,8 @@
         "NEXT_PUBLIC_ONEHASH_URL",
         "KEYCLOAK_CLIENT_ID",
         "KEYCLOAK_CLIENT_SECRET",
-        "KEYCLOAK_ISSUER"
+        "KEYCLOAK_ISSUER",
+        "NEXT_PUBLIC_MICROSOFT_CLARITY"
       ]
     },
     "@calcom/web#dx": {
