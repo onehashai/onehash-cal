@@ -74,7 +74,6 @@ class MyDocument extends Document<Props> {
           />
           <script
             id="microsoft-clarity-init"
-            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 (function(c,l,a,r,i,t,y){
