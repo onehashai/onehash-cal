@@ -119,14 +119,21 @@ export default class CalendlyAPIService {
     return data;
   };
 
-  getUserScheduledEvents = async (
-    userUri: string,
-    count?: number,
-    pageToken?: string,
-    status?: string,
-    maxStartTime?: string,
-    minStartTime?: string
-  ): Promise<CalendlyScheduledEvent[]> => {
+  getUserScheduledEvents = async ({
+    userUri,
+    count,
+    pageToken,
+    status,
+    maxStartTime,
+    minStartTime,
+  }: {
+    userUri: string;
+    count?: number;
+    pageToken?: string;
+    status?: string;
+    maxStartTime?: string;
+    minStartTime?: string;
+  }): Promise<CalendlyScheduledEvent[]> => {
     let queryParams = [`user=${userUri}`, `count=${count || 10}`, `sort=start_time:asc`].join("&");
 
     if (pageToken) queryParams += `&page_token=${pageToken}`;

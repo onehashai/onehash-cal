@@ -8,6 +8,7 @@ import type {
 import { CalendlyAPIService, CalendlyOAuthProvider } from "@onehash/calendly";
 import type { NextApiRequest, NextApiResponse } from "next";
 
+// import { mapBookingToMutationInput } from "@calcom/features/bookings/lib";
 import { defaultHandler, defaultResponder } from "@calcom/lib/server";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
@@ -128,7 +129,13 @@ const fetchCalendlyData = async (
 
   promises.push(cAService.getUserEventTypes(ownerUniqIdentifier));
   promises.push(cAService.getUserAvailabilitySchedules(ownerUniqIdentifier));
-  promises.push(cAService.getUserScheduledEvents(ownerUniqIdentifier));
+  promises.push(
+    cAService.getUserScheduledEvents({
+      userUri: ownerUniqIdentifier,
+      minStartTime: new Date().toISOString(),
+      status: "active",
+    })
+  );
 
   return await Promise.all(promises);
 };
@@ -357,13 +364,18 @@ const importUserAvailability = async (
 };
 
 //Maps the scheduled events with its corresponding event types and returns the event types to be inserted
-const fetchEventTypesToBeInserted = (
+const fetchEventTypesAndBookingsToBeInserted = (
   mergedList: EventTypeWithScheduledEvent[],
   userIntID: number
-): Prisma.EventTypeCreateInput[] => {
+): {
+  event_type_input: Prisma.EventTypeCreateInput;
+  scheduled_events_input: Prisma.BookingCreateInput[];
+}[] => {
   return mergedList.map((mergedItem) => {
     const { event_type, scheduled_events } = mergedItem;
-    const d: Prisma.EventTypeCreateInput = {
+
+    //Event Type Input
+    const event_type_input: Prisma.EventTypeCreateInput = {
       title: event_type.name,
       slug: event_type.slug,
       description: event_type.description_plain,
@@ -372,46 +384,49 @@ const fetchEventTypesToBeInserted = (
       owner: { connect: { id: userIntID } },
       users: { connect: { id: userIntID } },
     };
-    if (scheduled_events.length > 0) {
-      d.bookings = {
-        create: scheduled_events.map((scheduledEvent) => {
-          const eventId = scheduledEvent.uri.substring(scheduledEvent.uri.lastIndexOf("/") + 1);
-          return {
-            uid: eventId,
-            userId: userIntID,
-            title: `${scheduledEvent.name} between ${scheduledEvent.scheduled_by?.name} and ${scheduledEvent.event_memberships[0].user_name}`,
-            responses: {
-              name: scheduledEvent.scheduled_by?.name ?? "N/A",
-              email: scheduledEvent.scheduled_by?.email ?? "N/A",
-              guests: scheduledEvent.event_guests?.map((g) => g.email),
-            },
-            startTime: new Date(scheduledEvent.start_time),
-            endTime: new Date(scheduledEvent.end_time),
-            attendees: {
-              createMany: {
-                data: getAttendeesWithTimezone(scheduledEvent),
-              },
-            },
-            location:
-              scheduledEvent.location.type === "physical"
-                ? `${scheduledEvent.location.type} @ ${scheduledEvent.location.location}`
-                : scheduledEvent.location.join_url,
-            createdAt: new Date(scheduledEvent.created_at),
-            updatedAt: new Date(scheduledEvent.updated_at),
-            status: scheduledEvent.status === "canceled" ? BookingStatus.CANCELLED : BookingStatus.ACCEPTED,
-            ...(scheduledEvent.status === "canceled" && {
-              cancellationReason: scheduledEvent.cancellation?.reason,
-            }),
-          };
-        }),
-      };
-    }
     if (event_type.pooling_type === "collective") {
-      d.schedulingType = SchedulingType.COLLECTIVE;
+      event_type_input.schedulingType = SchedulingType.COLLECTIVE;
     } else if (event_type.pooling_type === "round_robin") {
-      d.schedulingType = SchedulingType.ROUND_ROBIN;
+      event_type_input.schedulingType = SchedulingType.ROUND_ROBIN;
     }
-    return d;
+    //Scheduled Booking Input
+    let scheduled_events_input: Prisma.BookingCreateInput[] = [];
+    if (scheduled_events.length > 0) {
+      scheduled_events_input = scheduled_events.map((scheduledEvent) => {
+        const eventId = scheduledEvent.uri.substring(scheduledEvent.uri.lastIndexOf("/") + 1);
+        return {
+          uid: eventId,
+          user: { connect: { id: userIntID } },
+          title: `${scheduledEvent.name} between ${scheduledEvent.scheduled_by?.name} and ${scheduledEvent.event_memberships[0].user_name}`,
+          responses: {
+            name: scheduledEvent.scheduled_by?.name ?? "N/A",
+            email: scheduledEvent.scheduled_by?.email ?? "N/A",
+            guests: scheduledEvent.event_guests?.map((g) => g.email),
+          },
+          startTime: new Date(scheduledEvent.start_time),
+          endTime: new Date(scheduledEvent.end_time),
+          attendees: {
+            createMany: {
+              data: getAttendeesWithTimezone(scheduledEvent),
+            },
+          },
+          location:
+            scheduledEvent.location.type === "physical"
+              ? `${scheduledEvent.location.type} @ ${scheduledEvent.location.location}`
+              : scheduledEvent.location.join_url,
+          createdAt: new Date(scheduledEvent.created_at),
+          updatedAt: new Date(scheduledEvent.updated_at),
+          status: scheduledEvent.status === "canceled" ? BookingStatus.CANCELLED : BookingStatus.ACCEPTED,
+          ...(scheduledEvent.status === "canceled" && {
+            cancellationReason: scheduledEvent.cancellation?.reason,
+          }),
+        };
+      });
+    }
+    return {
+      event_type_input,
+      scheduled_events_input,
+    };
   });
 };
 
@@ -448,6 +463,15 @@ const importEventTypesAndBookings = async (
   userScheduledEvents: CalendlyScheduledEvent[],
   userEventTypes: CalendlyEventType[]
 ) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userIntID,
+    },
+    include: {
+      destinationCalendar: true,
+    },
+  });
+  if (!user) return;
   const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = await getEventScheduler(
     userScheduledEvents,
     cAService.getUserScheduledEventInvitees
@@ -461,25 +485,149 @@ const importEventTypesAndBookings = async (
 
   console.log("mergedList", mergedList);
 
-  // importing userEventTypes to our db
-  const eventTypesToBeInserted: Prisma.EventTypeCreateInput[] = fetchEventTypesToBeInserted(
-    mergedList,
-    userIntID
-  );
+  // event types with bookings to be inserted
+  const eventTypesAndBookingsToBeInserted: {
+    event_type_input: Prisma.EventTypeCreateInput;
+    scheduled_events_input: Prisma.BookingCreateInput[];
+  }[] = fetchEventTypesAndBookingsToBeInserted(mergedList, userIntID);
 
-  eventTypesToBeInserted.forEach(async (eventType) => {
-    const addedEvent = await prisma.eventType.upsert({
-      create: eventType,
-      update: {},
-      where: {
-        userId_slug: {
-          userId: userIntID,
-          slug: eventType.slug,
+  if (eventTypesAndBookingsToBeInserted.length === 0) return;
+
+  console.log("eventTypesAndBookingsToBeInserted", eventTypesAndBookingsToBeInserted);
+
+  const eventTypesToBeInsertedPromises = eventTypesAndBookingsToBeInserted.map((eventTypeAndBooking) => {
+    const { event_type_input, scheduled_events_input } = eventTypeAndBooking;
+
+    return prisma.eventType
+      .upsert({
+        create: event_type_input,
+        update: {},
+        where: {
+          userId_slug: {
+            userId: userIntID,
+            slug: event_type_input.slug,
+          },
         },
-      },
-    });
-    console.log("addedEvent", addedEvent);
+      })
+      .then((eventTypeResult) => {
+        const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
+          return prisma.booking.create({
+            data: {
+              ...scheduledEvent,
+              eventType: { connect: { id: eventTypeResult.id } },
+            },
+          });
+        });
+        return Promise.all(bookingPromises).then((bookings) => {
+          return { upsertedEventType: eventTypeResult, createdBookings: bookings };
+        });
+      });
   });
+
+  const eventTypesAndBookingsInsertedResults = await Promise.all(eventTypesToBeInsertedPromises);
+
+  console.log("eventTypesAndBookingsInsertedResults", eventTypesAndBookingsInsertedResults);
+
+  // // Extract booking IDs from each transaction result
+  // const bookingIds = eventTypesAndBookingsInsertedResults.flatMap((result) =>
+  //   result.createdBookings.map((booking) => booking.id)
+  // );
+  // // Fetch all bookings with desired fields using the extracted IDs
+  // const createdBookings = await prisma.booking.findMany({
+  //   where: {
+  //     id: {
+  //       in: bookingIds,
+  //     },
+  //   },
+  //   include: {
+  //     eventType: true,
+  //     attendees: true,
+  //     destinationCalendar: true,
+  //   },
+  // });
+
+  // console.log("All bookings created:", createdBookings);
+
+  // //handle booking confirmation
+  // async function handleBookingConfirmation() {
+  //   if (!user) return;
+  //   // Fetch user credentials and translation
+  //   const [credentials, tOrganizer] = await Promise.all([
+  //     getUsersCredentials(userIntID),
+  //     getTranslation(user.locale ?? "en", "common"),
+  //   ]);
+  //   const userWithCredentials = { ...user, credentials };
+
+  //   const bookingConfirmationPromises = createdBookings.map(async (booking) => {
+  //     // Retrieving translations for attendees' locales
+  //     const translations = new Map();
+  //     const attendeesListPromises = booking.attendees.map(async (attendee) => {
+  //       const locale = attendee.locale ?? "en";
+  //       let translate = translations.get(locale);
+  //       if (!translate) {
+  //         translate = await getTranslation(locale, "common");
+  //         translations.set(locale, translate);
+  //       }
+  //       return {
+  //         name: attendee.name,
+  //         email: attendee.email,
+  //         timeZone: attendee.timeZone,
+  //         language: { translate, locale },
+  //       };
+  //     });
+  //     const attendeesList = await Promise.all(attendeesListPromises);
+
+  //     // Construct calendar event
+  //     const evt: CalendarEvent = {
+  //       type: booking?.eventType?.slug as string,
+  //       title: booking.title,
+  //       description: booking.description,
+  //       ...getCalEventResponses({
+  //         bookingFields: booking.eventType?.bookingFields ?? null,
+  //         booking,
+  //       }),
+  //       customInputs: isPrismaObjOrUndefined(booking.customInputs),
+  //       startTime: booking.startTime.toISOString(),
+  //       endTime: booking.endTime.toISOString(),
+  //       organizer: {
+  //         email: user.email,
+  //         name: user.name || "Unnamed",
+  //         username: user.username || undefined,
+  //         timeZone: user.timeZone,
+  //         timeFormat: getTimeFormatStringFromUserTimeFormat(user.timeFormat),
+  //         language: { translate: tOrganizer, locale: user.locale ?? "en" },
+  //       },
+  //       attendees: attendeesList,
+  //       location: booking.location ?? "",
+  //       uid: booking.uid,
+  //       destinationCalendar: booking?.destinationCalendar
+  //         ? [booking.destinationCalendar]
+  //         : user.destinationCalendar
+  //         ? [user.destinationCalendar]
+  //         : [],
+  //       requiresConfirmation: booking?.eventType?.requiresConfirmation ?? false,
+  //       eventTypeId: booking.eventType?.id,
+  //     };
+
+  //     // Handle confirmation for the booking
+  //     return handleConfirmation({
+  //       user: userWithCredentials,
+  //       evt: evt,
+  //       prisma: prisma,
+  //       bookingId: booking.id,
+  //       booking: {
+  //         eventType: booking.eventType,
+  //         smsReminderNumber: booking.smsReminderNumber,
+  //         eventTypeId: booking.eventType?.id ?? null,
+  //         userId: userIntID,
+  //       },
+  //     });
+  //   });
+  //   // Processing each booking concurrently
+  //   await Promise.all(bookingConfirmationPromises);
+  // }
+
+  // await handleBookingConfirmation();
 };
 
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
