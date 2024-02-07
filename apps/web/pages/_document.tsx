@@ -72,7 +72,6 @@ class MyDocument extends Document<Props> {
               __html: `window.calNewLocale = "${newLocale}";`,
             }}
           />
-          <ClarityScript />
           <link rel="apple-touch-icon" sizes="180x180" href="/api/logo?type=apple-touch-icon" />
           <link rel="icon" type="image/png" sizes="32x32" href="/api/logo?type=favicon-32" />
           <link rel="icon" type="image/png" sizes="16x16" href="/api/logo?type=favicon-16" />
@@ -106,6 +105,7 @@ class MyDocument extends Document<Props> {
           }>
           <Main />
           <NextScript nonce={nonce} />
+          <ClarityScript />
         </body>
       </Html>
     );
