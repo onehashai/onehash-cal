@@ -252,8 +252,6 @@ export default class CalendlyAPIService {
         throw new Error(data.message);
       }
       const data = res.data as CalendlyUserAvailabilitySchedulesSuccessResponse;
-      console.log("User availability schedules:", data.collection);
-
       return data.collection;
     } catch (e) {
       e instanceof Error
