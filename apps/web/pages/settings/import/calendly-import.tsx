@@ -42,7 +42,7 @@ const AuthorizeCalendlyButton = ({
   onClose,
 }: {
   authorizationUrl: string;
-  onCode: (code: string) => void;
+  onCode: (code: string, params: URLSearchParams) => void;
   onClose: () => void;
 }) => {
   const { t } = useLocale();
@@ -99,32 +99,32 @@ const ConferencingLayout = () => {
    * Retrieves and stores the user's access token and refresh token from Calendly
    * @param code  Authorization Code is a temporary code that the client exchanges for an access token.
    */
-  const retrieveUserCalendlyAccessToken = async (code: string) => {
-    try {
-      const res = await fetch("/api/import/calendly/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code,
-          userId,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        console.log("error", data);
-        return;
+  const retrieveUserCalendlyAccessToken = (code: string) => {
+    console.log("Code received from Calendly");
+    fetch("/api/import/calendly/auth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code,
+        userId,
+      }),
+    }).then(
+      (res) => {
+        if (res.ok) {
+          setIsAuthorized(true);
+          setDidAuthorize(true);
+        }
+      },
+      (err) => {
+        console.error("Error retrieving tokens", err);
       }
-      setIsAuthorized(true);
-      setDidAuthorize(true);
-    } catch (e) {
-      console.error("Error retrieving tokens", e);
-    }
+    );
   };
 
   //handles the authorization code returned from Calendly
-  const onCode = (code: string) => retrieveUserCalendlyAccessToken(code);
+  const onCode = (code: string, _params: URLSearchParams) => retrieveUserCalendlyAccessToken(code);
   const onClose = () => console.log("closed!");
   const calendlyOAuthProvider = new CalendlyOAuthProvider({
     clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
