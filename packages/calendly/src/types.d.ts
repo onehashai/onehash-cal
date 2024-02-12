@@ -100,19 +100,19 @@ type CalendlyEventTypeSuccessResponse = {
 type CalendlyEventTypeErrorResponse = ErrorResponse;
 
 //Types for user scheduled event
-type ScheduledEventLocation = {
-  type?: string | null;
-  location?: string | null;
-  join_url?: string | null;
+type CalendlyScheduledEventLocation = {
+  type: string;
+  location?: string;
+  join_url?: string;
 };
 
-type ScheduledEventInviteesCounter = {
+type CalendlyScheduledEventInviteesCounter = {
   total?: number | null;
   active?: number | null;
   limit?: number | null;
 };
 
-type ScheduledEventMembership = {
+type CalendlyScheduledEventMembership = {
   user?: string | null;
   user_email: string;
   user_name: string;
@@ -143,21 +143,21 @@ type CalendlyScheduledEvent = {
   start_time: string;
   end_time: string;
   event_type: string;
-  location: ScheduledEventLocation;
-  invitees_counter?: ScheduledEventInviteesCounter | null;
+  location: CalendlyScheduledEventLocation;
+  invitees_counter?: CalendlyScheduledEventInviteesCounter | null;
   created_at: string;
   updated_at: string;
-  event_memberships: ScheduledEventMembership[];
+  event_memberships: CalendlyScheduledEventMembership[];
   event_guests?: ScheduledEventGuest[] | null;
   cancellation: CalendlyScheduledEventCancellation | null;
   calendar_event?: ScheduledEventCalendar | null;
 };
 
-type ScheduledEventPagination = Pagination;
+type CalendlyScheduledEventPagination = Pagination;
 
 type CalendlyScheduledEventSuccessResponse = {
   collection: CalendlyScheduledEvent[];
-  pagination: ScheduledEventPagination;
+  pagination: CalendlyScheduledEventPagination;
 };
 
 type CalendlyScheduledEventErrorResponse = ErrorResponse;
@@ -262,6 +262,7 @@ export {
   CalendlyEventType,
   CalendlyEventTypeSuccessResponse,
   CalendlyEventTypeErrorResponse,
+  CalendlyScheduledEventLocation,
   CalendlyScheduledEvent,
   CalendlyScheduledEventSuccessResponse,
   CalendlyScheduledEventErrorResponse,
