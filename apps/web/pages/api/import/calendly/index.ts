@@ -1,5 +1,6 @@
 import type {
   CalendlyEventType,
+  CalendlyScheduledEventLocation,
   CalendlyScheduledEvent,
   CalendlyScheduledEventInvitee,
   CalendlyUserAvailabilityRules,
@@ -185,27 +186,40 @@ const combinedRules = (rules: CalendlyUserAvailabilityRules[]): CombinedAvailabi
 
 //Maps the scheduled events with its corresponding scheduler
 const getEventScheduler = async (
-  userScheduledEvents: CalendlyEventType[] | CalendlyUserAvailabilitySchedules[] | CalendlyScheduledEvent[],
+  userScheduledEvents: CalendlyScheduledEvent[],
   getUserScheduledEventInvitees: (
     uuid: string,
     count?: number,
     pageToken?: string | undefined
   ) => Promise<CalendlyScheduledEventInvitee[]>
 ): Promise<CalendlyScheduledEventWithScheduler[]> => {
-  const uuids = (userScheduledEvents as CalendlyScheduledEvent[]).map((userScheduledEvent) =>
-    userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1)
-  );
+  const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = [];
 
-  const scheduledEventInviteesByUUID = await Promise.all(
-    uuids.map((uuid) => getUserScheduledEventInvitees(uuid))
-  );
+  // Create an array of promises for fetching invitees
+  const inviteePromises = userScheduledEvents.map((userScheduledEvent) => {
+    const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
+    return getUserScheduledEventInvitees(uuid);
+  });
 
-  const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = (
-    userScheduledEvents as CalendlyScheduledEvent[]
-  ).map((userScheduledEvent, index) => ({
-    ...userScheduledEvent,
-    scheduled_by: scheduledEventInviteesByUUID[index][0] || null,
-  }));
+  // Fetching all invitees concurrently
+  const allInvitees = await Promise.all(inviteePromises);
+
+  // Iterate through events and check payment(if the booking is paid , we skip it )
+  userScheduledEvents.forEach((userScheduledEvent, index) => {
+    const scheduledEventInvitees = allInvitees[index];
+    const scheduled_by = scheduledEventInvitees[0] || null;
+
+    // Skip paid bookings, as it'll cause integrity issues
+    if (scheduled_by?.payment !== undefined && scheduled_by?.payment !== null) {
+      return;
+    }
+
+    userScheduledEventsWithScheduler.push({
+      ...userScheduledEvent,
+      scheduled_by,
+    });
+  });
+
   return userScheduledEventsWithScheduler;
 };
 
@@ -370,6 +384,28 @@ const importUserAvailability = async (
   );
 };
 
+const handleBookingLocation = (location: CalendlyScheduledEventLocation) => {
+  switch (location.type) {
+    case "physical":
+      return `In Person Meeting\nAt ${location.location}`;
+    case "outbound_call":
+      return `Phone Call\nGuest's contact number ${location.location}`;
+    case "inbound_call":
+      return `Phone Call\nHost's contact number ${location.location}`;
+    case "custom":
+    case "ask_invitee":
+      return String(location.location);
+    case "google_conference":
+    case "zoom":
+    case "gotomeeting":
+    case "microsoft_teams_conference":
+    case "webex_conference":
+      return MeetLocationType;
+    default: //location type not specified
+      return undefined;
+  }
+};
+
 //Maps the  event types with its corresponding scheduled events to input schema
 const mapEventTypeAndBookingsToInputSchema = (
   mergedList: EventTypeWithScheduledEvent[],
@@ -419,10 +455,7 @@ const mapEventTypeAndBookingsToInputSchema = (
             },
           },
           customInputs: {},
-          location:
-            scheduledEvent.location.type === "physical"
-              ? `${scheduledEvent.location.type} @ ${scheduledEvent.location.location}`
-              : MeetLocationType,
+          location: handleBookingLocation(scheduledEvent.location),
           createdAt: new Date(scheduledEvent.created_at),
           updatedAt: new Date(scheduledEvent.updated_at),
           status: scheduledEvent.status === "canceled" ? BookingStatus.CANCELLED : BookingStatus.ACCEPTED,
