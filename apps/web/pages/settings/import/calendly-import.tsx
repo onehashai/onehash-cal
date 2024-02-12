@@ -149,7 +149,7 @@ const ConferencingLayout = () => {
         console.error("error", data);
         return;
       }
-      showToast("Data imported successfully", "success");
+      showToast("Data importing began in background", "success");
     } catch (e) {
       console.error("Error importing from Calendly", e);
     } finally {

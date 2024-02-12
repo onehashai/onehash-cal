@@ -7,6 +7,7 @@ import type {
   CalendlyUserAvailabilitySchedules,
 } from "@onehash/calendly";
 import { CalendlyAPIService, CalendlyOAuthProvider } from "@onehash/calendly";
+import { inngestClient } from "@pages/api/inngest";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { MeetLocationType } from "@calcom/app-store/locations";
@@ -711,33 +712,32 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 
     //Initializing the CalendlyOAuthProvider with the required params
     userCalendlyIntegrationProvider = await refreshTokenIfExpired(userCalendlyIntegrationProvider, userId);
-
-    //Initializing the CalendlyAPIService with the required params
-    const cAService = new CalendlyAPIService({
-      accessToken: userCalendlyIntegrationProvider.accessToken,
-      refreshToken: userCalendlyIntegrationProvider.refreshToken,
-      clientID: NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-      clientSecret: CALENDLY_CLIENT_SECRET ?? "",
-      oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
-    });
-
     if (!userCalendlyIntegrationProvider.ownerUniqIdentifier) {
       return res.status(400).json({ message: "Missing User Unique Identifier" });
     }
-    const [userEventTypes, userAvailabilitySchedules, userScheduledEvents] = await fetchCalendlyData(
-      userCalendlyIntegrationProvider.ownerUniqIdentifier,
-      cAService
-    );
 
-    await Promise.all([
-      importUserAvailability(userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[], userIntID),
-      importEventTypesAndBookings(
-        userIntID,
-        cAService,
-        userScheduledEvents as CalendlyScheduledEvent[],
-        userEventTypes as CalendlyEventType[]
-      ),
-    ]);
+    await inngestClient.send({
+      // The event name
+      name: "import-from-calendly",
+      // The event's data
+      data: {
+        userCalendlyIntegrationProvider: {
+          accessToken: userCalendlyIntegrationProvider.accessToken,
+          refreshToken: userCalendlyIntegrationProvider.refreshToken,
+          ownerUniqIdentifier: userCalendlyIntegrationProvider.ownerUniqIdentifier,
+        },
+        userIntID: userIntID,
+      },
+    });
+    // //Initializing the CalendlyAPIService with the required pakrams
+    // await handleCalendlyImportEvent(
+    //   {
+    //     accessToken: userCalendlyIntegrationProvider.accessToken,
+    //     refreshToken: userCalendlyIntegrationProvider.refreshToken,
+    //     ownerUniqIdentifier: userCalendlyIntegrationProvider.ownerUniqIdentifier,
+    //   },
+    //   userIntID
+    // );
 
     return res.status(200).json({ message: "Success" });
   } catch (e) {
@@ -748,3 +748,34 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 export default defaultHandler({
   GET: Promise.resolve({ default: defaultResponder(getHandler) }),
 });
+export const handleCalendlyImportEvent = async (
+  userCalendlyIntegrationProvider: {
+    refreshToken: string;
+    accessToken: string;
+    ownerUniqIdentifier: string;
+  },
+  userIntID: number
+) => {
+  const cAService = new CalendlyAPIService({
+    accessToken: userCalendlyIntegrationProvider.accessToken,
+    refreshToken: userCalendlyIntegrationProvider.refreshToken,
+    clientID: NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
+    clientSecret: CALENDLY_CLIENT_SECRET ?? "",
+    oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
+  });
+
+  const [userEventTypes, userAvailabilitySchedules, userScheduledEvents] = await fetchCalendlyData(
+    userCalendlyIntegrationProvider.ownerUniqIdentifier,
+    cAService
+  );
+
+  await Promise.all([
+    importUserAvailability(userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[], userIntID),
+    importEventTypesAndBookings(
+      userIntID,
+      cAService,
+      userScheduledEvents as CalendlyScheduledEvent[],
+      userEventTypes as CalendlyEventType[]
+    ),
+  ]);
+};
