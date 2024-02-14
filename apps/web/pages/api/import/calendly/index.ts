@@ -11,6 +11,7 @@ import { inngestClient } from "@pages/api/inngest";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { MeetLocationType } from "@calcom/app-store/locations";
+import dayjs from "@calcom/dayjs";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { handleConfirmation } from "@calcom/features/bookings/lib/handleConfirmation";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
@@ -290,24 +291,19 @@ const doesBookingOverlap = async (userScheduledEvent: CalendlyScheduledEvent) =>
 };
 
 //Returns the datetime object from the time and timezone
-const getDatetimeObjectFromTime = (time: string, timezone: string): Date => {
+const getDatetimeObjectFromTime = (time: string) => {
   const [hours, minutes] = time.split(":").map(Number); // Convert to numbers
-  const currentDate = new Date();
-  currentDate.setUTCHours(hours);
-  currentDate.setUTCMinutes(minutes);
-  const formatOptions: Intl.DateTimeFormatOptions = {
-    timeZone: timezone,
-    hour12: false,
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  };
-  const dateTimeWithTimeZone = new Intl.DateTimeFormat("en-US", formatOptions).format(currentDate);
-  const date = new Date(dateTimeWithTimeZone);
-  return date;
+
+  // Get the current date in UTC
+  const currentDate = dayjs().utc();
+
+  // Create a new date object with the specified time
+  const dateWithTime = currentDate.set("hour", hours).set("minute", minutes);
+
+  // Convert to the specified timezone and format the output
+  const formattedDate = dateWithTime.format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+
+  return formattedDate;
 };
 
 //Returns the server timezone
@@ -358,8 +354,8 @@ const importUserAvailability = async (
       availability: {
         create: combinedRules(availabilitySchedule.rules).map((rule) => {
           return {
-            startTime: getDatetimeObjectFromTime(rule.interval.from, availabilitySchedule.timezone),
-            endTime: getDatetimeObjectFromTime(rule.interval.to, availabilitySchedule.timezone),
+            startTime: getDatetimeObjectFromTime(rule.interval.from),
+            endTime: getDatetimeObjectFromTime(rule.interval.to),
             days: rule.type === "wday" ? rule.wdays : undefined,
             date: rule.type === "date" ? rule.date : undefined,
             userId: userIntID,
