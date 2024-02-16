@@ -112,21 +112,23 @@ const refreshTokenIfExpired = async (
     accessToken: userCalendlyIntegrationProvider.accessToken,
     refreshToken: userCalendlyIntegrationProvider.refreshToken,
   });
+  console.log("isTokenValid", isTokenValid);
   //If user access token is expired then request for new access token
   if (!isTokenValid) {
     const freshTokenData = await cOService.requestNewAccessToken(
       userCalendlyIntegrationProvider.refreshToken
     );
+    console.log("freshTokenData", freshTokenData);
+
     //update the new tokens in db and the current token state "userCalendlyIntegrationProvider"
     userCalendlyIntegrationProvider = await updateTokensInDb({
-      userId: userId,
+      userId,
       accessToken: freshTokenData.access_token,
       refreshToken: freshTokenData.refresh_token,
       createdAt: freshTokenData.created_at,
       expiresIn: freshTokenData.expires_in,
     });
   }
-  return userCalendlyIntegrationProvider;
 };
 
 //Fetches user data from Calendly including event types, availability schedules and scheduled events
@@ -136,13 +138,13 @@ const fetchCalendlyData = async (
 ): Promise<(CalendlyEventType[] | CalendlyUserAvailabilitySchedules[] | CalendlyScheduledEvent[])[]> => {
   const promises = [];
 
-  promises.push(cAService.getUserEventTypes(ownerUniqIdentifier));
   promises.push(cAService.getUserAvailabilitySchedules(ownerUniqIdentifier));
+  promises.push(cAService.getUserEventTypes(ownerUniqIdentifier));
   promises.push(
     cAService.getUserScheduledEvents({
       userUri: ownerUniqIdentifier,
-      minStartTime: new Date().toISOString(),
-      status: "active",
+      // minStartTime: new Date().toISOString(),
+      // status: "active",
     })
   );
 
@@ -482,31 +484,48 @@ const insertEventTypeAndBookingsToDB = async (
       const { event_type_input, scheduled_events_input } = eventTypeAndBooking;
 
       // Perform the eventType upsert
-      return prisma.eventType
-        .upsert({
-          create: event_type_input,
-          update: {},
-          where: {
-            userId_slug: {
-              userId: userIntID,
-              slug: event_type_input.slug,
+      return prisma.eventType.upsert({
+        create: {
+          ...event_type_input,
+          bookings: {
+            createMany: {
+              data: scheduled_events_input,
+              skipDuplicates: true,
             },
           },
-        })
-        .then(async (upsertedEventType) => {
-          // Once eventTypeResult is resolved, create the bookings
-          const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
-            return prisma.booking.create({
-              data: {
-                ...scheduledEvent,
-                eventType: { connect: { id: upsertedEventType.id } },
-              },
-            });
-          });
+        },
+        update: {
+          bookings: {
+            createMany: {
+              data: scheduled_events_input,
+              skipDuplicates: true,
+            },
+          },
+        },
+        where: {
+          userId_slug: {
+            userId: userIntID,
+            slug: event_type_input.slug,
+          },
+        },
+        include: {
+          bookings: true,
+        },
+      });
+      // .then(async (upsertedEventType) => {
+      //   // Once eventTypeResult is resolved, create the bookings
+      //   const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
+      //     return prisma.booking.create({
+      //       data: {
+      //         ...scheduledEvent,
+      //         eventType: { connect: { id: upsertedEventType.id } },
+      //       },
+      //     });
+      //   });
 
-          const createdBookings = await Promise.all(bookingPromises);
-          return { upsertedEventType, createdBookings };
-        });
+      //   const createdBookings = await Promise.all(bookingPromises);
+      //   return { upsertedEventType, createdBookings };
+      // });
     }
   );
 
@@ -574,8 +593,13 @@ const importEventTypesAndBookings = async (
 
     // Extract booking IDs from each transaction result
     const bookingIds = eventTypesAndBookingsInsertedResults.flatMap((result) =>
-      result.createdBookings.map((booking) => booking.id)
+      result.bookings.flatMap((booking) => {
+        return booking.status === BookingStatus.ACCEPTED && new Date(booking.startTime) > new Date()
+          ? [booking.id]
+          : [];
+      })
     );
+
     await handleBookingsConfirmation(bookingIds, userIntID);
   } catch (error) {
     console.error("Error importing Calendly data:", error);
@@ -696,7 +720,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   const userIntID = parseInt(userId);
   try {
     //Checking if the user has authorized Calendly
-    let userCalendlyIntegrationProvider = await prisma.integrationAccounts.findFirst({
+    const userCalendlyIntegrationProvider = await prisma.integrationAccounts.findFirst({
       where: {
         userId: userIntID,
         provider: IntegrationProvider.CALENDLY,
@@ -707,7 +731,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     //Initializing the CalendlyOAuthProvider with the required params
-    userCalendlyIntegrationProvider = await refreshTokenIfExpired(userCalendlyIntegrationProvider, userId);
+    await refreshTokenIfExpired(userCalendlyIntegrationProvider, userId);
     if (!userCalendlyIntegrationProvider.ownerUniqIdentifier) {
       return res.status(400).json({ message: "Missing User Unique Identifier" });
     }
@@ -760,10 +784,13 @@ export const handleCalendlyImportEvent = async (
     oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
   });
 
-  const [userEventTypes, userAvailabilitySchedules, userScheduledEvents] = await fetchCalendlyData(
+  const [userAvailabilitySchedules, userEventTypes, userScheduledEvents] = await fetchCalendlyData(
     userCalendlyIntegrationProvider.ownerUniqIdentifier,
     cAService
   );
+  console.log("userAvailabilitySchedules", userAvailabilitySchedules);
+  console.log("userEventTypes", userEventTypes);
+  console.log("userScheduledEvents", userScheduledEvents);
 
   await Promise.all([
     importUserAvailability(userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[], userIntID),
