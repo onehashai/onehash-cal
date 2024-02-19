@@ -4,10 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
-import { subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import classNames from "@calcom/lib/classNames";
-import { CAL_URL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
@@ -50,21 +47,20 @@ export type WorkflowType = Workflow & {
   }[];
   readOnly?: boolean;
 };
-interface Props {
-  workflows: WorkflowType[] | undefined;
+
+interface WorkflowListProps {
+  workflows: WorkflowType[];
 }
-export default function WorkflowListPage({ workflows }: Props) {
+
+export default function WorkflowList({ workflows }: WorkflowListProps) {
   const { t } = useLocale();
   const utils = trpc.useContext();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workflowToDeleteId, setwWorkflowToDeleteId] = useState(0);
+  const [workflowToDeleteId, setWorkflowToDeleteId] = useState(0);
   const [parent] = useAutoAnimate<HTMLUListElement>();
   const router = useRouter();
 
-  const orgBranding = useOrgBranding();
-  const urlPrefix = orgBranding ? `${orgBranding.slug}.${subdomainSuffix()}` : CAL_URL;
-
-  const mutation = trpc.viewer.workflowOrder.useMutation({
+  const workflowOrderMutation = trpc.viewer.workflowOrder.useMutation({
     onError: async (err) => {
       console.error(err.message);
       await utils.viewer.workflows.filteredList.cancel();
@@ -76,7 +72,7 @@ export default function WorkflowListPage({ workflows }: Props) {
   });
 
   async function moveWorkflow(index: number, increment: 1 | -1) {
-    const types = workflows!;
+    const types = workflows;
 
     const newList = [...types];
 
@@ -89,14 +85,14 @@ export default function WorkflowListPage({ workflows }: Props) {
 
     await utils.viewer.appRoutingForms.forms.cancel();
 
-    mutation.mutate({
+    workflowOrderMutation.mutate({
       ids: newList?.map((type) => type.id),
     });
   }
 
   return (
     <>
-      {workflows && workflows.length > 0 ? (
+      {workflows.length > 0 ? (
         <div className="bg-default border-subtle overflow-hidden rounded-md border sm:mx-0">
           <ul className="divide-subtle !static w-full divide-y" data-testid="workflow-list" ref={parent}>
             {workflows.map((workflow, index) => {
@@ -243,7 +239,7 @@ export default function WorkflowListPage({ workflows }: Props) {
                             <Button
                               onClick={() => {
                                 setDeleteDialogOpen(true);
-                                setwWorkflowToDeleteId(workflow.id);
+                                setWorkflowToDeleteId(workflow.id);
                               }}
                               color="secondary"
                               variant="icon"
@@ -281,7 +277,7 @@ export default function WorkflowListPage({ workflows }: Props) {
                                   StartIcon={Trash2}
                                   onClick={() => {
                                     setDeleteDialogOpen(true);
-                                    setwWorkflowToDeleteId(workflow.id);
+                                    setWorkflowToDeleteId(workflow.id);
                                   }}>
                                   {t("delete")}
                                 </DropdownItem>

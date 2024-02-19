@@ -1,7 +1,7 @@
 import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
 import { updateMeeting } from "@calcom/core/videoClient";
+import { deleteScheduledEmailReminder } from "@calcom/ee/workflows/lib/reminders/managers/emailReminderManager";
 import { sendCancelledSeatEmails } from "@calcom/emails";
-import { deleteScheduledEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
 import { deleteScheduledSMSReminder } from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
 import { deleteScheduledWhatsappReminder } from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
 import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";

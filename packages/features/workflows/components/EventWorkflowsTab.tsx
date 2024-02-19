@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
-import { isTextMessageToAttendeeAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
+import { isTextMessageToAttendeeAction } from "@calcom/features/workflows/lib/actionHelperFunctions";
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HttpError } from "@calcom/lib/http-error";
@@ -13,9 +13,8 @@ import { trpc } from "@calcom/trpc/react";
 import { Button, EmptyScreen, showToast, Switch, Tooltip, Alert } from "@calcom/ui";
 import { ExternalLink, Zap, Lock, Info } from "@calcom/ui/components/icon";
 
-import LicenseRequired from "../../common/components/LicenseRequired";
 import { getActionIcon } from "../lib/getActionIcon";
-import SkeletonLoader from "./SkeletonLoaderEventWorkflowsTab";
+import { SkeletonLoaderEventWorkflowsTab } from "./SkeletonLoader";
 import type { WorkflowType } from "./WorkflowListPage";
 
 type ItemProps = {
@@ -205,7 +204,7 @@ function EventWorkflowsTab(props: Props) {
     t("locked_fields_admin_description"),
     t("locked_fields_member_description")
   );
-  const { data, isPending } = trpc.viewer.workflows.list.useQuery({
+  const { data, isLoading } = trpc.viewer.workflows.list.useQuery({
     teamId: eventType.team?.id,
     userId: !isChildrenManagedEventType ? eventType.userId || undefined : undefined,
   });
@@ -231,7 +230,7 @@ function EventWorkflowsTab(props: Props) {
       );
       setSortedWorkflows(activeWorkflows.concat(disabledWorkflows));
     }
-  }, [isPending]);
+  }, [isLoading]);
 
   const createMutation = trpc.viewer.workflows.create.useMutation({
     onSuccess: async ({ workflow }) => {
@@ -251,8 +250,8 @@ function EventWorkflowsTab(props: Props) {
   });
 
   return (
-    <LicenseRequired>
-      {!isPending ? (
+    <>
+      {!isLoading ? (
         <>
           {isManagedEventType && (
             <Alert
@@ -288,7 +287,7 @@ function EventWorkflowsTab(props: Props) {
                     target="_blank"
                     color="secondary"
                     onClick={() => createMutation.mutate({ teamId: eventType.team?.id })}
-                    loading={createMutation.isPending}>
+                    loading={createMutation.isLoading}>
                     {t("create_workflow")}
                   </Button>
                 }
@@ -297,9 +296,9 @@ function EventWorkflowsTab(props: Props) {
           )}
         </>
       ) : (
-        <SkeletonLoader />
+        <SkeletonLoaderEventWorkflowsTab />
       )}
-    </LicenseRequired>
+    </>
   );
 }
 

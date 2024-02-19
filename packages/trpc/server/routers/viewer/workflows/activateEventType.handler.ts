@@ -1,7 +1,7 @@
 import {
   deleteScheduledEmailReminder,
   scheduleEmailReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+} from "@calcom/ee/workflows/lib/reminders/managers/emailReminderManager";
 import {
   deleteScheduledSMSReminder,
   scheduleSMSReminder,

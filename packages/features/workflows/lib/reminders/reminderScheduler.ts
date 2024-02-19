@@ -4,15 +4,18 @@ import {
   isSMSAction,
   isTextMessageToAttendeeAction,
   isWhatsappAction,
-} from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
+} from "@calcom/features/workflows/lib/actionHelperFunctions";
 import { SENDER_NAME } from "@calcom/lib/constants";
 import { WorkflowActions, WorkflowMethods, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
-import { deleteScheduledEmailReminder, scheduleEmailReminder } from "./emailReminderManager";
-import type { ScheduleTextReminderAction } from "./smsReminderManager";
-import { deleteScheduledSMSReminder, scheduleSMSReminder } from "./smsReminderManager";
-import { deleteScheduledWhatsappReminder, scheduleWhatsappReminder } from "./whatsappReminderManager";
+import { deleteScheduledEmailReminder, scheduleEmailReminder } from "./managers/emailReminderManager";
+import type { ScheduleTextReminderAction } from "./managers/smsReminderManager";
+import { deleteScheduledSMSReminder, scheduleSMSReminder } from "./managers/smsReminderManager";
+import {
+  deleteScheduledWhatsappReminder,
+  scheduleWhatsappReminder,
+} from "./managers/whatsappReminderManager";
 
 type ExtendedCalendarEvent = CalendarEvent & {
   metadata?: { videoCallUrl: string | undefined };

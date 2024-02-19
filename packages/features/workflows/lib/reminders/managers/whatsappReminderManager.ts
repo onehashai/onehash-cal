@@ -8,15 +8,15 @@ import {
   WorkflowMethods,
 } from "@calcom/prisma/enums";
 
-import * as twilio from "./providers/twilioProvider";
-import type { ScheduleTextReminderArgs, timeUnitLowerCase } from "./smsReminderManager";
-import { deleteScheduledSMSReminder } from "./smsReminderManager";
+import * as twilio from "../providers/twilioProvider";
 import {
   whatsappEventCancelledTemplate,
   whatsappEventCompletedTemplate,
   whatsappEventRescheduledTemplate,
   whatsappReminderTemplate,
-} from "./templates/whatsapp";
+} from "../templates/whatsappReminderTemplate";
+import type { ScheduleTextReminderArgs, timeUnitLowerCase } from "./smsReminderManager";
+import { deleteScheduledSMSReminder } from "./smsReminderManager";
 
 const log = logger.getSubLogger({ prefix: ["[whatsappReminderManager]"] });
 

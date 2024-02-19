@@ -18,11 +18,11 @@ import {
 } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 
-import { getBatchId, sendSendgridMail } from "./providers/sendgridProvider";
+import { getBatchId, sendSendgridMail } from "../providers/sendgridProvider";
+import type { VariablesType } from "../templates/customTemplate";
+import customTemplate from "../templates/customTemplate";
+import emailReminderTemplate from "../templates/emailReminderTemplate";
 import type { AttendeeInBookingInfo, BookingInfo, timeUnitLowerCase } from "./smsReminderManager";
-import type { VariablesType } from "./templates/customTemplate";
-import customTemplate from "./templates/customTemplate";
-import emailReminderTemplate from "./templates/emailReminderTemplate";
 
 const log = logger.getSubLogger({ prefix: ["[emailReminderManager]"] });
 

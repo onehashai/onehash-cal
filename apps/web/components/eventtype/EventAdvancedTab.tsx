@@ -12,13 +12,13 @@ import { getEventName } from "@calcom/core/event";
 import getLocationsOptionsForSelect from "@calcom/features/bookings/lib/getLocationOptionsForSelect";
 import DestinationCalendarSelector from "@calcom/features/calendars/DestinationCalendarSelector";
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
 import { FormBuilder } from "@calcom/features/form-builder/FormBuilder";
 import type { EditableSchema } from "@calcom/features/form-builder/schema";
 import { BookerLayoutSelector } from "@calcom/features/settings/BookerLayoutSelector";
+import {
+  allowDisablingAttendeeConfirmationEmails,
+  allowDisablingHostConfirmationEmails,
+} from "@calcom/features/workflows/lib/allowDisablingStandardEmails";
 import { classNames } from "@calcom/lib";
 import { APP_NAME, CAL_URL } from "@calcom/lib/constants";
 import { IS_VISUAL_REGRESSION_TESTING } from "@calcom/lib/constants";

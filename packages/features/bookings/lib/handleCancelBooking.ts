@@ -7,9 +7,9 @@ import { FAKE_DAILY_CREDENTIAL } from "@calcom/app-store/dailyvideo/lib/VideoApi
 import { DailyLocationType } from "@calcom/app-store/locations";
 import { deleteMeeting } from "@calcom/core/videoClient";
 import dayjs from "@calcom/dayjs";
+import { deleteScheduledEmailReminder } from "@calcom/ee/workflows/lib/reminders/managers/emailReminderManager";
 import { sendCancelledEmails } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
-import { deleteScheduledEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
 import { sendCancelledReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import { deleteScheduledSMSReminder } from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
 import { deleteScheduledWhatsappReminder } from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";

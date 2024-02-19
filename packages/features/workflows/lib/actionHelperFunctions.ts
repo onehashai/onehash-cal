@@ -8,7 +8,7 @@ import {
   whatsappEventCompletedTemplate,
   whatsappEventRescheduledTemplate,
   whatsappReminderTemplate,
-} from "../lib/reminders/templates/whatsapp";
+} from "./reminders/templates/whatsappReminderTemplate";
 
 export function shouldScheduleEmailReminder(action: WorkflowActions) {
   return action === WorkflowActions.EMAIL_ATTENDEE || action === WorkflowActions.EMAIL_HOST;

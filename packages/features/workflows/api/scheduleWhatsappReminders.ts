@@ -58,26 +58,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       continue;
     }
     try {
+      let userName;
+      let attendeeName;
+      let timeZone;
       const sendTo =
         reminder.workflowStep.action === WorkflowActions.WHATSAPP_NUMBER
           ? reminder.workflowStep.sendTo
           : reminder.booking?.smsReminderNumber;
 
-      const userName =
-        reminder.workflowStep.action === WorkflowActions.WHATSAPP_ATTENDEE
-          ? reminder.booking?.attendees[0].name
-          : "";
-
-      const attendeeName =
-        reminder.workflowStep.action === WorkflowActions.WHATSAPP_ATTENDEE
-          ? reminder.booking?.user?.name
-          : reminder.booking?.attendees[0].name;
-
-      const timeZone =
-        reminder.workflowStep.action === WorkflowActions.WHATSAPP_ATTENDEE
-          ? reminder.booking?.attendees[0].timeZone
-          : reminder.booking?.user?.timeZone;
-
+      if (reminder.workflowStep.action === WorkflowActions.SMS_ATTENDEE) {
+        userName = reminder.booking?.attendees[0].name;
+        attendeeName = reminder.booking?.user?.name;
+        timeZone = reminder.booking?.attendees[0].timeZone;
+      } else {
+        userName = "";
+        attendeeName = reminder.booking?.attendees[0].name;
+        timeZone = reminder.booking?.user?.timeZone;
+      }
       const templateFunction = getWhatsappTemplateFunction(reminder.workflowStep.template);
       const message = templateFunction(
         false,

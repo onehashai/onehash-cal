@@ -9,7 +9,7 @@ import { SENDER_NAME } from "@calcom/lib/constants";
 import { WorkflowActions, WorkflowMethods, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
-import { deleteScheduledEmailReminder, scheduleEmailReminder } from "./emailReminderManager";
+import { deleteScheduledEmailReminder, scheduleEmailReminder } from "./managers/emailReminderManager";
 import type { ScheduleTextReminderAction } from "./smsReminderManager";
 import { deleteScheduledSMSReminder, scheduleSMSReminder } from "./smsReminderManager";
 import { deleteScheduledWhatsappReminder, scheduleWhatsappReminder } from "./whatsappReminderManager";

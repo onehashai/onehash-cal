@@ -1,4 +1,4 @@
-import { deleteScheduledEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+import { deleteScheduledEmailReminder } from "@calcom/ee/workflows/lib/reminders/managers/emailReminderManager";
 import { deleteScheduledSMSReminder } from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
 import { prisma } from "@calcom/prisma";
 import { WorkflowMethods } from "@calcom/prisma/enums";

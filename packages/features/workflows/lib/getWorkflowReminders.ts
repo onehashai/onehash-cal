@@ -64,7 +64,7 @@ async function getWorkflowReminders<T extends Prisma.WorkflowReminderSelect>(
 
 type RemindersToDeleteType = { referenceId: string | null };
 
-export async function getAllRemindersToDelete(): Promise<RemindersToDeleteType[]> {
+export async function fetchRemindersToBeDeleted(): Promise<RemindersToDeleteType[]> {
   const whereFilter: Prisma.WorkflowReminderWhereInput = {
     method: WorkflowMethods.EMAIL,
     cancelled: true,
@@ -84,7 +84,7 @@ export async function getAllRemindersToDelete(): Promise<RemindersToDeleteType[]
 
 type RemindersToCancelType = { referenceId: string | null; id: number };
 
-export async function getAllRemindersToCancel(): Promise<RemindersToCancelType[]> {
+export async function fetchRemindersToBeCancelled(): Promise<RemindersToCancelType[]> {
   const whereFilter: Prisma.WorkflowReminderWhereInput = {
     cancelled: true,
     scheduled: true, //if it is false then they are already cancelled
@@ -103,7 +103,7 @@ export async function getAllRemindersToCancel(): Promise<RemindersToCancelType[]
   return remindersToCancel;
 }
 
-export async function getAllUnscheduledReminders(): Promise<PartialWorkflowReminder[]> {
+export async function fetchUnscheduledReminders(): Promise<PartialWorkflowReminder[]> {
   const whereFilter: Prisma.WorkflowReminderWhereInput = {
     method: WorkflowMethods.EMAIL,
     scheduled: false,

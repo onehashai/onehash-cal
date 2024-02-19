@@ -1,14 +1,14 @@
 import type { Prisma } from "@prisma/client";
 
 import {
+  deleteScheduledEmailReminder,
+  scheduleEmailReminder,
+} from "@calcom/ee/workflows/lib/reminders/managers/emailReminderManager";
+import {
   isSMSOrWhatsappAction,
   isTextMessageToAttendeeAction,
   isTextMessageToSpecificNumber,
 } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
-import {
-  deleteScheduledEmailReminder,
-  scheduleEmailReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
 import {
   deleteScheduledSMSReminder,
   scheduleSMSReminder,

@@ -6,7 +6,7 @@ import { CalendarEventBuilder } from "@calcom/core/builders/CalendarEvent/builde
 import { CalendarEventDirector } from "@calcom/core/builders/CalendarEvent/director";
 import { deleteMeeting } from "@calcom/core/videoClient";
 import dayjs from "@calcom/dayjs";
-import { deleteScheduledEmailReminder } from "@calcom/ee/workflows/lib/reminders/emailReminderManager";
+import { deleteScheduledEmailReminder } from "@calcom/ee/workflows/lib/reminders/managers/emailReminderManager";
 import { deleteScheduledSMSReminder } from "@calcom/ee/workflows/lib/reminders/smsReminderManager";
 import { deleteScheduledWhatsappReminder } from "@calcom/ee/workflows/lib/reminders/whatsappReminderManager";
 import { sendRequestRescheduleEmail } from "@calcom/emails";

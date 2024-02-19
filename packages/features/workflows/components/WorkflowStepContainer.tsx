@@ -53,7 +53,7 @@ import { DYNAMIC_TEXT_VARIABLES } from "../lib/constants";
 import { getWorkflowTemplateOptions, getWorkflowTriggerOptions } from "../lib/getOptions";
 import emailReminderTemplate from "../lib/reminders/templates/emailReminderTemplate";
 import smsReminderTemplate from "../lib/reminders/templates/smsReminderTemplate";
-import { whatsappReminderTemplate } from "../lib/reminders/templates/whatsapp";
+import { whatsappReminderTemplate } from "../lib/reminders/templates/whatsappReminderTemplate";
 import type { FormValues } from "../pages/workflow";
 import { TimeTimeUnitInput } from "./TimeTimeUnitInput";
 
@@ -614,7 +614,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                           <Button
                             color="secondary"
                             className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
-                            disabled={verifyPhoneNumberMutation.isPending || props.readOnly}
+                            disabled={verifyPhoneNumberMutation.isLoading || props.readOnly}
                             onClick={() => {
                               verifyPhoneNumberMutation.mutate({
                                 phoneNumber: form.getValues(`steps.${step.stepNumber - 1}.sendTo`) || "",

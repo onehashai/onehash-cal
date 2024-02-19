@@ -7,14 +7,12 @@ import type { SVGComponent } from "@calcom/types/SVGComponent";
 import { CreateButtonWithTeamsList, EmptyScreen as ClassicEmptyScreen, showToast } from "@calcom/ui";
 import { Mail, Smartphone, Zap } from "@calcom/ui/components/icon";
 
-type WorkflowExampleType = {
+type WorkflowExampleProps = {
   Icon: SVGComponent;
   text: string;
 };
 
-function WorkflowExample(props: WorkflowExampleType) {
-  const { Icon, text } = props;
-
+function WorkflowExample({ Icon, text }: WorkflowExampleProps) {
   return (
     <div className="border-subtle mx-2 my-2 max-h-24 max-w-[600px] rounded-md border border-solid p-6">
       <div className="flex ">
@@ -31,7 +29,7 @@ function WorkflowExample(props: WorkflowExampleType) {
   );
 }
 
-export default function EmptyScreen(props: { isFilteredView: boolean }) {
+export default function EmptyScreen({ isFilteredView }: { isFilteredView: boolean }) {
   const { t } = useLocale();
   const router = useRouter();
 
@@ -52,7 +50,7 @@ export default function EmptyScreen(props: { isFilteredView: boolean }) {
     },
   });
 
-  const workflowsExamples = [
+  const workflowExamples = [
     { icon: Smartphone, text: t("workflow_example_1") },
     { icon: Smartphone, text: t("workflow_example_2") },
     { icon: Mail, text: t("workflow_example_3") },
@@ -60,9 +58,8 @@ export default function EmptyScreen(props: { isFilteredView: boolean }) {
     { icon: Mail, text: t("workflow_example_5") },
     { icon: Smartphone, text: t("workflow_example_6") },
   ];
-  // new workflow example when 'after meetings ends' trigger is implemented: Send custom thank you email to attendee after event (Smile icon),
 
-  if (props.isFilteredView) {
+  if (isFilteredView) {
     return <ClassicEmptyScreen Icon={Zap} headline={t("no_workflows")} description={t("change_filter")} />;
   }
 
@@ -82,14 +79,14 @@ export default function EmptyScreen(props: { isFilteredView: boolean }) {
               subtitle={t("new_workflow_subtitle").toUpperCase()}
               createFunction={(teamId?: number) => createMutation.mutate({ teamId })}
               buttonText={t("create_workflow")}
-              isPending={createMutation.isPending}
+              isPending={createMutation.isLoading}
             />
           </div>
         </div>
       </div>
       <div className="flex flex-row items-center justify-center">
         <div className="grid-cols-none items-center lg:grid lg:grid-cols-3 xl:mx-20">
-          {workflowsExamples.map((example, index) => (
+          {workflowExamples.map((example, index) => (
             <WorkflowExample key={index} Icon={example.icon} text={example.text} />
           ))}
         </div>

@@ -9,12 +9,12 @@ import { WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 import type { CalEventResponses, RecurringEvent } from "@calcom/types/Calendar";
 
-import { getSenderId } from "../alphanumericSenderIdSupport";
+import { getSenderId } from "../../alphanumericSenderIdSupport";
+import * as twilio from "../providers/twilioProvider";
+import type { VariablesType } from "../templates/customTemplate";
+import customTemplate from "../templates/customTemplate";
+import smsReminderTemplate from "../templates/smsReminderTemplate";
 import type { ScheduleReminderArgs } from "./emailReminderManager";
-import * as twilio from "./providers/twilioProvider";
-import type { VariablesType } from "./templates/customTemplate";
-import customTemplate from "./templates/customTemplate";
-import smsReminderTemplate from "./templates/smsReminderTemplate";
 
 export enum timeUnitLowerCase {
   DAY = "day",
