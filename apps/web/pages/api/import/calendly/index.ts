@@ -143,8 +143,8 @@ const fetchCalendlyData = async (
   promises.push(
     cAService.getUserScheduledEvents({
       userUri: ownerUniqIdentifier,
-      // minStartTime: new Date().toISOString(),
-      // status: "active",
+      minStartTime: new Date().toISOString(),
+      status: "active",
     })
   );
 
@@ -484,48 +484,31 @@ const insertEventTypeAndBookingsToDB = async (
       const { event_type_input, scheduled_events_input } = eventTypeAndBooking;
 
       // Perform the eventType upsert
-      return prisma.eventType.upsert({
-        create: {
-          ...event_type_input,
-          bookings: {
-            createMany: {
-              data: scheduled_events_input,
-              skipDuplicates: true,
+      return prisma.eventType
+        .upsert({
+          create: event_type_input,
+          update: {},
+          where: {
+            userId_slug: {
+              userId: userIntID,
+              slug: event_type_input.slug,
             },
           },
-        },
-        update: {
-          bookings: {
-            createMany: {
-              data: scheduled_events_input,
-              skipDuplicates: true,
-            },
-          },
-        },
-        where: {
-          userId_slug: {
-            userId: userIntID,
-            slug: event_type_input.slug,
-          },
-        },
-        include: {
-          bookings: true,
-        },
-      });
-      // .then(async (upsertedEventType) => {
-      //   // Once eventTypeResult is resolved, create the bookings
-      //   const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
-      //     return prisma.booking.create({
-      //       data: {
-      //         ...scheduledEvent,
-      //         eventType: { connect: { id: upsertedEventType.id } },
-      //       },
-      //     });
-      //   });
+        })
+        .then(async (upsertedEventType) => {
+          // Once eventTypeResult is resolved, create the bookings
+          const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
+            return prisma.booking.create({
+              data: {
+                ...scheduledEvent,
+                eventType: { connect: { id: upsertedEventType.id } },
+              },
+            });
+          });
 
-      //   const createdBookings = await Promise.all(bookingPromises);
-      //   return { upsertedEventType, createdBookings };
-      // });
+          const createdBookings = await Promise.all(bookingPromises);
+          return { upsertedEventType, createdBookings };
+        });
     }
   );
 
@@ -593,7 +576,7 @@ const importEventTypesAndBookings = async (
 
     // Extract booking IDs from each transaction result
     const bookingIds = eventTypesAndBookingsInsertedResults.flatMap((result) =>
-      result.bookings.flatMap((booking) => {
+      result.createdBookings.flatMap((booking) => {
         return booking.status === BookingStatus.ACCEPTED && new Date(booking.startTime) > new Date()
           ? [booking.id]
           : [];
@@ -730,16 +713,17 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    console.log("userCalendlyIntegrationProvider before ", userCalendlyIntegrationProvider.accessToken);
     //Initializing the CalendlyOAuthProvider with the required params
     await refreshTokenIfExpired(userCalendlyIntegrationProvider, userId);
+    console.log("userCalendlyIntegrationProvider after ", userCalendlyIntegrationProvider.accessToken);
+
     if (!userCalendlyIntegrationProvider.ownerUniqIdentifier) {
       return res.status(400).json({ message: "Missing User Unique Identifier" });
     }
 
     await inngestClient.send({
-      // The event name
       name: "import-from-calendly",
-      // The event's data
       data: {
         userCalendlyIntegrationProvider: {
           accessToken: userCalendlyIntegrationProvider.accessToken,
