@@ -174,12 +174,12 @@ const ConferencingLayout = () => {
   return (
     <>
       {loading ? (
-        <SkeletonLoader title="Calendly" description={t("import_from_calendly_description")} />
+        <SkeletonLoader title="Calendly" description={t("import_data_instructions")} />
       ) : (
         <div className="bg-default w-full sm:mx-0 xl:mt-0">
           <Meta
             title="Calendly"
-            description={t("import_from_calendly_description")}
+            description={t("import_data_instructions")}
             CTA={
               isAuthorized ? (
                 <ImportFromCalendlyButton importFromCalendly={importFromCalendly} importing={importing} />

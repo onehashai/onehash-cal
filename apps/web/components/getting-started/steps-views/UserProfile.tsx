@@ -1,4 +1,3 @@
-import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -16,9 +15,14 @@ import { ArrowRight } from "@calcom/ui/components/icon";
 type FormData = {
   bio: string;
 };
+interface IUserProfileProps {
+  nextStep: () => void;
+}
 
-const UserProfile = () => {
+const UserProfile = (props: IUserProfileProps) => {
   const [user] = trpc.viewer.me.useSuspenseQuery();
+  const { nextStep } = props;
+
   const { t } = useLocale();
   const avatarRef = useRef<HTMLInputElement>(null);
   const { setValue, handleSubmit, getValues } = useForm<FormData>({
@@ -28,7 +32,6 @@ const UserProfile = () => {
   const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
   const [imageSrc, setImageSrc] = useState<string>(user?.avatar || "");
   const utils = trpc.useContext();
-  const router = useRouter();
   const createEventType = trpc.viewer.eventTypes.create.useMutation();
   const telemetry = useTelemetry();
   const [firstRender, setFirstRender] = useState(true);
@@ -52,7 +55,7 @@ const UserProfile = () => {
         }
 
         await utils.viewer.me.refetch();
-        router.push("/");
+        nextStep();
       }
     },
     onError: () => {
@@ -158,7 +161,7 @@ const UserProfile = () => {
         EndIcon={ArrowRight}
         type="submit"
         className="mt-8 w-full items-center justify-center bg-blue-500 hover:bg-blue-600">
-        {t("finish")}
+        {t("next_step_text")}
       </Button>
     </form>
   );
