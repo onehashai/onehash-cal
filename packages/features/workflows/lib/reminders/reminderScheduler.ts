@@ -92,7 +92,6 @@ const processWorkflowStep = async (
 
         break;
     }
-
     await scheduleEmailReminder({
       evt,
       triggerEvent: workflow.trigger,
