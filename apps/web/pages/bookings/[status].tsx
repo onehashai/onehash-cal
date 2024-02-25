@@ -7,8 +7,10 @@ import React from "react";
 import { z } from "zod";
 
 import { WipeMyCalActionButton } from "@calcom/app-store/wipemycalother/components";
+import { MeetLocationType } from "@calcom/core/location";
 import dayjs from "@calcom/dayjs";
 import { getLayout } from "@calcom/features/MainLayout";
+import ExportBookingsButton from "@calcom/features/bookings/components/ExportBookingsButton";
 import { FilterToggle } from "@calcom/features/bookings/components/FilterToggle";
 import { FiltersContainer } from "@calcom/features/bookings/components/FiltersContainer";
 import type { filterQuerySchema } from "@calcom/features/bookings/lib/useFilterQuery";
@@ -109,6 +111,76 @@ export default function Bookings() {
     }
   });
 
+  // export bookings
+  const handleExportBookings = async () => {
+    let allData: BookingOutput[] = [];
+
+    // Clone the original query to avoid affecting it
+    const clonedQuery = query;
+
+    // Function to fetch all pages recursively
+    const fetchAllPages = async () => {
+      const data = await clonedQuery.fetchNextPage();
+      allData = allData.concat(data.data?.pages.map((page) => page.bookings).flat() ?? []);
+
+      // Recursively fetching next page if available
+      if (data.hasNextPage) {
+        await fetchAllPages();
+      }
+    };
+
+    await fetchAllPages();
+    console.log("allData", allData);
+
+    const header = [
+      "ID",
+      "Title",
+      "Description",
+      "Status",
+      "Event",
+      "Start Time",
+      "End Time",
+      "Location",
+      "Attendees",
+      "Paid",
+      "Payments",
+      "Rescheduled",
+      "Recurring Event ID",
+      "Is Recorded",
+    ];
+    const csvData = allData.map((item) => {
+      return [
+        item.id,
+        item.title,
+        item.description,
+        item.status,
+        item.eventType.title ?? "",
+        item.startTime,
+        item.endTime,
+        item.location === MeetLocationType ? "Google Meet" : item.location ?? "",
+        JSON.stringify(
+          item.attendees.map((attendee) => ({ id: attendee.id, name: attendee.name, email: attendee.email }))
+        ),
+        item.paid.toString(),
+        JSON.stringify(
+          item.payment.map((pay) => ({ currency: pay.currency, amount: pay.amount, success: pay.success }))
+        ),
+        item.rescheduled?.toString() ?? "",
+        item.recurringEventId ?? "",
+        item.isRecorded.toString(),
+      ];
+    });
+
+    const csvContent = [header.join(","), ...csvData.map((row) => row.join(","))].join("\n");
+
+    const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${status}-bookings.csv`);
+    document.body.appendChild(link);
+    link.click();
+  };
+
   const isEmpty = !query.data?.pages[0]?.bookings.length;
 
   const shownBookings: Record<string, BookingOutput[]> = {};
@@ -157,7 +229,10 @@ export default function Bookings() {
       <div className="flex flex-col">
         <div className="flex flex-row flex-wrap justify-between">
           <HorizontalTabs tabs={tabs} />
-          <FilterToggle setIsFiltersVisible={setIsFiltersVisible} />
+          <div className="flex flex-wrap gap-2">
+            <FilterToggle setIsFiltersVisible={setIsFiltersVisible} />
+            <ExportBookingsButton handleExportBookings={handleExportBookings} />
+          </div>
         </div>
         <FiltersContainer isFiltersVisible={isFiltersVisible} />
         <main className="w-full">
