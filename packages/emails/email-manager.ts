@@ -8,6 +8,7 @@ import type BaseEmail from "@calcom/emails/templates/_base-email";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
 import type { MonthlyDigestEmailData } from "./src/templates/MonthlyDigestEmail";
+import type { WelcomeEmailProps } from "./src/templates/WelcomeUserEmail";
 import type { EmailVerifyLink } from "./templates/account-verify-email";
 import AccountVerifyEmail from "./templates/account-verify-email";
 import type { OrganizationNotification } from "./templates/admin-organization-notification";
@@ -49,6 +50,7 @@ import OrganizerScheduledEmail from "./templates/organizer-scheduled-email";
 import SlugReplacementEmail from "./templates/slug-replacement-email";
 import type { TeamInvite } from "./templates/team-invite-email";
 import TeamInviteEmail from "./templates/team-invite-email";
+import WelcomeUserEmail from "./templates/welcome-user-email";
 
 const sendEmail = (prepare: () => BaseEmail) => {
   return new Promise((resolve, reject) => {
@@ -436,4 +438,9 @@ export const sendMonthlyDigestEmails = async (eventData: MonthlyDigestEmailData)
 
 export const sendAdminOrganizationNotification = async (input: OrganizationNotification) => {
   await sendEmail(() => new AdminOrganizationNotification(input));
+};
+
+export const sendWelcomeUserEmail = async (userDetails: WelcomeEmailProps) => {
+  console.log("triggered", userDetails);
+  await sendEmail(() => new WelcomeUserEmail(userDetails));
 };
