@@ -2,56 +2,26 @@ import { CalendlyOAuthProvider } from "@onehash/calendly";
 import classNames from "classnames";
 import { ArrowRight, Plus } from "lucide-react";
 import { useRouter } from "next/router";
-import { useState } from "react";
-import { useEffect } from "react";
 import OauthPopup from "react-oauth-popup";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { List } from "@calcom/ui";
-import { Button, showToast } from "@calcom/ui";
+import { Button } from "@calcom/ui";
+
+import useCalendlyImport from "@lib/hooks/useCalendlyImport";
 
 const ImportData = () => {
   const [user] = trpc.viewer.me.useSuspenseQuery();
   const router = useRouter();
   const { t } = useLocale();
-  const [importing, setImporting] = useState<boolean>(false);
-
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
-
-  const importFromCalendly = async () => {
-    try {
-      if (importing) return;
-      setImporting(true);
-      const uri = `/api/import/calendly?userId=${user.id}`;
-      const res = await fetch(uri, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.error("error", data);
-        return;
-      }
-      showToast("Data importing began in background", "success");
-    } catch (e) {
-      console.error("Error importing from Calendly", e);
-    } finally {
-      setImporting(false);
-      router.push("/");
-    }
-  };
+  const { importFromCalendly, importing } = useCalendlyImport(user.id);
 
   /**
    * Retrieves and stores the user's access token and refresh token from Calendly
    * @param code  Authorization Code is a temporary code that the client exchanges for an access token.
    */
-  const retrieveUserCalendlyAccessToken = (code: string) => {
-    console.log("Code received from Calendly");
+  const retrieveUserCalendlyAccessToken = async (code: string) => {
     fetch("/api/import/calendly/auth", {
       method: "POST",
       headers: {
@@ -61,7 +31,7 @@ const ImportData = () => {
         code,
         userId: user.id,
       }),
-    }).then(() => importFromCalendly());
+    }).then(() => importFromCalendly().then(() => router.push("/")));
   };
 
   const calendlyOAuthProvider = new CalendlyOAuthProvider({

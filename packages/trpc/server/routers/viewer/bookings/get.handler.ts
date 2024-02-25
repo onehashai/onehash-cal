@@ -185,6 +185,7 @@ async function getBookings({
       select: {
         slug: true,
         id: true,
+        title: true,
         eventName: true,
         price: true,
         recurringEvent: true,

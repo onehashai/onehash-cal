@@ -4,6 +4,8 @@
   "calendly_integration":"Calendly",
   "import_data":"Import",
   "import_data_instructions":"Import configuration from third-party services",
+  "export_bookings":"Export",
+  "export_bookings_desc":"Export your bookings to a CSV file",
   "identity_provider": "Identity provider",
   "trial_days_left": "You have $t(day, {\"count\": {{days}} }) left on your PRO trial",
   "day_one": "{{count}} day",

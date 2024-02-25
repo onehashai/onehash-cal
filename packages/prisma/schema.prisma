@@ -224,8 +224,8 @@ model User {
   availability        Availability[]
   invitedTo           Int?
   webhooks            Webhook[]
-  brandColor          String               @default("#007ee5")
-  darkBrandColor      String               @default("#fafafa")
+  brandColor          String?              @default("#007ee5")
+  darkBrandColor      String?              @default("#fafafa")
   // the location where the events will end up
   destinationCalendar DestinationCalendar?
   away                Boolean              @default(false)
@@ -298,8 +298,8 @@ model Team {
   /// @zod.custom(imports.teamMetadataSchema)
   metadata             Json?
   theme                String?
-  brandColor           String                  @default("#292929")
-  darkBrandColor       String                  @default("#fafafa")
+  brandColor           String?                 @default("#292929")
+  darkBrandColor       String?                 @default("#fafafa")
   verifiedNumbers      VerifiedNumber[]
   parentId             Int?
   parent               Team?                   @relation("organization", fields: [parentId], references: [id], onDelete: Cascade)

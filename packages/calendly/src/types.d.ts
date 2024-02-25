@@ -83,11 +83,11 @@ type CalendlyEventType = {
 };
 
 type Pagination = {
-  count?: number | null;
-  next_page?: string | null;
-  previous_page?: string | null;
-  next_page_token?: string | null;
-  previous_page_token?: string | null;
+  count?: number;
+  next_page?: string;
+  previous_page?: string;
+  next_page_token?: string;
+  previous_page_token?: string;
 };
 
 type EventTypePagination = Pagination;
