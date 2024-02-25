@@ -23,6 +23,8 @@ import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus, IntegrationProvider, SchedulingType } from "@calcom/prisma/client";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
+export const maxDuration = 300;
+
 type CalendlyScheduledEventWithScheduler = CalendlyScheduledEvent & {
   scheduled_by?: CalendlyScheduledEventInvitee;
 };

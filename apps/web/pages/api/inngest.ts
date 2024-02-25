@@ -17,4 +17,5 @@ const handleCalendlyImportFn = inngestClient.createFunction(
 export default serve({
   client: inngestClient,
   functions: [handleCalendlyImportFn],
+  streaming: "allow",
 });
