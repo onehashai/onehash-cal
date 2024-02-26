@@ -4,8 +4,6 @@ import { v4 as uuidv4 } from "uuid";
 
 import stripe from "@calcom/app-store/stripepayment/lib/server";
 import { getPremiumMonthlyPlanPriceId } from "@calcom/app-store/stripepayment/lib/utils";
-import { sendWelcomeUserEmail } from "@calcom/emails";
-import type { WelcomeEmailProps } from "@calcom/emails/src/templates/WelcomeUserEmail";
 import { passwordResetRequest } from "@calcom/features/auth/lib/passwordResetRequest";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { HttpError } from "@calcom/lib/http-error";
@@ -204,15 +202,15 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
     throw e; // make sure other errors are rethrown
   }
 
-  if (input.hasOwnProperty("name")) {
-    const userDetails: WelcomeEmailProps = {
-      user: {
-        email: updatedUser.email,
-        name: updatedUser.name,
-      },
-    };
-    await sendWelcomeUserEmail(userDetails);
-  }
+  // if (input.hasOwnProperty("name")) {
+  //   const userDetails: WelcomeEmailProps = {
+  //     user: {
+  //       email: updatedUser.email,
+  //       name: updatedUser.name,
+  //     },
+  //   };
+  //   await sendWelcomeUserEmail(userDetails);
+  // }
   if (user.timeZone !== data.timeZone && updatedUser.schedules.length > 0) {
     // on timezone change update timezone of default schedule
     const defaultScheduleId = await getDefaultScheduleId(user.id, prisma);

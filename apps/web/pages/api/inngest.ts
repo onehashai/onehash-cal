@@ -2,6 +2,8 @@ import { handleCalendlyImportEvent } from "@pages/api/import/calendly";
 import { Inngest } from "inngest";
 import { serve } from "inngest/next";
 
+export const runtime = "edge";
+
 export const inngestClient = new Inngest({ id: "onehash-cal" });
 
 const handleCalendlyImportFn = inngestClient.createFunction(
