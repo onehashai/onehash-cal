@@ -8,8 +8,8 @@ const handleCalendlyImportFn = inngestClient.createFunction(
   { id: "import-from-calendly", retries: 0 },
   { event: "import-from-calendly" },
   async ({ event, step }) => {
-    await handleCalendlyImportEvent(event.data.userCalendlyIntegrationProvider, event.data.userIntID, step);
-    return { message: `Import completed for userID :${event.data.userIntID}` };
+    await handleCalendlyImportEvent(event.data.userCalendlyIntegrationProvider, event.data.user, step);
+    return { message: `Import completed for userID :${event.data.user.id}` };
   }
 );
 
@@ -17,5 +17,4 @@ const handleCalendlyImportFn = inngestClient.createFunction(
 export default serve({
   client: inngestClient,
   functions: [handleCalendlyImportFn],
-  streaming: "allow",
 });

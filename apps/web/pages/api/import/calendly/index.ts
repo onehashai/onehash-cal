@@ -13,6 +13,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { MeetLocationType } from "@calcom/app-store/locations";
 import dayjs from "@calcom/dayjs";
+import { sendImportDataEmail } from "@calcom/emails";
+import type { ImportDataEmailProps } from "@calcom/emails/src/templates/ImportDataEmail";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { handleConfirmation } from "@calcom/features/bookings/lib/handleConfirmation";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
@@ -736,6 +738,15 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
         userId: userIntID,
         provider: IntegrationProvider.CALENDLY,
       },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            locale: true,
+          },
+        },
+      },
     });
     if (!userCalendlyIntegrationProvider) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -756,7 +767,11 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
           refreshToken: userCalendlyIntegrationProvider.refreshToken,
           ownerUniqIdentifier: userCalendlyIntegrationProvider.ownerUniqIdentifier,
         },
-        userIntID: userIntID,
+        user: {
+          id: userIntID,
+          name: userCalendlyIntegrationProvider.user.name,
+          email: userCalendlyIntegrationProvider.user.email,
+        },
       },
     });
     // //Initializing the CalendlyAPIService with the required pakrams
@@ -799,37 +814,67 @@ export const handleCalendlyImportEvent = async (
     accessToken: string;
     ownerUniqIdentifier: string;
   },
-  userIntID: number,
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  },
   step: ReturnType<typeof createStepTools>
 ) => {
-  const cAService = new CalendlyAPIService({
-    accessToken: userCalendlyIntegrationProvider.accessToken,
-    refreshToken: userCalendlyIntegrationProvider.refreshToken,
-    clientID: NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-    clientSecret: CALENDLY_CLIENT_SECRET ?? "",
-    oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
-  });
+  try {
+    const cAService = new CalendlyAPIService({
+      accessToken: userCalendlyIntegrationProvider.accessToken,
+      refreshToken: userCalendlyIntegrationProvider.refreshToken,
+      clientID: NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
+      clientSecret: CALENDLY_CLIENT_SECRET ?? "",
+      oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
+    });
 
-  const [userAvailabilitySchedules, userEventTypes, userScheduledEvents] = await step.run(
-    "Fetch Data from Calendly",
-    async () => await fetchCalendlyData(userCalendlyIntegrationProvider.ownerUniqIdentifier, cAService)
-  );
-  await Promise.all([
-    step.run(
-      "Import user availability schedules",
-      async () =>
-        await importUserAvailability(
-          userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[],
-          userIntID
-        )
-    ),
-    importEventTypesAndBookings(
-      userIntID,
-      cAService,
-      userScheduledEvents as CalendlyScheduledEvent[],
-      userEventTypes as CalendlyEventType[],
-      step
-    ),
-  ]);
-  return;
+    const [userAvailabilitySchedules, userEventTypes, userScheduledEvents] = await step.run(
+      "Fetch Data from Calendly",
+      async () => await fetchCalendlyData(userCalendlyIntegrationProvider.ownerUniqIdentifier, cAService)
+    );
+    await Promise.all([
+      step.run(
+        "Import user availability schedules",
+        async () =>
+          await importUserAvailability(
+            userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[],
+            user.id
+          )
+      ),
+      importEventTypesAndBookings(
+        user.id,
+        cAService,
+        userScheduledEvents as CalendlyScheduledEvent[],
+        userEventTypes as CalendlyEventType[],
+        step
+      ),
+    ]);
+
+    await step.run("Notify user", async () => {
+      const data: ImportDataEmailProps = {
+        status: true,
+        provider: "Calendly",
+        user: {
+          email: user.email,
+          name: user.name,
+        },
+      };
+      await sendImportDataEmail(data);
+    });
+  } catch (e) {
+    console.error("Error importing Calendly data:", e);
+    await step.run("Notify user", async () => {
+      const data: ImportDataEmailProps = {
+        status: false,
+        provider: "Calendly",
+        user: {
+          email: user.email,
+          name: user.name,
+        },
+      };
+      await sendImportDataEmail(data);
+    });
+  }
 };

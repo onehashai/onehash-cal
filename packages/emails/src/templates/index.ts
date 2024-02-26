@@ -32,3 +32,4 @@ export { OrgAutoInviteEmail } from "./OrgAutoInviteEmail";
 export { MonthlyDigestEmail } from "./MonthlyDigestEmail";
 export { AdminOrganizationNotificationEmail } from "./AdminOrganizationNotificationEmail";
 export { WelcomeUserEmail } from "./WelcomeUserEmail";
+export { ImportDataEmail } from "./ImportDataEmail";
