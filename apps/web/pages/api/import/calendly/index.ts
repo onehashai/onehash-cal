@@ -8,6 +8,7 @@ import type {
 } from "@onehash/calendly";
 import { CalendlyAPIService, CalendlyOAuthProvider } from "@onehash/calendly";
 import { inngestClient } from "@pages/api/inngest";
+import type { createStepTools } from "inngest/components/InngestStepTools";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { MeetLocationType } from "@calcom/app-store/locations";
@@ -130,7 +131,7 @@ const refreshTokenIfExpired = async (
 };
 
 //Fetches user data from Calendly including event types, availability schedules and scheduled events
-const fetchCalendlyData = async (
+export const fetchCalendlyData = async (
   ownerUniqIdentifier: string,
   cAService: CalendlyAPIService
 ): Promise<(CalendlyEventType[] | CalendlyUserAvailabilitySchedules[] | CalendlyScheduledEvent[])[]> => {
@@ -193,30 +194,46 @@ const getEventScheduler = async (
     uuid: string,
     count?: number,
     pageToken?: string | undefined
-  ) => Promise<CalendlyScheduledEventInvitee[]>
+  ) => Promise<CalendlyScheduledEventInvitee[]>,
+  step: ReturnType<typeof createStepTools>
 ): Promise<CalendlyScheduledEventWithScheduler[]> => {
   const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = [];
 
   const waitTime = 60000;
 
-  async function getUserScheduledEventInviteesWithDelay(
-    uuid: string
-  ): Promise<CalendlyScheduledEventInvitee[]> {
-    try {
-      // Make the API call to get invitees
-      const invitees = await getUserScheduledEventInvitees(uuid);
-      return invitees;
-    } catch (e: any) {
-      if (e.response && e.response.status === 429) {
-        await new Promise<void>((resolve) => setTimeout(resolve, waitTime));
-        return getUserScheduledEventInviteesWithDelay(uuid);
-      } else throw e;
-    }
-  }
+  // async function getUserScheduledEventInviteesWithDelay(
+  //   uuid: string
+  // ): Promise<CalendlyScheduledEventInvitee[]> {
+  //   try {
+  //     // const invitees = await getUserScheduledEventInvitees(uuid);
+  //     const invitees = await step.run(
+  //       "Get booking invitees",
+  //       async () => await getUserScheduledEventInvitees(uuid)
+  //     );
+  //     return invitees;
+  //   } catch (e: any) {
+  //     if (e.response && e.response.status === 429) {
+  //       await step.sleep("wait to avoid api call limit exceed", "1.1m");
+  //       // await new Promise<void>((resolve) => setTimeout(resolve, waitTime));
+  //       return await getUserScheduledEventInviteesWithDelay(uuid);
+  //     } else throw e;
+  //   }
+  // }
 
   for (const userScheduledEvent of userScheduledEvents) {
     const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
-    const invitees = await getUserScheduledEventInviteesWithDelay(uuid);
+    let invitees;
+    try {
+      invitees = await step.run(
+        "Get booking invitees",
+        async () => await getUserScheduledEventInvitees(uuid)
+      );
+    } catch (e: any) {
+      if (e.response && e.response.status === 429) {
+        await step.sleep("wait to avoid api call limit exceed", waitTime);
+        invitees = await getUserScheduledEventInvitees(uuid);
+      } else throw e;
+    }
 
     const scheduled_by = invitees[0] || null;
 
@@ -549,20 +566,26 @@ const importEventTypesAndBookings = async (
   userIntID: number,
   cAService: CalendlyAPIService,
   userScheduledEvents: CalendlyScheduledEvent[],
-  userEventTypes: CalendlyEventType[]
+  userEventTypes: CalendlyEventType[],
+  step: ReturnType<typeof createStepTools>
 ) => {
   try {
     if (userEventTypes.length === 0) return;
 
     const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = await getEventScheduler(
       userScheduledEvents,
-      cAService.getUserScheduledEventInvitees
+      cAService.getUserScheduledEventInvitees,
+      step
     );
 
     //mapping the scheduled events to its corresponding event type
-    const mergedList = await mergeEventTypeAndScheduledEvent(
-      userEventTypes as CalendlyEventType[],
-      userScheduledEventsWithScheduler as CalendlyScheduledEventWithScheduler[]
+    const mergedList = await step.run(
+      "Map bookings to its event type",
+      async () =>
+        await mergeEventTypeAndScheduledEvent(
+          userEventTypes as CalendlyEventType[],
+          userScheduledEventsWithScheduler as CalendlyScheduledEventWithScheduler[]
+        )
     );
 
     // event types with bookings to be inserted
@@ -572,9 +595,9 @@ const importEventTypesAndBookings = async (
     }[] = mapEventTypeAndBookingsToInputSchema(mergedList, userIntID);
 
     //inserting event type and bookings to db via prisma
-    const eventTypesAndBookingsInsertedResults = await insertEventTypeAndBookingsToDB(
-      eventTypesAndBookingsToBeInserted,
-      userIntID
+    const eventTypesAndBookingsInsertedResults = await step.run(
+      "Insert event type and bookings to DB",
+      async () => await insertEventTypeAndBookingsToDB(eventTypesAndBookingsToBeInserted, userIntID)
     );
 
     // Extract booking IDs from each transaction result
@@ -586,7 +609,10 @@ const importEventTypesAndBookings = async (
       })
     );
 
-    await confirmUpcomingImportedBookings(bookingIds, userIntID);
+    await step.run(
+      "Confirm bookings",
+      async () => await confirmUpcomingImportedBookings(bookingIds, userIntID)
+    );
   } catch (error) {
     console.error("Error importing Calendly data:", error);
     throw error;
@@ -752,13 +778,29 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 export default defaultHandler({
   GET: Promise.resolve({ default: defaultResponder(getHandler) }),
 });
+
+export const getCAService = (userCalendlyIntegrationProvider: {
+  refreshToken: string;
+  accessToken: string;
+  ownerUniqIdentifier: string;
+}) => {
+  const cAService = new CalendlyAPIService({
+    accessToken: userCalendlyIntegrationProvider.accessToken,
+    refreshToken: userCalendlyIntegrationProvider.refreshToken,
+    clientID: NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
+    clientSecret: CALENDLY_CLIENT_SECRET ?? "",
+    oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
+  });
+  return cAService;
+};
 export const handleCalendlyImportEvent = async (
   userCalendlyIntegrationProvider: {
     refreshToken: string;
     accessToken: string;
     ownerUniqIdentifier: string;
   },
-  userIntID: number
+  userIntID: number,
+  step: ReturnType<typeof createStepTools>
 ) => {
   const cAService = new CalendlyAPIService({
     accessToken: userCalendlyIntegrationProvider.accessToken,
@@ -768,18 +810,25 @@ export const handleCalendlyImportEvent = async (
     oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
   });
 
-  const [userAvailabilitySchedules, userEventTypes, userScheduledEvents] = await fetchCalendlyData(
-    userCalendlyIntegrationProvider.ownerUniqIdentifier,
-    cAService
+  const [userAvailabilitySchedules, userEventTypes, userScheduledEvents] = await step.run(
+    "Fetch Data from Calendly",
+    async () => await fetchCalendlyData(userCalendlyIntegrationProvider.ownerUniqIdentifier, cAService)
   );
-
   await Promise.all([
-    importUserAvailability(userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[], userIntID),
+    step.run(
+      "Import user availability schedules",
+      async () =>
+        await importUserAvailability(
+          userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[],
+          userIntID
+        )
+    ),
     importEventTypesAndBookings(
       userIntID,
       cAService,
       userScheduledEvents as CalendlyScheduledEvent[],
-      userEventTypes as CalendlyEventType[]
+      userEventTypes as CalendlyEventType[],
+      step
     ),
   ]);
   return;
