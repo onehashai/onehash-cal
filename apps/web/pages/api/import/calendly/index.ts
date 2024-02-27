@@ -121,13 +121,17 @@ const refreshTokenIfExpired = async (
       userCalendlyIntegrationProvider.refreshToken
     );
     //update the new tokens in db and the current token state "userCalendlyIntegrationProvider"
-    userCalendlyIntegrationProvider = await updateTokensInDb({
+    const updatedConfig = await updateTokensInDb({
       userId,
       accessToken: freshTokenData.access_token,
       refreshToken: freshTokenData.refresh_token,
       createdAt: freshTokenData.created_at,
       expiresIn: freshTokenData.expires_in,
     });
+    userCalendlyIntegrationProvider.accessToken = updatedConfig.accessToken;
+    userCalendlyIntegrationProvider.refreshToken = updatedConfig.refreshToken;
+    userCalendlyIntegrationProvider.createdAt = updatedConfig.createdAt;
+    userCalendlyIntegrationProvider.expiresIn = updatedConfig.expiresIn;
   }
 };
 
@@ -782,15 +786,6 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
         },
       },
     });
-    // //Initializing the CalendlyAPIService with the required pakrams
-    // await handleCalendlyImportEvent(
-    //   {
-    //     accessToken: userCalendlyIntegrationProvider.accessToken,
-    //     refreshToken: userCalendlyIntegrationProvider.refreshToken,
-    //     ownerUniqIdentifier: userCalendlyIntegrationProvider.ownerUniqIdentifier,
-    //   },
-    //   userIntID
-    // );
 
     return res.status(200).json({ message: "Success" });
   } catch (e) {
