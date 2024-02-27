@@ -136,7 +136,7 @@ const refreshTokenIfExpired = async (
 };
 
 //Fetches user data from Calendly including event types, availability schedules and scheduled events
-export const fetchCalendlyData = async (
+const fetchCalendlyData = async (
   ownerUniqIdentifier: string,
   cAService: CalendlyAPIService
 ): Promise<(CalendlyEventType[] | CalendlyUserAvailabilitySchedules[] | CalendlyScheduledEvent[])[]> => {
@@ -615,13 +615,16 @@ const importEventTypesAndBookings = async (
     );
 
     // Extract booking IDs from each transaction result
-    const bookingIds = eventTypesAndBookingsInsertedResults.flatMap((result) =>
-      result.createdBookings.flatMap((booking) => {
-        return booking.status === BookingStatus.ACCEPTED && new Date(booking.startTime) > new Date()
-          ? [booking.id]
-          : [];
-      })
-    );
+    const currentTime = new Date();
+
+    const bookingIds = eventTypesAndBookingsInsertedResults
+      .flatMap((result) => result.createdBookings)
+      .reduce((acc: number[], booking) => {
+        if (booking.status === BookingStatus.ACCEPTED && new Date(booking.startTime) > currentTime) {
+          acc.push(booking.id);
+        }
+        return acc;
+      }, []);
 
     await step.run(
       "Confirm bookings",
@@ -797,20 +800,6 @@ export default defaultHandler({
   GET: Promise.resolve({ default: defaultResponder(getHandler) }),
 });
 
-export const getCAService = (userCalendlyIntegrationProvider: {
-  refreshToken: string;
-  accessToken: string;
-  ownerUniqIdentifier: string;
-}) => {
-  const cAService = new CalendlyAPIService({
-    accessToken: userCalendlyIntegrationProvider.accessToken,
-    refreshToken: userCalendlyIntegrationProvider.refreshToken,
-    clientID: NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-    clientSecret: CALENDLY_CLIENT_SECRET ?? "",
-    oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
-  });
-  return cAService;
-};
 export const handleCalendlyImportEvent = async (
   userCalendlyIntegrationProvider: {
     refreshToken: string;
