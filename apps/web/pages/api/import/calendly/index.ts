@@ -120,7 +120,6 @@ const refreshTokenIfExpired = async (
     const freshTokenData = await cOService.requestNewAccessToken(
       userCalendlyIntegrationProvider.refreshToken
     );
-
     //update the new tokens in db and the current token state "userCalendlyIntegrationProvider"
     userCalendlyIntegrationProvider = await updateTokensInDb({
       userId,
@@ -203,38 +202,25 @@ const getEventScheduler = async (
 
   const waitTime = 60000;
 
-  // async function getUserScheduledEventInviteesWithDelay(
-  //   uuid: string
-  // ): Promise<CalendlyScheduledEventInvitee[]> {
-  //   try {
-  //     // const invitees = await getUserScheduledEventInvitees(uuid);
-  //     const invitees = await step.run(
-  //       "Get booking invitees",
-  //       async () => await getUserScheduledEventInvitees(uuid)
-  //     );
-  //     return invitees;
-  //   } catch (e: any) {
-  //     if (e.response && e.response.status === 429) {
-  //       await step.sleep("wait to avoid api call limit exceed", "1.1m");
-  //       // await new Promise<void>((resolve) => setTimeout(resolve, waitTime));
-  //       return await getUserScheduledEventInviteesWithDelay(uuid);
-  //     } else throw e;
-  //   }
-  // }
-
   for (const userScheduledEvent of userScheduledEvents) {
     const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
     let invitees;
     try {
-      invitees = await step.run(
-        "Get booking invitees",
-        async () => await getUserScheduledEventInvitees(uuid)
-      );
-    } catch (e: any) {
-      if (e.response && e.response.status === 429) {
-        await step.sleep("wait to avoid api call limit exceed", waitTime);
-        invitees = await getUserScheduledEventInvitees(uuid);
-      } else throw e;
+      invitees = await step.run("Get booking invitees", async () => {
+        return await getUserScheduledEventInvitees(uuid);
+      });
+    } catch (e) {
+      await step.sleep("wait to avoid api call limit exceed", waitTime);
+      invitees = await step.run("Get booking invitees", async () => {
+        return await getUserScheduledEventInvitees(uuid);
+      });
+      // TODO: check if the error is 429
+      // // if (e instanceof StepError && (e.cause as any)?.response?.status === 429) {
+      // //   await step.sleep("wait to avoid api call limit exceed", waitTime);
+      // //   invitees = await step.run("Get booking invitees", async () => {
+      // //     return await getUserScheduledEventInvitees(uuid);
+      // //   });
+      // // } else throw new NonRetriableError("Failed to get booking invitees", { cause: e });
     }
 
     const scheduled_by = invitees[0] || null;
@@ -246,6 +232,28 @@ const getEventScheduler = async (
       });
     }
   }
+
+  // for (const userScheduledEvent of userScheduledEvents) {
+  //   const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
+  //   let invitees;
+  //   try {
+  //     invitees = await getUserScheduledEventInvitees(uuid);
+  //   } catch (e: any) {
+  //     if (e.response && e.response.status === 429) {
+  //       await step.sleep("wait to avoid api call limit exceed", waitTime);
+  //       invitees = await getUserScheduledEventInvitees(uuid);
+  //     } else throw new NonRetriableError("Failed to get booking invitees", { cause: e });
+  //   }
+
+  //   const scheduled_by = invitees[0] || null;
+
+  //   if (scheduled_by?.payment === undefined || scheduled_by?.payment === null) {
+  //     userScheduledEventsWithScheduler.push({
+  //       ...userScheduledEvent,
+  //       scheduled_by,
+  //     });
+  //   }
+  // }
 
   return userScheduledEventsWithScheduler;
 };

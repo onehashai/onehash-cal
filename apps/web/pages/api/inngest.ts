@@ -5,7 +5,7 @@ import { serve } from "inngest/next";
 export const inngestClient = new Inngest({ id: "onehash-cal" });
 
 const handleCalendlyImportFn = inngestClient.createFunction(
-  { id: "import-from-calendly", retries: 0 },
+  { id: "import-from-calendly", retries: 2 },
   { event: "import-from-calendly" },
   async ({ event, step }) => {
     await handleCalendlyImportEvent(event.data.userCalendlyIntegrationProvider, event.data.user, step);

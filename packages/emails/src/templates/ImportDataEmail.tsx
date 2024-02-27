@@ -50,7 +50,8 @@ export const ImportDataEmail = (
               rel="noreferrer">
               contact our support team
             </a>
-            , Happy Scheduling 📆.
+            , <br />
+            Happy Scheduling 📆.
           </>
         </p>
       </div>

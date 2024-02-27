@@ -16,8 +16,10 @@ import { FiltersContainer } from "@calcom/features/bookings/components/FiltersCo
 import type { filterQuerySchema } from "@calcom/features/bookings/lib/useFilterQuery";
 import { useFilterQuery } from "@calcom/features/bookings/lib/useFilterQuery";
 import { ShellMain } from "@calcom/features/shell/Shell";
+import { formatTime } from "@calcom/lib/date-fns";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
+import { BookingStatus } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import { HorizontalTabs } from "@calcom/ui";
@@ -36,7 +38,12 @@ import { ssgInit } from "@server/lib/ssg";
 
 type BookingListingStatus = z.infer<NonNullable<typeof filterQuerySchema>>["status"];
 type BookingOutput = RouterOutputs["viewer"]["bookings"]["get"]["bookings"][0];
-
+type BookingListingByStatusType = "Unconfirmed" | "Cancelled" | "Recurring" | "Upcoming" | "Past";
+type BookingExportType = BookingOutput & {
+  type: BookingListingByStatusType;
+  startDate: string;
+  interval: string;
+};
 type RecurringInfo = {
   recurringEventId: string | null;
   count: number;
@@ -84,7 +91,10 @@ export default function Bookings() {
   const params = useParamsWithFallback();
   const { data: filterQuery } = useFilterQuery();
   const { status } = params ? querySchema.parse(params) : { status: "upcoming" as const };
-  const { t } = useLocale();
+  const {
+    t,
+    i18n: { language },
+  } = useLocale();
   const user = useMeQuery().data;
   const [isFiltersVisible, setIsFiltersVisible] = useState<boolean>(false);
 
@@ -103,6 +113,18 @@ export default function Bookings() {
     }
   );
 
+  const allBookingsQuery = trpc.viewer.bookings.get.useInfiniteQuery(
+    {
+      limit: 10,
+      filters: {},
+    },
+    {
+      // first render has status `undefined`
+      enabled: true,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    }
+  );
+
   // Animate page (tab) transitions to look smoothing
 
   const buttonInView = useInViewObserver(() => {
@@ -113,24 +135,52 @@ export default function Bookings() {
 
   // export bookings
   const handleExportBookings = async () => {
-    let allData: BookingOutput[] = [];
-
-    // Clone the original query to avoid affecting it
-    const clonedQuery = query;
+    let allBookings: BookingOutput[] = [];
 
     // Function to fetch all pages recursively
-    const fetchAllPages = async () => {
-      const data = await clonedQuery.fetchNextPage();
-      allData = allData.concat(data.data?.pages.map((page) => page.bookings).flat() ?? []);
+    const fetchAllBookings = async () => {
+      const data = await allBookingsQuery.fetchNextPage();
+      allBookings = allBookings.concat(data.data?.pages.map((page) => page.bookings).flat() ?? []);
 
       // Recursively fetching next page if available
       if (data.hasNextPage) {
-        await fetchAllPages();
+        await fetchAllBookings();
       }
     };
 
-    await fetchAllPages();
-    console.log("allData", allData);
+    await fetchAllBookings();
+    const allBookingsWithType: BookingExportType[] = [];
+
+    allBookings.forEach((booking) => {
+      let type: BookingListingByStatusType | null = null;
+      let startDate = "";
+
+      const endTime = new Date(booking.endTime);
+      if (endTime >= new Date()) {
+        if (booking.status === BookingStatus.PENDING) {
+          type = "Unconfirmed";
+        } else if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
+          type = "Cancelled";
+        } else if (booking.recurringEventId !== null) {
+          type = "Recurring";
+        } else {
+          type = "Upcoming";
+        }
+        startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("ddd, D MMM");
+      } else {
+        if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
+          type = "Cancelled";
+        } else {
+          type = "Past";
+        }
+        startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("D MMMM YYYY");
+      }
+
+      const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} -
+        ${formatTime(booking.endTime, user?.timeFormat, user?.timeZone)}`;
+
+      allBookingsWithType.push({ ...booking, type, startDate, interval });
+    });
 
     const header = [
       "ID",
@@ -138,8 +188,8 @@ export default function Bookings() {
       "Description",
       "Status",
       "Event",
-      "Start Time",
-      "End Time",
+      "Date",
+      "Interval",
       "Location",
       "Attendees",
       "Paid",
@@ -148,26 +198,30 @@ export default function Bookings() {
       "Recurring Event ID",
       "Is Recorded",
     ];
-    const csvData = allData.map((item) => {
+    const csvData = allBookingsWithType.map((booking) => {
       return [
-        item.id,
-        item.title,
-        item.description,
-        item.status,
-        item.eventType.title ?? "",
-        item.startTime,
-        item.endTime,
-        item.location === MeetLocationType ? "Google Meet" : item.location ?? "",
+        booking.id,
+        booking.title,
+        booking.description,
+        booking.type,
+        booking.eventType.title ?? "",
+        booking.startDate,
+        booking.interval,
+        booking.location === MeetLocationType ? "Google Meet" : booking.location ?? "",
         JSON.stringify(
-          item.attendees.map((attendee) => ({ id: attendee.id, name: attendee.name, email: attendee.email }))
+          booking.attendees.map((attendee) => ({
+            id: attendee.id,
+            name: attendee.name,
+            email: attendee.email,
+          }))
         ),
-        item.paid.toString(),
+        booking.paid.toString(),
         JSON.stringify(
-          item.payment.map((pay) => ({ currency: pay.currency, amount: pay.amount, success: pay.success }))
+          booking.payment.map((pay) => ({ currency: pay.currency, amount: pay.amount, success: pay.success }))
         ),
-        item.rescheduled?.toString() ?? "",
-        item.recurringEventId ?? "",
-        item.isRecorded.toString(),
+        booking.rescheduled?.toString() ?? "",
+        booking.recurringEventId ?? "",
+        booking.isRecorded.toString(),
       ];
     });
 
@@ -176,7 +230,7 @@ export default function Bookings() {
     const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${status}-bookings.csv`);
+    link.setAttribute("download", "bookings-export.csv");
     document.body.appendChild(link);
     link.click();
   };
