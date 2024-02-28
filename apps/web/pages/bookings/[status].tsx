@@ -226,7 +226,7 @@ export default function Bookings() {
     const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "bookings-export.csv");
+    link.setAttribute("download", "all-bookings.csv");
     document.body.appendChild(link);
     link.click();
   };

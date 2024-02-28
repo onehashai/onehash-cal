@@ -24,7 +24,7 @@ export const ImportDataEmail = (
           {" "}
           <p style={{ fontWeight: 400, lineHeight: "24px" }}>
             {" "}
-            <>Your data from {props.provider} has been successfully updated.</>
+            <>Your data from {props.provider} has been successfully imported.</>
           </p>
           <CallToAction label="Start Scheduling Events" href={WEBAPP_URL} />
         </>
