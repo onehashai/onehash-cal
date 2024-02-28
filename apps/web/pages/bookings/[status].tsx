@@ -193,7 +193,9 @@ export default function Bookings() {
       "Location",
       "Attendees",
       "Paid",
-      "Payments",
+      "Current",
+      "Amount",
+      "Payment Status",
       "Rescheduled",
       "Recurring Event ID",
       "Is Recorded",
@@ -208,17 +210,11 @@ export default function Bookings() {
         booking.startDate,
         booking.interval,
         booking.location === MeetLocationType ? "Google Meet" : booking.location ?? "",
-        JSON.stringify(
-          booking.attendees.map((attendee) => ({
-            id: attendee.id,
-            name: attendee.name,
-            email: attendee.email,
-          }))
-        ),
+        booking.attendees.map((attendee) => attendee.email).join(";"),
         booking.paid.toString(),
-        JSON.stringify(
-          booking.payment.map((pay) => ({ currency: pay.currency, amount: pay.amount, success: pay.success }))
-        ),
+        booking.payment.map((pay) => pay.currency).join(";"),
+        booking.payment.map((pay) => pay.amount).join(";"),
+        booking.payment.map((pay) => pay.success).join(";"),
         booking.rescheduled?.toString() ?? "",
         booking.recurringEventId ?? "",
         booking.isRecorded.toString(),
