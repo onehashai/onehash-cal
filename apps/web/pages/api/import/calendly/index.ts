@@ -10,6 +10,7 @@ import { CalendlyAPIService, CalendlyOAuthProvider } from "@onehash/calendly";
 import { inngestClient } from "@pages/api/inngest";
 import type { createStepTools } from "inngest/components/InngestStepTools";
 import type { NextApiRequest, NextApiResponse } from "next";
+import short from "short-uuid";
 
 import { MeetLocationType } from "@calcom/app-store/locations";
 import dayjs from "@calcom/dayjs";
@@ -473,9 +474,8 @@ const mapEventTypeAndBookingsToInputSchema = (
     let scheduled_events_input: Prisma.BookingCreateInput[] = [];
     if (scheduled_events.length > 0) {
       scheduled_events_input = scheduled_events.map((scheduledEvent) => {
-        const scheduled_event_id = scheduledEvent.uri.substring(scheduledEvent.uri.lastIndexOf("/") + 1);
         return {
-          uid: scheduled_event_id,
+          uid: short.uuid(),
           user: { connect: { id: userIntID } },
           title: `${scheduledEvent.name} between ${scheduledEvent.scheduled_by?.name} and ${scheduledEvent.event_memberships[0].user_name}`,
           responses: {
