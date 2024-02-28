@@ -23,7 +23,9 @@ export const getHandler = async ({ ctx, input }: GetOptions) => {
   const skip = input.cursor ?? 0;
   const { prisma, user } = ctx;
   const bookingListingByStatus = input.filters.status;
-  const bookingListingFilters: Record<typeof bookingListingByStatus, Prisma.BookingWhereInput> = {
+  type BookingListingByStatusType = "upcoming" | "recurring" | "past" | "cancelled" | "unconfirmed";
+
+  const bookingListingFilters: Record<BookingListingByStatusType, Prisma.BookingWhereInput> = {
     upcoming: {
       endTime: { gte: new Date() },
       // These changes are needed to not show confirmed recurring events,
@@ -62,19 +64,18 @@ export const getHandler = async ({ ctx, input }: GetOptions) => {
       status: { equals: BookingStatus.PENDING },
     },
   };
-  const bookingListingOrderby: Record<
-    typeof bookingListingByStatus,
-    Prisma.BookingOrderByWithAggregationInput
-  > = {
-    upcoming: { startTime: "asc" },
-    recurring: { startTime: "asc" },
-    past: { startTime: "desc" },
-    cancelled: { startTime: "desc" },
-    unconfirmed: { startTime: "asc" },
-  };
+  const bookingListingOrderby: Record<BookingListingByStatusType, Prisma.BookingOrderByWithAggregationInput> =
+    {
+      upcoming: { startTime: "asc" },
+      recurring: { startTime: "asc" },
+      past: { startTime: "desc" },
+      cancelled: { startTime: "desc" },
+      unconfirmed: { startTime: "asc" },
+    };
 
-  const passedBookingsStatusFilter = bookingListingFilters[bookingListingByStatus];
-  const orderBy = bookingListingOrderby[bookingListingByStatus];
+  const passedBookingsStatusFilter =
+    bookingListingByStatus != undefined ? bookingListingFilters[bookingListingByStatus] : {};
+  const orderBy = bookingListingByStatus != undefined ? bookingListingOrderby[bookingListingByStatus] : {};
 
   const { bookings, recurringInfo } = await getBookings({
     user,
@@ -185,6 +186,7 @@ async function getBookings({
       select: {
         slug: true,
         id: true,
+        title: true,
         eventName: true,
         price: true,
         recurringEvent: true,

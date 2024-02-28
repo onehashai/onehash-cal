@@ -1,4 +1,3 @@
-// calendly-service.ts
 import type { AxiosInstance, AxiosResponse } from "axios";
 import axios from "axios";
 
@@ -47,12 +46,9 @@ export default class CalendlyAPIService {
       oauthUrl,
     };
     this.request = axios.create({
-      baseURL: "https://api.calendly.com", // Adjust the base URL if needed
+      baseURL: "https://api.calendly.com",
     });
   }
-
-  // Rest of the CalendlyService code remains unchanged
-  // ...
 
   requestConfiguration() {
     const { accessToken } = this.apiConfig;
@@ -95,10 +91,9 @@ export default class CalendlyAPIService {
             console.error("Error fetching user event types:", data.message);
             break;
           }
-          // Add the current collection to the list
-          allEventTypes = [...allEventTypes, ...data.collection];
-          // Update the API URL for the next page
-          next_page = data.pagination.next_page;
+          const newData = res.data as CalendlyEventTypeSuccessResponse;
+          allEventTypes = [...allEventTypes, ...newData.collection];
+          next_page = newData.pagination.next_page;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           console.error("Error fetching data:", error.message);
@@ -143,28 +138,30 @@ export default class CalendlyAPIService {
 
     const url = `/scheduled_events?${queryParams}`;
     const res = await this.request.get(url, this.requestConfiguration());
+
     if (this._isRequestResponseOk(res)) {
       const data = res.data as CalendlyScheduledEventSuccessResponse;
       let allScheduledEvents: CalendlyScheduledEvent[] = [...data.collection];
-      let next_page = data?.pagination?.next_page;
+      let next_page: string | null = data?.pagination?.next_page ?? null;
+
       while (next_page) {
         try {
           const res = await this.request.get(next_page, this.requestConfiguration());
           if (!this._isRequestResponseOk(res)) {
-            const data = res.data as CalendlyScheduledEventErrorResponse;
-            console.error("Error fetching user event types:", data.message);
+            const errorData = res.data as CalendlyScheduledEventErrorResponse;
+            console.error("Error fetching user event types:", errorData.message);
             break;
           }
-          // Add the current collection to the list
-          allScheduledEvents = [...allScheduledEvents, ...data.collection];
-          // Update the API URL for the next page
-          next_page = data.pagination.next_page;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+          const newData = res.data as CalendlyScheduledEventSuccessResponse;
+          allScheduledEvents = [...allScheduledEvents, ...newData.collection];
+          next_page = newData.pagination.next_page;
         } catch (error: any) {
           console.error("Error fetching data:", error.message);
           break;
         }
       }
+
       return allScheduledEvents;
     } else {
       const data = res.data as CalendlyEventTypeErrorResponse;
@@ -202,10 +199,10 @@ export default class CalendlyAPIService {
             console.error("Error fetching user event types:", data.message);
             break;
           }
-          // Add the current collection to the list
-          allScheduledEventInvitees = [...allScheduledEventInvitees, ...data.collection];
-          // Update the API URL for the next page
-          next_page = data.pagination.next_page;
+          const newData = res.data as CalendlyScheduledEventInviteeSuccessResponse;
+
+          allScheduledEventInvitees = [...allScheduledEventInvitees, ...newData.collection];
+          next_page = newData.pagination.next_page;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           console.error("Error fetching data:", error.message);

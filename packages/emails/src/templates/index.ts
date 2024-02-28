@@ -32,3 +32,5 @@ export { OrgAutoInviteEmail } from "./OrgAutoInviteEmail";
 export { MonthlyDigestEmail } from "./MonthlyDigestEmail";
 export { AdminOrganizationNotificationEmail } from "./AdminOrganizationNotificationEmail";
 export { BookingRedirectEmailNotification } from "./BookingRedirectEmailNotification";
+export { WelcomeUserEmail } from "./WelcomeUserEmail";
+export { ImportDataEmail } from "./ImportDataEmail";

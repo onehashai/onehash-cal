@@ -61,6 +61,7 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
   const { user } = ctx;
   const userMetadata = handleUserMetadata({ ctx, input });
   const locale = input.locale || user.locale;
+
   const data: Prisma.UserUpdateInput = {
     ...input,
     // DO NOT OVERWRITE AVATAR.
@@ -201,6 +202,15 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
     throw e; // make sure other errors are rethrown
   }
 
+  // if (input.hasOwnProperty("name")) {
+  //   const userDetails: WelcomeEmailProps = {
+  //     user: {
+  //       email: updatedUser.email,
+  //       name: updatedUser.name,
+  //     },
+  //   };
+  //   await sendWelcomeUserEmail(userDetails);
+  // }
   if (user.timeZone !== data.timeZone && updatedUser.schedules.length > 0) {
     // on timezone change update timezone of default schedule
     const defaultScheduleId = await getDefaultScheduleId(user.id, prisma);

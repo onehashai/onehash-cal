@@ -6,7 +6,9 @@ import OauthPopup from "react-oauth-popup";
 
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { Button, Meta, SkeletonContainer, showToast } from "@calcom/ui";
+import { Button, Meta, SkeletonContainer } from "@calcom/ui";
+
+import useCalendlyImport from "@lib/hooks/useCalendlyImport";
 
 import PageWrapper from "@components/PageWrapper";
 
@@ -57,17 +59,30 @@ const AuthorizeCalendlyButton = ({
 };
 
 //Main view for Calendly import
-const ConferencingLayout = () => {
-  const { t } = useLocale();
-
+const ImportLayout = () => {
   const [userId, setUserId] = useState<number>();
-  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [importing, setImporting] = useState<boolean>(false);
-  const [didAuthorize, setDidAuthorize] = useState<boolean>(false);
 
   const session = useSession();
 
+  //checks if the user had already authorized Calendly on first load
+  useEffect(() => {
+    if (!session || !session.data) return;
+    session.data.user.id && setUserId(session.data.user.id);
+  }, [session]);
+
+  return <> {userId ? <CalendlyImportComponent userId={userId} /> : <></>}</>;
+};
+
+const CalendlyImportComponent = ({ userId }: { userId: number }) => {
+  const { importFromCalendly, importing } = useCalendlyImport(userId);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [didAuthorize, setDidAuthorize] = useState<boolean>(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
+  const { t } = useLocale();
+
+  useEffect(() => {
+    checkIfAuthorized(userId);
+  }, [userId]);
   /**
    * Checks if the user has already authorized Calendly and sets the state accordingly
    * @param userId The user id of the current user
@@ -100,7 +115,6 @@ const ConferencingLayout = () => {
    * @param code  Authorization Code is a temporary code that the client exchanges for an access token.
    */
   const retrieveUserCalendlyAccessToken = (code: string) => {
-    console.log("Code received from Calendly");
     fetch("/api/import/calendly/auth", {
       method: "POST",
       headers: {
@@ -131,40 +145,6 @@ const ConferencingLayout = () => {
     redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
     oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
   });
-
-  //responsible for the api call to import data from Calendly
-  const importFromCalendly = async () => {
-    try {
-      if (!isAuthorized || importing) return;
-      setImporting(true);
-      const uri = `/api/import/calendly?userId=${userId}`;
-      const res = await fetch(uri, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.error("error", data);
-        return;
-      }
-      showToast("Data imported successfully", "success");
-    } catch (e) {
-      console.error("Error importing from Calendly", e);
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  //checks if the user had already authorized Calendly on first load
-  useEffect(() => {
-    if (!session || !session.data) return;
-    session.data.user.id && setUserId(session.data.user.id);
-    checkIfAuthorized(session.data.user.id);
-  }, [session]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
   useEffect(() => {
     if (didAuthorize) {
       importFromCalendly();
@@ -174,12 +154,12 @@ const ConferencingLayout = () => {
   return (
     <>
       {loading ? (
-        <SkeletonLoader title="Calendly" description={t("import_from_calendly_description")} />
+        <SkeletonLoader title="Calendly" description={t("import_data_instructions")} />
       ) : (
         <div className="bg-default w-full sm:mx-0 xl:mt-0">
           <Meta
             title="Calendly"
-            description={t("import_from_calendly_description")}
+            description={t("import_data_instructions")}
             CTA={
               isAuthorized ? (
                 <ImportFromCalendlyButton importFromCalendly={importFromCalendly} importing={importing} />
@@ -199,7 +179,7 @@ const ConferencingLayout = () => {
   );
 };
 
-ConferencingLayout.getLayout = getLayout;
-ConferencingLayout.PageWrapper = PageWrapper;
+ImportLayout.getLayout = getLayout;
+ImportLayout.PageWrapper = PageWrapper;
 
-export default ConferencingLayout;
+export default ImportLayout;
