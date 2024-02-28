@@ -265,12 +265,13 @@ const getEventScheduler = async (
 //Merges the scheduled events with its corresponding event types while checking for overlapping bookings
 const mergeEventTypeAndScheduledEvent = async (
   eventTypeList: CalendlyEventType[],
-  scheduledEventList: CalendlyScheduledEventWithScheduler[]
+  scheduledEventList: CalendlyScheduledEventWithScheduler[],
+  userIntID: number
 ): Promise<EventTypeWithScheduledEvent[]> => {
   const scheduledEventsMap: Record<string, CalendlyScheduledEventWithScheduler[]> = {};
 
   const overlappingEvent = await Promise.all(
-    scheduledEventList.map((scheduledEvent) => doesBookingOverlap(scheduledEvent))
+    scheduledEventList.map((scheduledEvent) => doesBookingOverlap(scheduledEvent, userIntID))
   );
 
   scheduledEventList.map((scheduledEvent, index) => {
@@ -293,7 +294,7 @@ const mergeEventTypeAndScheduledEvent = async (
 };
 
 //Checks if the booking overlaps with the existing bookings
-const doesBookingOverlap = async (userScheduledEvent: CalendlyScheduledEvent) => {
+const doesBookingOverlap = async (userScheduledEvent: CalendlyScheduledEvent, userIntID: number) => {
   return await prisma.booking.findFirst({
     where: {
       AND: [
@@ -322,6 +323,7 @@ const doesBookingOverlap = async (userScheduledEvent: CalendlyScheduledEvent) =>
         {
           AND: [{ status: { not: BookingStatus.CANCELLED } }, { status: { not: BookingStatus.REJECTED } }],
         },
+        { userId: userIntID },
       ],
     },
   });
@@ -598,7 +600,8 @@ const importEventTypesAndBookings = async (
       async () =>
         await mergeEventTypeAndScheduledEvent(
           userEventTypes as CalendlyEventType[],
-          userScheduledEventsWithScheduler as CalendlyScheduledEventWithScheduler[]
+          userScheduledEventsWithScheduler as CalendlyScheduledEventWithScheduler[],
+          userIntID
         )
     );
 
