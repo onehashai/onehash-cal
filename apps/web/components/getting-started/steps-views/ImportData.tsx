@@ -5,8 +5,9 @@ import { useRouter } from "next/router";
 import OauthPopup from "react-oauth-popup";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
-import { List } from "@calcom/ui";
+import { List, showToast } from "@calcom/ui";
 import { Button } from "@calcom/ui";
 
 import useCalendlyImport from "@lib/hooks/useCalendlyImport";
@@ -31,7 +32,7 @@ const ImportData = () => {
         code,
         userId: user.id,
       }),
-    }).then(() => importFromCalendly().then(() => router.push("/")));
+    }).then(() => importFromCalendly().then(handleFinish));
   };
 
   const calendlyOAuthProvider = new CalendlyOAuthProvider({
@@ -41,6 +42,23 @@ const ImportData = () => {
   });
   const onCode = (code: string, _params: URLSearchParams) => retrieveUserCalendlyAccessToken(code);
   const onClose = () => console.log("closed!");
+  const telemetry = useTelemetry();
+
+  const mutation = trpc.viewer.updateProfile.useMutation({
+    onSuccess: async (_data, _context) => {
+      router.push("/");
+    },
+    onError: () => {
+      showToast(t("problem_saving_user_profile"), "error");
+    },
+  });
+  const handleFinish = () => {
+    telemetry.event(telemetryEventTypes.onboardingFinished);
+
+    mutation.mutate({
+      completedOnboarding: true,
+    });
+  };
 
   return (
     <>
@@ -74,7 +92,7 @@ const ImportData = () => {
           "text-inverted bg-inverted border-inverted mt-8 flex w-full flex-row justify-center rounded-md border bg-blue-500 p-2 text-center text-sm hover:bg-blue-600",
           importing ? "cursor-not-allowed opacity-20" : ""
         )}
-        onClick={() => router.push("/")}
+        onClick={handleFinish}
         disabled={importing}>
         {t("finish")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />

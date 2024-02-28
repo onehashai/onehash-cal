@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import OrganizationMemberAvatar from "@calcom/features/ee/organizations/components/OrganizationMemberAvatar";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { md } from "@calcom/lib/markdownIt";
-import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import turndown from "@calcom/lib/turndownService";
 import { trpc } from "@calcom/trpc/react";
 import type { Ensure } from "@calcom/types/utils";
@@ -33,7 +32,6 @@ const UserProfile = (props: IUserProfileProps) => {
   const [imageSrc, setImageSrc] = useState<string>(user?.avatar || "");
   const utils = trpc.useContext();
   const createEventType = trpc.viewer.eventTypes.create.useMutation();
-  const telemetry = useTelemetry();
   const [firstRender, setFirstRender] = useState(true);
 
   const mutation = trpc.viewer.updateProfile.useMutation({
@@ -65,11 +63,8 @@ const UserProfile = (props: IUserProfileProps) => {
   const onSubmit = handleSubmit((data: { bio: string }) => {
     const { bio } = data;
 
-    telemetry.event(telemetryEventTypes.onboardingFinished);
-
     mutation.mutate({
       bio,
-      completedOnboarding: true,
     });
   });
 
