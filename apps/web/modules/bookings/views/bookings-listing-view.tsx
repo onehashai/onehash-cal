@@ -7,6 +7,7 @@ import { z } from "zod";
 import { WipeMyCalActionButton } from "@calcom/app-store/wipemycalother/components";
 import { MeetLocationType } from "@calcom/core/location";
 import dayjs from "@calcom/dayjs";
+import ExportBookingsButton from "@calcom/features/bookings/components/ExportBookingsButton";
 import { FilterToggle } from "@calcom/features/bookings/components/FilterToggle";
 import { FiltersContainer } from "@calcom/features/bookings/components/FiltersContainer";
 import type { filterQuerySchema } from "@calcom/features/bookings/lib/useFilterQuery";
@@ -273,7 +274,10 @@ export default function Bookings() {
       <div className="flex flex-col">
         <div className="flex flex-row flex-wrap justify-between">
           <HorizontalTabs tabs={tabs} />
-          <FilterToggle setIsFiltersVisible={setIsFiltersVisible} />
+          <div className="flex flex-wrap gap-2">
+            <FilterToggle setIsFiltersVisible={setIsFiltersVisible} />
+            <ExportBookingsButton handleExportBookings={handleExportBookings} />
+          </div>
         </div>
         <FiltersContainer isFiltersVisible={isFiltersVisible} />
         <main className="w-full">
