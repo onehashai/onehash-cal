@@ -1,15 +1,15 @@
 import {
   deleteScheduledEmailReminder,
   scheduleEmailReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+} from "@calcom/features/workflows/lib/reminders/managers/emailReminderManager";
 import {
   deleteScheduledSMSReminder,
   scheduleSMSReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
+} from "@calcom/features/workflows/lib/reminders/managers/smsReminderManager";
 import {
   deleteScheduledWhatsappReminder,
   scheduleWhatsappReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
+} from "@calcom/features/workflows/lib/reminders/managers/whatsappReminderManager";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import { prisma } from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/client";

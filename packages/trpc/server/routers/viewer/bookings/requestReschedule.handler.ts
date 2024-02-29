@@ -6,9 +6,6 @@ import { CalendarEventBuilder } from "@calcom/core/builders/CalendarEvent/builde
 import { CalendarEventDirector } from "@calcom/core/builders/CalendarEvent/director";
 import { deleteMeeting } from "@calcom/core/videoClient";
 import dayjs from "@calcom/dayjs";
-import { deleteScheduledEmailReminder } from "@calcom/ee/workflows/lib/reminders/emailReminderManager";
-import { deleteScheduledSMSReminder } from "@calcom/ee/workflows/lib/reminders/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/ee/workflows/lib/reminders/whatsappReminderManager";
 import { sendRequestRescheduleEmail } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
@@ -25,6 +22,9 @@ import { prisma } from "@calcom/prisma";
 import type { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { BookingStatus, WorkflowMethods } from "@calcom/prisma/enums";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
+import { deleteScheduledEmailReminder } from "@calcom/workflows/lib/reminders/managers/emailReminderManager";
+import { deleteScheduledSMSReminder } from "@calcom/workflows/lib/reminders/smsReminderManager";
+import { deleteScheduledWhatsappReminder } from "@calcom/workflows/lib/reminders/whatsappReminderManager";
 
 import { TRPCError } from "@trpc/server";
 

@@ -25,7 +25,6 @@ import EventManager from "@calcom/core/EventManager";
 import { getEventName } from "@calcom/core/event";
 import { getUserAvailability } from "@calcom/core/getUserAvailability";
 import dayjs from "@calcom/dayjs";
-import { scheduleMandatoryReminder } from "@calcom/ee/workflows/lib/reminders/scheduleMandatoryReminder";
 import {
   sendAttendeeRequestEmail,
   sendOrganizerRequestEmail,
@@ -41,18 +40,19 @@ import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventR
 import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhookTrigger";
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
 import { userOrgQuery } from "@calcom/features/ee/organizations/lib/orgDomains";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
-import {
-  cancelWorkflowReminders,
-  scheduleWorkflowReminders,
-} from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import { getFullName } from "@calcom/features/form-builder/utils";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { cancelScheduledJobs, scheduleTrigger } from "@calcom/features/webhooks/lib/scheduleTrigger";
+import {
+  allowDisablingAttendeeConfirmationEmails,
+  allowDisablingHostConfirmationEmails,
+} from "@calcom/features/workflows/lib/allowDisablingStandardEmails";
+import {
+  cancelWorkflowReminders,
+  scheduleWorkflowReminders,
+} from "@calcom/features/workflows/lib/reminders/reminderScheduler";
+import { scheduleMandatoryReminder } from "@calcom/features/workflows/lib/reminders/scheduleMandatoryReminder";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";

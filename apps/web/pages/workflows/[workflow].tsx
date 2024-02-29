@@ -2,7 +2,7 @@
 
 import type { GetStaticPaths } from "next";
 
-import Workflow from "@calcom/features/ee/workflows/pages/workflow";
+import Workflow from "@calcom/features/workflows/pages/workflow";
 
 import { getStaticProps } from "@lib/workflows/[workflow]/getStaticProps";
 
