@@ -4,12 +4,14 @@ import { useRef, useState, useEffect } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import "react-phone-number-input/style.css";
+import type { SingleValue } from "react-select";
 
 import { classNames } from "@calcom/lib";
 import { SENDER_ID, SENDER_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HttpError } from "@calcom/lib/http-error";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
+import type { $Enums } from "@calcom/prisma/client";
 import { WorkflowTemplates, TimeUnit, WorkflowActions } from "@calcom/prisma/enums";
 import { WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
@@ -347,6 +349,101 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
       );
     };
 
+    const handleActionWorkflowChange = (
+      val: SingleValue<{
+        label: string;
+        value: $Enums.WorkflowActions;
+        needsTeamsUpgrade: boolean;
+        needsOrgsUpgrade: boolean;
+      }>
+    ) => {
+      if (val) {
+        const oldValue = form.getValues(`steps.${step.stepNumber - 1}.action`);
+
+        const setNumberRequiredConfigs = (phoneNumberIsNeeded: boolean, senderNeeded = true) => {
+          setIsSenderIsNeeded(senderNeeded);
+          setIsEmailAddressNeeded(false);
+          setIsPhoneNumberNeeded(phoneNumberIsNeeded);
+          setNumberVerified(getNumberVerificationStatus());
+        };
+
+        if (isSMSAction(val.value)) {
+          setNumberRequiredConfigs(val.value === WorkflowActions.SMS_NUMBER);
+          // email action changes to sms action
+          if (!isSMSAction(oldValue)) {
+            form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, "");
+            form.setValue(`steps.${step.stepNumber - 1}.sender`, SENDER_ID);
+          }
+
+          setIsEmailSubjectNeeded(false);
+        } else if (isWhatsappAction(val.value)) {
+          setNumberRequiredConfigs(val.value === WorkflowActions.WHATSAPP_NUMBER, false);
+
+          if (!isWhatsappAction(oldValue)) {
+            form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, "");
+            form.setValue(`steps.${step.stepNumber - 1}.sender`, "");
+          }
+
+          setIsEmailSubjectNeeded(false);
+        } else {
+          setIsPhoneNumberNeeded(false);
+          setIsSenderIsNeeded(false);
+          setIsEmailAddressNeeded(val.value === WorkflowActions.EMAIL_ADDRESS);
+          setIsEmailSubjectNeeded(true);
+        }
+
+        if (isTextMessageToAttendeeAction(val.value)) {
+          setIsRequiresConfirmationNeeded(true);
+        } else {
+          setIsRequiresConfirmationNeeded(false);
+        }
+
+        if (form.getValues(`steps.${step.stepNumber - 1}.template`) === WorkflowTemplates.REMINDER) {
+          if (isSMSOrWhatsappAction(val.value) === isSMSOrWhatsappAction(oldValue)) {
+            if (isAttendeeAction(oldValue) !== isAttendeeAction(val.value)) {
+              const currentReminderBody = form.getValues(`steps.${step.stepNumber - 1}.reminderBody`) || "";
+              const newReminderBody = currentReminderBody
+                .replaceAll("{ORGANIZER}", "{PLACEHOLDER}")
+                .replaceAll("{ATTENDEE}", "{ORGANIZER}")
+                .replaceAll("{PLACEHOLDER}", "{ATTENDEE}");
+              form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, newReminderBody);
+
+              if (!isSMSOrWhatsappAction(val.value)) {
+                const currentEmailSubject = form.getValues(`steps.${step.stepNumber - 1}.emailSubject`) || "";
+                const newEmailSubject = isAttendeeAction(val.value)
+                  ? currentEmailSubject.replace("{ORGANIZER}", "{ATTENDEE}")
+                  : currentEmailSubject.replace("{ATTENDEE}", "{ORGANIZER}");
+
+                form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, newEmailSubject || "");
+              }
+            }
+          } else {
+            if (isSMSAction(val.value)) {
+              form.setValue(
+                `steps.${step.stepNumber - 1}.reminderBody`,
+                smsReminderTemplate(true, val.value, timeFormat)
+              );
+            } else if (isWhatsappAction(val.value)) {
+              form.setValue(
+                `steps.${step.stepNumber - 1}.reminderBody`,
+                whatsappReminderTemplate(true, val.value, timeFormat)
+              );
+            } else {
+              const emailReminderBody = emailReminderTemplate(true, val.value, timeFormat);
+              form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, emailReminderBody.emailBody);
+              form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, emailReminderBody.emailSubject);
+            }
+          }
+        } else {
+          const template = isWhatsappAction(val.value) ? "REMINDER" : "CUSTOM";
+          template && form.setValue(`steps.${step.stepNumber - 1}.template`, template);
+        }
+        form.unregister(`steps.${step.stepNumber - 1}.sendTo`);
+        form.clearErrors(`steps.${step.stepNumber - 1}.sendTo`);
+        form.setValue(`steps.${step.stepNumber - 1}.action`, val.value);
+        setUpdateTemplate(!updateTemplate);
+      }
+    };
     return (
       <>
         <div className="my-3 flex justify-center">
@@ -415,115 +512,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                         isSearchable={false}
                         className="text-sm"
                         isDisabled={props.readOnly}
-                        onChange={(val) => {
-                          if (val) {
-                            const oldValue = form.getValues(`steps.${step.stepNumber - 1}.action`);
-
-                            const setNumberRequiredConfigs = (
-                              phoneNumberIsNeeded: boolean,
-                              senderNeeded = true
-                            ) => {
-                              setIsSenderIsNeeded(senderNeeded);
-                              setIsEmailAddressNeeded(false);
-                              setIsPhoneNumberNeeded(phoneNumberIsNeeded);
-                              setNumberVerified(getNumberVerificationStatus());
-                            };
-
-                            if (isSMSAction(val.value)) {
-                              setNumberRequiredConfigs(val.value === WorkflowActions.SMS_NUMBER);
-                              // email action changes to sms action
-                              if (!isSMSAction(oldValue)) {
-                                form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, "");
-                                form.setValue(`steps.${step.stepNumber - 1}.sender`, SENDER_ID);
-                              }
-
-                              setIsEmailSubjectNeeded(false);
-                            } else if (isWhatsappAction(val.value)) {
-                              setNumberRequiredConfigs(val.value === WorkflowActions.WHATSAPP_NUMBER, false);
-
-                              if (!isWhatsappAction(oldValue)) {
-                                form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, "");
-                                form.setValue(`steps.${step.stepNumber - 1}.sender`, "");
-                              }
-
-                              setIsEmailSubjectNeeded(false);
-                            } else {
-                              setIsPhoneNumberNeeded(false);
-                              setIsSenderIsNeeded(false);
-                              setIsEmailAddressNeeded(val.value === WorkflowActions.EMAIL_ADDRESS);
-                              setIsEmailSubjectNeeded(true);
-                            }
-
-                            if (isTextMessageToAttendeeAction(val.value)) {
-                              setIsRequiresConfirmationNeeded(true);
-                            } else {
-                              setIsRequiresConfirmationNeeded(false);
-                            }
-
-                            if (
-                              form.getValues(`steps.${step.stepNumber - 1}.template`) ===
-                              WorkflowTemplates.REMINDER
-                            ) {
-                              if (isSMSOrWhatsappAction(val.value) === isSMSOrWhatsappAction(oldValue)) {
-                                if (isAttendeeAction(oldValue) !== isAttendeeAction(val.value)) {
-                                  const currentReminderBody =
-                                    form.getValues(`steps.${step.stepNumber - 1}.reminderBody`) || "";
-                                  const newReminderBody = currentReminderBody
-                                    .replaceAll("{ORGANIZER}", "{PLACEHOLDER}")
-                                    .replaceAll("{ATTENDEE}", "{ORGANIZER}")
-                                    .replaceAll("{PLACEHOLDER}", "{ATTENDEE}");
-                                  form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, newReminderBody);
-
-                                  if (!isSMSOrWhatsappAction(val.value)) {
-                                    const currentEmailSubject =
-                                      form.getValues(`steps.${step.stepNumber - 1}.emailSubject`) || "";
-                                    const newEmailSubject = isAttendeeAction(val.value)
-                                      ? currentEmailSubject.replace("{ORGANIZER}", "{ATTENDEE}")
-                                      : currentEmailSubject.replace("{ATTENDEE}", "{ORGANIZER}");
-
-                                    form.setValue(
-                                      `steps.${step.stepNumber - 1}.emailSubject`,
-                                      newEmailSubject || ""
-                                    );
-                                  }
-                                }
-                              } else {
-                                if (isSMSAction(val.value)) {
-                                  form.setValue(
-                                    `steps.${step.stepNumber - 1}.reminderBody`,
-                                    smsReminderTemplate(true, val.value, timeFormat)
-                                  );
-                                } else if (isWhatsappAction(val.value)) {
-                                  form.setValue(
-                                    `steps.${step.stepNumber - 1}.reminderBody`,
-                                    whatsappReminderTemplate(true, val.value, timeFormat)
-                                  );
-                                } else {
-                                  const emailReminderBody = emailReminderTemplate(
-                                    true,
-                                    val.value,
-                                    timeFormat
-                                  );
-                                  form.setValue(
-                                    `steps.${step.stepNumber - 1}.reminderBody`,
-                                    emailReminderBody.emailBody
-                                  );
-                                  form.setValue(
-                                    `steps.${step.stepNumber - 1}.emailSubject`,
-                                    emailReminderBody.emailSubject
-                                  );
-                                }
-                              }
-                            } else {
-                              const template = isWhatsappAction(val.value) ? "REMINDER" : "CUSTOM";
-                              template && form.setValue(`steps.${step.stepNumber - 1}.template`, template);
-                            }
-                            form.unregister(`steps.${step.stepNumber - 1}.sendTo`);
-                            form.clearErrors(`steps.${step.stepNumber - 1}.sendTo`);
-                            form.setValue(`steps.${step.stepNumber - 1}.action`, val.value);
-                            setUpdateTemplate(!updateTemplate);
-                          }
-                        }}
+                        onChange={handleActionWorkflowChange}
                         defaultValue={selectedAction}
                         options={actionOptions?.map((option) => ({
                           ...option,
