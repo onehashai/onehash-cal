@@ -3,6 +3,7 @@ import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 
 import type { AuthOptions, Session } from "next-auth";
 import { getToken } from "next-auth/jwt";
 
+import checkLicense from "@calcom/features/ee/common/server/checkLicense";
 import { CAL_URL } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 
@@ -57,8 +58,7 @@ export async function getServerSession(options: {
     return null;
   }
 
-  // const hasValidLicense = await checkLicense(prisma);
-  const hasValidLicense = true;
+  const hasValidLicense = await checkLicense(prisma);
 
   const session: Session = {
     hasValidLicense,

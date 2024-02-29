@@ -7,6 +7,7 @@ import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
 import KeyCloakProvider from "next-auth/providers/keycloak";
 
+import checkLicense from "@calcom/features/ee/common/server/checkLicense";
 import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/ImpersonationProvider";
 import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { clientSecretVerifier, hostedCal, isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
@@ -582,8 +583,7 @@ export const AUTH_OPTIONS: AuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // const hasValidLicense = await checkLicense(prisma);
-      const hasValidLicense = true;
+      const hasValidLicense = await checkLicense(prisma);
       const calendsoSession: Session = {
         ...session,
         hasValidLicense,
