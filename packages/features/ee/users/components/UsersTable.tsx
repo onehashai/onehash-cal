@@ -23,7 +23,7 @@ import {
 } from "@calcom/ui";
 import { Edit, Lock, Trash, User, VenetianMask } from "@calcom/ui/components/icon";
 
-import { withLicenseRequired } from "../../common/components/LicenseRequired";
+// import { withLicenseRequired } from "../../common/components/LicenseRequired";
 
 const { Cell, ColumnTitle, Header, Row } = Table;
 
@@ -307,4 +307,5 @@ const DeleteUserDialog = ({
   );
 };
 
-export const UsersTable = withLicenseRequired(UsersTableBare);
+// export const UsersTable = withLicenseRequired(UsersTableBare);
+export const UsersTable = UsersTableBare;
