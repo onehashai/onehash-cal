@@ -11,6 +11,9 @@
     },
     "pages/api/trpc/slots/[trpc].ts": {
       "memory": 768
+    },
+    "pages/api/inngest.ts": {
+      "maxDuration": 300
     }
   }
 }

@@ -31,6 +31,7 @@ import {
   Terminal,
   User,
   Users,
+  CalendarPlus,
 } from "@calcom/ui/components/icon";
 
 const tabs: VerticalTabItemProps[] = [
@@ -64,6 +65,12 @@ const tabs: VerticalTabItemProps[] = [
     href: "/settings/billing",
     icon: CreditCard,
     children: [{ name: "manage_billing", href: "/settings/billing" }],
+  },
+  {
+    name: "import",
+    href: "/settings/import",
+    icon: CalendarPlus,
+    children: [{ name: "calendly_integration", href: "/settings/import/calendly" }],
   },
   {
     name: "developer",

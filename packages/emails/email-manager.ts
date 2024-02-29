@@ -7,7 +7,9 @@ import { getEventName } from "@calcom/core/event";
 import type BaseEmail from "@calcom/emails/templates/_base-email";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
+import type { ImportDataEmailProps } from "./src/templates/ImportDataEmail";
 import type { MonthlyDigestEmailData } from "./src/templates/MonthlyDigestEmail";
+import type { WelcomeEmailProps } from "./src/templates/WelcomeUserEmail";
 import type { EmailVerifyLink } from "./templates/account-verify-email";
 import AccountVerifyEmail from "./templates/account-verify-email";
 import type { OrganizationNotification } from "./templates/admin-organization-notification";
@@ -32,6 +34,7 @@ import type { Feedback } from "./templates/feedback-email";
 import FeedbackEmail from "./templates/feedback-email";
 import type { PasswordReset } from "./templates/forgot-password-email";
 import ForgotPasswordEmail from "./templates/forgot-password-email";
+import ImportDataEmail from "./templates/import-data-email";
 import MonthlyDigestEmail from "./templates/monthly-digest-email";
 import NoShowFeeChargedEmail from "./templates/no-show-fee-charged-email";
 import type { OrgAutoInvite } from "./templates/org-auto-join-invite";
@@ -51,6 +54,7 @@ import OrganizerScheduledEmail from "./templates/organizer-scheduled-email";
 import SlugReplacementEmail from "./templates/slug-replacement-email";
 import type { TeamInvite } from "./templates/team-invite-email";
 import TeamInviteEmail from "./templates/team-invite-email";
+import WelcomeUserEmail from "./templates/welcome-user-email";
 
 const sendEmail = (prepare: () => BaseEmail) => {
   return new Promise((resolve, reject) => {
@@ -442,4 +446,11 @@ export const sendAdminOrganizationNotification = async (input: OrganizationNotif
 
 export const sendBookingRedirectNotification = async (bookingRedirect: IBookingRedirect) => {
   await sendEmail(() => new BookingRedirectEmailNotification(bookingRedirect));
+};
+export const sendWelcomeUserEmail = async (userDetails: WelcomeEmailProps) => {
+  await sendEmail(() => new WelcomeUserEmail(userDetails));
+};
+
+export const sendImportDataEmail = async (importData: ImportDataEmailProps) => {
+  await sendEmail(() => new ImportDataEmail(importData));
 };

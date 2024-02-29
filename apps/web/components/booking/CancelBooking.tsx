@@ -42,6 +42,33 @@ export default function CancelBooking(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleCancelBooking = async () => {
+    setLoading(true);
+
+    telemetry.event(telemetryEventTypes.bookingCancelled, collectPageParameters());
+
+    const res = await fetch("/api/cancel", {
+      body: JSON.stringify({
+        uid: booking?.uid,
+        cancellationReason: cancellationReason,
+        allRemainingBookings,
+        // @NOTE: very important this shouldn't cancel with number ID use uid instead
+        seatReferenceUid,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+
+    if (res.status >= 200 && res.status < 300) {
+      // tested by apps/web/playwright/booking-pages.e2e.ts
+      router.refresh();
+    } else {
+      setLoading(false);
+      setError(`${t("error_with_status_code_occured", { status: res.status })} ${t("please_try_again")}`);
+    }
+  };
   return (
     <>
       {error && (
@@ -76,40 +103,7 @@ export default function CancelBooking(props: Props) {
                 onClick={() => props.setIsCancellationMode(false)}>
                 {t("nevermind")}
               </Button>
-              <Button
-                data-testid="confirm_cancel"
-                onClick={async () => {
-                  setLoading(true);
-
-                  telemetry.event(telemetryEventTypes.bookingCancelled, collectPageParameters());
-
-                  const res = await fetch("/api/cancel", {
-                    body: JSON.stringify({
-                      uid: booking?.uid,
-                      cancellationReason: cancellationReason,
-                      allRemainingBookings,
-                      // @NOTE: very important this shouldn't cancel with number ID use uid instead
-                      seatReferenceUid,
-                    }),
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    method: "POST",
-                  });
-
-                  if (res.status >= 200 && res.status < 300) {
-                    // tested by apps/web/playwright/booking-pages.e2e.ts
-                    router.refresh();
-                  } else {
-                    setLoading(false);
-                    setError(
-                      `${t("error_with_status_code_occured", { status: res.status })} ${t(
-                        "please_try_again"
-                      )}`
-                    );
-                  }
-                }}
-                loading={loading}>
+              <Button data-testid="confirm_cancel" onClick={handleCancelBooking} loading={loading}>
                 {props.allRemainingBookings ? t("cancel_all_remaining") : t("cancel_event")}
               </Button>
             </div>
