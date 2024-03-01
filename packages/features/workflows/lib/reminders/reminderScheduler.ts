@@ -54,7 +54,7 @@ const processWorkflowStep = async (
     eventTypeRequiresConfirmation,
   }: ProcessWorkflowStepParams
 ) => {
-  if (isTextMessageToAttendeeAction(step.action) && !eventTypeRequiresConfirmation) return;
+  if (isTextMessageToAttendeeAction(step.action) && eventTypeRequiresConfirmation) return;
   if (isSMSAction(step.action)) {
     const sendTo = step.action === WorkflowActions.SMS_ATTENDEE ? smsReminderNumber : step.sendTo;
     await scheduleSMSReminder({
