@@ -13,9 +13,10 @@ import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { cancelScheduledJobs } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
 import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
+import { deleteScheduledEmailReminder } from "@calcom/features/workflows/lib/reminders/managers/emailReminderManager";
+import { deleteScheduledSMSReminder } from "@calcom/features/workflows/lib/reminders/managers/smsReminderManager";
+import { deleteScheduledWhatsappReminder } from "@calcom/features/workflows/lib/reminders/managers/whatsappReminderManager";
 import { sendCancelledReminders } from "@calcom/features/workflows/lib/reminders/reminderScheduler";
-import { deleteScheduledSMSReminder } from "@calcom/features/workflows/lib/reminders/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/features/workflows/lib/reminders/whatsappReminderManager";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import { HttpError } from "@calcom/lib/http-error";
@@ -30,7 +31,6 @@ import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/crede
 import { schemaBookingCancelParams } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 import type { IAbstractPaymentService, PaymentApp } from "@calcom/types/PaymentService";
-import { deleteScheduledEmailReminder } from "@calcom/workflows/lib/reminders/managers/emailReminderManager";
 
 import cancelAttendeeSeat from "./handleSeats/cancel/cancelAttendeeSeat";
 

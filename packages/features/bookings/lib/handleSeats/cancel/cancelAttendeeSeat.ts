@@ -3,8 +3,9 @@ import { updateMeeting } from "@calcom/core/videoClient";
 import { sendCancelledSeatEmails } from "@calcom/emails";
 import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
 import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
-import { deleteScheduledSMSReminder } from "@calcom/features/workflows/lib/reminders/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/features/workflows/lib/reminders/whatsappReminderManager";
+import { deleteScheduledEmailReminder } from "@calcom/features/workflows/lib/reminders/managers/emailReminderManager";
+import { deleteScheduledSMSReminder } from "@calcom/features/workflows/lib/reminders/managers/smsReminderManager";
+import { deleteScheduledWhatsappReminder } from "@calcom/features/workflows/lib/reminders/managers/whatsappReminderManager";
 import { HttpError } from "@calcom/lib/http-error";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import prisma from "@calcom/prisma";
@@ -12,7 +13,6 @@ import { WebhookTriggerEvents, WorkflowMethods } from "@calcom/prisma/enums";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
 import { schemaBookingCancelParams } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent } from "@calcom/types/Calendar";
-import { deleteScheduledEmailReminder } from "@calcom/workflows/lib/reminders/managers/emailReminderManager";
 
 import type { CustomRequest } from "../../handleCancelBooking";
 
