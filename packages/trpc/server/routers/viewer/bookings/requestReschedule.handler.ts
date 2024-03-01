@@ -11,6 +11,9 @@ import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventR
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { cancelScheduledJobs } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
+import { deleteScheduledEmailReminder } from "@calcom/features/workflows/lib/reminders/managers/emailReminderManager";
+import { deleteScheduledSMSReminder } from "@calcom/features/workflows/lib/reminders/managers/smsReminderManager";
+import { deleteScheduledWhatsappReminder } from "@calcom/features/workflows/lib/reminders/managers/whatsappReminderManager";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
@@ -22,9 +25,6 @@ import { prisma } from "@calcom/prisma";
 import type { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { BookingStatus, WorkflowMethods } from "@calcom/prisma/enums";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
-import { deleteScheduledEmailReminder } from "@calcom/workflows/lib/reminders/managers/emailReminderManager";
-import { deleteScheduledSMSReminder } from "@calcom/workflows/lib/reminders/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/workflows/lib/reminders/whatsappReminderManager";
 
 import { TRPCError } from "@trpc/server";
 
