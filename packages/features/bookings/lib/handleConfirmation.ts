@@ -2,13 +2,17 @@ import type { Prisma, Workflow, WorkflowsOnEventTypes, WorkflowStep } from "@pri
 
 import type { EventManagerUser } from "@calcom/core/EventManager";
 import EventManager from "@calcom/core/EventManager";
-import { scheduleMandatoryReminder } from "@calcom/ee/workflows/lib/reminders/scheduleMandatoryReminder";
 import { sendScheduledEmails } from "@calcom/emails";
-import { scheduleWorkflowReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { scheduleTrigger } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
 import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
+import {
+  allowDisablingAttendeeConfirmationEmails,
+  allowDisablingHostConfirmationEmails,
+} from "@calcom/features/workflows/lib/allowDisablingStandardEmails";
+import { scheduleWorkflowReminders } from "@calcom/features/workflows/lib/reminders/reminderScheduler";
+import { scheduleMandatoryReminder } from "@calcom/features/workflows/lib/reminders/scheduleMandatoryReminder";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import logger from "@calcom/lib/logger";
@@ -17,11 +21,6 @@ import type { PrismaClient } from "@calcom/prisma";
 import { BookingStatus, WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 import type { AdditionalInformation, CalendarEvent } from "@calcom/types/Calendar";
-
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "../../ee/workflows/lib/allowDisablingStandardEmails";
 
 const log = logger.getSubLogger({ prefix: ["[handleConfirmation] book:user"] });
 
@@ -285,7 +284,7 @@ export async function handleConfirmation(args: {
         calendarEvent: evtOfBooking,
         isFirstRecurringEvent: isFirstBooking,
         hideBranding: !!updatedBookings[index].eventType?.owner?.hideBranding,
-        eventTypeRequiresConfirmation: true,
+        eventTypeRequiresConfirmation: evt.requiresConfirmation ?? false,
       });
     }
   } catch (error) {

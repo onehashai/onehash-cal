@@ -1,4 +1,4 @@
-import { sendVerificationCode } from "@calcom/features/ee/workflows/lib/reminders/verifyPhoneNumber";
+import { sendVerificationCode } from "@calcom/features/workflows/lib/reminders/verifyPhoneNumber";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
