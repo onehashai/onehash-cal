@@ -1,6 +1,6 @@
 import { _generateMetadata } from "app/_utils";
 
-import Page from "@calcom/features/ee/organizations/pages/settings/other-team-profile-view";
+import Page from "@calcom/features/organizations/pages/settings/other-team-profile-view";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

@@ -2,14 +2,14 @@
 
 import { redirect, useRouter } from "next/navigation";
 
-import AddNewTeamMembers from "@calcom/features/ee/teams/components/AddNewTeamMembers";
+import AddNewTeamMembers from "@calcom/features/teams/components/AddNewTeamMembers";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta, WizardLayout, WizardLayoutAppDir } from "@calcom/ui";
 
 import PageWrapper from "@components/PageWrapper";
 
-export { getServerSideProps } from "@calcom/features/ee/organizations/pages/organization";
+export { getServerSideProps } from "@calcom/features/organizations/pages/organization";
 
 const OnboardTeamMembersPage = () => {
   const { t } = useLocale();

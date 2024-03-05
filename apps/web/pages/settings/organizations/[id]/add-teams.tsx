@@ -2,14 +2,14 @@
 
 import { redirect, useRouter } from "next/navigation";
 
-import { AddNewTeamsForm } from "@calcom/features/ee/organizations/components";
+import { AddNewTeamsForm } from "@calcom/features/organizations/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta, WizardLayout } from "@calcom/ui";
 import { WizardLayoutAppDir } from "@calcom/ui";
 
 import PageWrapper from "@components/PageWrapper";
 
-export { getServerSideProps } from "@calcom/features/ee/organizations/pages/organization";
+export { getServerSideProps } from "@calcom/features/organizations/pages/organization";
 
 const AddNewTeamsPage = () => {
   const { t } = useLocale();

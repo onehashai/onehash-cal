@@ -11,7 +11,7 @@ import type { ReadonlyURLSearchParams } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
-import { OrgBrandingProvider } from "@calcom/features/ee/organizations/context/provider";
+import { OrgBrandingProvider } from "@calcom/features/organizations/context/provider";
 import DynamicHelpscoutProvider from "@calcom/features/ee/support/lib/helpscout/providerDynamic";
 import DynamicIntercomProvider from "@calcom/features/ee/support/lib/intercom/providerDynamic";
 import { FeatureProvider } from "@calcom/features/flags/context/provider";

@@ -1,12 +1,12 @@
 "use client";
 
-import { AboutOrganizationForm } from "@calcom/features/ee/organizations/components";
+import { AboutOrganizationForm } from "@calcom/features/organizations/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta, WizardLayout, WizardLayoutAppDir } from "@calcom/ui";
 
 import PageWrapper from "@components/PageWrapper";
 
-export { getServerSideProps } from "@calcom/features/ee/organizations/pages/organization";
+export { getServerSideProps } from "@calcom/features/organizations/pages/organization";
 
 const AboutOrganizationPage = () => {
   const { t } = useLocale();

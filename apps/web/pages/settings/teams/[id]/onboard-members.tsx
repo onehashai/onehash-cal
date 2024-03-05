@@ -2,7 +2,7 @@
 
 import Head from "next/head";
 
-import AddNewTeamMembers from "@calcom/features/ee/teams/components/AddNewTeamMembers";
+import AddNewTeamMembers from "@calcom/features/teams/components/AddNewTeamMembers";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { WizardLayout } from "@calcom/ui";
 

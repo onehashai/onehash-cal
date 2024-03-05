@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { UIEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
-import type { UserAdminTeams } from "@calcom/features/ee/teams/lib/getUserAdminTeams";
+import type { UserAdminTeams } from "@calcom/features/teams/lib/getUserAdminTeams";
 import { classNames } from "@calcom/lib";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";

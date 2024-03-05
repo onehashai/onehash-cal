@@ -1,1 +1,1 @@
-export { default } from "@calcom/features/ee/organizations/api/subteams";
+export { default } from "@calcom/features/organizations/api/subteams";

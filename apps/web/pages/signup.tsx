@@ -15,7 +15,7 @@ import { z } from "zod";
 import getStripe from "@calcom/app-store/stripepayment/lib/client";
 import { getPremiumPlanPriceValue } from "@calcom/app-store/stripepayment/lib/utils";
 import { getOrgUsernameFromEmail } from "@calcom/features/auth/signup/utils/getOrgUsernameFromEmail";
-import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/organizations/lib/orgDomains";
 import { useFlagMap } from "@calcom/features/flags/context/provider";
 import { classNames } from "@calcom/lib";
 import { APP_NAME, URL_PROTOCOL_REGEX, IS_CALCOM, WEBAPP_URL, ONEHASH_URL } from "@calcom/lib/constants";
