@@ -18,12 +18,14 @@ import {
 export function getWorkflowActionOptions(t: TFunction, isTeamsPlan?: boolean, isOrgsPlan?: boolean) {
   return (
     WORKFLOW_ACTIONS.filter(
-      (action) => action == WorkflowActions.SMS_NUMBER || action == WorkflowActions.SMS_ATTENDEE
+      (action) =>
+        action == WorkflowActions.SMS_NUMBER ||
+        action == WorkflowActions.SMS_ATTENDEE ||
+        action == WorkflowActions.EMAIL_ATTENDEE ||
+        action == WorkflowActions.EMAIL_HOST
       // action !== WorkflowActions.EMAIL_ADDRESS &&
       // action !== WorkflowActions.WHATSAPP_ATTENDEE &&
-      // action !== WorkflowActions.WHATSAPP_NUMBER &&
-      // action !== WorkflowActions.EMAIL_ATTENDEE &&
-      // action !== WorkflowActions.EMAIL_HOST
+      // action !== WorkflowActions.WHATSAPP_NUMBER
     ) //removing EMAIL_ADDRESS for now due to abuse episode
       //removing  WHATSAPP WORKFLOWS for nowas twilio is not configured
       .map((action) => {
