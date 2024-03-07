@@ -237,7 +237,15 @@ const EditKeysModal: FC<{
                     name={key}
                     value={value}
                     onChange={(e) => {
-                      formMethods.setValue(key, e?.target.value);
+                      const fieldSchema = appKeySchema.shape[
+                        key as keyof typeof appKeySchema.shape
+                      ] as typeof appKeySchema.shape;
+
+                      if (fieldSchema instanceof z.ZodNumber && !isNaN(parseFloat(e.target.value))) {
+                        formMethods.setValue(key, parseFloat(e.target.value));
+                      } else {
+                        formMethods.setValue(key, e.target.value);
+                      }
                     }}
                   />
                 )}
@@ -245,7 +253,7 @@ const EditKeysModal: FC<{
             ))}
           </Form>
         )}
-        <DialogFooter showDivider className="mt-8">
+        <DialogFooter showDivider>
           <DialogClose onClick={handleModelClose} />
           <Button form="edit-keys" type="submit">
             {t("save")}
