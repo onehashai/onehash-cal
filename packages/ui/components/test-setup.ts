@@ -8,13 +8,13 @@ vi.mock("next-auth/react", () => ({
   },
 }));
 
-vi.mock("@calcom/features/organizations/hooks", () => ({
+vi.mock("@calcom/features/oe/organizations/hooks", () => ({
   useOrgBrandingValues() {
     return {};
   },
 }));
 
-vi.mock("@calcom/features/organizations/context/provider", () => ({
+vi.mock("@calcom/features/oe/organizations/context/provider", () => ({
   useOrgBranding() {
     return {};
   },

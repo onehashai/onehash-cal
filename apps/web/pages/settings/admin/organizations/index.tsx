@@ -1,4 +1,4 @@
-import AdminOrgsPage from "@calcom/features/organizations/pages/settings/admin/AdminOrgPage";
+import AdminOrgsPage from "@calcom/features/oe/organizations/pages/settings/admin/AdminOrgPage";
 
 import type { CalPageWrapper } from "@components/PageWrapper";
 import PageWrapper from "@components/PageWrapper";

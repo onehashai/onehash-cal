@@ -1,4 +1,4 @@
-import TeamMembersView from "@calcom/features/teams/pages/team-members-view";
+import TeamMembersView from "@calcom/features/oe/teams/pages/team-members-view";
 
 import type { CalPageWrapper } from "@components/PageWrapper";
 import PageWrapper from "@components/PageWrapper";

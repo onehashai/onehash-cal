@@ -1,4 +1,4 @@
-import OrgGeneralView from "@calcom/features/organizations/pages/settings/general";
+import OrgGeneralView from "@calcom/features/oe/organizations/pages/settings/general";
 
 import type { CalPageWrapper } from "@components/PageWrapper";
 import PageWrapper from "@components/PageWrapper";

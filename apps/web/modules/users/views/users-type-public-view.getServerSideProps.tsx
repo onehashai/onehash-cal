@@ -5,7 +5,7 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { handleTypeRedirection } from "@calcom/features/booking-redirect/handle-type";
 import { getBookingForReschedule, getBookingForSeatedEvent } from "@calcom/features/bookings/lib/get-booking";
 import type { GetBookingType } from "@calcom/features/bookings/lib/get-booking";
-import { orgDomainConfig, userOrgQuery } from "@calcom/features/organizations/lib/orgDomains";
+import { orgDomainConfig, userOrgQuery } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { getUsernameList } from "@calcom/lib/defaultEvents";
 import slugify from "@calcom/lib/slugify";
 import prisma from "@calcom/prisma";

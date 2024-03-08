@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -13,7 +14,6 @@ import { trpc } from "@calcom/trpc/react";
 import { Alert, Button, Form, TextField } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
 
-import { useOrgBranding } from "../../organizations/context/provider";
 import { subdomainSuffix } from "../../organizations/lib/orgDomains";
 import type { NewTeamFormValues } from "../lib/types";
 

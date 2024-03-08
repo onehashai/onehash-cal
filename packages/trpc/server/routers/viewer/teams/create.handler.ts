@@ -1,4 +1,4 @@
-import { generateTeamCheckoutSession } from "@calcom/features/teams/lib/payments";
+import { generateTeamCheckoutSession } from "@calcom/features/oe/teams/lib/payments";
 import { IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { closeComUpsertTeamUser } from "@calcom/lib/sync/SyncServiceManager";
 import { prisma } from "@calcom/prisma";

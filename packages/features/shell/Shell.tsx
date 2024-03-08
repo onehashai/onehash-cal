@@ -19,10 +19,10 @@ import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
 import {
   OrgUpgradeBanner,
   type OrgUpgradeBannerProps,
-} from "@calcom/features/organizations/components/OrgBannerUpgrade";
-import { getOrgFullOrigin } from "@calcom/features/organizations/lib/orgDomains";
+} from "@calcom/features/oe/organizations/components/OrgBannerUpgrade";
+import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog";
-import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/teams/components";
+import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
 import AdminPasswordBanner, {
   type AdminPasswordBannerProps,
 } from "@calcom/features/users/components/AdminPasswordBanner";
@@ -99,7 +99,7 @@ import {
 import { Discord } from "@calcom/ui/components/icon/Discord";
 
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
-import { useOrgBranding } from "../organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
 // need to import without ssr to prevent hydration errors

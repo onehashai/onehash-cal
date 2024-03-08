@@ -4,8 +4,8 @@ import { encode } from "querystring";
 import type { z } from "zod";
 
 import { handleUserRedirection } from "@calcom/features/booking-redirect/handle-user";
-import { getSlugOrRequestedSlug } from "@calcom/features/organizations/lib/orgDomains";
-import { orgDomainConfig } from "@calcom/features/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { DEFAULT_DARK_BRAND_COLOR, DEFAULT_LIGHT_BRAND_COLOR } from "@calcom/lib/constants";
 import { getUsernameList } from "@calcom/lib/defaultEvents";
 import logger from "@calcom/lib/logger";

@@ -1,6 +1,6 @@
 import { _generateMetadata } from "app/_utils";
 
-import Page from "@calcom/features/organizations/pages/settings/admin/AdminOrgPage";
+import Page from "@calcom/features/oe/organizations/pages/settings/admin/AdminOrgPage";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

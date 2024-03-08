@@ -6,7 +6,7 @@ import useAddAppMutation from "@calcom/app-store/_utils/useAddAppMutation";
 import { InstallAppButton } from "@calcom/app-store/components";
 import { doesAppSupportTeamInstall } from "@calcom/app-store/utils";
 import { Spinner } from "@calcom/features/calendars/weeklyview/components/spinner/Spinner";
-import type { UserAdminTeams } from "@calcom/features/teams/lib/getUserAdminTeams";
+import type { UserAdminTeams } from "@calcom/features/oe/teams/lib/getUserAdminTeams";
 import classNames from "@calcom/lib/classNames";
 import { CAL_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";

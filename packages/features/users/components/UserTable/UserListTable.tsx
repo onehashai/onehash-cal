@@ -10,7 +10,7 @@ import type { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc";
 import { Avatar, Badge, Button, Checkbox, DataTable } from "@calcom/ui";
 
-import { useOrgBranding } from "../../../organizations/context/provider";
+import { useOrgBranding } from "../@calcom/features/oe/organizations/context/providercontext/provider";
 import { DeleteBulkUsers } from "./BulkActions/DeleteBulkUsers";
 import { TeamListBulkAction } from "./BulkActions/TeamList";
 import { ChangeUserRoleModal } from "./ChangeUserRoleModal";

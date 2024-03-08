@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateANewOrganizationForm } from "@calcom/features/organizations/components";
+import { CreateANewOrganizationForm } from "@calcom/features/oe/organizations/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { WizardLayout, Meta, WizardLayoutAppDir } from "@calcom/ui";
 

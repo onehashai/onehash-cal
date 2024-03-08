@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useFilterQuery } from "@calcom/features/bookings/lib/useFilterQuery";
-import { useOrgBranding } from "@calcom/features/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import {
   FilterCheckboxFieldsContainer,
   FilterCheckboxField,

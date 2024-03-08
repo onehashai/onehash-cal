@@ -2,7 +2,7 @@ import { getServerSideProps as GSSUserPage } from "@pages/[user]";
 import { getServerSideProps as GSSTeamPage } from "@pages/team/[slug]";
 import type { GetServerSidePropsContext } from "next";
 
-import { getSlugOrRequestedSlug } from "@calcom/features/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
 import prisma from "@calcom/prisma";
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {

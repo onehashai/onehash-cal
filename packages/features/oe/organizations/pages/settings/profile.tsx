@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
-import { subdomainSuffix } from "@calcom/features/organizations/lib/orgDomains";
+import { subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";

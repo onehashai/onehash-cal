@@ -2,8 +2,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import InviteLinkSettingsModal from "@calcom/features/teams/components/InviteLinkSettingsModal";
-import MemberInvitationModal from "@calcom/features/teams/components/MemberInvitationModal";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import InviteLinkSettingsModal from "@calcom/features/oe/teams/components/InviteLinkSettingsModal";
+import MemberInvitationModal from "@calcom/features/oe/teams/components/MemberInvitationModal";
 import classNames from "@calcom/lib/classNames";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getTeamUrlSync } from "@calcom/lib/getBookerUrl/client";
@@ -42,7 +43,6 @@ import {
   X,
 } from "@calcom/ui/components/icon";
 
-import { useOrgBranding } from "../../organizations/context/provider";
 import { TeamRole } from "./TeamPill";
 
 interface Props {

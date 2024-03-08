@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { VerifyCodeDialog } from "@calcom/features/bookings/components/VerifyCodeDialog";
-import { subdomainSuffix } from "@calcom/features/organizations/lib/orgDomains";
+import { subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import slugify from "@calcom/lib/slugify";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
