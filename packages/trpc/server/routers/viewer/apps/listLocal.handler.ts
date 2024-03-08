@@ -45,7 +45,7 @@ export const listLocalHandler = async ({ ctx, input }: ListLocalOptions) => {
     const dbData = dbApps.find((dbApp) => dbApp.slug === app.slug);
 
     // If the app already contains keys then return
-    if (dbData?.keys) {
+    if (dbData?.keys != undefined) {
       return {
         name: app.name,
         slug: app.slug,
