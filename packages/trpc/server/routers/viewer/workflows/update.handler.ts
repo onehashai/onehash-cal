@@ -4,19 +4,19 @@ import {
   isSMSOrWhatsappAction,
   isTextMessageToAttendeeAction,
   isTextMessageToSpecificNumber,
-} from "@calcom/features/workflows/lib/actionHelperFunctions";
+} from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
 import {
   deleteScheduledEmailReminder,
   scheduleEmailReminder,
-} from "@calcom/features/workflows/lib/reminders/managers/emailReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/emailReminderManager";
 import {
   deleteScheduledSMSReminder,
   scheduleSMSReminder,
-} from "@calcom/features/workflows/lib/reminders/managers/smsReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/smsReminderManager";
 import {
   deleteScheduledWhatsappReminder,
   scheduleWhatsappReminder,
-} from "@calcom/features/workflows/lib/reminders/managers/whatsappReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/whatsappReminderManager";
 import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";

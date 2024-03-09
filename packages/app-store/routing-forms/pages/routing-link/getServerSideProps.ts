@@ -1,4 +1,4 @@
-import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import type { AppGetServerSidePropsContext, AppPrisma } from "@calcom/types/AppGetServerSideProps";
 
 import { getSerializableForm } from "../../lib/getSerializableForm";

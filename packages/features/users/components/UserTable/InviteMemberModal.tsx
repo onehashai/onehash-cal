@@ -1,7 +1,7 @@
 import { useSession } from "next-auth/react";
 import type { Dispatch } from "react";
 
-import MemberInvitationModal from "@calcom/features/ee/teams/components/MemberInvitationModal";
+import MemberInvitationModal from "@calcom/features/oe/teams/components/MemberInvitationModal";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc";
 import { showToast } from "@calcom/ui";

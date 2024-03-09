@@ -13,16 +13,16 @@ import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookin
 import ImpersonatingBanner, {
   type ImpersonatingBannerProps,
 } from "@calcom/features/ee/impersonation/components/ImpersonatingBanner";
+import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
+import { useFlagMap } from "@calcom/features/flags/context/provider";
+import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
 import {
   OrgUpgradeBanner,
   type OrgUpgradeBannerProps,
-} from "@calcom/features/ee/organizations/components/OrgUpgradeBanner";
-import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
-import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
-import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/ee/teams/components";
-import { useFlagMap } from "@calcom/features/flags/context/provider";
-import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
+} from "@calcom/features/oe/organizations/components/OrgBannerUpgrade";
+import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog";
+import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
 import AdminPasswordBanner, {
   type AdminPasswordBannerProps,
 } from "@calcom/features/users/components/AdminPasswordBanner";
@@ -98,8 +98,8 @@ import {
 } from "@calcom/ui/components/icon";
 import { Discord } from "@calcom/ui/components/icon/Discord";
 
-import { useOrgBranding } from "../ee/organizations/context/provider";
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
 // need to import without ssr to prevent hydration errors

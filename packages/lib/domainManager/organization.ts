@@ -1,4 +1,4 @@
-import { subdomainSuffix } from "@calcom/ee/organizations/lib/orgDomains";
+import { subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 
 import { deleteDnsRecord, addDnsRecord } from "./deploymentServices/cloudflare";
 import {

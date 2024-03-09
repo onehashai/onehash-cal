@@ -3,6 +3,9 @@
 import { useRouter } from "next/router";
 
 import { getLayout } from "@calcom/features/MainLayout";
+import { FilterResults } from "@calcom/features/filters/components/FilterResults";
+import { TeamsFilter } from "@calcom/features/filters/components/TeamsFilter";
+import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
 import { ShellMain } from "@calcom/features/shell/Shell";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
@@ -10,9 +13,6 @@ import { HttpError } from "@calcom/lib/http-error";
 import { trpc } from "@calcom/trpc/react";
 import { CreateButtonWithTeamsList, showToast } from "@calcom/ui";
 
-import { FilterResults } from "../../filters/components/FilterResults";
-import { TeamsFilter } from "../../filters/components/TeamsFilter";
-import { getTeamsFiltersFromQuery } from "../../filters/lib/getTeamsFiltersFromQuery";
 import EmptyScreen from "../components/EmptyScreen";
 import { SkeletonLoaderList } from "../components/SkeletonLoader";
 import WorkflowList from "../components/WorkflowListPage";

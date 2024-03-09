@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   orgDomainConfig,
   whereClauseForOrgWithSlugOrRequestedSlug,
-} from "@calcom/features/ee/organizations/lib/orgDomains";
+} from "@calcom/features/oe/organizations/lib/orgDomains";
 import { AVATAR_FALLBACK } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import logger from "@calcom/lib/logger";

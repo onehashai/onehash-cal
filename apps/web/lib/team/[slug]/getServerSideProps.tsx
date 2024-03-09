@@ -1,6 +1,6 @@
 import type { GetServerSidePropsContext } from "next";
 
-import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { getFeatureFlagMap } from "@calcom/features/flags/server/utils";
 import { getBookerBaseUrlSync } from "@calcom/lib/getBookerUrl/client";
 import logger from "@calcom/lib/logger";
