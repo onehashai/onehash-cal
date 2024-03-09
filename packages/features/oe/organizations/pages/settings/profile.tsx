@@ -8,7 +8,6 @@ import { useState, useLayoutEffect, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
@@ -118,43 +117,41 @@ const OrgProfileView = () => {
   };
 
   return (
-    <LicenseRequired>
+    <>
       <Meta title={t("profile")} description={t("profile_org_description")} borderInShellHeader={true} />
-      <>
-        {isOrgAdminOrOwner ? (
-          <OrgProfileForm defaultValues={defaultValues} />
-        ) : (
-          <div className="border-subtle flex rounded-b-md border border-t-0 px-4 py-8 sm:px-6">
-            <div className="flex-grow">
-              <div>
-                <Label className="text-emphasis">{t("organization_name")}</Label>
-                <p className="text-default text-sm">{currentOrganisation?.name}</p>
-              </div>
-              {!isBioEmpty && (
-                <>
-                  <Label className="text-emphasis mt-5">{t("about")}</Label>
-                  <div
-                    className="  text-subtle break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
-                    dangerouslySetInnerHTML={{ __html: md.render(currentOrganisation.bio || "") }}
-                  />
-                </>
-              )}
+      {isOrgAdminOrOwner ? (
+        <OrgProfileForm defaultValues={defaultValues} />
+      ) : (
+        <div className="border-subtle flex rounded-b-md border border-t-0 px-4 py-8 sm:px-6">
+          <div className="flex-grow">
+            <div>
+              <Label className="text-emphasis">{t("organization_name")}</Label>
+              <p className="text-default text-sm">{currentOrganisation?.name}</p>
             </div>
-            <div className="">
-              <LinkIconButton
-                Icon={LinkIcon}
-                onClick={() => {
-                  navigator.clipboard.writeText(orgBranding.fullDomain);
-                  showToast("Copied to clipboard", "success");
-                }}>
-                {t("copy_link_org")}
-              </LinkIconButton>
-            </div>
+            {!isBioEmpty && (
+              <>
+                <Label className="text-emphasis mt-5">{t("about")}</Label>
+                <div
+                  className="  text-subtle break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
+                  dangerouslySetInnerHTML={{ __html: md.render(currentOrganisation.bio || "") }}
+                />
+              </>
+            )}
           </div>
-        )}
-        {/* LEAVE ORG should go above here ^ */}
-      </>
-    </LicenseRequired>
+          <div className="">
+            <LinkIconButton
+              Icon={LinkIcon}
+              onClick={() => {
+                navigator.clipboard.writeText(orgBranding.fullDomain);
+                showToast("Copied to clipboard", "success");
+              }}>
+              {t("copy_link_org")}
+            </LinkIconButton>
+          </div>
+        </div>
+      )}
+      {/* LEAVE ORG should go above here ^ */}
+    </>
   );
 };
 

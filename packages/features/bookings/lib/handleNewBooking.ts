@@ -47,12 +47,12 @@ import { cancelScheduledJobs, scheduleTrigger } from "@calcom/features/webhooks/
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
-} from "@calcom/features/workflows/lib/allowDisablingStandardEmails";
+} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import {
   cancelWorkflowReminders,
   scheduleWorkflowReminders,
-} from "@calcom/features/workflows/lib/reminders/reminderScheduler";
-import { scheduleMandatoryReminder } from "@calcom/features/workflows/lib/reminders/scheduleMandatoryReminder";
+} from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
+import { scheduleMandatoryReminder } from "@calcom/features/oe/workflows/lib/reminders/scheduleMandatoryReminder";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";

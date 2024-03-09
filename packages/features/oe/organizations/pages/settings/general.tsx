@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -75,13 +74,7 @@ const OrgGeneralView = () => {
     currentOrg.user.role === MembershipRole.OWNER || currentOrg.user.role === MembershipRole.ADMIN;
 
   return (
-    <LicenseRequired>
-      <GeneralView
-        currentOrg={currentOrg}
-        isAdminOrOwner={isAdminOrOwner}
-        localeProp={user?.locale ?? "en"}
-      />
-    </LicenseRequired>
+    <GeneralView currentOrg={currentOrg} isAdminOrOwner={isAdminOrOwner} localeProp={user?.locale ?? "en"} />
   );
 };
 

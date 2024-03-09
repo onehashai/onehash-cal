@@ -48,8 +48,8 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
   const { user } = ctx;
   const { slug, name, logo } = input;
   const isOrgChildTeam = !!user.organizationId;
-  //To remove once teams will be live
-  throw new TRPCError({ code: "BAD_REQUEST", message: "The teams feature is currently being developed" });
+  // //To remove once teams will be live
+  // throw new TRPCError({ code: "BAD_REQUEST", message: "The teams feature is currently being developed" });
 
   // For orgs we want to create teams under the org
   if (user.organizationId && !user.organization.isOrgAdmin) {
@@ -77,22 +77,23 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
     if (nameCollisions) throw new TRPCError({ code: "BAD_REQUEST", message: "team_slug_exists_as_user" });
   }
 
-  // If the user is not a part of an org, then make them pay before creating the team
-  if (!isOrgChildTeam) {
-    const checkoutSession = await generateCheckoutSession({
-      teamSlug: slug,
-      teamName: name,
-      userId: user.id,
-    });
+  //TODO:payments disabled as of now
+  // // If the user is not a part of an org, then make them pay before creating the team
+  // if (!isOrgChildTeam) {
+  //   const checkoutSession = await generateCheckoutSession({
+  //     teamSlug: slug,
+  //     teamName: name,
+  //     userId: user.id,
+  //   });
 
-    // If there is a checkout session, return it. Otherwise, it means it's disabled.
-    if (checkoutSession)
-      return {
-        url: checkoutSession.url,
-        message: checkoutSession.message,
-        team: null,
-      };
-  }
+  //   // If there is a checkout session, return it. Otherwise, it means it's disabled.
+  //   if (checkoutSession)
+  //     return {
+  //       url: checkoutSession.url,
+  //       message: checkoutSession.message,
+  //       team: null,
+  //     };
+  // }
 
   const createdTeam = await prisma.team.create({
     data: {

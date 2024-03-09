@@ -1,6 +1,5 @@
 "use client";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import MakeTeamPrivateSwitch from "@calcom/features/oe/teams/components/MakeTeamPrivateSwitch";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { UserListTable } from "@calcom/features/users/components/UserTable/UserListTable";
@@ -19,7 +18,7 @@ const MembersView = () => {
     (currentOrg.user.role === MembershipRole.OWNER || currentOrg.user.role === MembershipRole.ADMIN);
 
   return (
-    <LicenseRequired>
+    
       <Meta title={t("organization_members")} description={t("organization_description")} />
       <div>
         {((currentOrg?.isPrivate && isOrgAdminOrOwner) || isOrgAdminOrOwner || !currentOrg?.isPrivate) && (
@@ -34,7 +33,7 @@ const MembersView = () => {
           />
         )}
       </div>
-    </LicenseRequired>
+    
   );
 };
 MembersView.getLayout = getLayout;
