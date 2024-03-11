@@ -18,7 +18,7 @@ const MembersView = () => {
     (currentOrg.user.role === MembershipRole.OWNER || currentOrg.user.role === MembershipRole.ADMIN);
 
   return (
-    
+    <>
       <Meta title={t("organization_members")} description={t("organization_description")} />
       <div>
         {((currentOrg?.isPrivate && isOrgAdminOrOwner) || isOrgAdminOrOwner || !currentOrg?.isPrivate) && (
@@ -33,7 +33,7 @@ const MembersView = () => {
           />
         )}
       </div>
-    
+    </>
   );
 };
 MembersView.getLayout = getLayout;
