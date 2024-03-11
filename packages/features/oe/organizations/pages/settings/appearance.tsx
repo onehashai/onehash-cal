@@ -77,6 +77,7 @@ const OrgAppearanceView = ({
   };
 
   return (
+    <>
       <Meta
         title={t("appearance")}
         description={t("appearance_org_description")}
@@ -203,7 +204,7 @@ const OrgAppearanceView = ({
           <span className="text-default text-sm">{t("only_owner_change")}</span>
         </div>
       )}
-    
+    </>
   );
 };
 

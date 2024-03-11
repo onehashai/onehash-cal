@@ -27,7 +27,7 @@ const OrgEditView = ({ orgId }: { orgId: number }) => {
   const [org] = trpc.viewer.organizations.adminGet.useSuspenseQuery({ id: orgId });
 
   return (
-    
+    <>
       <Meta
         title={`Editing organization: ${org.name}`}
         description="Here you can edit a current organization."
@@ -35,7 +35,7 @@ const OrgEditView = ({ orgId }: { orgId: number }) => {
       <NoSSR>
         <OrgForm org={org} />
       </NoSSR>
-    
+    </>
   );
 };
 
