@@ -1,6 +1,5 @@
 import type { User as UserAuth } from "next-auth";
 import { signOut, useSession } from "next-auth/react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
@@ -20,9 +19,10 @@ import {
   OrgUpgradeBanner,
   type OrgUpgradeBannerProps,
 } from "@calcom/features/oe/organizations/components/OrgBannerUpgrade";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
-import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog";
 import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
+import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog";
 import AdminPasswordBanner, {
   type AdminPasswordBannerProps,
 } from "@calcom/features/users/components/AdminPasswordBanner";
@@ -99,13 +99,13 @@ import {
 import { Discord } from "@calcom/ui/components/icon/Discord";
 
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
-// need to import without ssr to prevent hydration errors
-const Tips = dynamic(() => import("@calcom/features/tips").then((mod) => mod.Tips), {
-  ssr: false,
-});
+//TODO:Uncomment when needed
+// // need to import without ssr to prevent hydration errors
+// const Tips = dynamic(() => import("@calcom/features/tips").then((mod) => mod.Tips), {
+//   ssr: false,
+// });
 
 /* TODO: Migate this */
 
@@ -953,7 +953,7 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
         </div>
 
         <div>
-          <Tips />
+          {/* <Tips /> */}
           {bottomNavItems.map(({ icon: Icon, ...item }, index) => (
             <Tooltip side="right" content={t(item.name)} className="lg:hidden" key={item.name}>
               <ButtonOrLink
