@@ -2,7 +2,7 @@
 
 import Head from "next/head";
 
-import { CreateANewTeamForm } from "@calcom/features/ee/teams/components";
+import { CreateANewTeamForm } from "@calcom/features/oe/teams/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { WizardLayout } from "@calcom/ui";
 

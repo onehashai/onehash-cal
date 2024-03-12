@@ -1,6 +1,5 @@
 import type { User as UserAuth } from "next-auth";
 import { signOut, useSession } from "next-auth/react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
@@ -13,15 +12,16 @@ import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookin
 import ImpersonatingBanner, {
   type ImpersonatingBannerProps,
 } from "@calcom/features/ee/impersonation/components/ImpersonatingBanner";
+import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
+import { useFlagMap } from "@calcom/features/flags/context/provider";
+import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
 import {
   OrgUpgradeBanner,
   type OrgUpgradeBannerProps,
-} from "@calcom/features/ee/organizations/components/OrgUpgradeBanner";
-import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
-import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
-import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/ee/teams/components";
-import { useFlagMap } from "@calcom/features/flags/context/provider";
-import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
+} from "@calcom/features/oe/organizations/components/OrgBannerUpgrade";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
 import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog";
 import AdminPasswordBanner, {
   type AdminPasswordBannerProps,
@@ -98,14 +98,14 @@ import {
 } from "@calcom/ui/components/icon";
 import { Discord } from "@calcom/ui/components/icon/Discord";
 
-import { useOrgBranding } from "../ee/organizations/context/provider";
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
-// need to import without ssr to prevent hydration errors
-const Tips = dynamic(() => import("@calcom/features/tips").then((mod) => mod.Tips), {
-  ssr: false,
-});
+//TODO:Uncomment when needed
+// // need to import without ssr to prevent hydration errors
+// const Tips = dynamic(() => import("@calcom/features/tips").then((mod) => mod.Tips), {
+//   ssr: false,
+// });
 
 /* TODO: Migate this */
 
@@ -953,7 +953,7 @@ function SideBar({ bannersHeight, user }: SideBarProps) {
         </div>
 
         <div>
-          <Tips />
+          {/* <Tips /> */}
           {bottomNavItems.map(({ icon: Icon, ...item }, index) => (
             <Tooltip side="right" content={t(item.name)} className="lg:hidden" key={item.name}>
               <ButtonOrLink

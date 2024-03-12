@@ -18,7 +18,7 @@ import { BookerLayoutSelector } from "@calcom/features/settings/BookerLayoutSele
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
-} from "@calcom/features/workflows/lib/allowDisablingStandardEmails";
+} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import { classNames } from "@calcom/lib";
 import { APP_NAME, CAL_URL } from "@calcom/lib/constants";
 import { IS_VISUAL_REGRESSION_TESTING } from "@calcom/lib/constants";

@@ -11,9 +11,9 @@ import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventR
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { cancelScheduledJobs } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
-import { deleteScheduledEmailReminder } from "@calcom/features/workflows/lib/reminders/managers/emailReminderManager";
-import { deleteScheduledSMSReminder } from "@calcom/features/workflows/lib/reminders/managers/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/features/workflows/lib/reminders/managers/whatsappReminderManager";
+import { deleteScheduledEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/emailReminderManager";
+import { deleteScheduledSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/smsReminderManager";
+import { deleteScheduledWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/whatsappReminderManager";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";

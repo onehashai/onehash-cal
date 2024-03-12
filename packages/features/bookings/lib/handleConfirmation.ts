@@ -10,9 +10,9 @@ import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
-} from "@calcom/features/workflows/lib/allowDisablingStandardEmails";
-import { scheduleWorkflowReminders } from "@calcom/features/workflows/lib/reminders/reminderScheduler";
-import { scheduleMandatoryReminder } from "@calcom/features/workflows/lib/reminders/scheduleMandatoryReminder";
+} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
+import { scheduleWorkflowReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
+import { scheduleMandatoryReminder } from "@calcom/features/oe/workflows/lib/reminders/scheduleMandatoryReminder";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import logger from "@calcom/lib/logger";

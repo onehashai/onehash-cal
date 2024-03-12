@@ -1,4 +1,4 @@
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { CAL_URL, WEBAPP_URL } from "@calcom/lib/constants";
 
 export const useBookerUrl = () => {

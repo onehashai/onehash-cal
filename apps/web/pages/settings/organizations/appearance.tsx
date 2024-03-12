@@ -1,4 +1,4 @@
-import OrgAppearanceView from "@calcom/features/ee/organizations/pages/settings/appearance";
+import OrgAppearanceView from "@calcom/features/oe/organizations/pages/settings/appearance";
 
 import type { CalPageWrapper } from "@components/PageWrapper";
 import PageWrapper from "@components/PageWrapper";

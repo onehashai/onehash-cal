@@ -1,1 +1,1 @@
-export { default } from "@calcom/features/workflows/components/EventWorkflowsTab";
+export { default } from "@calcom/features/oe/workflows/components/EventWorkflowsTab";

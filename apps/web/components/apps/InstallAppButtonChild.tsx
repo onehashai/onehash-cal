@@ -1,7 +1,7 @@
 import useAddAppMutation from "@calcom/app-store/_utils/useAddAppMutation";
 import { doesAppSupportTeamInstall } from "@calcom/app-store/utils";
 import { Spinner } from "@calcom/features/calendars/weeklyview/components/spinner/Spinner";
-import type { UserAdminTeams } from "@calcom/features/ee/teams/lib/getUserAdminTeams";
+import type { UserAdminTeams } from "@calcom/features/oe/teams/lib/getUserAdminTeams";
 import { CAL_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";

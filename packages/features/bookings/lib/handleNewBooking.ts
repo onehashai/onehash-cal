@@ -39,7 +39,7 @@ import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhookTrigger";
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
-import { userOrgQuery } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { userOrgQuery } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { getFullName } from "@calcom/features/form-builder/utils";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
@@ -47,12 +47,12 @@ import { cancelScheduledJobs, scheduleTrigger } from "@calcom/features/webhooks/
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
-} from "@calcom/features/workflows/lib/allowDisablingStandardEmails";
+} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import {
   cancelWorkflowReminders,
   scheduleWorkflowReminders,
-} from "@calcom/features/workflows/lib/reminders/reminderScheduler";
-import { scheduleMandatoryReminder } from "@calcom/features/workflows/lib/reminders/scheduleMandatoryReminder";
+} from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
+import { scheduleMandatoryReminder } from "@calcom/features/oe/workflows/lib/reminders/scheduleMandatoryReminder";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";

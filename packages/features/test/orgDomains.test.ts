@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getOrgSlug, getOrgDomainConfigFromHostname } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getOrgSlug, getOrgDomainConfigFromHostname } from "@calcom/features/oe/organizations/lib/orgDomains";
 import * as constants from "@calcom/lib/constants";
 
 function setupEnvs({ WEBAPP_URL = "https://app.cal.com" } = {}) {

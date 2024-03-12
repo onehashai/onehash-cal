@@ -37,12 +37,6 @@ const getIPAddress = async (url: string): Promise<string> => {
 export const createHandler = async ({ input, ctx }: CreateOptions) => {
   const { slug, name, adminEmail, adminUsername, check } = input;
 
-  const userCollisions = await prisma.user.findUnique({
-    where: {
-      email: adminEmail,
-    },
-  });
-
   const hasAnOrgWithSameSlug = await prisma.team.findFirst({
     where: {
       slug: slug,
@@ -60,6 +54,12 @@ export const createHandler = async ({ input, ctx }: CreateOptions) => {
 
   if (hasAnOrgWithSameSlug || RESERVED_SUBDOMAINS.includes(slug))
     throw new TRPCError({ code: "BAD_REQUEST", message: "organization_url_taken" });
+
+  const userCollisions = await prisma.user.findUnique({
+    where: {
+      email: adminEmail,
+    },
+  });
   if (userCollisions) throw new TRPCError({ code: "BAD_REQUEST", message: "admin_email_taken" });
 
   const password = createHash("md5")

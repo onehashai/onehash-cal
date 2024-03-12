@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
-import { isTextMessageToAttendeeAction } from "@calcom/features/workflows/lib/actionHelperFunctions";
+import { isTextMessageToAttendeeAction } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HttpError } from "@calcom/lib/http-error";

@@ -6,7 +6,7 @@ import {
   getSmsReminderNumberSource,
 } from "@calcom/features/bookings/lib/getBookingFields";
 import { removeBookingField, upsertBookingField } from "@calcom/features/eventtypes/lib/bookingFieldsManager";
-import { isSMSOrWhatsappAction } from "@calcom/features/workflows/lib/actionHelperFunctions";
+import { isSMSOrWhatsappAction } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
 import { SENDER_ID, SENDER_NAME } from "@calcom/lib/constants";
 import type { PrismaClient } from "@calcom/prisma";
 import type { WorkflowStep } from "@calcom/prisma/client";
