@@ -9,7 +9,7 @@ import {
   getOrgDomainConfigFromHostname,
   subdomainSuffix,
 } from "@calcom/features/oe/organizations/lib/orgDomains";
-import { DOCS_URL, IS_CALCOM, JOIN_DISCORD, WEBSITE_URL } from "@calcom/lib/constants";
+import { DOCS_URL, IS_ONEHASHCOM, JOIN_DISCORD, WEBSITE_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HeadSeo } from "@calcom/ui";
 import { BookOpen, Check, ChevronRight, FileText, Shield } from "@calcom/ui/components/icon";
@@ -147,7 +147,7 @@ export default function Custom404() {
             </h1>
             {isSubpage && currentPageType !== pageType.TEAM ? (
               <span className="mt-2 inline-block text-lg ">{t("check_spelling_mistakes_or_go_back")}</span>
-            ) : IS_CALCOM ? (
+            ) : IS_ONEHASHCOM ? (
               <a target="_blank" href={url} className="mt-2 inline-block text-lg" rel="noreferrer">
                 {t(`404_the_${currentPageType.toLowerCase()}`)}{" "}
                 <strong className="text-blue-500">{username}</strong> {t("is_still_available")}{" "}
@@ -162,7 +162,7 @@ export default function Custom404() {
             )}
           </div>
           <div className="mt-12">
-            {((!isSubpage && IS_CALCOM) ||
+            {((!isSubpage && IS_ONEHASHCOM) ||
               currentPageType === pageType.ORG ||
               currentPageType === pageType.TEAM) && (
               <ul role="list" className="my-4">
