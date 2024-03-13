@@ -22,7 +22,7 @@ export const WEBAPP_URL_FOR_OAUTH = IS_PRODUCTION || IS_DEV ? WEBAPP_URL : "http
 
 /** @deprecated use `WEBAPP_URL` */
 export const BASE_URL = WEBAPP_URL;
-export const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://cal.id";
+export const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://www.onehash.ai";
 export const ONEHASH_URL = process.env.NEXT_PUBLIC_ONEHASH_URL || "https://www.onehash.ai";
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "OneHash Cal";
 export const SUPPORT_MAIL_ADDRESS = process.env.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS || "support@onehash.ai";
@@ -33,9 +33,13 @@ export const SENDER_NAME = process.env.NEXT_PUBLIC_SENDGRID_SENDER_NAME || "OneH
 // This is the URL from which all Cal Links and their assets are served.
 // Use website URL to make links shorter(cal.com and not app.cal.com)
 // As website isn't setup for preview environments, use the webapp url instead
-export const CAL_URL = new URL(WEBAPP_URL).hostname.endsWith(".vercel.app") ? WEBAPP_URL : WEBSITE_URL;
+// If it's a .vercel.app domain, keep it.
+// Else use the website url if defined and finally fallback to the webapp url
+export const CAL_URL = new URL(WEBAPP_URL).hostname.endsWith(".vercel.app")
+  ? WEBAPP_URL
+  : process.env.NEXT_PUBLIC_WEBSITE_URL || WEBAPP_URL;
 
-export const IS_CALCOM =
+export const IS_ONEHASHCOM =
   WEBAPP_URL &&
   (new URL(WEBAPP_URL).hostname.endsWith("cal.com") ||
     new URL(WEBAPP_URL).hostname.endsWith("cal.dev") ||
@@ -81,9 +85,9 @@ export const SEO_IMG_DEFAULT = `${WEBSITE_URL}/og-image.png`;
 // parameters you pass to the /api/social/og/image endpoint, you wrap them in encodeURIComponent
 // as well, otherwise the URL won't be valid.
 export const SEO_IMG_OGIMG = `${CAL_URL}/_next/image?w=1200&q=100&url=${encodeURIComponent(
-  "/api/social/og/image"
+  `/api/social/og/image`
 )}`;
-export const SEO_IMG_OGIMG_VIDEO = `${WEBSITE_URL}/video-og-image.png`;
+export const SEO_IMG_OGIMG_VIDEO = `${CAL_URL}/video-og-image.png`;
 export const IS_STRIPE_ENABLED = !!(
   process.env.STRIPE_CLIENT_ID &&
   process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY &&
@@ -93,7 +97,7 @@ export const IS_STRIPE_ENABLED = !!(
 export const IS_TEAM_BILLING_ENABLED = IS_STRIPE_ENABLED;
 export const FULL_NAME_LENGTH_MAX_LIMIT = 50;
 export const MINUTES_TO_BOOK = process.env.NEXT_PUBLIC_MINUTES_TO_BOOK || "5";
-
+export const ENABLE_PROFILE_SWITCHER = process.env.NEXT_PUBLIC_ENABLE_PROFILE_SWITCHER === "1";
 // Needed for orgs
 export const ALLOWED_HOSTNAMES = JSON.parse(`[${process.env.ALLOWED_HOSTNAMES || ""}]`) as string[];
 export const RESERVED_SUBDOMAINS = JSON.parse(`[${process.env.RESERVED_SUBDOMAINS || ""}]`) as string[];
@@ -104,8 +108,10 @@ export const ORGANIZATION_MIN_SEATS = 30;
 export const IS_MAILHOG_ENABLED = process.env.E2E_TEST_MAILHOG_ENABLED === "1";
 export const CALCOM_VERSION = process.env.NEXT_PUBLIC_CALCOM_VERSION as string;
 
-export const APP_CREDENTIAL_SHARING_ENABLED =
-  process.env.CALCOM_WEBHOOK_SECRET && process.env.CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY;
+export const CREDENTIAL_SYNC_SECRET = process.env.CALCOM_CREDENTIAL_SYNC_SECRET;
+export const CREDENTIAL_SYNC_SECRET_HEADER_NAME =
+  process.env.CALCOM_CREDENTIAL_SYNC_SECRET_HEADER_NAME || "calcom-credential-sync-secret";
+export const APP_CREDENTIAL_SHARING_ENABLED = CREDENTIAL_SYNC_SECRET && CREDENTIAL_SYNC_SECRET_HEADER_NAME;
 
 // OneHash default brand color
 export const DEFAULT_LIGHT_BRAND_COLOR = "#007ee5";
@@ -122,13 +128,15 @@ export const AB_TEST_BUCKET_PROBABILITY = defaultOnNaN(
 );
 
 export const IS_PREMIUM_USERNAME_ENABLED =
-  (IS_CALCOM || (process.env.NEXT_PUBLIC_IS_E2E && IS_STRIPE_ENABLED)) &&
+  (IS_ONEHASHCOM || (process.env.NEXT_PUBLIC_IS_E2E && IS_STRIPE_ENABLED)) &&
   process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PLAN_PRICE_MONTHLY;
 
 // Max number of invites to join a team/org that can be sent at once
 export const MAX_NB_INVITES = 100;
 
 export const URL_PROTOCOL_REGEX = /(^\w+:|^)\/\//;
+export const FUTURE_ROUTES_OVERRIDE_COOKIE_NAME = "x-calcom-future-routes-override";
+export const FUTURE_ROUTES_ENABLED_COOKIE_NAME = "x-calcom-future-routes-enabled";
 
 export const IS_VISUAL_REGRESSION_TESTING = Boolean(globalThis.window?.Meticulous?.isRunningAsTest);
 
