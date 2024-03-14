@@ -94,7 +94,8 @@ export const IS_STRIPE_ENABLED = !!(
   process.env.STRIPE_PRIVATE_KEY
 );
 /** Self hosted shouldn't checkout when creating teams unless required */
-export const IS_TEAM_BILLING_ENABLED = IS_STRIPE_ENABLED && process.env.IS_TEAM_BILLING_ENABLED;
+//TODO:Set this to true once we enable teams billing
+export const IS_TEAM_BILLING_ENABLED = !!(IS_STRIPE_ENABLED && false);
 export const FULL_NAME_LENGTH_MAX_LIMIT = 50;
 export const MINUTES_TO_BOOK = process.env.NEXT_PUBLIC_MINUTES_TO_BOOK || "5";
 export const ENABLE_PROFILE_SWITCHER = process.env.NEXT_PUBLIC_ENABLE_PROFILE_SWITCHER === "1";
