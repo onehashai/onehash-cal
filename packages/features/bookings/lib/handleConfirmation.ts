@@ -3,16 +3,16 @@ import type { Prisma, Workflow, WorkflowsOnEventTypes, WorkflowStep } from "@pri
 import type { EventManagerUser } from "@calcom/core/EventManager";
 import EventManager from "@calcom/core/EventManager";
 import { sendScheduledEmails } from "@calcom/emails";
-import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
-import { scheduleTrigger } from "@calcom/features/webhooks/lib/scheduleTrigger";
-import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
-import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
 } from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import { scheduleWorkflowReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
 import { scheduleMandatoryReminder } from "@calcom/features/oe/workflows/lib/reminders/scheduleMandatoryReminder";
+import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
+import { scheduleTrigger } from "@calcom/features/webhooks/lib/scheduleTrigger";
+import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
+import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import logger from "@calcom/lib/logger";

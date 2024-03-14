@@ -45,7 +45,7 @@ import { getIs24hClockFromLocalStorage, isBrowserLocale24h } from "@calcom/lib/t
 import { localStorage } from "@calcom/lib/webstorage";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
-import { Alert, Badge, Button, EmailInput, HeadSeo, useCalcomTheme } from "@calcom/ui";
+import { Alert, Badge, Button, EmailInput, HeadSeo, useBrandTheme } from "@calcom/ui";
 import { AlertCircle, Calendar, Check, ChevronLeft, ExternalLink, X } from "@calcom/ui/components/icon";
 
 import { timeZone } from "@lib/clock";
@@ -85,7 +85,7 @@ const useBrandColors = ({
     lightVal: brandColor,
     darkVal: darkBrandColor,
   });
-  useCalcomTheme(brandTheme);
+  useBrandTheme(brandTheme);
 };
 
 export default function Success(props: PageProps) {

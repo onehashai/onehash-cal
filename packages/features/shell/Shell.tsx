@@ -77,7 +77,7 @@ import {
   showToast,
   SkeletonText,
   Tooltip,
-  useCalcomTheme,
+  useBrandTheme,
   PrivacyPolicy,
   TermsOfUse,
 } from "@calcom/ui";
@@ -350,7 +350,7 @@ const useAppTheme = () => {
     lightVal: user?.brandColor,
     darkVal: user?.darkBrandColor,
   });
-  useCalcomTheme(brandTheme);
+  useBrandTheme(brandTheme);
   useTheme(user?.appTheme);
 };
 

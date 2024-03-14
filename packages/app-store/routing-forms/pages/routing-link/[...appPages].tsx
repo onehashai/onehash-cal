@@ -15,7 +15,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useTheme from "@calcom/lib/hooks/useTheme";
 import { trpc } from "@calcom/trpc/react";
 import type { inferSSRProps } from "@calcom/types/inferSSRProps";
-import { Button, showToast, useCalcomTheme } from "@calcom/ui";
+import { Button, showToast, useBrandTheme } from "@calcom/ui";
 
 import FormInputFields from "../../components/FormInputFields";
 import { getAbsoluteEventTypeRedirectUrl } from "../../getEventTypeRedirectUrl";
@@ -38,7 +38,7 @@ const useBrandColors = ({
     lightVal: brandColor,
     darkVal: darkBrandColor,
   });
-  useCalcomTheme(brandTheme);
+  useBrandTheme(brandTheme);
 };
 
 function RoutingForm({ form, profile, ...restProps }: Props) {

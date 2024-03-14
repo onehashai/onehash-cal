@@ -158,7 +158,7 @@ export { default as BannerUploader } from "./components/image-uploader/BannerUpl
 export type { ButtonColor } from "./components/button/Button";
 export { CreateButton, CreateButtonWithTeamsList } from "./components/createButton";
 
-export { useCalcomTheme } from "./styles/useCalcomTheme";
+export { useBrandTheme } from "./styles/useBrandTheme";
 export { ScrollableArea } from "./components/scrollable/ScrollableArea";
 export { WizardLayout } from "./layouts/WizardLayout";
 export { WizardLayoutAppDir } from "./layouts/WizardLayoutAppDir";

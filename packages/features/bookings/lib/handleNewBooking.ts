@@ -6,7 +6,6 @@ import { isValidPhoneNumber } from "libphonenumber-js";
 import { cloneDeep } from "lodash";
 import type { NextApiRequest } from "next";
 import type { TFunction } from "next-i18next";
-import { scheduleMandatoryReminder } from "oe/workflows/lib/reminders/scheduleMandatoryReminder";
 import short, { uuid } from "short-uuid";
 import type { Logger } from "tslog";
 import { v5 as uuidv5 } from "uuid";
@@ -50,6 +49,7 @@ import {
   cancelWorkflowReminders,
   scheduleWorkflowReminders,
 } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
+import { scheduleMandatoryReminder } from "@calcom/features/oe/workflows/lib/reminders/scheduleMandatoryReminder";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { cancelScheduledJobs, scheduleTrigger } from "@calcom/features/webhooks/lib/scheduleTrigger";
