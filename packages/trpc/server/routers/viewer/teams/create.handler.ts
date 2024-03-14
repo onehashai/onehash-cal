@@ -74,23 +74,24 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
     if (nameCollisions) throw new TRPCError({ code: "BAD_REQUEST", message: "team_slug_exists_as_user" });
   }
 
-  //TODO:payments disabled as of now
-  // // If the user is not a part of an org, then make them pay before creating the team
-  // if (!isOrgChildTeam) {
-  //   const checkoutSession = await generateCheckoutSession({
-  //     teamSlug: slug,
-  //     teamName: name,
-  //     userId: user.id,
-  //   });
+  if (IS_TEAM_BILLING_ENABLED) {
+    // If the user is not a part of an org, then make them pay before creating the team
+    if (!isOrgChildTeam) {
+      const checkoutSession = await generateCheckoutSession({
+        teamSlug: slug,
+        teamName: name,
+        userId: user.id,
+      });
 
-  //   // If there is a checkout session, return it. Otherwise, it means it's disabled.
-  //   if (checkoutSession)
-  //     return {
-  //       url: checkoutSession.url,
-  //       message: checkoutSession.message,
-  //       team: null,
-  //     };
-  // }
+      // If there is a checkout session, return it. Otherwise, it means it's disabled.
+      if (checkoutSession)
+        return {
+          url: checkoutSession.url,
+          message: checkoutSession.message,
+          team: null,
+        };
+    }
+  }
 
   const createdTeam = await prisma.team.create({
     data: {
