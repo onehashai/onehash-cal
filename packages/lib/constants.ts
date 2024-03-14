@@ -39,7 +39,7 @@ export const CAL_URL = new URL(WEBAPP_URL).hostname.endsWith(".vercel.app")
   ? WEBAPP_URL
   : process.env.NEXT_PUBLIC_WEBSITE_URL || WEBAPP_URL;
 
-export const IS_ONEHASHCOM =
+export const IS_CALCOM =
   WEBAPP_URL &&
   (new URL(WEBAPP_URL).hostname.endsWith("cal.com") ||
     new URL(WEBAPP_URL).hostname.endsWith("cal.dev") ||
@@ -128,7 +128,7 @@ export const AB_TEST_BUCKET_PROBABILITY = defaultOnNaN(
 );
 
 export const IS_PREMIUM_USERNAME_ENABLED =
-  (IS_ONEHASHCOM || (process.env.NEXT_PUBLIC_IS_E2E && IS_STRIPE_ENABLED)) &&
+  (IS_CALCOM || (process.env.NEXT_PUBLIC_IS_E2E && IS_STRIPE_ENABLED)) &&
   process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PLAN_PRICE_MONTHLY;
 
 // Max number of invites to join a team/org that can be sent at once
