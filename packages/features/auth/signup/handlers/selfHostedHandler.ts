@@ -145,7 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const checkUsername = await checkPremiumUsername(correctedUsername);
       if (checkUsername.premium) {
         res.status(422).json({
-          message: "Sign up from https://cal.com/signup to claim your premium username",
+          message: "Sign up from https://cal.id/signup to claim your premium username",
         });
         return;
       }

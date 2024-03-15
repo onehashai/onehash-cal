@@ -196,10 +196,7 @@ const CheckedHostField = ({
 const FixedHostHelper = (
   <Trans i18nKey="fixed_host_helper">
     Add anyone who needs to attend the event.
-    <Link
-      className="underline underline-offset-2"
-      target="_blank"
-      href="https://cal.com/docs/enterprise-features/teams/round-robin-scheduling#fixed-hosts">
+    <Link className="underline underline-offset-2" target="_blank" href="https://www.onehash.ai/cal">
       Learn more
     </Link>
   </Trans>

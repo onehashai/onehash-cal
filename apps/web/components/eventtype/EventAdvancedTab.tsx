@@ -354,7 +354,7 @@ export const EventAdvancedTab = ({ eventType, team }: Pick<EventTypeSetupProps, 
             data-testid="hashedLinkCheck-info"
             target="_blank"
             rel="noreferrer"
-            href="https://cal.com/docs/core-features/event-types/single-use-private-links">
+            href="https://www.onehash.ai/cal">
             <Info className="ml-1.5 h-4 w-4 cursor-pointer" />
           </a>
         }
