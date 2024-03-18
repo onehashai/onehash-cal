@@ -15,10 +15,9 @@ import customTemplate from "../lib/reminders/templates/customTemplate";
 import smsReminderTemplate from "../lib/reminders/templates/smsReminderTemplate";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const apiKey = req.headers.authorization || req.query.apiKey;
-  if (process.env.CRON_API_KEY !== apiKey) {
-    res.status(401).json({ message: "Not authenticated" });
-    return;
+  const authHeader = req.headers.authorization;
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ message: "Not authenticated" });
   }
 
   await prisma.workflowReminder.deleteMany({
@@ -153,5 +152,5 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default defaultHandler({
-  POST: Promise.resolve({ default: handler }),
+  GET: Promise.resolve({ default: handler }),
 });

@@ -51,7 +51,7 @@ export default function EmbedInitIframe() {
       for (const [themeName, cssVars] of Object.entries(cssVarsPerTheme)) {
         cssVarsStyle.push(`.${themeName} {`);
         for (const [cssVarName, value] of Object.entries(cssVars)) {
-          // The styles are applied inline on .light/.dark elements by the codebase(useCalcomTheme). So, to make sure embed styles take precedence, we add !important
+          // The styles are applied inline on .light/.dark elements by the codebase(useBrandTheme). So, to make sure embed styles take precedence, we add !important
           cssVarsStyle.push(`--${cssVarName}: ${value} !important;`);
         }
         cssVarsStyle.push(`}`);

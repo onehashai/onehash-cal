@@ -29,10 +29,9 @@ import customTemplate from "../lib/reminders/templates/customTemplate";
 import emailReminderTemplate from "../lib/reminders/templates/emailReminderTemplate";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const apiKey = req.headers.authorization || req.query.apiKey;
-  if (process.env.CRON_API_KEY !== apiKey) {
-    res.status(401).json({ message: "Not authenticated" });
-    return;
+  const authHeader = req.headers.authorization;
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ message: "Not authenticated" });
   }
 
   if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_EMAIL) {
@@ -325,5 +324,5 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default defaultHandler({
-  POST: Promise.resolve({ default: handler }),
+  GET: Promise.resolve({ default: handler }),
 });

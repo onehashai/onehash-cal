@@ -6,7 +6,6 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { md } from "@calcom/lib/markdownIt";
 import turndown from "@calcom/lib/turndownService";
 import { trpc } from "@calcom/trpc/react";
-import type { Ensure } from "@calcom/types/utils";
 import { Button, Editor, ImageUploader, Label, showToast } from "@calcom/ui";
 import { UserAvatar } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
@@ -39,7 +38,7 @@ const UserProfile = (props: IUserProfileProps) => {
       if (context.avatar) {
         showToast(t("your_user_profile_updated_successfully"), "success");
         await utils.viewer.me.refetch();
-      } else {
+      } else
         try {
           if (eventTypes?.length === 0) {
             await Promise.all(
@@ -52,9 +51,8 @@ const UserProfile = (props: IUserProfileProps) => {
           console.error(error);
         }
 
-        await utils.viewer.me.refetch();
-        nextStep();
-      }
+      await utils.viewer.me.refetch();
+      nextStep();
     },
     onError: () => {
       showToast(t("problem_saving_user_profile"), "error");
@@ -95,18 +93,10 @@ const UserProfile = (props: IUserProfileProps) => {
     },
   ];
 
-  const organization =
-    user.organization && user.organization.id
-      ? {
-          ...(user.organization as Ensure<typeof user.organization, "id">),
-          slug: user.organization.slug || null,
-          requestedSlug: user.organization.metadata?.requestedSlug || null,
-        }
-      : null;
   return (
     <form onSubmit={onSubmit}>
       <div className="flex flex-row items-center justify-start rtl:justify-end">
-        {user && <UserAvatar size="lg" user={user} previewSrc={imageSrc} organization={organization} />}
+        {user && <UserAvatar size="lg" user={user} previewSrc={imageSrc} />}
         <input
           ref={avatarRef}
           type="hidden"

@@ -56,12 +56,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const parsedQuery = querySchema.safeParse(context.query);
 
   if (!parsedQuery.success) return { notFound: true } as const;
-  const { uid, eventTypeSlug, seatReferenceUid } = parsedQuery.data;
+  const { eventTypeSlug } = parsedQuery.data;
+  let { uid, seatReferenceUid } = parsedQuery.data;
 
-  const { uid: maybeUid } = await maybeGetBookingUidFromSeat(prisma, uid);
+  const maybeBookingUidFromSeat = await maybeGetBookingUidFromSeat(prisma, uid);
+  if (maybeBookingUidFromSeat.uid) uid = maybeBookingUidFromSeat.uid;
+  if (maybeBookingUidFromSeat.seatReferenceUid) seatReferenceUid = maybeBookingUidFromSeat.seatReferenceUid;
   const bookingInfoRaw = await prisma.booking.findFirst({
     where: {
-      uid: maybeUid,
+      uid: uid,
     },
     select: {
       title: true,
@@ -79,6 +82,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       cancellationReason: true,
       responses: true,
       rejectionReason: true,
+      userPrimaryEmail: true,
       user: {
         select: {
           id: true,
@@ -168,7 +172,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   };
 
   if (bookingInfo !== null && eventType.seatsPerTimeSlot) {
-    await handleSeatsEventTypeOnBooking(eventType, bookingInfo, seatReferenceUid, session?.user.id);
+    await handleSeatsEventTypeOnBooking(
+      eventType,
+      bookingInfo,
+      seatReferenceUid,
+      session?.user.id === eventType.userId
+    );
   }
 
   const payment = await prisma.payment.findFirst({

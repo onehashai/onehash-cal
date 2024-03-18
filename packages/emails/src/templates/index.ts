@@ -34,3 +34,4 @@ export { AdminOrganizationNotificationEmail } from "./AdminOrganizationNotificat
 export { BookingRedirectEmailNotification } from "./BookingRedirectEmailNotification";
 export { WelcomeUserEmail } from "./WelcomeUserEmail";
 export { ImportDataEmail } from "./ImportDataEmail";
+export { VerifyEmailChangeEmail } from "./VerifyEmailChangeEmail";

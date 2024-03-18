@@ -11,10 +11,9 @@ import { getWhatsappTemplateFunction } from "../lib/actionHelperFunctions";
 import * as twilio from "../lib/reminders/providers/twilioProvider";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const apiKey = req.headers.authorization || req.query.apiKey;
-  if (process.env.CRON_API_KEY !== apiKey) {
-    res.status(401).json({ message: "Not authenticated" });
-    return;
+  const authHeader = req.headers.authorization;
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ message: "Not authenticated" });
   }
 
   //delete all scheduled whatsapp reminders where scheduled date is past current date
@@ -109,5 +108,5 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default defaultHandler({
-  POST: Promise.resolve({ default: handler }),
+  GET: Promise.resolve({ default: handler }),
 });

@@ -50,7 +50,7 @@ const ChooseLicense = (
           </div>
         </RadioGroup.Item>
         <RadioGroup.Item value="EE" disabled>
-          <Link href="https://cal.com/sales" target="_blank">
+          <Link href="https://www.onehash.ai/cal" target="_blank">
             <div className={classNames("bg-default h-full cursor-pointer space-y-2 rounded-md border p-4")}>
               <h2 className="font-cal text-emphasis text-xl">{t("custom_plan")}</h2>
               <p className="font-medium text-green-800">{t("contact_sales")}</p>
