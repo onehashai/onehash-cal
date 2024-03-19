@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useFormContext } from "react-hook-form";
 
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import { isTextMessageToAttendeeAction } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
@@ -199,11 +200,13 @@ type Props = {
 function EventWorkflowsTab(props: Props) {
   const { workflows, eventType } = props;
   const { t } = useLocale();
-  const { isManagedEventType, isChildrenManagedEventType } = useLockedFieldsManager(
+  const formMethods = useFormContext<FormValues>();
+
+  const { isManagedEventType, isChildrenManagedEventType } = useLockedFieldsManager({
     eventType,
-    t("locked_fields_admin_description"),
-    t("locked_fields_member_description")
-  );
+    translate: t,
+    formMethods,
+  });
   const { data, isLoading } = trpc.viewer.workflows.list.useQuery({
     teamId: eventType.team?.id,
     userId: !isChildrenManagedEventType ? eventType.userId || undefined : undefined,
