@@ -7,7 +7,7 @@
   "variant": "other",
   "categories": ["other"],
   "publisher": "OneHash Inc",
-  "email": "support@cal.com",
+  "email": "support@onehash.ai",
   "description": "It is a template showing how an App can have settings in installed section that configures the app globally e.g. Weather in your Calendar",
   "isTemplate": true,
   "__createdUsingCli": true
