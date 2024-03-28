@@ -257,6 +257,7 @@ async function getBookings({
         },
       },
     },
+    cancellationReason: true,
   };
 
   const [

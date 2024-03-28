@@ -8,6 +8,7 @@ import { ZGetInputSchema } from "./get.schema";
 import { ZGetBookingAttendeesInputSchema } from "./getBookingAttendees.schema";
 import { ZInstantBookingInputSchema } from "./getInstantBookingLocation.schema";
 import { ZRequestRescheduleInputSchema } from "./requestReschedule.schema";
+import { ZSaveNoteInputSchema } from "./saveNotes.schema";
 import { bookingsProcedure } from "./util";
 
 type BookingsRouterHandlerCache = {
@@ -18,6 +19,7 @@ type BookingsRouterHandlerCache = {
   getBookingAttendees?: typeof import("./getBookingAttendees.handler").getBookingAttendeesHandler;
   find?: typeof import("./find.handler").getHandler;
   getInstantBookingLocation?: typeof import("./getInstantBookingLocation.handler").getHandler;
+  saveNotes?: typeof import("./saveNotes.handler").saveNoteHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: BookingsRouterHandlerCache = {};
@@ -71,6 +73,23 @@ export const bookingsRouter = router({
 
     return UNSTABLE_HANDLER_CACHE.editLocation({
       ctx,
+      input,
+    });
+  }),
+
+  saveNote: bookingsProcedure.input(ZSaveNoteInputSchema).mutation(async ({ input }) => {
+    if (!UNSTABLE_HANDLER_CACHE.saveNotes) {
+      UNSTABLE_HANDLER_CACHE.saveNotes = await import("./saveNotes.handler").then(
+        (mod) => mod.saveNoteHandler
+      );
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.saveNotes) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.saveNotes({
       input,
     });
   }),

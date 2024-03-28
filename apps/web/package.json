@@ -119,6 +119,7 @@
     "react-oauth-popup": "^1.0.5",
     "react-phone-input-2": "^2.15.1",
     "react-phone-number-input": "^3.2.7",
+    "react-quill": "^2.0.0",
     "react-schemaorg": "^2.0.0",
     "react-select": "^5.7.0",
     "react-timezone-select": "^1.4.0",
