@@ -99,15 +99,6 @@ class MyDocument extends Document<Props> {
                 `,
             }}
           />
-          <noscript>
-            <img
-              alt="Pixel"
-              height="1"
-              width="1"
-              style={{ display: "none" }}
-              src="https://www.facebook.com/tr?id=606640377220056&ev=PageView&noscript=1"
-            />
-          </noscript>
           <link rel="apple-touch-icon" sizes="180x180" href="/api/logo?type=apple-touch-icon" />
           <link rel="icon" type="image/png" sizes="32x32" href="/api/logo?type=favicon-32" />
           <link rel="icon" type="image/png" sizes="16x16" href="/api/logo?type=favicon-16" />
