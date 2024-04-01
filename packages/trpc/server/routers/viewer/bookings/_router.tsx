@@ -1,6 +1,7 @@
 import authedProcedure from "../../../procedures/authedProcedure";
 import publicProcedure from "../../../procedures/publicProcedure";
 import { router } from "../../../trpc";
+import { ZCancelScheduledWorkflowsInputSchema } from "./cancelWorkflows.schema";
 import { ZConfirmInputSchema } from "./confirm.schema";
 import { ZEditLocationInputSchema } from "./editLocation.schema";
 import { ZFindInputSchema } from "./find.schema";
@@ -20,6 +21,7 @@ type BookingsRouterHandlerCache = {
   find?: typeof import("./find.handler").getHandler;
   getInstantBookingLocation?: typeof import("./getInstantBookingLocation.handler").getHandler;
   saveNotes?: typeof import("./saveNotes.handler").saveNoteHandler;
+  cancelWorkflow?: typeof import("./cancelWorkflows.handler").cancelWorkflowHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: BookingsRouterHandlerCache = {};
@@ -90,6 +92,23 @@ export const bookingsRouter = router({
     }
 
     return UNSTABLE_HANDLER_CACHE.saveNotes({
+      input,
+    });
+  }),
+
+  cancelWorkflow: publicProcedure.input(ZCancelScheduledWorkflowsInputSchema).mutation(async ({ input }) => {
+    if (!UNSTABLE_HANDLER_CACHE.cancelWorkflow) {
+      UNSTABLE_HANDLER_CACHE.cancelWorkflow = await import("./cancelWorkflows.handler").then(
+        (mod) => mod.cancelWorkflowHandler
+      );
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.cancelWorkflow) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.cancelWorkflow({
       input,
     });
   }),

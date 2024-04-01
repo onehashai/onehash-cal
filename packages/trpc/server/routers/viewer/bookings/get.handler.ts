@@ -258,6 +258,13 @@ async function getBookings({
       },
     },
     cancellationReason: true,
+    workflowReminders: {
+      select: {
+        referenceId: true,
+        id: true,
+        method: true,
+      },
+    },
   };
 
   const [
