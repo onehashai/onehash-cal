@@ -94,7 +94,7 @@ class MyDocument extends Document<Props> {
                   t.src=v;s=b.getElementsByTagName(e)[0];
                   s.parentNode.insertBefore(t,s)}(window, document,'script',
                   'https://connect.facebook.net/en_US/fbevents.js');
-                  fbq('init', '606640377220056');
+                  fbq('init', '${process.env.NEXT_PUBLIC_PIXEL}');
                   fbq('track', 'PageView');
                 `,
             }}
