@@ -35,11 +35,10 @@ const IS_GOOGLE_LOGIN_ENABLED = !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && G
 const ORGANIZATIONS_AUTOLINK =
   process.env.ORGANIZATIONS_AUTOLINK === "1" || process.env.ORGANIZATIONS_AUTOLINK === "true";
 //keycloak credentials
-const IS_KEYCLOAK_LOGIN_ENABLED = true;
+const IS_KEYCLOAK_LOGIN_ENABLED = process.env.KEYCLOAK_LOGIN_ENABLED === "true";
 const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "";
 const KEYCLOAK_CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || "";
 const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER || "";
-
 const usernameSlug = (username: string) => `${slugify(username)}-${randomString(6).toLowerCase()}`;
 
 const loginWithTotp = async (user: { email: string }) =>
@@ -547,7 +546,7 @@ export const AUTH_OPTIONS: AuthOptions = {
             ? IdentityProvider.GOOGLE
             : account.provider === "keycloak"
             ? IdentityProvider.KEYCLOAK
-            : IdentityProvider.GOOGLE;
+            : IdentityProvider.KEYCLOAK;
 
         const existingUser = await prisma.user.findFirst({
           where: {
@@ -603,7 +602,12 @@ export const AUTH_OPTIONS: AuthOptions = {
     },
     async signIn(params) {
       const { user, account, profile } = params;
-
+      if ("refresh_expires_in" in account) {
+        delete account.refresh_expires_in;
+      }
+      if ("not-before-policy" in account) {
+        delete account["not-before-policy"];
+      }
       if (account?.provider === "email") {
         return true;
       }
@@ -685,17 +689,9 @@ export const AUTH_OPTIONS: AuthOptions = {
           // hasn't changed since they last logged in.
           if (existingUser.email === user.email) {
             try {
-              // If old user without Account entry we link their google account
+              // If old user without Account entry we link their keycloak account
               if (existingUser.accounts.length === 0) {
                 const linkAccountWithUserData = { ...account, userId: existingUser.id };
-                if ("refresh_expires_in" in linkAccountWithUserData) {
-                  // Delete refresh_expires_in property
-                  delete linkAccountWithUserData.refresh_expires_in;
-                }
-                if ("not-before-policy" in linkAccountWithUserData) {
-                  // Delete not-before-policy property
-                  delete linkAccountWithUserData["not-before-policy"];
-                }
                 await calcomAdapter.linkAccount(linkAccountWithUserData);
               }
             } catch (error) {
@@ -785,9 +781,9 @@ export const AUTH_OPTIONS: AuthOptions = {
             }
           }
 
-          // User signs up with email/password and then tries to login with Google/SAML using the same email
+          // User signs up with email/password or Google and then tries to login with Google/SAML/Keycloak using the same email
           if (
-            existingUserWithEmail.identityProvider === IdentityProvider.CAL &&
+            existingUserWithEmail.identityProvider === (IdentityProvider.CAL || IdentityProvider.GOOGLE) &&
             (idP === IdentityProvider.GOOGLE ||
               idP === IdentityProvider.SAML ||
               idP === IdentityProvider.KEYCLOAK)
@@ -839,14 +835,6 @@ export const AUTH_OPTIONS: AuthOptions = {
         });
 
         const linkAccountNewUserData = { ...account, userId: newUser.id };
-        if ("refresh_expires_in" in linkAccountNewUserData) {
-          // Delete refresh_expires_in property
-          delete linkAccountNewUserData.refresh_expires_in;
-        }
-        if ("not-before-policy" in linkAccountNewUserData) {
-          // Delete not-before-policy property
-          delete linkAccountNewUserData["not-before-policy"];
-        }
         await calcomAdapter.linkAccount(linkAccountNewUserData);
 
         if (account.twoFactorEnabled) {

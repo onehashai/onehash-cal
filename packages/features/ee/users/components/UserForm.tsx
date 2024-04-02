@@ -74,6 +74,7 @@ export const UserForm = ({
     { value: "CAL", label: "CAL" },
     { value: "GOOGLE", label: "GOOGLE" },
     { value: "SAML", label: "SAML" },
+    { value: "KEYCLOAK", label: "KEYCLOAK" },
   ];
   const defaultLocale = defaultValues?.locale || localeOptions[0].value;
   const form = useForm<FormValues>({

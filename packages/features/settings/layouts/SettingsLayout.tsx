@@ -154,7 +154,7 @@ const useTabs = () => {
       tab.avatar = `${orgBranding?.fullDomain}/org/${orgBranding?.slug}/avatar.png`;
     } else if (
       tab.href === "/settings/security" &&
-      user?.identityProvider === IdentityProvider.GOOGLE &&
+      user?.identityProvider === (IdentityProvider.GOOGLE || IdentityProvider.KEYCLOAK) &&
       !user?.twoFactorEnabled
     ) {
       tab.children = tab?.children?.filter(
