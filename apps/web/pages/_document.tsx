@@ -84,6 +84,7 @@ class MyDocument extends Document<Props> {
           />
           {/* Facebook Pixel Script */}
           <script
+            id="pixel"
             dangerouslySetInnerHTML={{
               __html: `
                   !function(f,b,e,v,n,t,s)
