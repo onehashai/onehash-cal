@@ -300,7 +300,7 @@ function BookingListItem(booking: BookingItemProps) {
   const meetingNote: string | undefined = bookingMetadataSchema.parse(booking?.metadata || {})?.meetingNote;
   const [notes, setNotes] = useState<string>(meetingNote || "");
 
-  const [showRTE, setShowRTE] = useState(false);
+  const [showRTE, setShowRTE] = useState(meetingNote !== undefined);
 
   const saveNotesMutation = trpc.viewer.bookings.saveNote.useMutation({
     onSuccess: () => {
@@ -611,9 +611,9 @@ function BookingListItem(booking: BookingItemProps) {
               </div>
             )}
             {isPast && (
-              <p onClick={() => setMarkNoShowDialogIsOpen(true)} className="cursor-pointer text-blue-500">
+              <Button className="w-fit" color="secondary" onClick={() => setMarkNoShowDialogIsOpen(true)}>
                 {t("mark_no_show")}
-              </p>
+              </Button>
             )}
             {showRTE ? (
               <div>
