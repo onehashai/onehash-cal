@@ -11,6 +11,11 @@ import {
 import dayjs from "@calcom/dayjs";
 // TODO: Use browser locale, implement Intl in Dayjs maybe?
 import "@calcom/dayjs/locales";
+import {
+  SMS_REMINDER_NUMBER_FIELD,
+  SystemField,
+  TITLE_FIELD,
+} from "@calcom/features/bookings/lib/SystemField";
 import ViewRecordingsDialog from "@calcom/features/ee/video/ViewRecordingsDialog";
 import classNames from "@calcom/lib/classNames";
 import { formatTime } from "@calcom/lib/date-fns";
@@ -36,8 +41,18 @@ import {
   TextAreaField,
   Tooltip,
 } from "@calcom/ui";
-import { ChevronRight } from "@calcom/ui/components/icon";
-import { Ban, Check, Clock, CreditCard, MapPin, RefreshCcw, Send, X } from "@calcom/ui/components/icon";
+import {
+  Ban,
+  Check,
+  Clock,
+  CreditCard,
+  MapPin,
+  RefreshCcw,
+  Send,
+  X,
+  ChevronRight,
+  ExternalLink,
+} from "@calcom/ui/components/icon";
 
 import { ChargeCardDialog } from "@components/dialog/ChargeCardDialog";
 import { EditLocationDialog } from "@components/dialog/EditLocationDialog";
@@ -114,6 +129,18 @@ function BookingListItem(booking: BookingItemProps) {
     booking.status
   );
   const provider = guessEventLocationType(location);
+  // let rescheduleLocation: string | undefined;
+  // if (typeof booking.responses?.location === "object" && "optionValue" in booking.responses.location) {
+  //   rescheduleLocation = booking.responses.location.optionValue;
+  // }
+  // const rescheduleLocationToDisplay = getSuccessPageLocationMessage(
+  //   rescheduleLocation ?? "",
+  //   t,
+  //   booking.status
+  // );
+
+  // const providerName = provider?.label;
+  // const rescheduleProviderName = guessEventLocationType(rescheduleLocation)?.label;
 
   const bookingConfirm = async (confirm: boolean) => {
     let body = {
@@ -569,6 +596,33 @@ function BookingListItem(booking: BookingItemProps) {
       {expanded && (
         <div className="px-3 pb-3 md:px-6">
           <hr className="mb-3 h-px border-0 bg-gray-200 dark:bg-gray-700" />
+          <div className="text-bookingdark dark:border-darkgray-200 mt-8 text-left dark:text-gray-300">
+            {/* {locationToDisplay && !isCancelled && (
+              <>
+                <div className="mt-3 font-medium">{t("where")}</div>
+                <div className="col-span-2 mt-3" data-testid="where">
+                  {!rescheduleLocation || locationToDisplay === rescheduleLocationToDisplay ? (
+                    <DisplayLocation locationToDisplay={locationToDisplay} providerName={providerName} />
+                  ) : (
+                    <>
+                      {rescheduleProviderName ? (
+                        <DisplayLocation
+                          locationToDisplay={locationToDisplay}
+                          providerName={providerName}
+                          className="line-through"
+                        />
+                      ) : (
+                        <DisplayLocation
+                          locationToDisplay={rescheduleLocationToDisplay}
+                          providerName={rescheduleProviderName}
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
+            )} */}
+          </div>
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center">
@@ -580,36 +634,82 @@ function BookingListItem(booking: BookingItemProps) {
               </div>
             </div>
 
-            <div className="flex items-center">
+            <div className="flex flex-row items-center">
               <div className="mr-4">
                 <p className="text-emphasis text-sm leading-6">Invitee : </p>
               </div>
               <div>
-                <p className="text-subtle text-sm">
-                  {booking.attendees.map((attendee) => attendee.name).join(",")}
-                </p>
+                {booking.attendees.map((attendee: any, i: number) => (
+                  <p key={attendee.email} className="text-subtle text-sm">
+                    {attendee.name}{" "}
+                    {booking.payment.length != 0 && (booking.payment[i].success ? "- Paid" : "- Not Paid")}
+                  </p>
+                ))}
               </div>
             </div>
 
             <div className="flex items-center">
               <div className="mr-4">
-                <p className="text-emphasis text-md ">Invitee Timezone : </p>
+                <p className="text-emphasis text-sm ">Invitee Timezone : </p>
               </div>
               <div>
-                <p className="text-subtle text-md">{booking.attendees[0].timeZone}</p>
+                <p className="text-subtle text-sm">{booking.attendees[0].timeZone}</p>
               </div>
             </div>
 
             {booking.status === BookingStatus.CANCELLED && (
               <div className="flex items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-md ">Cancellation Reason : </p>
+                  <p className="text-emphasis text-sm ">Cancellation Reason : </p>
                 </div>
                 <div>
-                  <p className="text-subtle text-md">{booking.cancellationReason ?? "N/A"}</p>
+                  <p className="text-subtle text-sm">{booking.cancellationReason ?? "N/A"}</p>
                 </div>
               </div>
             )}
+
+            {booking?.description && (
+              <div className="flex items-center">
+                <div className="mr-4">
+                  <p className="text-emphasis text-sm ">{t("additional_notes")}</p>
+                </div>
+                <div>
+                  <p className="text-subtle text-sm">{booking.description}</p>
+                </div>
+              </div>
+            )}
+
+            {booking.eventType.bookingFields &&
+              Object.entries(booking.responses).map(([name, response]) => {
+                const field = booking.eventType.bookingFields.find((field) => field.name === name);
+
+                if (!field) return null;
+                const isSystemField = SystemField.safeParse(field.name);
+                // SMS_REMINDER_NUMBER_FIELD is a system field but doesn't have a dedicated place in the UI. So, it would be shown through the following responses list
+                // TITLE is also an identifier for booking question "What is this meeting about?"
+                if (
+                  isSystemField.success &&
+                  field.name !== SMS_REMINDER_NUMBER_FIELD &&
+                  field.name !== TITLE_FIELD
+                )
+                  return null;
+
+                const label = field.label || t(field.defaultLabel || "");
+
+                return (
+                  <div className="flex items-center" key={label}>
+                    <div className="mr-4">
+                      <p className="text-emphasis text-sm ">{label}</p>
+                    </div>
+                    <div>
+                      <p className="text-subtle text-sm">
+                        {field.type === "boolean" ? (response ? t("yes") : t("no")) : response.toString()}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+
             {isPast && (
               <Button className="w-fit" color="secondary" onClick={() => setMarkNoShowDialogIsOpen(true)}>
                 {t("mark_no_show")}
@@ -795,5 +895,28 @@ const DisplayAttendees = ({
     </div>
   );
 };
+
+const DisplayLocation = ({
+  locationToDisplay,
+  providerName,
+  className,
+}: {
+  locationToDisplay: string;
+  providerName?: string;
+  className?: string;
+}) =>
+  locationToDisplay.startsWith("http") ? (
+    <a
+      href={locationToDisplay}
+      target="_blank"
+      title={locationToDisplay}
+      className={classNames("text-default flex items-center gap-2", className)}
+      rel="noreferrer">
+      {providerName || "Link"}
+      <ExternalLink className="text-default inline h-4 w-4" />
+    </a>
+  ) : (
+    <p className={className}>{locationToDisplay}</p>
+  );
 
 export default BookingListItem;
