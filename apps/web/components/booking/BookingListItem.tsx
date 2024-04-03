@@ -627,7 +627,7 @@ function BookingListItem(booking: BookingItemProps) {
           <div className="flex flex-col gap-3">
             <div className="flex items-center">
               <div className="mr-4">
-                <p className="text-emphasis text-sm leading-6">Event Type : </p>
+                <p className="text-emphasis text-sm leading-6">Event Type :</p>
               </div>
               <div>
                 <p className="text-subtle text-sm">{booking.eventType.title}</p>
@@ -636,7 +636,7 @@ function BookingListItem(booking: BookingItemProps) {
 
             <div className="flex flex-row items-center">
               <div className="mr-4">
-                <p className="text-emphasis text-sm leading-6">Invitee : </p>
+                <p className="text-emphasis text-sm leading-6">Invitee :</p>
               </div>
               <div>
                 {booking.attendees.map((attendee: any, i: number) => (
@@ -650,7 +650,7 @@ function BookingListItem(booking: BookingItemProps) {
 
             <div className="flex items-center">
               <div className="mr-4">
-                <p className="text-emphasis text-sm ">Invitee Timezone : </p>
+                <p className="text-emphasis text-sm ">Invitee Timezone :</p>
               </div>
               <div>
                 <p className="text-subtle text-sm">{booking.attendees[0].timeZone}</p>
@@ -660,7 +660,7 @@ function BookingListItem(booking: BookingItemProps) {
             {booking.status === BookingStatus.CANCELLED && (
               <div className="flex items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-sm ">Cancellation Reason : </p>
+                  <p className="text-emphasis text-sm ">Cancellation Reason :</p>
                 </div>
                 <div>
                   <p className="text-subtle text-sm">{booking.cancellationReason ?? "N/A"}</p>
@@ -671,7 +671,7 @@ function BookingListItem(booking: BookingItemProps) {
             {booking?.description && (
               <div className="flex items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-sm ">{t("additional_notes")}</p>
+                  <p className="text-emphasis text-sm ">{`${t("additional_notes")} :`}</p>
                 </div>
                 <div>
                   <p className="text-subtle text-sm">{booking.description}</p>
@@ -699,7 +699,7 @@ function BookingListItem(booking: BookingItemProps) {
                 return (
                   <div className="flex items-center" key={label}>
                     <div className="mr-4">
-                      <p className="text-emphasis text-sm ">{label}</p>
+                      <p className="text-emphasis text-sm ">{`${label} :`}</p>
                     </div>
                     <div>
                       <p className="text-subtle text-sm">
@@ -734,9 +734,9 @@ function BookingListItem(booking: BookingItemProps) {
                 </div>
               </div>
             ) : (
-              <p onClick={() => setShowRTE(true)} className="cursor-pointer text-blue-500">
+              <Button className="w-fit" color="secondary" onClick={() => setShowRTE(true)}>
                 {t("meeting_notes")}
-              </p>
+              </Button>
             )}
           </div>
         </div>
