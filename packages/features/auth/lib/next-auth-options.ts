@@ -11,8 +11,8 @@ import KeyCloakProvider from "next-auth/providers/keycloak";
 
 import checkLicense from "@calcom/features/ee/common/server/checkLicense";
 import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/ImpersonationProvider";
-import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { clientSecretVerifier, hostedCal, isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
+import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { ENABLE_PROFILE_SWITCHER, IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
@@ -627,13 +627,6 @@ export const AUTH_OPTIONS: AuthOptions = {
       return calendsoSession;
     },
     async signIn(params) {
-      const { user, account, profile } = params;
-      if ("refresh_expires_in" in account) {
-        delete account.refresh_expires_in;
-      }
-      if ("not-before-policy" in account) {
-        delete account["not-before-policy"];
-      }
       const {
         /**
          * Available when Credentials provider is used - Has the value returned by authorize callback
@@ -645,7 +638,12 @@ export const AUTH_OPTIONS: AuthOptions = {
         profile,
         account,
       } = params;
-
+      if ("refresh_expires_in" in account) {
+        delete account.refresh_expires_in;
+      }
+      if ("not-before-policy" in account) {
+        delete account["not-before-policy"];
+      }
       log.debug("callbacks:signin", safeStringify(params));
 
       if (account?.provider === "email") {

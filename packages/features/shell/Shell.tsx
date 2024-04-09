@@ -1,5 +1,5 @@
 import type { User as UserAuth } from "next-auth";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
@@ -108,8 +108,6 @@ import {
 import { Discord } from "@calcom/ui/components/icon/Discord";
 
 import federatedLogout from "../auth/lib/federatedLogout";
-import { useOrgBranding } from "../ee/organizations/context/provider";
-
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
