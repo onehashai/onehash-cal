@@ -107,6 +107,9 @@ import {
 } from "@calcom/ui/components/icon";
 import { Discord } from "@calcom/ui/components/icon/Discord";
 
+import federatedLogout from "../auth/lib/federatedLogout";
+import { useOrgBranding } from "../ee/organizations/context/provider";
+
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
@@ -568,7 +571,7 @@ function UserDropdown({ small }: UserDropdownProps) {
                   <DropdownItem
                     type="button"
                     StartIcon={(props) => <LogOut aria-hidden="true" {...props} />}
-                    onClick={() => signOut({ callbackUrl: "/auth/logout" })}>
+                    onClick={() => federatedLogout()}>
                     {t("sign_out")}
                   </DropdownItem>
                 </DropdownMenuItem>
