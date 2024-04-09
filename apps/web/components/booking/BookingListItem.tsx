@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import { useState } from "react";
 import "react-quill/dist/quill.snow.css";
 
@@ -57,9 +56,8 @@ import {
 import { ChargeCardDialog } from "@components/dialog/ChargeCardDialog";
 import { EditLocationDialog } from "@components/dialog/EditLocationDialog";
 import { MarkNoShowDialog } from "@components/dialog/MarkNoShowDialog";
+import { MeetingNotesDialog } from "@components/dialog/MeetingNotesDialog";
 import { RescheduleDialog } from "@components/dialog/RescheduleDialog";
-
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 type BookingListingStatus = RouterInputs["viewer"]["bookings"]["get"]["filters"]["status"];
 
@@ -327,7 +325,7 @@ function BookingListItem(booking: BookingItemProps) {
   const meetingNote: string | undefined = bookingMetadataSchema.parse(booking?.metadata || {})?.meetingNote;
   const [notes, setNotes] = useState<string>(meetingNote || "");
 
-  const [showRTE, setShowRTE] = useState(meetingNote !== undefined);
+  const [showRTE, setShowRTE] = useState(false);
 
   const saveNotesMutation = trpc.viewer.bookings.saveNote.useMutation({
     onSuccess: () => {
@@ -339,6 +337,30 @@ function BookingListItem(booking: BookingItemProps) {
   const handleMeetingNoteSave = (): void => {
     saveNotesMutation.mutate({ bookingId: booking.id, meetingNote: notes });
   };
+
+  const createReinviteeAttendeeLink = () => {
+    const ownerSlug = booking.eventType.team ? booking.eventType.team.slug : booking.user?.username;
+    const eventSlug = booking.eventType.slug;
+    const bookingUrl = `${bookerUrl}/${ownerSlug}/${eventSlug}`;
+
+    const queryParams = {
+      name: booking.attendees[0].name,
+      email: booking.attendees[0].email,
+    };
+
+    const urlSearchParams = new URLSearchParams(queryParams);
+
+    const guests = booking.responses?.guests;
+    if (guests && Array.isArray(guests) && guests.length > 0) {
+      guests.forEach((guest) => {
+        urlSearchParams.append("guests", guest);
+      });
+    }
+
+    return `${bookingUrl}?${urlSearchParams}`;
+  };
+
+  const reinviteeAttendeeLink = createReinviteeAttendeeLink();
 
   return (
     <>
@@ -375,6 +397,13 @@ function BookingListItem(booking: BookingItemProps) {
         isOpenDialog={markNoShowDialogIsOpen}
         setIsOpenDialog={setMarkNoShowDialogIsOpen}
         workflows={booking.workflowReminders}
+      />
+      <MeetingNotesDialog
+        notes={notes}
+        setNotes={setNotes}
+        isOpenDialog={showRTE}
+        setIsOpenDialog={setShowRTE}
+        handleMeetingNoteSave={handleMeetingNoteSave}
       />
       {/* NOTE: Should refactor this dialog component as is being rendered multiple times */}
       <Dialog open={rejectionDialogIsOpen} onOpenChange={setRejectionDialogIsOpen}>
@@ -596,148 +625,132 @@ function BookingListItem(booking: BookingItemProps) {
       {expanded && (
         <div className="px-3 pb-3 md:px-6">
           <hr className="mb-3 h-px border-0 bg-gray-200 dark:bg-gray-700" />
-          <div className="text-bookingdark dark:border-darkgray-200 mt-8 text-left dark:text-gray-300">
-            {/* {locationToDisplay && !isCancelled && (
-              <>
-                <div className="mt-3 font-medium">{t("where")}</div>
-                <div className="col-span-2 mt-3" data-testid="where">
-                  {!rescheduleLocation || locationToDisplay === rescheduleLocationToDisplay ? (
-                    <DisplayLocation locationToDisplay={locationToDisplay} providerName={providerName} />
-                  ) : (
-                    <>
-                      {rescheduleProviderName ? (
-                        <DisplayLocation
-                          locationToDisplay={locationToDisplay}
-                          providerName={providerName}
-                          className="line-through"
-                        />
-                      ) : (
-                        <DisplayLocation
-                          locationToDisplay={rescheduleLocationToDisplay}
-                          providerName={rescheduleProviderName}
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
-              </>
-            )} */}
-          </div>
 
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center">
-              <div className="mr-4">
-                <p className="text-emphasis text-sm leading-6">Event Type :</p>
-              </div>
-              <div>
-                <p className="text-subtle text-sm">{booking.eventType.title}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-row items-center">
-              <div className="mr-4">
-                <p className="text-emphasis text-sm leading-6">Invitee :</p>
-              </div>
-              <div>
-                {booking.attendees.map((attendee: any, i: number) => (
-                  <p key={attendee.email} className="text-subtle text-sm">
-                    {attendee.name}{" "}
-                    {booking.payment.length != 0 && (booking.payment[i].success ? "- Paid" : "- Not Paid")}
-                  </p>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <div className="mr-4">
-                <p className="text-emphasis text-sm ">Invitee Timezone :</p>
-              </div>
-              <div>
-                <p className="text-subtle text-sm">{booking.attendees[0].timeZone}</p>
-              </div>
-            </div>
-
-            {booking.status === BookingStatus.CANCELLED && (
+          <div className="flex flex-col justify-between md:flex-row md:gap-3">
+            <div className="flex flex-col gap-2 ">
               <div className="flex items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-sm ">Cancellation Reason :</p>
+                  <p className="text-emphasis text-sm leading-6">Event Type </p>
                 </div>
                 <div>
-                  <p className="text-subtle text-sm">{booking.cancellationReason ?? "N/A"}</p>
+                  <p className="text-subtle text-sm">{booking.eventType.title}</p>
                 </div>
               </div>
-            )}
 
-            {booking?.description && (
+              <div className="flex flex-row items-center">
+                <div className="mr-4">
+                  <p className="text-emphasis text-sm leading-6">Invitee </p>
+                </div>
+                <div>
+                  {booking.attendees.map((attendee: any, i: number) => (
+                    <p key={attendee.email} className="text-subtle text-sm">
+                      {attendee.name}{" "}
+                      {booking.payment.length != 0 &&
+                        (booking.payment[i].success ? "- [Paid]" : "- [Not Paid]")}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-row items-center">
+                <div className="mr-4">
+                  <p className="text-emphasis text-sm leading-6">Invitee Email</p>
+                </div>
+                <div>
+                  {booking.attendees.map((attendee: any, i: number) => (
+                    <p key={attendee.email} className="text-subtle text-sm">
+                      {attendee.email}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-sm ">{`${t("additional_notes")} :`}</p>
+                  <p className="text-emphasis text-sm ">Invitee Timezone </p>
                 </div>
                 <div>
-                  <p className="text-subtle text-sm">{booking.description}</p>
+                  <p className="text-subtle text-sm">{booking.attendees[0].timeZone}</p>
                 </div>
               </div>
-            )}
 
-            {booking.eventType.bookingFields &&
-              Object.entries(booking.responses).map(([name, response]) => {
-                const field = booking.eventType.bookingFields.find((field) => field.name === name);
-
-                if (!field) return null;
-                const isSystemField = SystemField.safeParse(field.name);
-                // SMS_REMINDER_NUMBER_FIELD is a system field but doesn't have a dedicated place in the UI. So, it would be shown through the following responses list
-                // TITLE is also an identifier for booking question "What is this meeting about?"
-                if (
-                  isSystemField.success &&
-                  field.name !== SMS_REMINDER_NUMBER_FIELD &&
-                  field.name !== TITLE_FIELD
-                )
-                  return null;
-
-                const label = field.label || t(field.defaultLabel || "");
-
-                return (
-                  <div className="flex items-center" key={label}>
-                    <div className="mr-4">
-                      <p className="text-emphasis text-sm ">{`${label} :`}</p>
-                    </div>
-                    <div>
-                      <p className="text-subtle text-sm">
-                        {field.type === "boolean" ? (response ? t("yes") : t("no")) : response.toString()}
-                      </p>
-                    </div>
+              {booking.status === BookingStatus.CANCELLED && (
+                <div className="flex items-center">
+                  <div className="mr-4">
+                    <p className="text-emphasis text-sm ">Cancellation Reason </p>
                   </div>
-                );
-              })}
-
-            {isPast && (
-              <Button className="w-fit" color="secondary" onClick={() => setMarkNoShowDialogIsOpen(true)}>
-                {t("mark_no_show")}
-              </Button>
-            )}
-            {showRTE ? (
-              <div>
-                <ReactQuill
-                  theme="snow"
-                  value={notes}
-                  className="mb-14 h-40 w-full md:w-1/2"
-                  onChange={setNotes}
-                />
-
-                <div className="flex items-center gap-2">
-                  <Button color="secondary" onClick={() => setShowRTE(false)} className="mb-4">
-                    {t("close")}
-                  </Button>
-                  <Button color="secondary" onClick={handleMeetingNoteSave} className="mb-4">
-                    {t("save")}
-                  </Button>
+                  <div>
+                    <p className="text-subtle text-sm">{booking.cancellationReason ?? "N/A"}</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <Button className="w-fit" color="secondary" onClick={() => setShowRTE(true)}>
+              )}
+
+              {booking?.description && (
+                <div className="flex items-center">
+                  <div className="mr-4">
+                    <p className="text-emphasis text-sm ">{t("additional_notes")}</p>
+                  </div>
+                  <div>
+                    <p className="text-subtle text-sm">{booking.description}</p>
+                  </div>
+                </div>
+              )}
+
+              {booking.eventType.bookingFields &&
+                Object.entries(booking.responses).map(([name, response]) => {
+                  const field = booking.eventType.bookingFields.find((field) => field.name === name);
+
+                  if (!field) return null;
+                  const isSystemField = SystemField.safeParse(field.name);
+                  // SMS_REMINDER_NUMBER_FIELD is a system field but doesn't have a dedicated place in the UI. So, it would be shown through the following responses list
+                  // TITLE is also an identifier for booking question "What is this meeting about?"
+                  if (
+                    isSystemField.success &&
+                    field.name !== SMS_REMINDER_NUMBER_FIELD &&
+                    field.name !== TITLE_FIELD
+                  )
+                    return null;
+
+                  const label = field.label || t(field.defaultLabel || "");
+
+                  return (
+                    <div className="flex items-center" key={label}>
+                      <div className="mr-4">
+                        <p className="text-emphasis text-sm ">{label}</p>
+                      </div>
+                      <div>
+                        <p className="text-subtle text-sm">
+                          {field.type === "boolean" ? (response ? t("yes") : t("no")) : response.toString()}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+            <div className="mt-2 flex min-h-full flex-col  justify-center gap-2 ">
+              <Button
+                className="flex w-full justify-center"
+                color="secondary"
+                onClick={() => setShowRTE(true)}>
                 {t("meeting_notes")}
               </Button>
-            )}
+              {isPast && (
+                <Button
+                  className="flex w-full justify-center "
+                  color="secondary"
+                  onClick={() => setMarkNoShowDialogIsOpen(true)}>
+                  {t("mark_no_show")}
+                </Button>
+              )}
+              {isPast && (
+                <Button
+                  className="flex w-full justify-center"
+                  color="secondary"
+                  onClick={() => window.open(reinviteeAttendeeLink, "_blank")}>
+                  {t("reinvitee_attendee")}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}

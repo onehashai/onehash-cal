@@ -219,6 +219,7 @@ async function getBookings({
           select: {
             id: true,
             name: true,
+            slug: true,
           },
         },
         bookingFields: true,
@@ -239,6 +240,7 @@ async function getBookings({
         id: true,
         name: true,
         email: true,
+        username: true,
       },
     },
     rescheduled: true,
