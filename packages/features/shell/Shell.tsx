@@ -108,8 +108,6 @@ import {
 import { Discord } from "@calcom/ui/components/icon/Discord";
 
 import federatedLogout from "../auth/lib/federatedLogout";
-import { useOrgBranding } from "../ee/organizations/context/provider";
-
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
