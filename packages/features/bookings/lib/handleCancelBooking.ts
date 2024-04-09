@@ -9,14 +9,14 @@ import { deleteMeeting } from "@calcom/core/videoClient";
 import dayjs from "@calcom/dayjs";
 import { sendCancelledEmails } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
-import { deleteScheduledEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
-import { sendCancelledReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
-import { deleteScheduledSMSReminder } from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { cancelScheduledJobs } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
 import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
+import { deleteScheduledEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/emailReminderManager";
+import { deleteScheduledSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/smsReminderManager";
+import { deleteScheduledWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/whatsappReminderManager";
+import { sendCancelledReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import { HttpError } from "@calcom/lib/http-error";
@@ -245,7 +245,7 @@ async function handler(req: CustomRequest) {
     startTime: bookingToDelete?.startTime ? dayjs(bookingToDelete.startTime).format() : "",
     endTime: bookingToDelete?.endTime ? dayjs(bookingToDelete.endTime).format() : "",
     organizer: {
-      email: organizer.email,
+      email: bookingToDelete?.userPrimaryEmail ?? organizer.email,
       name: organizer.name ?? "Nameless",
       timeZone: organizer.timeZone,
       timeFormat: getTimeFormatStringFromUserTimeFormat(organizer.timeFormat),
@@ -524,7 +524,7 @@ async function handler(req: CustomRequest) {
       startTime: bookingToDelete.startTime.toISOString(),
       endTime: bookingToDelete.endTime.toISOString(),
       organizer: {
-        email: bookingToDelete.user?.email ?? "dev@calendso.com",
+        email: bookingToDelete?.userPrimaryEmail ?? bookingToDelete.user?.email ?? "dev@calendso.com",
         name: bookingToDelete.user?.name ?? "no user",
         timeZone: bookingToDelete.user?.timeZone ?? "",
         timeFormat: getTimeFormatStringFromUserTimeFormat(organizer.timeFormat),

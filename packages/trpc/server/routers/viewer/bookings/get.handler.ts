@@ -1,9 +1,10 @@
+import { getBookingWithResponses } from "@calcom/features/bookings/lib/get-booking";
 import { parseRecurringEvent } from "@calcom/lib";
 import type { PrismaClient } from "@calcom/prisma";
 import { bookingMinimalSelect } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
-import { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
+import { eventTypeBookingFields, EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 
 import type { TrpcSessionUser } from "../../../trpc";
 import type { TGetInputSchema } from "./get.schema";
@@ -23,7 +24,9 @@ export const getHandler = async ({ ctx, input }: GetOptions) => {
   const skip = input.cursor ?? 0;
   const { prisma, user } = ctx;
   const bookingListingByStatus = input.filters.status;
-  const bookingListingFilters: Record<typeof bookingListingByStatus, Prisma.BookingWhereInput> = {
+  type BookingListingByStatusType = "upcoming" | "recurring" | "past" | "cancelled" | "unconfirmed";
+
+  const bookingListingFilters: Record<BookingListingByStatusType, Prisma.BookingWhereInput> = {
     upcoming: {
       endTime: { gte: new Date() },
       // These changes are needed to not show confirmed recurring events,
@@ -62,19 +65,18 @@ export const getHandler = async ({ ctx, input }: GetOptions) => {
       status: { equals: BookingStatus.PENDING },
     },
   };
-  const bookingListingOrderby: Record<
-    typeof bookingListingByStatus,
-    Prisma.BookingOrderByWithAggregationInput
-  > = {
-    upcoming: { startTime: "asc" },
-    recurring: { startTime: "asc" },
-    past: { startTime: "desc" },
-    cancelled: { startTime: "desc" },
-    unconfirmed: { startTime: "asc" },
-  };
+  const bookingListingOrderby: Record<BookingListingByStatusType, Prisma.BookingOrderByWithAggregationInput> =
+    {
+      upcoming: { startTime: "asc" },
+      recurring: { startTime: "asc" },
+      past: { startTime: "desc" },
+      cancelled: { startTime: "desc" },
+      unconfirmed: { startTime: "asc" },
+    };
 
-  const passedBookingsStatusFilter = bookingListingFilters[bookingListingByStatus];
-  const orderBy = bookingListingOrderby[bookingListingByStatus];
+  const passedBookingsStatusFilter =
+    bookingListingByStatus != undefined ? bookingListingFilters[bookingListingByStatus] : {};
+  const orderBy = bookingListingByStatus != undefined ? bookingListingOrderby[bookingListingByStatus] : {};
 
   const { bookings, recurringInfo } = await getBookings({
     user,
@@ -147,15 +149,35 @@ async function getBookings({
     userIds: {
       AND: [
         {
-          eventType: {
-            users: {
-              some: {
-                id: {
-                  in: filters?.userIds,
+          OR: [
+            {
+              eventType: {
+                hosts: {
+                  some: {
+                    userId: {
+                      in: filters?.userIds,
+                    },
+                  },
                 },
               },
             },
-          },
+            {
+              userId: {
+                in: filters?.userIds,
+              },
+            },
+            {
+              eventType: {
+                users: {
+                  some: {
+                    id: {
+                      in: filters?.userIds,
+                    },
+                  },
+                },
+              },
+            },
+          ],
         },
       ],
     },
@@ -185,6 +207,7 @@ async function getBookings({
       select: {
         slug: true,
         id: true,
+        title: true,
         eventName: true,
         price: true,
         recurringEvent: true,
@@ -196,8 +219,10 @@ async function getBookings({
           select: {
             id: true,
             name: true,
+            slug: true,
           },
         },
+        bookingFields: true,
       },
     },
     status: true,
@@ -215,6 +240,7 @@ async function getBookings({
         id: true,
         name: true,
         email: true,
+        username: true,
       },
     },
     rescheduled: true,
@@ -235,6 +261,15 @@ async function getBookings({
         },
       },
     },
+    cancellationReason: true,
+    workflowReminders: {
+      select: {
+        referenceId: true,
+        id: true,
+        method: true,
+      },
+    },
+    responses: true,
   };
 
   const [
@@ -410,9 +445,10 @@ async function getBookings({
       booking.attendees = booking.attendees.filter((attendee) => attendee.email === user.email);
     }
     return {
-      ...booking,
+      ...getBookingWithResponses(booking),
       eventType: {
         ...booking.eventType,
+        bookingFields: eventTypeBookingFields.parse(booking.eventType?.bookingFields || []),
         recurringEvent: parseRecurringEvent(booking.eventType?.recurringEvent),
         price: booking.eventType?.price || 0,
         currency: booking.eventType?.currency || "usd",
@@ -422,5 +458,6 @@ async function getBookings({
       endTime: booking.endTime.toISOString(),
     };
   });
+
   return { bookings, recurringInfo };
 }

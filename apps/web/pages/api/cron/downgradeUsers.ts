@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
-// import { updateQuantitySubscriptionFromStripe } from "@calcom/features/ee/teams/lib/payments";
+// import { updateQuantitySubscriptionFromStripe } from "@calcom/features/oe/teams/lib/payments";
 import prisma from "@calcom/prisma";
 
 const querySchema = z.object({
@@ -10,7 +10,7 @@ const querySchema = z.object({
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const apiKey = req.headers.authorization || req.query.apiKey;
-  if (process.env.CRON_API_KEY !== apiKey) {
+  if (process.env.CRON_SECRET !== apiKey) {
     res.status(401).json({ message: "Not authenticated" });
     return;
   }

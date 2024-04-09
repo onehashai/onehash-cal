@@ -11,7 +11,7 @@ import type { CalendarEvent } from "@calcom/types/Calendar";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const apiKey = req.headers.authorization || req.query.apiKey;
-  if (process.env.CRON_API_KEY !== apiKey) {
+  if (process.env.CRON_SECRET !== apiKey) {
     res.status(401).json({ message: "Not authenticated" });
     return;
   }
@@ -119,7 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         endTime: booking.endTime.toISOString(),
         organizer: {
           id: user.id,
-          email: user.email,
+          email: booking?.userPrimaryEmail ?? user.email,
           name,
           timeZone: user.timeZone,
           language: { translate: tOrganizer, locale: user.locale ?? "en" },

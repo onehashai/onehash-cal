@@ -1,15 +1,15 @@
 import {
   deleteScheduledEmailReminder,
   scheduleEmailReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/emailReminderManager";
 import {
   deleteScheduledSMSReminder,
   scheduleSMSReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/smsReminderManager";
 import {
   deleteScheduledWhatsappReminder,
   scheduleWhatsappReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/whatsappReminderManager";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import { prisma } from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/client";
@@ -169,7 +169,7 @@ export const activateEventTypeHandler = async ({ ctx, input }: ActivateEventType
         organizer: booking.user
           ? {
               name: booking.user.name || "",
-              email: booking.user.email,
+              email: booking?.userPrimaryEmail ?? booking.user.email,
               timeZone: booking.user.timeZone,
               timeFormat: getTimeFormatStringFromUserTimeFormat(booking.user.timeFormat),
               language: { locale: booking.user.locale || defaultLocale },

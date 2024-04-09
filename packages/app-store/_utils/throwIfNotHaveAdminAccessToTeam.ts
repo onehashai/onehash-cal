@@ -1,4 +1,4 @@
-import getUserAdminTeams from "@calcom/features/ee/teams/lib/getUserAdminTeams";
+import getUserAdminTeams from "@calcom/features/oe/teams/lib/getUserAdminTeams";
 import { HttpError } from "@calcom/lib/http-error";
 
 export const throwIfNotHaveAdminAccessToTeam = async ({

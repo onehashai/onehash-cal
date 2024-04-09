@@ -5,7 +5,8 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
+import { FaGoogle } from "react-icons/fa";
 import { z } from "zod";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";

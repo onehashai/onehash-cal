@@ -16,6 +16,7 @@ import { Loader } from "@calcom/ui/components/icon";
 import PageWrapper from "@components/PageWrapper";
 import { ConnectedCalendars } from "@components/getting-started/steps-views/ConnectCalendars";
 import { ConnectedVideoStep } from "@components/getting-started/steps-views/ConnectedVideoStep";
+import { ImportData } from "@components/getting-started/steps-views/ImportData";
 import { SetupAvailability } from "@components/getting-started/steps-views/SetupAvailability";
 import UserProfile from "@components/getting-started/steps-views/UserProfile";
 import { UserSettings } from "@components/getting-started/steps-views/UserSettings";
@@ -29,6 +30,7 @@ const steps = [
   "connected-video",
   "setup-availability",
   "user-profile",
+  "import-data",
 ] as const;
 
 const stepTransform = (step: (typeof steps)[number]) => {
@@ -85,6 +87,10 @@ const OnboardingPage = () => {
     {
       title: `${t("nearly_there")}`,
       subtitle: [`${t("nearly_there_instructions")}`],
+    },
+    {
+      title: `${t("import_data")}`,
+      subtitle: [`${t("import_data_instructions")}`],
     },
   ];
 
@@ -153,7 +159,8 @@ const OnboardingPage = () => {
                     defaultScheduleId={user.defaultScheduleId}
                   />
                 )}
-                {currentStep === "user-profile" && <UserProfile />}
+                {currentStep === "user-profile" && <UserProfile nextStep={() => goToIndex(5)} />}
+                {currentStep === "import-data" && <ImportData />}
               </Suspense>
             </StepCard>
 

@@ -7,7 +7,7 @@
   "variant": "other",
   "categories": ["other"],
   "publisher": "OneHash, Inc.",
-  "email": "support@cal.com",
+  "email": "support@onehash.ai",
   "description": "A template showcasing how an app with EventType AppCard can be built e.g. Giphy, QR Code",
   "extendsFeature": "EventType",
   "isTemplate": true,

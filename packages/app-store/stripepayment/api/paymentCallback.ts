@@ -74,7 +74,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
         url: req.url,
         method: req.method,
         message:
-          "We have received your payment. Your premium username could still not be reserved. Please contact support@cal.com and mention your premium username",
+          "We have received your payment. Your premium username could still not be reserved. Please contact support@onehash.ai and mention your premium username",
       });
     }
   }

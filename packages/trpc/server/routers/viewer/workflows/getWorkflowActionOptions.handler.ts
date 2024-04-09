@@ -1,4 +1,4 @@
-import { getWorkflowActionOptions } from "@calcom/features/ee/workflows/lib/getOptions";
+import { getWorkflowActionOptions } from "@calcom/features/oe/workflows/lib/getOptions";
 import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { getTranslation } from "@calcom/lib/server/i18n";
@@ -26,7 +26,7 @@ export const getWorkflowActionOptionsHandler = async ({ ctx }: GetWorkflowAction
     isTeamsPlan = !!hasTeamPlan;
   }
 
-  const hasOrgsPlan = !!user.organizationId;
+  const hasOrgsPlan = !!user.profile?.organizationId;
 
   const t = await getTranslation(ctx.user.locale, "common");
   return getWorkflowActionOptions(

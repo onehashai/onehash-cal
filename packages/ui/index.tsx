@@ -66,6 +66,7 @@ export {
   Stepper,
   Switch,
   NumberInput,
+  InputError,
 } from "./components/form";
 export type { ITimezone, ITimezoneOption } from "./components/form";
 export {
@@ -152,10 +153,12 @@ export {
 export { default as MultiSelectCheckboxes } from "./components/form/checkbox/MultiSelectCheckboxes";
 export type { Option as MultiSelectCheckboxesOptionType } from "./components/form/checkbox/MultiSelectCheckboxes";
 export { default as ImageUploader } from "./components/image-uploader/ImageUploader";
+export { default as BannerUploader } from "./components/image-uploader/BannerUploader";
+
 export type { ButtonColor } from "./components/button/Button";
 export { CreateButton, CreateButtonWithTeamsList } from "./components/createButton";
 
-export { useCalcomTheme } from "./styles/useCalcomTheme";
+export { useBrandTheme } from "./styles/useBrandTheme";
 export { ScrollableArea } from "./components/scrollable/ScrollableArea";
 export { WizardLayout } from "./layouts/WizardLayout";
 export { WizardLayoutAppDir } from "./layouts/WizardLayoutAppDir";

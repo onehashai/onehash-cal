@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
 import React, { Suspense, useEffect, useState } from "react";
 
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
 import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
@@ -31,6 +31,7 @@ import {
   Terminal,
   User,
   Users,
+  CalendarPlus,
 } from "@calcom/ui/components/icon";
 
 const tabs: VerticalTabItemProps[] = [
@@ -66,6 +67,12 @@ const tabs: VerticalTabItemProps[] = [
     children: [{ name: "manage_billing", href: "/settings/billing" }],
   },
   {
+    name: "import",
+    href: "/settings/import",
+    icon: CalendarPlus,
+    children: [{ name: "calendly_integration", href: "/settings/import/calendly" }],
+  },
+  {
     name: "developer",
     href: "/settings/developer",
     icon: Terminal,
@@ -94,12 +101,20 @@ const tabs: VerticalTabItemProps[] = [
         href: "/settings/organizations/members",
       },
       {
+        name: "privacy",
+        href: "/settings/organizations/privacy",
+      },
+      {
         name: "appearance",
         href: "/settings/organizations/appearance",
       },
       {
         name: "billing",
         href: "/settings/organizations/billing",
+      },
+      {
+        name: "directory_sync",
+        href: "/settings/organizations/dsync",
       },
     ],
   },
@@ -127,9 +142,10 @@ const tabs: VerticalTabItemProps[] = [
 ];
 
 tabs.find((tab) => {
-  // Add "SAML SSO" to the tab
-  if (tab.name === "security" && HOSTED_CAL_FEATURES) {
+  if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
     tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
+    // TODO: Enable dsync for self hosters
+    // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
   }
 });
 
@@ -705,7 +721,7 @@ export function ShellHeader() {
           )}
           <div>
             {meta.title && isLocaleReady ? (
-              <h1 className="font-cal text-emphasis mb-1 text-xl font-bold leading-5 tracking-wide">
+              <h1 className="font-cal text-emphasis mb-1 text-xl font-semibold leading-5 tracking-wide">
                 {t(meta.title)}
               </h1>
             ) : (
