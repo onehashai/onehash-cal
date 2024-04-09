@@ -23,7 +23,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 
   if (!accounts) {
     console.error("Account is missing.");
-    return res.status(500).json({ error: ErrorCode.InternalServerError });
+    return res.status(200).json({ message: "No Session Info." });
   }
   let accessToken;
   accounts.accounts.forEach((account) => {
