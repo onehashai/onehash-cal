@@ -19,7 +19,7 @@ import {
 } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 
-import { getBatchId, sendSendgridMail } from "../providers/sendgridProvider";
+import { cancelScheduledEmail, getBatchId, sendSendgridMail } from "../providers/sendgridProvider";
 import type { VariablesType } from "../templates/customTemplate";
 import customTemplate from "../templates/customTemplate";
 import emailReminderTemplate from "../templates/emailReminderTemplate";
@@ -360,22 +360,23 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
 
 export const deleteScheduledEmailReminder = async (reminderId: number, referenceId: string | null) => {
   try {
-    if (!referenceId) {
-      await prisma.workflowReminder.delete({
-        where: {
-          id: reminderId,
-        },
-      });
+    // if (!referenceId) {
+    //   return;
+    // }
 
-      return;
-    }
+    // await prisma.workflowReminder.update({
+    //   where: {
+    //     id: reminderId,
+    //   },
+    //   data: {
+    //     cancelled: true,
+    //   },
+    // });
 
-    await prisma.workflowReminder.update({
+    if (referenceId) await cancelScheduledEmail(referenceId);
+    await prisma.workflowReminder.delete({
       where: {
         id: reminderId,
-      },
-      data: {
-        cancelled: true,
       },
     });
   } catch (error) {

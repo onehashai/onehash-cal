@@ -1,9 +1,10 @@
+import { getBookingWithResponses } from "@calcom/features/bookings/lib/get-booking";
 import { parseRecurringEvent } from "@calcom/lib";
 import type { PrismaClient } from "@calcom/prisma";
 import { bookingMinimalSelect } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
-import { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
+import { eventTypeBookingFields, EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 
 import type { TrpcSessionUser } from "../../../trpc";
 import type { TGetInputSchema } from "./get.schema";
@@ -218,8 +219,10 @@ async function getBookings({
           select: {
             id: true,
             name: true,
+            slug: true,
           },
         },
+        bookingFields: true,
       },
     },
     status: true,
@@ -237,6 +240,7 @@ async function getBookings({
         id: true,
         name: true,
         email: true,
+        username: true,
       },
     },
     rescheduled: true,
@@ -257,6 +261,15 @@ async function getBookings({
         },
       },
     },
+    cancellationReason: true,
+    workflowReminders: {
+      select: {
+        referenceId: true,
+        id: true,
+        method: true,
+      },
+    },
+    responses: true,
   };
 
   const [
@@ -432,9 +445,10 @@ async function getBookings({
       booking.attendees = booking.attendees.filter((attendee) => attendee.email === user.email);
     }
     return {
-      ...booking,
+      ...getBookingWithResponses(booking),
       eventType: {
         ...booking.eventType,
+        bookingFields: eventTypeBookingFields.parse(booking.eventType?.bookingFields || []),
         recurringEvent: parseRecurringEvent(booking.eventType?.recurringEvent),
         price: booking.eventType?.price || 0,
         currency: booking.eventType?.currency || "usd",
@@ -444,5 +458,6 @@ async function getBookings({
       endTime: booking.endTime.toISOString(),
     };
   });
+
   return { bookings, recurringInfo };
 }

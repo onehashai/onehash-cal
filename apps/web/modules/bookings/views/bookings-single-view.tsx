@@ -88,7 +88,7 @@ const useBrandColors = ({
   useBrandTheme(brandTheme);
 };
 
-export default function Success(props: PageProps) {
+export default function BookingDetailsView(props: PageProps) {
   const { t } = useLocale();
   const router = useRouter();
   const routerQuery = useRouterQuery();
@@ -819,8 +819,8 @@ const DisplayLocation = ({
     <p className={className}>{locationToDisplay}</p>
   );
 
-Success.isBookingPage = true;
-Success.PageWrapper = PageWrapper;
+BookingDetailsView.isBookingPage = true;
+BookingDetailsView.PageWrapper = PageWrapper;
 
 type RecurringBookingsProps = {
   eventType: PageProps["eventType"];
