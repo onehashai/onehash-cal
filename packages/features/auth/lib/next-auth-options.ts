@@ -627,13 +627,6 @@ export const AUTH_OPTIONS: AuthOptions = {
       return calendsoSession;
     },
     async signIn(params) {
-      const { user, account, profile } = params;
-      if ("refresh_expires_in" in account) {
-        delete account.refresh_expires_in;
-      }
-      if ("not-before-policy" in account) {
-        delete account["not-before-policy"];
-      }
       const {
         /**
          * Available when Credentials provider is used - Has the value returned by authorize callback
@@ -645,7 +638,12 @@ export const AUTH_OPTIONS: AuthOptions = {
         profile,
         account,
       } = params;
-
+      if ("refresh_expires_in" in account) {
+        delete account.refresh_expires_in;
+      }
+      if ("not-before-policy" in account) {
+        delete account["not-before-policy"];
+      }
       log.debug("callbacks:signin", safeStringify(params));
 
       if (account?.provider === "email") {
