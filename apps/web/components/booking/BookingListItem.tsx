@@ -645,7 +645,21 @@ function BookingListItem(booking: BookingItemProps) {
                   {booking.attendees.map((attendee: any, i: number) => (
                     <p key={attendee.email} className="text-subtle text-sm">
                       {attendee.name}{" "}
-                      {booking.payment.length != 0 && (booking.payment[i].success ? "- Paid" : "- Not Paid")}
+                      {booking.payment.length != 0 &&
+                        (booking.payment[i].success ? "- [Paid]" : "- [Not Paid]")}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-row items-center">
+                <div className="mr-4">
+                  <p className="text-emphasis text-sm leading-6">Invitee Email</p>
+                </div>
+                <div>
+                  {booking.attendees.map((attendee: any, i: number) => (
+                    <p key={attendee.email} className="text-subtle text-sm">
+                      {attendee.email}
                     </p>
                   ))}
                 </div>
@@ -713,18 +727,24 @@ function BookingListItem(booking: BookingItemProps) {
                   );
                 })}
             </div>
-            <div className="mt-2 flex min-h-full  flex-col items-start justify-center gap-2  md:items-center">
-              <Button className="w-fit" color="secondary" onClick={() => setShowRTE(true)}>
+            <div className="mt-2 flex min-h-full flex-col  justify-center gap-2 ">
+              <Button
+                className="flex w-full justify-center"
+                color="secondary"
+                onClick={() => setShowRTE(true)}>
                 {t("meeting_notes")}
               </Button>
               {isPast && (
-                <Button className="w-fit" color="secondary" onClick={() => setMarkNoShowDialogIsOpen(true)}>
+                <Button
+                  className="flex w-full justify-center "
+                  color="secondary"
+                  onClick={() => setMarkNoShowDialogIsOpen(true)}>
                   {t("mark_no_show")}
                 </Button>
               )}
               {isPast && (
                 <Button
-                  className="w-fit"
+                  className="flex w-full justify-center"
                   color="secondary"
                   onClick={() => window.open(reinviteeAttendeeLink, "_blank")}>
                   {t("reinvitee_attendee")}
