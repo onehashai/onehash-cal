@@ -22,7 +22,10 @@ const logoutUserFromKeycloak = async (refresh_token: string, access_token: strin
         "Content-Type": "application/x-www-form-urlencoded",
       },
     });
-    console.log("response", response);
+    if (!response.ok) {
+      console.error(response);
+      throw new Error("Failed to logout user from Keycloak");
+    }
     return response.status;
   } catch (err) {
     console.log(err);
@@ -58,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (refreshToken && accessToken) {
     try {
       const result = await logoutUserFromKeycloak(refreshToken, accessToken);
-      if (result === 200) {
+      if (result === 204) {
         await prisma.account.deleteMany({
           where: { userId: session.user.id },
         });
