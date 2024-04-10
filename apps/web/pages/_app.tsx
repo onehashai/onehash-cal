@@ -12,7 +12,7 @@ import "../styles/globals.css";
 
 function MyApp(props: AppProps) {
   useEffect(() => {
-    fetch("api/auth/keycloak/userinfo")
+    fetch("/api/auth/keycloak/userinfo")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");

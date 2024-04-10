@@ -22,6 +22,7 @@ const logoutUserFromKeycloak = async (refresh_token: string, access_token: strin
         "Content-Type": "application/x-www-form-urlencoded",
       },
     });
+
     return response.status;
   } catch (err) {
     console.log(err);
