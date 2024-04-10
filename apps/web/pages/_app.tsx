@@ -20,7 +20,7 @@ function MyApp(props: AppProps) {
         return response.json();
       })
       .then((data) => {
-        if (data.message === "Session expired. Please log in again.") {
+        if (data.message === "Session expired. Please log in again." || data.message === "No Session Info.") {
           signOut();
         }
       })
