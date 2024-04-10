@@ -7,14 +7,14 @@ import prisma from "@calcom/prisma";
 const logoutUserFromKeycloak = async (refresh_token: string, access_token: string) => {
   const clientId = process.env.KEYCLOAK_CLIENT_ID;
   const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET;
-  const endsessionURL = new URL(`${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/logout`);
+  const endsessionURL = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/logout`;
 
   try {
     const response = await fetch(endsessionURL, {
       method: "POST",
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
+      body: new URLSearchParams({
+        client_id: clientId ?? "",
+        client_secret: clientSecret ?? "",
         refresh_token: refresh_token,
       }),
       headers: {
@@ -22,7 +22,7 @@ const logoutUserFromKeycloak = async (refresh_token: string, access_token: strin
         "Content-Type": "application/x-www-form-urlencoded",
       },
     });
-
+    console.log("response", response);
     return response.status;
   } catch (err) {
     console.log(err);
@@ -59,6 +59,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const result = await logoutUserFromKeycloak(refreshToken, accessToken);
       if (result === 200) {
+        await prisma.account.deleteMany({
+          where: { userId: session.user.id },
+        });
         return res.status(200).json({ result });
       }
       return res.status(500).json({ message: "Invalid Response from Keycloak" });

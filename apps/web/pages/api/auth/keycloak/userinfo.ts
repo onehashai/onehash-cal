@@ -7,8 +7,12 @@ import prisma from "@calcom/prisma";
 
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession({ req, res });
+  console.log("session", session);
   if (!session) {
-    return res.status(401).json({ message: "Not authenticated" });
+    //redirect to login page
+    return res.writeHead(302, { Location: "/auth/login" }).end();
+
+    // return res.status(401).json({ message: "Not authenticated" });
   }
 
   if (!session.user?.id) {
