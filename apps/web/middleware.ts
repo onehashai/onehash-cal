@@ -24,6 +24,7 @@ const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const requestHeaders = new Headers(req.headers);
 
   requestHeaders.set("x-url", req.url);
+  requestHeaders.set("Access-Control-Allow-Origin", "*");
 
   if (!url.pathname.startsWith("/api")) {
     //

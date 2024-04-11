@@ -70,6 +70,7 @@ class MyDocument extends Document<Props> {
               __html: `window.calNewLocale = "${newLocale}";`,
             }}
           />
+          {/* Microsoft Clarity Script */}
           <script
             id="microsoft-clarity-init"
             dangerouslySetInnerHTML={{

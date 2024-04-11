@@ -19,7 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { redirect_url } = await oauthController.oidcAuthzResponse({ code, state });
-    console.log(redirect_url);
     if (!redirect_url) {
       throw new HttpError({
         message: "No redirect URL found",

@@ -8,6 +8,7 @@ import { identityProviderNameMap } from "@calcom/features/auth/lib/identityProvi
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { classNames } from "@calcom/lib";
+import { IS_PRODUCTION } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { IdentityProvider } from "@calcom/prisma/enums";
 import { userMetadata as userMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -26,6 +27,7 @@ import {
   SkeletonContainer,
   SkeletonText,
 } from "@calcom/ui";
+import { ExternalLink } from "@calcom/ui/components/icon";
 
 import PageWrapper from "@components/PageWrapper";
 
@@ -161,6 +163,9 @@ const PasswordView = ({ user }: PasswordViewProps) => {
 
   const passwordMinLength = data?.user.role === "USER" ? 7 : 7;
   const isUser = data?.user.role === "USER";
+  const userHref = IS_PRODUCTION
+    ? "https://sso.onehash.ai/realms/OneHash/account"
+    : "http://localhost:8080/realms/OneHash/account";
 
   return (
     <>
@@ -169,15 +174,24 @@ const PasswordView = ({ user }: PasswordViewProps) => {
         <div className="border-subtle rounded-b-xl border border-t-0 px-4 py-6 sm:px-6">
           <h2 className="font-cal text-emphasis text-lg font-medium leading-6">
             {t("account_managed_by_identity_provider", {
-              provider: identityProviderNameMap[user.identityProvider],
+              provider:
+                identityProviderNameMap[user.identityProvider] === "keycloak"
+                  ? "OneHash"
+                  : identityProviderNameMap[user.identityProvider],
             })}
           </h2>
 
-          <p className="text-subtle mt-1 text-sm">
+          <p className="text-subtle mb-1 mt-1 text-sm">
             {t("account_managed_by_identity_provider_description", {
-              provider: identityProviderNameMap[user.identityProvider],
+              provider:
+                identityProviderNameMap[user.identityProvider] === "keycloak"
+                  ? "OneHash"
+                  : identityProviderNameMap[user.identityProvider],
             })}
           </p>
+          <Button color="primary" href={userHref} target="_blank" EndIcon={ExternalLink}>
+            {t("OneHash account")}
+          </Button>
         </div>
       ) : (
         <Form form={formMethods} handleSubmit={handleSubmit}>

@@ -145,3 +145,7 @@ export const BOOKER_NUMBER_OF_DAYS_TO_LOAD = parseInt(
   process.env.NEXT_PUBLIC_BOOKER_NUMBER_OF_DAYS_TO_LOAD ?? "0",
   0
 );
+
+export const SSO_BASE_URL = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/auth`;
+export const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID;
+export const KEYCLOAK_CALLBACK_URI = process.env.KEYCLOAK_CALLBACK_URI;

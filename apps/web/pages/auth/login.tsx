@@ -1,16 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import classNames from "classnames";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
-import { FaGoogle } from "react-icons/fa";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { SAMLLogin } from "@calcom/features/auth/SAMLLogin";
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { WEBAPP_URL, HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
@@ -18,7 +15,7 @@ import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
-import { Alert, Button, EmailField, PasswordField } from "@calcom/ui";
+import { Button } from "@calcom/ui";
 import { ArrowLeft, Lock } from "@calcom/ui/components/icon";
 
 import type { inferSSRProps } from "@lib/types/inferSSRProps";
@@ -26,9 +23,7 @@ import type { WithNonceProps } from "@lib/withNonce";
 
 import AddToHomescreen from "@components/AddToHomescreen";
 import PageWrapper from "@components/PageWrapper";
-import BackupCode from "@components/auth/BackupCode";
-import TwoFactor from "@components/auth/TwoFactor";
-import AuthContainer from "@components/ui/AuthContainer";
+import RedirectLoader from "@components/RedirectLoader";
 
 import { getServerSideProps } from "@server/lib/auth/login/getServerSideProps";
 
@@ -168,13 +163,23 @@ inferSSRProps<typeof getServerSideProps> & WithNonceProps<{}>) {
     [error]
   );
 
+  useEffect(() => {
+    const redirectToKeycloak = async () => {
+      setTimeout(() => {
+        signIn("keycloak");
+      }, 3000);
+    };
+
+    redirectToKeycloak();
+  }, []);
+
   const displaySSOLogin = HOSTED_CAL_FEATURES
     ? true
     : isSAMLLoginEnabled && !isPending && data?.connectionExists;
 
   return (
-    <div className="dark:bg-brand dark:text-brand-contrast text-emphasis min-h-screen [--cal-brand-emphasis:#101010] [--cal-brand-subtle:#9CA3AF] [--cal-brand-text:white] [--cal-brand:#111827] dark:[--cal-brand-emphasis:#e1e1e1] dark:[--cal-brand-text:black] dark:[--cal-brand:white]">
-      <AuthContainer
+    <div className="dark:bg-brand dark:text-brand-contrast text-emphasis flex min-h-screen items-center justify-center [--cal-brand-emphasis:#101010] [--cal-brand-subtle:#9CA3AF] [--cal-brand-text:white] [--cal-brand:#111827] dark:[--cal-brand-emphasis:#e1e1e1] dark:[--cal-brand-text:black] dark:[--cal-brand:white]">
+      {/* <AuthContainer
         title={t("login")}
         description={t("login")}
         showLogo
@@ -263,7 +268,8 @@ inferSSRProps<typeof getServerSideProps> & WithNonceProps<{}>) {
             </>
           )}
         </FormProvider>
-      </AuthContainer>
+      </AuthContainer> */}
+      <RedirectLoader />
       <AddToHomescreen />
     </div>
   );

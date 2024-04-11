@@ -21,6 +21,7 @@ type Props = inferSSRProps<typeof getServerSideProps>;
 export function Logout(props: Props) {
   const [btnLoading, setBtnLoading] = useState<boolean>(false);
   const { status } = useSession();
+
   if (status === "authenticated") signOut({ redirect: false });
   const router = useRouter();
   useEffect(() => {
