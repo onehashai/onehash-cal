@@ -23,6 +23,11 @@ const querySchema = z.object({
 });
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  //redirect to sso login page as of now
+  ctx.res.writeHead(302, { Location: "/auth/login" });
+  ctx.res.end();
+  return { props: {} };
+
   const prisma = await import("@calcom/prisma").then((mod) => mod.default);
   const signupDisabled = await getFeatureFlag(prisma, "disable-signup");
   const ssr = await ssrInit(ctx);
