@@ -1,6 +1,6 @@
 import React from "react";
 
-import { CAL_URL, LOGO, WEBAPP_URL } from "./constants";
+import { CAL_URL, WEBAPP_URL } from "./constants";
 
 // Ensures tw prop is typed.
 declare module "react" {
@@ -140,7 +140,7 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
     <Wrapper variant="dark">
       <div tw="h-full flex flex-col justify-start">
         <div tw="flex items-center justify-center" style={{ fontFamily: "cal", fontWeight: 300 }}>
-          <img src={`${WEBAPP_URL}/${LOGO}`} width="350" alt="Logo" />
+          <img src={OG_IMAGE} width="350" alt="Logo" />
           {avatars.length > 0 && (
             <div style={{ color: "#111827" }} tw="font-bold text-[92px] mx-8 bottom-2">
               /
@@ -214,7 +214,7 @@ const VisualBlur = ({ visualSlug }: { visualSlug: string }) => {
 
 export const App = ({ name, description, slug }: AppImageProps) => (
   <Wrapper>
-    <img src={`${WEBAPP_URL}/${LOGO}`} width="150" alt="Logo" tw="absolute right-[48px] top-[48px]" />
+    <img src={OG_IMAGE} width="150" alt="Logo" tw="absolute right-[48px] top-[48px]" />
 
     <VisualBlur visualSlug={slug} />
 
@@ -238,7 +238,7 @@ export const Generic = ({ title, description }: GenericImageProps) => (
   <Wrapper>
     <div tw="h-full flex flex-col justify-start">
       <div tw="flex items-center justify-center" style={{ fontFamily: "cal", fontWeight: 300 }}>
-        <img src={`${WEBAPP_URL}/cal-logo-word-black.svg`} width="350" alt="Logo" />
+        <img src={OG_IMAGE} width="350" alt="Logo" />
       </div>
 
       <div style={{ color: "#111827" }} tw="relative flex text-[54px] w-full flex-col mt-auto">
