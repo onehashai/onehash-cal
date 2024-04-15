@@ -45,7 +45,7 @@ export const listLocalHandler = async ({ ctx, input }: ListLocalOptions) => {
     const dbData = dbApps.find((dbApp) => dbApp.slug === app.slug);
 
     // If the app already contains keys then return
-    if (dbData?.keys) {
+    if (dbData?.keys != undefined) {
       return {
         name: app.name,
         slug: app.slug,
@@ -65,14 +65,12 @@ export const listLocalHandler = async ({ ctx, input }: ListLocalOptions) => {
 
     const keys: Record<string, string> = {};
 
-    // `typeof val === 'undefined'` is always slower than !== undefined comparison
-    // it is important to avoid string to string comparisons as much as we can
-    if (keysSchema !== undefined) {
-      // TODO: Why don't we parse with schema here? Not doing it makes default() not work in schema.
-      Object.values(keysSchema.keyof()._def.values).reduce((keysObject, key) => {
-        keys[key as string] = "";
-        return keysObject;
-      }, {} as Record<string, string>);
+    if (keysSchema) {
+      const schemaKeys = keysSchema.shape;
+
+      for (const key of Object.keys(schemaKeys)) {
+        keys[key] = "";
+      }
     }
 
     return {

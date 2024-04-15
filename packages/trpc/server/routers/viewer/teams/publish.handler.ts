@@ -4,7 +4,7 @@ import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-
 import {
   purchaseTeamSubscription,
   updateQuantitySubscriptionFromStripe,
-} from "@calcom/features/ee/teams/lib/payments";
+} from "@calcom/features/oe/teams/lib/payments";
 import { IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { isOrganisationAdmin } from "@calcom/lib/server/queries/organisations";
 import { isTeamAdmin } from "@calcom/lib/server/queries/teams";
@@ -57,13 +57,13 @@ const generateCheckoutSession = async ({
 };
 
 const publishOrganizationTeamHandler = async ({ ctx, input }: PublishOptions) => {
-  if (!ctx.user.organizationId) throw new TRPCError({ code: "UNAUTHORIZED" });
+  if (!ctx.user.profile?.organizationId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-  if (!isOrganisationAdmin(ctx.user.id, ctx.user?.organizationId))
+  if (!isOrganisationAdmin(ctx.user.id, ctx.user?.profile.organizationId))
     throw new TRPCError({ code: "UNAUTHORIZED" });
 
   const createdTeam = await prisma.team.findFirst({
-    where: { id: input.teamId, parentId: ctx.user.organizationId },
+    where: { id: input.teamId, parentId: ctx.user.profile?.organizationId },
     include: {
       parent: {
         include: {
@@ -109,7 +109,7 @@ const publishOrganizationTeamHandler = async ({ ctx, input }: PublishOptions) =>
 };
 
 export const publishHandler = async ({ ctx, input }: PublishOptions) => {
-  if (ctx.user.organizationId) return publishOrganizationTeamHandler({ ctx, input });
+  if (ctx.user.profile?.organizationId) return publishOrganizationTeamHandler({ ctx, input });
 
   if (!(await isTeamAdmin(ctx.user.id, input.teamId))) throw new TRPCError({ code: "UNAUTHORIZED" });
   const { teamId: id } = input;

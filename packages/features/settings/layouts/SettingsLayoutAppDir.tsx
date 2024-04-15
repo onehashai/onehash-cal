@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
 import React, { Suspense, useEffect, useState } from "react";
 
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
 import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
@@ -704,7 +704,7 @@ export function ShellHeader() {
           )}
           <div>
             {meta.title && isLocaleReady ? (
-              <h1 className="font-cal text-emphasis mb-1 text-xl font-bold leading-5 tracking-wide">
+              <h1 className="font-cal text-emphasis mb-1 text-xl font-semibold leading-5 tracking-wide">
                 {t(meta.title)}
               </h1>
             ) : (

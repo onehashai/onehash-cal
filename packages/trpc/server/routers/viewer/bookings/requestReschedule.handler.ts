@@ -6,14 +6,14 @@ import { CalendarEventBuilder } from "@calcom/core/builders/CalendarEvent/builde
 import { CalendarEventDirector } from "@calcom/core/builders/CalendarEvent/director";
 import { deleteMeeting } from "@calcom/core/videoClient";
 import dayjs from "@calcom/dayjs";
-import { deleteScheduledEmailReminder } from "@calcom/ee/workflows/lib/reminders/emailReminderManager";
-import { deleteScheduledSMSReminder } from "@calcom/ee/workflows/lib/reminders/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/ee/workflows/lib/reminders/whatsappReminderManager";
 import { sendRequestRescheduleEmail } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { cancelScheduledJobs } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
+import { deleteScheduledEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/emailReminderManager";
+import { deleteScheduledSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/smsReminderManager";
+import { deleteScheduledWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/whatsappReminderManager";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
@@ -53,6 +53,7 @@ export const requestRescheduleHandler = async ({ ctx, input }: RequestReschedule
       startTime: true,
       endTime: true,
       eventTypeId: true,
+      userPrimaryEmail: true,
       eventType: {
         include: {
           team: {
@@ -127,7 +128,6 @@ export const requestRescheduleHandler = async ({ ctx, input }: RequestReschedule
     event = await prisma.eventType.findFirstOrThrow({
       select: {
         title: true,
-        users: true,
         schedulingType: true,
         recurringEvent: true,
       },
@@ -181,14 +181,18 @@ export const requestRescheduleHandler = async ({ ctx, input }: RequestReschedule
 
   const userTranslation = await getTranslation(user.locale ?? "en", "common");
   const [userAsPeopleType] = usersToPeopleType([user], userTranslation);
+  const organizer = {
+    ...userAsPeopleType,
+    email: bookingToReschedule?.userPrimaryEmail ?? userAsPeopleType.email,
+  };
 
   const builder = new CalendarEventBuilder();
   const eventType = bookingToReschedule.eventType;
   builder.init({
     title: bookingToReschedule.title,
     bookerUrl: eventType?.team
-      ? await getBookerBaseUrl({ organizationId: eventType.team.parentId })
-      : await getBookerBaseUrl(user),
+      ? await getBookerBaseUrl(eventType.team.parentId)
+      : await getBookerBaseUrl(user.profile?.organizationId ?? null),
     type: event && event.slug ? event.slug : bookingToReschedule.title,
     startTime: bookingToReschedule.startTime.toISOString(),
     endTime: bookingToReschedule.endTime.toISOString(),
@@ -197,7 +201,7 @@ export const requestRescheduleHandler = async ({ ctx, input }: RequestReschedule
       bookingToReschedule.attendees as unknown as PersonAttendeeCommonFields[],
       tAttendees
     ),
-    organizer: userAsPeopleType,
+    organizer,
     iCalUID: bookingToReschedule.iCalUID,
   });
 
@@ -213,7 +217,7 @@ export const requestRescheduleHandler = async ({ ctx, input }: RequestReschedule
 
   // Handling calendar and videos cancellation
   // This can set previous time as available, until virtual calendar is done
-  const credentials = await getUsersCredentials(user.id);
+  const credentials = await getUsersCredentials(user);
   const credentialsMap = new Map();
   credentials.forEach((credential) => {
     credentialsMap.set(credential.type, credential);
@@ -258,7 +262,7 @@ export const requestRescheduleHandler = async ({ ctx, input }: RequestReschedule
     }),
     startTime: bookingToReschedule?.startTime ? dayjs(bookingToReschedule.startTime).format() : "",
     endTime: bookingToReschedule?.endTime ? dayjs(bookingToReschedule.endTime).format() : "",
-    organizer: userAsPeopleType,
+    organizer,
     attendees: usersToPeopleType(
       // username field doesn't exists on attendee but could be in the future
       bookingToReschedule.attendees as unknown as PersonAttendeeCommonFields[],

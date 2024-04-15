@@ -11,7 +11,7 @@ import type { ParsedUrlQuery } from "querystring";
 import type { PropsWithChildren, ReactNode } from "react";
 import { useEffect } from "react";
 
-import { OrgBrandingProvider } from "@calcom/features/ee/organizations/context/provider";
+import { OrgBrandingProvider } from "@calcom/features/oe/organizations/context/provider";
 import DynamicHelpscoutProvider from "@calcom/features/ee/support/lib/helpscout/providerDynamic";
 import DynamicIntercomProvider from "@calcom/features/ee/support/lib/intercom/providerDynamic";
 import { FeatureProvider } from "@calcom/features/flags/context/provider";
@@ -127,9 +127,9 @@ const enum ThemeSupport {
   // e.g. Login Page
   None = "none",
   // Entire App except Booking Pages
-  App = "systemOnly",
+  App = "appConfigured",
   // Booking Pages(including Routing Forms)
-  Booking = "userConfigured",
+  Booking = "bookingConfigured",
 }
 
 type CalcomThemeProps = PropsWithChildren<
@@ -144,8 +144,10 @@ const CalcomThemeProvider = (props: CalcomThemeProps) => {
   const embedNamespace = getEmbedNamespace(props.router.query);
   const isEmbedMode = typeof embedNamespace === "string";
 
+  const themeProviderProps = getThemeProviderProps({ props, isEmbedMode, embedNamespace });
+
   return (
-    <ThemeProvider {...getThemeProviderProps({ props, isEmbedMode, embedNamespace })}>
+    <ThemeProvider {...themeProviderProps}>
       {/* Embed Mode can be detected reliably only on client side here as there can be static generated pages as well which can't determine if it's embed mode at backend */}
       {/* color-scheme makes background:transparent not work in iframe which is required by embed. */}
       {typeof window !== "undefined" && !isEmbedMode && (

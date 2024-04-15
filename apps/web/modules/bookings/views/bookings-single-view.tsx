@@ -14,17 +14,21 @@ import BookingPageTagManager from "@calcom/app-store/BookingPageTagManager";
 import type { getEventLocationValue } from "@calcom/app-store/locations";
 import { getSuccessPageLocationMessage, guessEventLocationType } from "@calcom/app-store/locations";
 import { getEventTypeAppData } from "@calcom/app-store/utils";
+import type { nameObjectSchema } from "@calcom/core/event";
 import { getEventName } from "@calcom/core/event";
 import type { ConfigType } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";
 import {
-  sdkActionManager,
   useEmbedNonStylesConfig,
   useIsBackgroundTransparent,
   useIsEmbed,
 } from "@calcom/embed-core/embed-iframe";
 import { Price } from "@calcom/features/bookings/components/event-meta/Price";
-import { SMS_REMINDER_NUMBER_FIELD, SystemField } from "@calcom/features/bookings/lib/SystemField";
+import {
+  SMS_REMINDER_NUMBER_FIELD,
+  SystemField,
+  TITLE_FIELD,
+} from "@calcom/features/bookings/lib/SystemField";
 import { APP_NAME } from "@calcom/lib/constants";
 import {
   formatToLocalizedDate,
@@ -41,7 +45,7 @@ import { getIs24hClockFromLocalStorage, isBrowserLocale24h } from "@calcom/lib/t
 import { localStorage } from "@calcom/lib/webstorage";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
-import { Alert, Badge, Button, EmailInput, HeadSeo, useCalcomTheme } from "@calcom/ui";
+import { Alert, Badge, Button, EmailInput, HeadSeo, useBrandTheme } from "@calcom/ui";
 import { AlertCircle, Calendar, Check, ChevronLeft, ExternalLink, X } from "@calcom/ui/components/icon";
 
 import { timeZone } from "@lib/clock";
@@ -81,15 +85,17 @@ const useBrandColors = ({
     lightVal: brandColor,
     darkVal: darkBrandColor,
   });
-  useCalcomTheme(brandTheme);
+  useBrandTheme(brandTheme);
 };
 
-export default function Success(props: PageProps) {
+export default function BookingDetailsView(props: PageProps) {
   const { t } = useLocale();
   const router = useRouter();
   const routerQuery = useRouterQuery();
   const pathname = usePathname();
   const searchParams = useCompatSearchParams();
+  const { eventType, bookingInfo, requiresLoginToUpdate } = props;
+
   const {
     allRemainingBookings,
     isSuccessBookingPage,
@@ -99,35 +105,28 @@ export default function Success(props: PageProps) {
     seatReferenceUid,
   } = querySchema.parse(routerQuery);
 
-  const attendeeTimeZone = props?.bookingInfo?.attendees.find(
-    (attendee) => attendee.email === email
-  )?.timeZone;
+  const attendeeTimeZone = bookingInfo?.attendees.find((attendee) => attendee.email === email)?.timeZone;
 
   const tz = props.tz ? props.tz : isSuccessBookingPage && attendeeTimeZone ? attendeeTimeZone : timeZone();
 
-  const location = props.bookingInfo.location as ReturnType<typeof getEventLocationValue>;
+  const location = bookingInfo.location as ReturnType<typeof getEventLocationValue>;
   let rescheduleLocation: string | undefined;
   if (
-    typeof props.bookingInfo.responses.location === "object" &&
-    "optionValue" in props.bookingInfo.responses.location
+    typeof bookingInfo.responses?.location === "object" &&
+    "optionValue" in bookingInfo.responses.location
   ) {
-    rescheduleLocation = props.bookingInfo.responses.location.optionValue;
+    rescheduleLocation = bookingInfo.responses.location.optionValue;
   }
 
   const locationVideoCallUrl: string | undefined = bookingMetadataSchema.parse(
-    props?.bookingInfo?.metadata || {}
+    bookingInfo?.metadata || {}
   )?.videoCallUrl;
 
-  const status = props.bookingInfo?.status;
-  const reschedule = props.bookingInfo.status === BookingStatus.ACCEPTED;
-  const cancellationReason = props.bookingInfo.cancellationReason || props.bookingInfo.rejectionReason;
+  const status = bookingInfo?.status;
+  const reschedule = bookingInfo.status === BookingStatus.ACCEPTED;
+  const cancellationReason = bookingInfo.cancellationReason || bookingInfo.rejectionReason;
 
-  const attendeeName =
-    typeof props?.bookingInfo?.attendees?.[0]?.name === "string"
-      ? props?.bookingInfo?.attendees?.[0]?.name
-      : "Nameless";
-
-  const attendees = props?.bookingInfo?.attendees;
+  const attendees = bookingInfo?.attendees;
 
   const isGmail = !!attendees.find((attendee) => attendee.email.includes("gmail.com"));
 
@@ -136,15 +135,14 @@ export default function Success(props: PageProps) {
   );
   const { data: session } = useSession();
 
-  const [date, setDate] = useState(dayjs.utc(props.bookingInfo.startTime));
-  const { eventType, bookingInfo } = props;
+  const [date, setDate] = useState(dayjs.utc(bookingInfo.startTime));
 
   const isBackgroundTransparent = useIsBackgroundTransparent();
   const isEmbed = useIsEmbed();
   const shouldAlignCentrallyInEmbed = useEmbedNonStylesConfig("align") !== "left";
   const shouldAlignCentrally = !isEmbed || shouldAlignCentrallyInEmbed;
   const [calculatedDuration, setCalculatedDuration] = useState<number | undefined>(undefined);
-  const { requiresLoginToUpdate } = props;
+
   function setIsCancellationMode(value: boolean) {
     const _searchParams = new URLSearchParams(searchParams ?? undefined);
 
@@ -159,13 +157,13 @@ export default function Success(props: PageProps) {
     router.replace(`${pathname}?${_searchParams.toString()}`);
   }
 
-  let evtName = props.eventType.eventName;
+  let evtName = eventType.eventName;
   if (eventType.isDynamic && bookingInfo.responses?.title) {
     evtName = bookingInfo.responses.title as string;
   }
   const eventNameObject = {
-    attendeeName,
-    eventType: props.eventType.title,
+    attendeeName: bookingInfo.responses.name as z.infer<typeof nameObjectSchema> | string,
+    eventType: eventType.title,
     eventName: evtName,
     host: props.profile.name || "Nameless",
     location: location,
@@ -199,22 +197,6 @@ export default function Success(props: PageProps) {
   }, [telemetry]); */
 
   useEffect(() => {
-    const users = eventType.users;
-    if (!sdkActionManager) return;
-    // TODO: We should probably make it consistent with Webhook payload. Some data is not available here, as and when requirement comes we can add
-    sdkActionManager.fire("bookingSuccessful", {
-      booking: bookingInfo,
-      eventType,
-      date: date.toString(),
-      duration: calculatedDuration,
-      organizer: {
-        name: users[0].name || "Nameless",
-        email: users[0].email || "Email-less",
-        timeZone: users[0].timeZone,
-      },
-      confirmed: !needsConfirmation,
-      // TODO: Add payment details
-    });
     setDate(
       date.tz(localStorage.getItem("timeOption.preferredTimeZone") || dayjs.tz.guess() || "Europe/London")
     );
@@ -223,9 +205,7 @@ export default function Success(props: PageProps) {
   }, [eventType, needsConfirmation]);
 
   useEffect(() => {
-    setCalculatedDuration(
-      dayjs(props.bookingInfo.endTime).diff(dayjs(props.bookingInfo.startTime), "minutes")
-    );
+    setCalculatedDuration(dayjs(bookingInfo.endTime).diff(dayjs(bookingInfo.startTime), "minutes"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -245,7 +225,7 @@ export default function Success(props: PageProps) {
       ],
       startInputType: "utc",
       title: eventName,
-      description: props.eventType.description ? props.eventType.description : undefined,
+      description: eventType.description ? eventType.description : undefined,
       /** formatted to required type of description ^ */
       duration: {
         minutes: calculatedDuration,
@@ -301,6 +281,16 @@ export default function Success(props: PageProps) {
 
   const providerName = guessEventLocationType(location)?.label;
   const rescheduleProviderName = guessEventLocationType(rescheduleLocation)?.label;
+
+  const bookingCancelledEventProps = {
+    booking: bookingInfo,
+    organizer: {
+      name: bookingInfo?.user?.name || "Nameless",
+      email: bookingInfo?.userPrimaryEmail || bookingInfo?.user?.email || "Email-less",
+      timeZone: bookingInfo?.user?.timeZone,
+    },
+    eventType,
+  };
 
   return (
     <div className={isEmbed ? "" : "h-screen"} data-testid="success-page">
@@ -360,7 +350,7 @@ export default function Success(props: PageProps) {
                     !giphyImage && !isCancelled && needsConfirmation
                       ? "bg-subtle h-12 w-12 rounded-full"
                       : "",
-                    isCancelled ? "bg-error h-12 w-12 rounded-full" : ""
+                    isCancelled ? "bg-error h-12 w-12 rounded-full " : ""
                   )}>
                   {giphyImage && !needsConfirmation && !isCancelled && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -424,7 +414,7 @@ export default function Success(props: PageProps) {
                       {reschedule && !!formerTime && (
                         <p className="line-through">
                           <RecurringBookings
-                            eventType={props.eventType}
+                            eventType={eventType}
                             duration={calculatedDuration}
                             recurringBookings={props.recurringBookings}
                             allRemainingBookings={allRemainingBookings}
@@ -436,7 +426,7 @@ export default function Success(props: PageProps) {
                         </p>
                       )}
                       <RecurringBookings
-                        eventType={props.eventType}
+                        eventType={eventType}
                         duration={calculatedDuration}
                         recurringBookings={props.recurringBookings}
                         allRemainingBookings={allRemainingBookings}
@@ -458,7 +448,9 @@ export default function Success(props: PageProps) {
                                 </span>
                                 <Badge variant="blue">{t("Host")}</Badge>
                               </div>
-                              <p className="text-default">{bookingInfo.user.email}</p>
+                              <p className="text-default">
+                                {bookingInfo?.userPrimaryEmail ?? bookingInfo.user.email}
+                              </p>
                             </div>
                           )}
                           {bookingInfo?.attendees.map((attendee) => (
@@ -531,7 +523,13 @@ export default function Success(props: PageProps) {
                       if (!field) return null;
                       const isSystemField = SystemField.safeParse(field.name);
                       // SMS_REMINDER_NUMBER_FIELD is a system field but doesn't have a dedicated place in the UI. So, it would be shown through the following responses list
-                      if (isSystemField.success && field.name !== SMS_REMINDER_NUMBER_FIELD) return null;
+                      // TITLE is also an identifier for booking question "What is this meeting about?"
+                      if (
+                        isSystemField.success &&
+                        field.name !== SMS_REMINDER_NUMBER_FIELD &&
+                        field.name !== TITLE_FIELD
+                      )
+                        return null;
 
                       const label = field.label || t(field.defaultLabel || "");
 
@@ -616,6 +614,7 @@ export default function Success(props: PageProps) {
                         theme={isSuccessBookingPage ? props.profile.theme : "light"}
                         allRemainingBookings={allRemainingBookings}
                         seatReferenceUid={seatReferenceUid}
+                        bookingCancelledEventProps={bookingCancelledEventProps}
                       />
                     </>
                   ))}
@@ -638,15 +637,15 @@ export default function Success(props: PageProps) {
                               .add(calculatedDuration, "minute")
                               .utc()
                               .format("YYYYMMDDTHHmmss[Z]")}&text=${eventName}&details=${
-                              props.eventType.description
+                              eventType.description
                             }${
                               typeof locationVideoCallUrl === "string"
                                 ? `&location=${encodeURIComponent(locationVideoCallUrl)}`
                                 : ""
                             }${
-                              props.eventType.recurringEvent
+                              eventType.recurringEvent
                                 ? `&recur=${encodeURIComponent(
-                                    new RRule(props.eventType.recurringEvent).toString()
+                                    new RRule(eventType.recurringEvent).toString()
                                   )}`
                                 : ""
                             }`}
@@ -664,7 +663,7 @@ export default function Success(props: PageProps) {
                             href={
                               encodeURI(
                                 `https://outlook.live.com/calendar/0/deeplink/compose?body=${
-                                  props.eventType.description
+                                  eventType.description
                                 }&enddt=${date
                                   .add(calculatedDuration, "minute")
                                   .utc()
@@ -691,7 +690,7 @@ export default function Success(props: PageProps) {
                             href={
                               encodeURI(
                                 `https://outlook.office.com/calendar/0/deeplink/compose?body=${
-                                  props.eventType.description
+                                  eventType.description
                                 }&enddt=${date
                                   .add(calculatedDuration, "minute")
                                   .utc()
@@ -717,7 +716,7 @@ export default function Success(props: PageProps) {
                           <Link
                             href={`data:text/calendar,${eventLink()}`}
                             className="border-subtle text-default mx-2 h-10 w-10 rounded-sm border px-3 py-2"
-                            download={`${props.eventType.title}.ics`}>
+                            download={`${eventType.title}.ics`}>
                             <svg
                               version="1.1"
                               fill="currentColor"
@@ -820,8 +819,8 @@ const DisplayLocation = ({
     <p className={className}>{locationToDisplay}</p>
   );
 
-Success.isBookingPage = true;
-Success.PageWrapper = PageWrapper;
+BookingDetailsView.isBookingPage = true;
+BookingDetailsView.PageWrapper = PageWrapper;
 
 type RecurringBookingsProps = {
   eventType: PageProps["eventType"];

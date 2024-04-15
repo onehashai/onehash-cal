@@ -5,8 +5,8 @@ import { Booker } from "@calcom/atoms";
 import { getBookerWrapperClasses } from "@calcom/features/bookings/Booker/utils/getBookerWrapperClasses";
 import { BookerSeo } from "@calcom/features/bookings/components/BookerSeo";
 import { getMultipleDurationValue } from "@calcom/features/bookings/lib/get-booking";
-import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
-import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import slugify from "@calcom/lib/slugify";
 import prisma from "@calcom/prisma";
 

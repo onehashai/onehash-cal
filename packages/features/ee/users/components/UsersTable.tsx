@@ -23,7 +23,7 @@ import {
 } from "@calcom/ui";
 import { Edit, Lock, Trash, User, VenetianMask } from "@calcom/ui/components/icon";
 
-import { withLicenseRequired } from "../../common/components/LicenseRequired";
+// import { withLicenseRequired } from "../../common/components/LicenseRequired";
 
 const { Cell, ColumnTitle, Header, Row } = Table;
 
@@ -176,6 +176,7 @@ function UsersTableBare() {
                     <Avatar
                       size="md"
                       alt={`Avatar of ${user.username || "Nameless"}`}
+                      // @ts-expect-error - Figure it out later. Ideally we should show all the profiles here for the user.
                       imageSrc={`${WEBAPP_URL}/${user.username}/avatar.png?orgId=${user.organizationId}`}
                     />
 
@@ -307,4 +308,5 @@ const DeleteUserDialog = ({
   );
 };
 
-export const UsersTable = withLicenseRequired(UsersTableBare);
+// export const UsersTable = withLicenseRequired(UsersTableBare);
+export const UsersTable = UsersTableBare;

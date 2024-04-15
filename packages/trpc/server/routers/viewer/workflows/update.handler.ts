@@ -4,19 +4,19 @@ import {
   isSMSOrWhatsappAction,
   isTextMessageToAttendeeAction,
   isTextMessageToSpecificNumber,
-} from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
+} from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
 import {
   deleteScheduledEmailReminder,
   scheduleEmailReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/emailReminderManager";
 import {
   deleteScheduledSMSReminder,
   scheduleSMSReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/smsReminderManager";
 import {
   deleteScheduledWhatsappReminder,
   scheduleWhatsappReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/managers/whatsappReminderManager";
 import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
@@ -84,7 +84,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
   }
   const hasPaidPlan = IS_SELF_HOSTED || isCurrentUsernamePremium || isTeamsPlan;
 
-  const hasOrgsPlan = IS_SELF_HOSTED || ctx.user.organizationId;
+  const hasOrgsPlan = IS_SELF_HOSTED || (ctx.user.profile?.organizationId ?? null);
 
   const where: Prisma.EventTypeWhereInput = {};
   where.id = {
@@ -147,7 +147,11 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
         id: newEventTypeId,
       },
       include: {
-        users: true,
+        users: {
+          select: {
+            id: true,
+          },
+        },
         team: {
           include: {
             members: true,
@@ -284,7 +288,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
                 ? {
                     language: { locale: booking.user.locale || defaultLocale },
                     name: booking.user.name || "",
-                    email: booking.user.email,
+                    email: booking?.userPrimaryEmail ?? booking.user.email,
                     timeZone: booking.user.timeZone,
                     timeFormat: getTimeFormatStringFromUserTimeFormat(booking.user.timeFormat),
                   }
@@ -521,7 +525,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
               ? {
                   language: { locale: booking.user.locale || defaultLocale },
                   name: booking.user.name || "",
-                  email: booking.user.email,
+                  email: booking?.userPrimaryEmail ?? booking.user.email,
                   timeZone: booking.user.timeZone,
                   timeFormat: getTimeFormatStringFromUserTimeFormat(booking.user.timeFormat),
                 }
@@ -665,7 +669,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
               organizer: booking.user
                 ? {
                     name: booking.user.name || "",
-                    email: booking.user.email,
+                    email: booking?.userPrimaryEmail ?? booking.user.email,
                     timeZone: booking.user.timeZone,
                     timeFormat: getTimeFormatStringFromUserTimeFormat(booking.user.timeFormat),
                     language: { locale: booking.user.locale || defaultLocale },

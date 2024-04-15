@@ -5,10 +5,10 @@ import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 
-import SkeletonLoaderTeamList from "@calcom/features/ee/teams/components/SkeletonloaderTeamList";
 import { FilterResults } from "@calcom/features/filters/components/FilterResults";
 import { TeamsFilter } from "@calcom/features/filters/components/TeamsFilter";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
+import SkeletonLoaderTeamList from "@calcom/features/oe/teams/components/SkeletonloaderTeamList";
 import Shell, { ShellMain } from "@calcom/features/shell/Shell";
 import { UpgradeTip } from "@calcom/features/tips";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -246,7 +246,7 @@ export default function RoutingForms({
                               actions={
                                 <>
                                   {form.team?.name && (
-                                    <div className="border-r-2 border-neutral-300">
+                                    <div className="border-subtle border-r-2">
                                       <Badge className="ltr:mr-2 rtl:ml-2" variant="gray">
                                         {form.team.name}
                                       </Badge>
@@ -362,7 +362,11 @@ export default function RoutingForms({
 
 RoutingForms.getLayout = (page: React.ReactElement) => {
   return (
-    <Shell withoutMain={true} hideHeadingOnMobile>
+    <Shell
+      title="Routing Forms"
+      description="Create forms to direct attendees to the correct destinations."
+      withoutMain={true}
+      hideHeadingOnMobile>
       {page}
     </Shell>
   );

@@ -4,10 +4,11 @@ import { uuid } from "short-uuid";
 
 import EventManager from "@calcom/core/EventManager";
 import { sendScheduledSeatsEmails } from "@calcom/emails";
+import { refreshCredentials } from "@calcom/features/bookings/lib/getAllCredentialsForUsersOnEvent/refreshCredentials";
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
-} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
+} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { HttpError } from "@calcom/lib/http-error";
 import { handlePayment } from "@calcom/lib/payment/handlePayment";
@@ -15,7 +16,7 @@ import prisma from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/enums";
 
 import type { IEventTypePaymentCredentialType } from "../../handleNewBooking";
-import { refreshCredentials, findBookingQuery } from "../../handleNewBooking";
+import { findBookingQuery } from "../../handleNewBooking";
 import type { SeatedBooking, NewSeatedBookingObject, HandleSeatsResultBooking } from "../types";
 
 const createNewSeat = async (
@@ -27,7 +28,6 @@ const createNewSeat = async (
     attendeeLanguage,
     invitee,
     eventType,
-    reqBookingUid,
     additionalNotes,
     noEmail,
     paymentAppData,
@@ -35,6 +35,7 @@ const createNewSeat = async (
     organizerUser,
     fullName,
     bookerEmail,
+    responses,
   } = rescheduleSeatedBookingObject;
   let { evt } = rescheduleSeatedBookingObject;
   let resultBooking: HandleSeatsResultBooking;
@@ -66,7 +67,7 @@ const createNewSeat = async (
 
   await prisma.booking.update({
     where: {
-      uid: reqBookingUid,
+      uid: seatedBooking.uid,
     },
     include: {
       attendees: true,
@@ -83,6 +84,7 @@ const createNewSeat = async (
               referenceUid: attendeeUniqueId,
               data: {
                 description: additionalNotes,
+                responses,
               },
               booking: {
                 connect: {

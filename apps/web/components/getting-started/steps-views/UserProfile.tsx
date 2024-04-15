@@ -1,14 +1,11 @@
-import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { md } from "@calcom/lib/markdownIt";
-import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import turndown from "@calcom/lib/turndownService";
 import { trpc } from "@calcom/trpc/react";
-import type { Ensure } from "@calcom/types/utils";
 import { Button, Editor, ImageUploader, Label, showToast } from "@calcom/ui";
 import { UserAvatar } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
@@ -16,9 +13,14 @@ import { ArrowRight } from "@calcom/ui/components/icon";
 type FormData = {
   bio: string;
 };
+interface IUserProfileProps {
+  nextStep: () => void;
+}
 
-const UserProfile = () => {
+const UserProfile = (props: IUserProfileProps) => {
   const [user] = trpc.viewer.me.useSuspenseQuery();
+  const { nextStep } = props;
+
   const { t } = useLocale();
   const avatarRef = useRef<HTMLInputElement>(null);
   const { setValue, handleSubmit, getValues } = useForm<FormData>({
@@ -28,9 +30,7 @@ const UserProfile = () => {
   const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
   const [imageSrc, setImageSrc] = useState<string>(user?.avatar || "");
   const utils = trpc.useContext();
-  const router = useRouter();
   const createEventType = trpc.viewer.eventTypes.create.useMutation();
-  const telemetry = useTelemetry();
   const [firstRender, setFirstRender] = useState(true);
 
   const mutation = trpc.viewer.updateProfile.useMutation({
@@ -38,7 +38,7 @@ const UserProfile = () => {
       if (context.avatar) {
         showToast(t("your_user_profile_updated_successfully"), "success");
         await utils.viewer.me.refetch();
-      } else {
+      } else
         try {
           if (eventTypes?.length === 0) {
             await Promise.all(
@@ -51,9 +51,8 @@ const UserProfile = () => {
           console.error(error);
         }
 
-        await utils.viewer.me.refetch();
-        router.push("/");
-      }
+      await utils.viewer.me.refetch();
+      nextStep();
     },
     onError: () => {
       showToast(t("problem_saving_user_profile"), "error");
@@ -62,11 +61,8 @@ const UserProfile = () => {
   const onSubmit = handleSubmit((data: { bio: string }) => {
     const { bio } = data;
 
-    telemetry.event(telemetryEventTypes.onboardingFinished);
-
     mutation.mutate({
       bio,
-      completedOnboarding: true,
     });
   });
 
@@ -97,18 +93,10 @@ const UserProfile = () => {
     },
   ];
 
-  const organization =
-    user.organization && user.organization.id
-      ? {
-          ...(user.organization as Ensure<typeof user.organization, "id">),
-          slug: user.organization.slug || null,
-          requestedSlug: user.organization.metadata?.requestedSlug || null,
-        }
-      : null;
   return (
     <form onSubmit={onSubmit}>
       <div className="flex flex-row items-center justify-start rtl:justify-end">
-        {user && <UserAvatar size="lg" user={user} previewSrc={imageSrc} organization={organization} />}
+        {user && <UserAvatar size="lg" user={user} previewSrc={imageSrc} />}
         <input
           ref={avatarRef}
           type="hidden"
@@ -156,7 +144,7 @@ const UserProfile = () => {
         EndIcon={ArrowRight}
         type="submit"
         className="mt-8 w-full items-center justify-center bg-blue-500 hover:bg-blue-600">
-        {t("finish")}
+        {t("next_step_text")}
       </Button>
     </form>
   );

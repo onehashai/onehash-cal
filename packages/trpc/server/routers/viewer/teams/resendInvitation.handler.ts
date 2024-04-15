@@ -1,5 +1,5 @@
 import { sendTeamInviteEmail } from "@calcom/emails";
-import { WEBAPP_URL } from "@calcom/lib/constants";
+import { KEYCLOAK_CALLBACK_URI, KEYCLOAK_CLIENT_ID, SSO_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { prisma } from "@calcom/prisma";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
@@ -15,7 +15,7 @@ type InviteMemberOptions = {
 };
 
 export const resendInvitationHandler = async ({ ctx, input }: InviteMemberOptions) => {
-  const team = await getTeamOrThrow(input.teamId, input.isOrg);
+  const team = await getTeamOrThrow(input.teamId);
 
   await checkPermissions({
     userId: ctx.user.id,
@@ -37,11 +37,21 @@ export const resendInvitationHandler = async ({ ctx, input }: InviteMemberOption
   const inviteTeamOptions = {
     joinLink: `${WEBAPP_URL}/auth/login?callbackUrl=/settings/teams`,
     isCalcomMember: true,
+    isAutoJoin: false,
   };
 
   if (verificationToken) {
-    // Token only exists if user is CAL user but hasn't completed onboarding.
-    inviteTeamOptions.joinLink = `${WEBAPP_URL}/signup?token=${verificationToken.token}&callbackUrl=/getting-started`;
+    if (KEYCLOAK_CALLBACK_URI && KEYCLOAK_CLIENT_ID && SSO_BASE_URL) {
+      const sso_query_params = new URLSearchParams({
+        client_id: KEYCLOAK_CLIENT_ID,
+        redirect_uri: KEYCLOAK_CALLBACK_URI,
+        response_type: "code",
+        scope: "openid",
+      }).toString();
+
+      // Token only exists if user is CAL user but hasn't completed onboarding.
+      inviteTeamOptions.joinLink = `${SSO_BASE_URL}?${sso_query_params}`;
+    }
     inviteTeamOptions.isCalcomMember = false;
   }
 

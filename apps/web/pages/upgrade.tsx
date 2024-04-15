@@ -53,7 +53,7 @@ export default function UpgradePage() {
             headline="You are all set"
             description="You are already on the latest plan. Nothing to upgrade. Enjoy the new features and reach out to us with any questions!"
             Icon={CheckCircle}
-            buttonRaw={<Button href="mailto:support@cal.com">{t("contact_support")}</Button>}
+            buttonRaw={<Button href="mailto:support@onehash.ai">{t("contact_support")}</Button>}
           />
         )}
       </div>
