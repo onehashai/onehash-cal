@@ -140,6 +140,19 @@ export const shouldShowOnboarding = (
   );
 };
 
+function useLogoutOnLogoutPage() {
+  const { status } = useSession();
+  const pathname = usePathname();
+  console.log("pathname", pathname);
+
+  useEffect(() => {
+    if (status === "authenticated" || pathname === "/auth/logout") {
+      signOut({ redirect: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+}
+
 function useRedirectToLoginIfUnauthenticated(isPublic = false) {
   const { data: session, status } = useSession();
   const loading = status === "loading";
@@ -154,6 +167,7 @@ function useRedirectToLoginIfUnauthenticated(isPublic = false) {
       urlSearchParams.set("callbackUrl", `${WEBAPP_URL}${location.pathname}${location.search}`);
       router.replace(`/auth/login?${urlSearchParams.toString()}`);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, session, isPublic]);
 
@@ -377,6 +391,7 @@ const PublicShell = (props: LayoutProps) => {
 export default function Shell(props: LayoutProps) {
   // if a page is unauthed and isPublic is true, the redirect does not happen.
   useRedirectToLoginIfUnauthenticated(props.isPublic);
+  // useLogoutOnLogoutPage();
   useRedirectToOnboardingIfNeeded();
   useAppTheme();
 
@@ -569,7 +584,10 @@ function UserDropdown({ small }: UserDropdownProps) {
                   <DropdownItem
                     type="button"
                     StartIcon={(props) => <LogOut aria-hidden="true" {...props} />}
-                    onClick={() => federatedLogout()}>
+                    onClick={() => {
+                      federatedLogout();
+                      signOut();
+                    }}>
                     {t("sign_out")}
                   </DropdownItem>
                 </DropdownMenuItem>

@@ -106,26 +106,14 @@ export const inviteMemberHandler = async ({ ctx, input }: InviteMemberOptions) =
   );
 
   // deal with users to create and invite to team/org
-  if (newUsersEmailsOrUsernames.length) {
-    await createNewUsersConnectToOrgIfExists({
-      usernamesOrEmails: newUsersEmailsOrUsernames,
-      input,
-      connectionInfoMap: orgConnectInfoByUsernameOrEmail,
-      autoAcceptEmailDomain,
-      parentId: team.parentId,
-    });
-    const sendVerifEmailsPromises = newUsersEmailsOrUsernames.map((usernameOrEmail) => {
-      return sendSignupToOrganizationEmail({
-        usernameOrEmail,
-        team,
-        translation,
-        inviterName: ctx.user.name ?? "",
-        teamId: input.teamId,
-        isOrg: input.isOrg,
-      });
-    });
-    sendEmails(sendVerifEmailsPromises);
-  }
+  await handleNewUsersInvites(
+    newUsersEmailsOrUsernames,
+    input,
+    orgConnectInfoByUsernameOrEmail,
+    autoAcceptEmailDomain,
+    team,
+    ctx.user.name ?? ""
+  );
 
   // deal with existing users invited to join the team/org
   await handleExistingUsersInvites({
@@ -148,6 +136,46 @@ export const inviteMemberHandler = async ({ ctx, input }: InviteMemberOptions) =
 
 export default inviteMemberHandler;
 
+// Handles new users invited to join the team/org
+async function handleNewUsersInvites(
+  newUsersEmailsOrUsernames: string[],
+  input: {
+    teamId: number;
+    usernameOrEmail: (string | string[]) & (string | string[] | undefined);
+    role: "ADMIN" | "MEMBER" | "OWNER";
+    language: string;
+    isOrg: boolean;
+  },
+  orgConnectInfoByUsernameOrEmail: Record<string, { orgId: number | undefined; autoAccept: boolean }>,
+  autoAcceptEmailDomain: string,
+  team: TeamWithParent,
+  inviterName: string
+) {
+  const translation = await getTranslation(input.language ?? "en", "common");
+
+  if (newUsersEmailsOrUsernames.length) {
+    await createNewUsersConnectToOrgIfExists({
+      usernamesOrEmails: newUsersEmailsOrUsernames,
+      input,
+      connectionInfoMap: orgConnectInfoByUsernameOrEmail,
+      autoAcceptEmailDomain,
+      parentId: team.parentId,
+    });
+    const sendVerifEmailsPromises = newUsersEmailsOrUsernames.map((usernameOrEmail) => {
+      return sendSignupToOrganizationEmail({
+        usernameOrEmail,
+        team,
+        translation,
+        inviterName,
+        teamId: input.teamId,
+        isOrg: input.isOrg,
+      });
+    });
+    sendEmails(sendVerifEmailsPromises);
+  }
+}
+
+// Handles existing users invited to join the team/org
 async function handleExistingUsersInvites({
   existingUsersWithMembersips,
   team,

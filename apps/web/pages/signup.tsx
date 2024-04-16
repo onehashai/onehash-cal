@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarHeart, Info, Link2, ShieldCheckIcon, StarIcon, Users } from "lucide-react";
+import { CalendarHeart, Info, Link2, StarIcon, Users } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { Trans } from "next-i18next";
 import Link from "next/link";
@@ -27,7 +27,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { signupSchema as apiSignupSchema } from "@calcom/prisma/zod-utils";
 import type { inferSSRProps } from "@calcom/types/inferSSRProps";
-import { Button, HeadSeo, PasswordField, TextField, Form, Alert, showToast } from "@calcom/ui";
+import { Button, HeadSeo, PasswordField, TextField, Form, Alert } from "@calcom/ui";
 
 import { getServerSideProps } from "@lib/signup/getServerSideProps";
 
@@ -344,7 +344,7 @@ export default function Signup({
               </Button>
             </Form>
             {/* Continue with Social Logins - Only for non-invite links */}
-            {token || (!isGoogleLoginEnabled && !isSAMLLoginEnabled) ? null : (
+            {/* {token || (!isGoogleLoginEnabled && !isSAMLLoginEnabled) ? null : (
               <div className="mt-6">
                 <div className="relative flex items-center">
                   <div className="border-subtle flex-grow border-t" />
@@ -354,9 +354,9 @@ export default function Signup({
                   <div className="border-subtle flex-grow border-t" />
                 </div>
               </div>
-            )}
+            )} */}
             {/* Social Logins - Only for non-invite links*/}
-            {!token && (
+            {/* {!token && (
               <div className="mt-6 flex flex-col gap-2 md:flex-row">
                 {isGoogleLoginEnabled ? (
                   <Button
@@ -441,7 +441,7 @@ export default function Signup({
                   </Button>
                 ) : null}
               </div>
-            )}
+            )} */}
           </div>
           {/* Already have an account & T&C */}
           <div className="mt-10 flex h-full flex-col justify-end text-xs">

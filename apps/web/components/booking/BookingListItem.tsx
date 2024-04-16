@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "react-quill/dist/quill.snow.css";
 
 import type { EventLocationType, getEventLocationValue } from "@calcom/app-store/locations";
 import {

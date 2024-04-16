@@ -23,8 +23,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 
   if (!accounts) {
     console.error("Account is missing.");
-    return res.status(500).json({ error: ErrorCode.InternalServerError });
+    return res.status(200).json({ message: "No Session Info." });
   }
+
   let accessToken;
   accounts.accounts.forEach((account) => {
     accessToken = account.access_token;
@@ -53,7 +54,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 
   const introspectData = await introspectRes.json();
   if (introspectData.active === false) {
-    // Session expired, delete the account
+    // Session expired, delete the account credentials
     await prisma.account.deleteMany({
       where: { userId: session.user.id },
     });
