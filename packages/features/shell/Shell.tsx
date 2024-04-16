@@ -51,7 +51,6 @@ import {
 } from "@calcom/lib/constants";
 import { useFormbricks } from "@calcom/lib/formbricks-client";
 import getBrandColours from "@calcom/lib/getBrandColours";
-import { useBookerUrl } from "@calcom/lib/hooks/useBookerUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useTheme from "@calcom/lib/hooks/useTheme";
 import { isKeyInObject } from "@calcom/lib/isKeyInObject";
@@ -110,6 +109,7 @@ import { Discord } from "@calcom/ui/components/icon/Discord";
 
 import federatedLogout from "../auth/lib/federatedLogout";
 import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
+import AllProducts from "./AllProducts";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
 //TODO:Uncomment when needed
@@ -413,7 +413,6 @@ function UserDropdown({ small }: UserDropdownProps) {
   const { t } = useLocale();
   const { data: user } = useMeQuery();
   const utils = trpc.useContext();
-  const bookerUrl = useBookerUrl();
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -426,29 +425,7 @@ function UserDropdown({ small }: UserDropdownProps) {
         screenResolution: `${screen.width}x${screen.height}`,
       });
   });
-  const mutation = trpc.viewer.away.useMutation({
-    onMutate: async ({ away }) => {
-      await utils.viewer.me.cancel();
 
-      const previousValue = utils.viewer.me.getData();
-
-      if (previousValue) {
-        utils.viewer.me.setData(undefined, { ...previousValue, away });
-      }
-
-      return { previousValue };
-    },
-    onError: (_, __, context) => {
-      if (context?.previousValue) {
-        utils.viewer.me.setData(undefined, context.previousValue);
-      }
-
-      showToast(t("toggle_away_error"), "error");
-    },
-    onSettled() {
-      utils.viewer.me.invalidate();
-    },
-  });
   const [helpOpen, setHelpOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -730,6 +707,7 @@ const Navigation = () => {
       <div className="text-subtle mt-0.5 lg:hidden">
         <KBarTrigger />
       </div>
+      <AllProducts />
     </nav>
   );
 };
