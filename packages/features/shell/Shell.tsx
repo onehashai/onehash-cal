@@ -585,10 +585,7 @@ function UserDropdown({ small }: UserDropdownProps) {
                   <DropdownItem
                     type="button"
                     StartIcon={(props) => <LogOut aria-hidden="true" {...props} />}
-                    onClick={() => {
-                      federatedLogout();
-                      signOut();
-                    }}>
+                    onClick={() => federatedLogout()}>
                     {t("sign_out")}
                   </DropdownItem>
                 </DropdownMenuItem>
