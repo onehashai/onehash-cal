@@ -1,4 +1,4 @@
-import { LineChartIcon, HeartHandshakeIcon } from "lucide-react";
+// import { LineChart, HeartHandshakeIcon } from "lucide-react";
 import { useState } from "react";
 
 import classNames from "@calcom/lib/classNames";
@@ -12,7 +12,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuTrigger,
 } from "@calcom/ui";
-import { ChevronRight, MessageCircle } from "@calcom/ui/components/icon";
+import { ChevronRight, MessageCircle, LineChart, HeartHandshake, Boxes } from "@calcom/ui/components/icon";
 
 const AllProducts = () => {
   const [expanded, setIsExpanded] = useState(false);
@@ -36,10 +36,17 @@ const AllProducts = () => {
               "hover:bg-subtle todesktop:[&[aria-current='page']]:bg-emphasis todesktop:hover:bg-transparent hover:text-emphasis",
               "flex items-center justify-between"
             )}>
-            <span className="hidden lg:block">{t("all_products")}</span>
+            <div className="hidden gap-2 lg:flex">
+              <Boxes className="h-4 w-4" />
+              <span>{t("all_products")}</span>
+            </div>
+
             <ChevronRight
               strokeWidth="2"
-              className={classNames(" ", expanded ? "rotate-90 transform" : "rotate-0 transform")}
+              className={classNames(
+                "text-muted h-4 w-4",
+                expanded ? "rotate-90 transform" : " rotate-0 transform"
+              )}
             />
           </div>
         </DropdownMenuTrigger>
@@ -66,7 +73,7 @@ const AllProducts = () => {
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon={() => <LineChartIcon className="text-default h-4 w-4" />}
+                  StartIcon={() => <HeartHandshake className="text-default h-4 w-4" />}
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_CRM_URL}
@@ -80,7 +87,7 @@ const AllProducts = () => {
 
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon={() => <HeartHandshakeIcon className="text-default h-4 w-4" />}
+                  StartIcon={() => <LineChart className="text-default h-4 w-4" />}
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_ERP_URL}

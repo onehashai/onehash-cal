@@ -8,7 +8,6 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
-import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
@@ -57,7 +56,7 @@ const tabs: VerticalTabItemProps[] = [
     children: [
       { name: "password", href: "/settings/security/password" },
       { name: "impersonation", href: "/settings/security/impersonation" },
-      { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
+      // { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
     ],
   },
   {
@@ -141,13 +140,13 @@ const tabs: VerticalTabItemProps[] = [
   },
 ];
 
-tabs.find((tab) => {
-  if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
-    tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
-    // TODO: Enable dsync for self hosters
-    // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
-  }
-});
+// tabs.find((tab) => {
+//   if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
+//     tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
+//     // TODO: Enable dsync for self hosters
+//     // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
+//   }
+// });
 
 // The following keys are assigned to admin only
 const adminRequiredKeys = ["admin"];
