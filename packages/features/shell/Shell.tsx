@@ -1,6 +1,5 @@
 import type { User as UserAuth } from "next-auth";
 import { useSession } from "next-auth/react";
-import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
@@ -140,19 +139,6 @@ export const shouldShowOnboarding = (
     dayjs(user.createdDate).isAfter(ONBOARDING_INTRODUCED_AT)
   );
 };
-
-function useLogoutOnLogoutPage() {
-  const { status } = useSession();
-  const pathname = usePathname();
-  console.log("pathname", pathname);
-
-  useEffect(() => {
-    if (status === "authenticated" || pathname === "/auth/logout") {
-      signOut({ redirect: false });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
-}
 
 function useRedirectToLoginIfUnauthenticated(isPublic = false) {
   const { data: session, status } = useSession();
@@ -562,10 +548,7 @@ function UserDropdown({ small }: UserDropdownProps) {
                   <DropdownItem
                     type="button"
                     StartIcon={(props) => <LogOut aria-hidden="true" {...props} />}
-                    onClick={() => {
-                      federatedLogout();
-                      signOut();
-                    }}>
+                    onClick={() => federatedLogout()}>
                     {t("sign_out")}
                   </DropdownItem>
                 </DropdownMenuItem>
