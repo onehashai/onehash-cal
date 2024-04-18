@@ -153,7 +153,7 @@ function UsersTableBare() {
       <div
         className="border-subtle rounded-md border"
         ref={tableContainerRef}
-        onScroll={() => fetchMoreOnBottomReached()}
+        onScroll={() => fetchMoreOnBottomReached(tableContainerRef.current)}
         style={{
           height: "calc(100vh - 30vh)",
           overflow: "auto",

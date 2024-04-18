@@ -7,7 +7,7 @@ export default async function federatedLogout() {
     const res = await fetch(`${WEBAPP_URL}/api/auth/federated-logout`);
     const status = await res.json();
     if (status.result === 204) {
-      await signOut({ callbackUrl: "/auth/logout" });
+      await signOut();
     }
   } catch (error) {
     console.log(error);

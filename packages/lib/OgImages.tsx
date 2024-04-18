@@ -1,6 +1,6 @@
 import React from "react";
 
-import { CAL_URL, WEBAPP_URL } from "./constants";
+import { CAL_URL, OG_IMAGE, WEBAPP_URL } from "./constants";
 
 // Ensures tw prop is typed.
 declare module "react" {
