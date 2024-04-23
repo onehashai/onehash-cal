@@ -259,17 +259,15 @@ const ProfessionTypeAndEventTypes: TProfessionTypeAndEventTypes = {
     },
   ],
   others: [
-    { title: "15min_meeting", slug: "15min", description: "15min_meeting_description", length: [15] },
+    { title: "15min_meeting", slug: "15min", length: [15] },
     {
       title: "30min_meeting",
       slug: "30min",
-      description: "30min_meeting_description",
       length: [30],
     },
     {
       title: "secret_meeting",
       slug: "secret",
-      description: "secret_meeting_description",
       length: [15],
       hidden: true,
     },
