@@ -2,6 +2,7 @@ import type { MailData } from "@sendgrid/helpers/classes/mail";
 import { createEvent } from "ics";
 import type { ParticipationStatus } from "ics";
 import type { DateArray } from "ics";
+import emailThankYouTemplate from "oe/workflows/lib/reminders/templates/emailThankYouTemplate";
 import { RRule } from "rrule";
 import { v4 as uuidv4 } from "uuid";
 
@@ -220,6 +221,16 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
     emailContent = emailReminderTemplate(
       false,
       action,
+      evt.organizer.timeFormat,
+      startTime,
+      endTime,
+      evt.title,
+      timeZone,
+      attendeeName,
+      name
+    );
+  } else if (template === WorkflowTemplates.COMPLETED) {
+    emailContent = emailThankYouTemplate(
       evt.organizer.timeFormat,
       startTime,
       endTime,
