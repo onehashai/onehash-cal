@@ -156,13 +156,13 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
         // If it's an array, take the first entry (if it exists) and extract name and email (if object); otherwise, just put the email (if string)
         const emailData = sendTo[0];
         if (typeof emailData === "object" && emailData !== null) {
-          const { name, email } = emailData;
+          const { email } = emailData;
           attendeeEmailToBeUsedInMail = email;
         } else if (typeof emailData === "string") {
           attendeeEmailToBeUsedInMail = emailData;
         }
       } else if (typeof sendTo === "object" && sendTo !== null) {
-        const { name, email } = sendTo;
+        const { email } = sendTo;
         attendeeEmailToBeUsedInMail = email;
       }
 

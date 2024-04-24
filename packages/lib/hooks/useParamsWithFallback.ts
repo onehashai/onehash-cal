@@ -12,7 +12,12 @@ interface Params {
  * This hook is a workaround until pages are migrated to app directory.
  */
 export function useParamsWithFallback(): Params | ParsedUrlQuery {
-  const params = useParams(); // always `null` in pages router
   const router = useCompatRouter(); // always `null` in app router
-  return params ?? router?.query ?? {};
+  const params = useParams(); // always `null` in pages router
+
+  // Ensure that hooks are always called, even if the values are null
+  const paramsFallback = params ?? {};
+  const routerFallback = router?.query ?? {};
+
+  return paramsFallback || routerFallback;
 }

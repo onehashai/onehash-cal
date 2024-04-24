@@ -16,17 +16,25 @@ import {
 } from "./constants";
 
 export function getWorkflowActionOptions(t: TFunction, isTeamsPlan?: boolean, isOrgsPlan?: boolean) {
-  return WORKFLOW_ACTIONS.filter((action) => action !== WorkflowActions.EMAIL_ADDRESS) //removing EMAIL_ADDRESS for now due to abuse episode
-    .map((action) => {
-      const actionString = t(`${action.toLowerCase()}_action`);
-      return {
-        label: actionString.charAt(0).toUpperCase() + actionString.slice(1),
-        value: action,
-        needsTeamsUpgrade:
-          isSMSOrWhatsappAction(action) && !isTextMessageToAttendeeAction(action) && !isTeamsPlan,
-        needsOrgsUpgrade: isTextMessageToAttendeeAction(action) && !isOrgsPlan,
-      };
-    });
+  return (
+    WORKFLOW_ACTIONS.filter(
+      (action) =>
+        action !== WorkflowActions.EMAIL_ADDRESS &&
+        action !== WorkflowActions.WHATSAPP_ATTENDEE &&
+        action !== WorkflowActions.WHATSAPP_NUMBER
+    ) //removing EMAIL_ADDRESS for now due to abuse episode
+      //removing WHATSAPP_ATTENDEE and WHATSAPP_NUMBER until it's ready from twilio
+      .map((action) => {
+        const actionString = t(`${action.toLowerCase()}_action`);
+        return {
+          label: actionString.charAt(0).toUpperCase() + actionString.slice(1),
+          value: action,
+          needsTeamsUpgrade:
+            isSMSOrWhatsappAction(action) && !isTextMessageToAttendeeAction(action) && !isTeamsPlan,
+          needsOrgsUpgrade: isTextMessageToAttendeeAction(action) && !isOrgsPlan,
+        };
+      })
+  );
 }
 
 export function getWorkflowTriggerOptions(t: TFunction) {
