@@ -2,7 +2,6 @@ import type { MailData } from "@sendgrid/helpers/classes/mail";
 import { createEvent } from "ics";
 import type { ParticipationStatus } from "ics";
 import type { DateArray } from "ics";
-import emailThankYouTemplate from "oe/workflows/lib/reminders/templates/emailThankYouTemplate";
 import { RRule } from "rrule";
 import { v4 as uuidv4 } from "uuid";
 
@@ -24,6 +23,7 @@ import { cancelScheduledEmail, getBatchId, sendSendgridMail } from "../providers
 import type { VariablesType } from "../templates/customTemplate";
 import customTemplate from "../templates/customTemplate";
 import emailReminderTemplate from "../templates/emailReminderTemplate";
+import emailThankYouTemplate from "../templates/emailThankYouTemplate";
 import type { AttendeeInBookingInfo, BookingInfo, timeUnitLowerCase } from "./smsReminderManager";
 
 const log = logger.getSubLogger({ prefix: ["[emailReminderManager]"] });
