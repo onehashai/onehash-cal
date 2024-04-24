@@ -70,7 +70,7 @@ export async function scheduleMandatoryReminder(
           triggerEvent: WorkflowTriggerEvents.AFTER_EVENT,
           action: WorkflowActions.EMAIL_ATTENDEE,
           timeSpan: {
-            time: 30,
+            time: 5,
             timeUnit: TimeUnit.MINUTE,
           },
           sendTo: filteredAttendees,
