@@ -20,7 +20,7 @@ export const getStaticPaths: GetStaticPaths = () => {
       params: { status },
       locale: "en",
     })),
-    fallback: "blocking",
+    fallback: false,
   };
 };
 
