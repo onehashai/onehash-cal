@@ -122,7 +122,6 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
   const attendees = (profile.image ? [profile, ...users] : users).filter(
     (value, index, self) => self.findIndex((v) => v.name === value.name) == index
   );
-
   // Construct list of avatar urls, removes duplicates and empty profile images
   const avatars = attendees
     .map((user) => {
@@ -140,7 +139,7 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
     <Wrapper variant="dark">
       <div tw="h-full flex flex-col justify-start">
         <div tw="flex items-center justify-center" style={{ fontFamily: "cal", fontWeight: 300 }}>
-          <img src={OG_IMAGE} width="350" alt="Logo" />
+          <img src={OG_IMAGE} width="350" height="100" alt="Logo" />
           {avatars.length > 0 && (
             <div style={{ color: "#111827" }} tw="font-bold text-[92px] mx-8 bottom-2">
               /
