@@ -2309,7 +2309,6 @@ async function handler(
   await scheduleMandatoryReminder(
     evtWithMetadata,
     eventType.workflows || [],
-    !isConfirmedByDefault,
     !!eventType.owner?.hideBranding,
     evt.attendeeSeatId
   );

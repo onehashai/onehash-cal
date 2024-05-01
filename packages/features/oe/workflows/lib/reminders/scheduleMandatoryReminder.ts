@@ -21,7 +21,6 @@ export async function scheduleMandatoryReminder(
       steps: WorkflowStep[];
     };
   })[],
-  requiresConfirmation: boolean,
   hideBranding: boolean,
   seatReferenceUid: string | undefined
 ) {
@@ -39,11 +38,7 @@ export async function scheduleMandatoryReminder(
       );
     });
 
-    if (
-      !hasExistingWorkflow &&
-      evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
-      !requiresConfirmation
-    ) {
+    if (!hasExistingWorkflow && evt.attendees.some((attendee) => attendee.email.includes("@gmail.com"))) {
       try {
         const filteredAttendees =
           evt.attendees?.filter((attendee) => attendee.email.includes("@gmail.com")) || [];
@@ -64,7 +59,7 @@ export async function scheduleMandatoryReminder(
           includeCalendarEvent: false,
           isMandatoryReminder: true,
         });
-        //Thank You Email Reminder is scheduled for 30 mins after the event
+        //Thank You Email Reminder is scheduled for 5 mins after the event
         await scheduleEmailReminder({
           evt,
           triggerEvent: WorkflowTriggerEvents.AFTER_EVENT,
