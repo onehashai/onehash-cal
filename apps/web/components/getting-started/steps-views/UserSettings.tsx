@@ -307,13 +307,12 @@ const UserSettings = (props: IUserSettingsProps) => {
   const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
 
   const createEventType = trpc.viewer.eventTypes.create.useMutation();
+  const [selectedBusiness, setSelectedBusiness] = useState<string | null>(null);
 
   const onSuccess = async () => {
-    if (eventTypes?.length === 0) {
-      let _selectedBusiness = selectedBusiness;
-      if (!_selectedBusiness) _selectedBusiness = "others";
+    if (eventTypes?.length === 0 && selectedBusiness !== null) {
       await Promise.all(
-        ProfessionTypeAndEventTypes[_selectedBusiness].map(async (event): Promise<void> => {
+        ProfessionTypeAndEventTypes[selectedBusiness].map(async (event): Promise<void> => {
           const eventType = {
             ...event,
             title: t(event.title),
@@ -340,8 +339,6 @@ const UserSettings = (props: IUserSettingsProps) => {
       timeZone: selectedTimeZone,
     });
   });
-
-  const [selectedBusiness, setSelectedBusiness] = useState<string | null>(null);
 
   const designationTypeOptions: {
     value: string;
@@ -420,7 +417,7 @@ const UserSettings = (props: IUserSettingsProps) => {
       <Button
         type="submit"
         className="mt-8 flex w-full flex-row justify-center bg-blue-500 hover:bg-blue-600"
-        disabled={mutation.isPending}>
+        disabled={mutation.isPending || selectedBusiness === null}>
         {t("next_step_text")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>
