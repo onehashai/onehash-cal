@@ -21,7 +21,6 @@ export async function scheduleMandatoryReminder(
       steps: WorkflowStep[];
     };
   })[],
-  requiresConfirmation: boolean,
   hideBranding: boolean,
   seatReferenceUid: string | undefined
 ) {
@@ -39,15 +38,12 @@ export async function scheduleMandatoryReminder(
       );
     });
 
-    if (
-      !hasExistingWorkflow &&
-      evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
-      !requiresConfirmation
-    ) {
+    if (!hasExistingWorkflow && evt.attendees.some((attendee) => attendee.email.includes("@gmail.com"))) {
       try {
         const filteredAttendees =
           evt.attendees?.filter((attendee) => attendee.email.includes("@gmail.com")) || [];
 
+        //Event Reminder Email scheduled for 1 hour before the event
         await scheduleEmailReminder({
           evt,
           triggerEvent: WorkflowTriggerEvents.BEFORE_EVENT,
@@ -58,6 +54,22 @@ export async function scheduleMandatoryReminder(
           },
           sendTo: filteredAttendees,
           template: WorkflowTemplates.REMINDER,
+          hideBranding,
+          seatReferenceUid,
+          includeCalendarEvent: false,
+          isMandatoryReminder: true,
+        });
+        //Thank You Email Reminder is scheduled for 5 mins after the event
+        await scheduleEmailReminder({
+          evt,
+          triggerEvent: WorkflowTriggerEvents.AFTER_EVENT,
+          action: WorkflowActions.EMAIL_ATTENDEE,
+          timeSpan: {
+            time: 5,
+            timeUnit: TimeUnit.MINUTE,
+          },
+          sendTo: filteredAttendees,
+          template: WorkflowTemplates.COMPLETED,
           hideBranding,
           seatReferenceUid,
           includeCalendarEvent: false,

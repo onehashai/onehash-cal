@@ -29,14 +29,15 @@ const AllProducts = () => {
         <DropdownMenuTrigger asChild onClick={toggleDropdown}>
           <div
             className={classNames(
-              "todesktop:py-[7px] text-default group flex items-center rounded-md px-2 py-1.5 text-sm font-medium transition",
+              "todesktop:py-[7px] text-default group flex items-center rounded-md p-5 text-base font-medium transition  md:px-2 md:py-1.5 md:text-sm",
               `[&[aria-current='page']]:!bg-transparent`,
 
               "[&[aria-current='page']]:text-emphasis mt-0.5 text-sm",
               "hover:bg-subtle todesktop:[&[aria-current='page']]:bg-emphasis todesktop:hover:bg-transparent hover:text-emphasis",
-              "flex items-center justify-between"
+              "flex items-center justify-between",
+              "border-subtle rounded-md border border-t-0 font-semibold md:border-none md:font-normal"
             )}>
-            <div className="hidden gap-2 lg:flex">
+            <div className="flex gap-3 md:hidden md:gap-2 lg:flex ">
               <Boxes className="h-4 w-4" />
               <span>{t("all_products")}</span>
             </div>

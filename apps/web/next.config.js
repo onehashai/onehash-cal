@@ -205,7 +205,7 @@ const nextConfig = {
     // },
   },
   images: {
-    unoptimized: true,
+    // unoptimized: true,
   },
   webpack: (config, { webpack, buildId, isServer }) => {
     if (isServer) {

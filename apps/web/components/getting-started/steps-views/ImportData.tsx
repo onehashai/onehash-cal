@@ -91,7 +91,7 @@ const ImportData = () => {
         type="button"
         data-testid="save-calendar-button"
         className={classNames(
-          "text-inverted bg-inverted border-inverted mt-8 flex w-full flex-row justify-center rounded-md border bg-blue-500 p-2 text-center text-sm hover:bg-blue-600",
+          "mt-8 flex w-full flex-row justify-center rounded-md bg-blue-500 p-2 hover:bg-blue-600",
           importing ? "cursor-not-allowed opacity-20" : ""
         )}
         onClick={handleFinish}
