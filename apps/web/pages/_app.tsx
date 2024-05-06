@@ -9,27 +9,37 @@ import type { AppProps } from "@lib/app-providers";
 
 import "../styles/globals.css";
 
-type AppOwnProps = { sessionExpired: boolean };
-
 // Higher-level component where session state is managed
-function SessionManager({
-  children,
-  sessionExpired,
-}: {
-  children: React.ReactNode;
-  sessionExpired: boolean;
-}) {
+function SessionManager({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    if (sessionExpired) {
-      signOut();
+    const cachedUserInfo = sessionStorage.getItem("isSessionActive");
+    if (cachedUserInfo) {
+      return;
     }
-  }, [sessionExpired]);
+    fetch("/api/auth/keycloak/userinfo")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.message === "Session expired. Please log in again." || data.message === "No Session Info.") {
+          signOut();
+        } else {
+          sessionStorage.setItem("isSessionActive", "true");
+        }
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+      });
+  }, []);
 
   return <>{children}</>;
 }
 
 // MyApp component
-function MyApp(props: AppProps & AppOwnProps) {
+function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
 
   if (Component.PageWrapper !== undefined) return Component.PageWrapper(props);
@@ -37,9 +47,9 @@ function MyApp(props: AppProps & AppOwnProps) {
 }
 
 // Wraps MyApp with SessionManager to handle session expiration
-function AppWithSessionManager(props: AppProps & AppOwnProps) {
+function AppWithSessionManager(props: AppProps) {
   return (
-    <SessionManager sessionExpired={props.sessionExpired}>
+    <SessionManager>
       <MyApp {...props} />
     </SessionManager>
   );
@@ -51,9 +61,7 @@ declare global {
   }
 }
 
-AppWithSessionManager.getInitialProps = async (
-  ctx: AppContextType
-): Promise<AppOwnProps & AppInitialProps> => {
+AppWithSessionManager.getInitialProps = async (ctx: AppContextType): Promise<AppInitialProps> => {
   const { req } = ctx.ctx;
 
   let newLocale = "en";
@@ -65,29 +73,11 @@ AppWithSessionManager.getInitialProps = async (
   } else if (typeof window !== "undefined" && window.calNewLocale) {
     newLocale = window.calNewLocale;
   }
-  let sessionExpired = false;
-  try {
-    const response = await fetch("api/auth/keycloak/userinfo");
-
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-
-    const data = await response.json();
-
-    if (data.message === "Session expired. Please log in again.") {
-      sessionExpired = true;
-    }
-  } catch (error) {
-    sessionExpired = true;
-    console.error("There was a problem with the fetch operation:", error);
-  }
 
   return {
     pageProps: {
       newLocale,
     },
-    sessionExpired,
   };
 };
 
