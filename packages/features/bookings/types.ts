@@ -19,6 +19,7 @@ export enum EventDetailBlocks {
   // Includes input to select # of occurences.
   OCCURENCES,
   PRICE,
+  WHATSAPP_CONTACT,
 }
 
 export type { BookingCreateBody };

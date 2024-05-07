@@ -103,6 +103,7 @@ export const EventTypeMetaDataSchema = z
       })
       .optional(),
     bookerLayouts: bookerLayouts.optional(),
+    whatsappNumber: z.string().optional(),
   })
   .nullable();
 

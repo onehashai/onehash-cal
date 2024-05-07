@@ -535,6 +535,9 @@ const EventTypePage = (props: EventTypeSetupProps) => {
     if (metadata?.apps?.stripe?.paymentOption === "HOLD" && seatsPerTimeSlot) {
       throw new Error(t("seats_and_no_show_fee_error"));
     }
+    if (metadata?.whatsappNumber && !isValidPhoneNumber(metadata.whatsappNumber)) {
+      throw new Error(t("invalid_whatsapp_number"));
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { availability, users, scheduleName, ...rest } = input;
@@ -684,6 +687,9 @@ const EventTypePage = (props: EventTypeSetupProps) => {
             if (checkForMultiplePaymentApps(metadata as z.infer<typeof EventTypeMetaDataSchema>))
               throw new Error(t("event_setup_multiple_payment_apps_error"));
 
+            if (metadata?.whatsappNumber && !isValidPhoneNumber(metadata.whatsappNumber)) {
+              throw new Error(t("invalid_whatsapp_number"));
+            }
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { availability, users, scheduleName, ...rest } = input;
             const payload = {

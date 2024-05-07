@@ -35,7 +35,7 @@ import { Plus, X, Check, CornerDownRight } from "@calcom/ui/components/icon";
 
 import CheckboxField from "@components/ui/form/CheckboxField";
 import type { SingleValueLocationOption } from "@components/ui/form/LocationSelect";
-import LocationSelect from "@components/ui/form/LocationSelect";
+import LocationSelect, { OptionWithIcon } from "@components/ui/form/LocationSelect";
 
 const getLocationFromType = (
   type: EventLocationType["type"],
@@ -124,6 +124,10 @@ export const EventSetupTab = (
       options,
     };
   });
+
+  const whatsappOption = locationOptions
+    .flatMap((option) => option.options)
+    .find((subOption) => subOption.value === "integrations:whatsapp_video");
 
   const multipleDurationOptions = [
     5, 10, 15, 20, 25, 30, 45, 50, 60, 75, 80, 90, 120, 150, 180, 240, 480,
@@ -472,6 +476,15 @@ export const EventSetupTab = (
             </Label>
             <DescriptionEditor isEditable={!descriptionLockedProps.disabled} />
           </div>
+
+          {whatsappOption && (
+            <TextField
+              placeholder={t("whatsApp_number_placeholder")}
+              label={t("whatsApp_number")}
+              addOnLeading={<OptionWithIcon icon={whatsappOption.icon} />}
+              {...formMethods.register("metadata.whatsappNumber")}
+            />
+          )}
           <TextField
             required
             label={t("URL")}
