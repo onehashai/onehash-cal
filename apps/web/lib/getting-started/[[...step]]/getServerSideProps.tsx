@@ -52,7 +52,8 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   }
   const locale = await getLocale(context.req);
   let currentOnboardingStep: string | undefined = undefined;
-  if (isPrismaObj(user.metadata)) {
+
+  if (context.params?.step == undefined && isPrismaObj(user.metadata)) {
     currentOnboardingStep = user.metadata.currentOnboardingStep as string | undefined;
     if (currentOnboardingStep) {
       return { redirect: { permanent: true, destination: `/getting-started/${currentOnboardingStep}` } };
