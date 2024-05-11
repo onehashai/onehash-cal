@@ -47,6 +47,9 @@ const UserProfile = (props: IUserProfileProps) => {
     const { bio } = data;
 
     mutation.mutate({
+      metadata: {
+        currentOnboardingStep: "import-data",
+      },
       bio,
     });
   });

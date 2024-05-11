@@ -67,6 +67,7 @@ export const uploadAvatar = async ({ userId, avatar: data }: { userId: number; a
 export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions) => {
   const { user } = ctx;
   const userMetadata = handleUserMetadata({ ctx, input });
+
   const locale = input.locale || user.locale;
   const emailVerification = await getFeatureFlag(prisma, "email-verification");
 

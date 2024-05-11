@@ -344,6 +344,7 @@ export const userMetadata = z
         revertTime: z.string().optional(),
       })
       .optional(),
+    currentOnboardingStep: z.string().optional(),
   })
   .nullable();
 
