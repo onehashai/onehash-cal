@@ -107,10 +107,10 @@ export const BaseScheduledEmail = (
       )}
       {props.calEvent.organizer.phoneNumber && (
         <Info
-          label={t("connect_with_organizer")}
-          description={generateWhatsAppLink(props.calEvent.organizer.phoneNumber)}
+          label={t("running_late")}
+          description={t("connect_with_organizer")}
           withSpacer
-          isLink
+          link={generateWhatsAppLink(props.calEvent.organizer.phoneNumber)}
         />
       )}
     </BaseEmailHtml>

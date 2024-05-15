@@ -9,7 +9,7 @@ export const Info = (props: {
   withSpacer?: boolean;
   lineThrough?: boolean;
   formatted?: boolean;
-  isLink?: boolean;
+  link?: string;
 }) => {
   if (!props.description || props.description === "") return null;
 
@@ -22,9 +22,9 @@ export const Info = (props: {
       {props.withSpacer && <Spacer />}
       <div>
         <p style={{ color: "#101010" }}>{props.label}</p>
-        {props.isLink ? (
+        {props.link ? (
           <a
-            href={props.description as string}
+            href={props.link as string}
             target="_blank"
             style={{
               color: "#101010",
