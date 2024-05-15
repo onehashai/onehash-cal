@@ -105,7 +105,7 @@ export const BaseScheduledEmail = (
           withSpacer
         />
       )}
-      {props.calEvent.organizer.phoneNumber && (
+      {props.attendee.isAttendee && props.calEvent.organizer.phoneNumber && (
         <Info
           label={t("running_late")}
           description={t("connect_with_organizer")}
