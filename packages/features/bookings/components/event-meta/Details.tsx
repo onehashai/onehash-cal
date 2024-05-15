@@ -13,7 +13,6 @@ import { AvailableEventLocations } from "./AvailableEventLocations";
 import { EventDuration } from "./Duration";
 import { EventOccurences } from "./Occurences";
 import { Price } from "./Price";
-import { WhatsappChat } from "./WhatsappChat";
 import { getPriceIcon } from "./getPriceIcon";
 
 type EventDetailsPropsBase = {
@@ -54,7 +53,6 @@ const defaultEventDetailsBlocks = [
   EventDetailBlocks.OCCURENCES,
   EventDetailBlocks.LOCATION,
   EventDetailBlocks.PRICE,
-  EventDetailBlocks.WHATSAPP_CONTACT,
 ];
 
 /**
@@ -136,13 +134,6 @@ export const EventDetails = ({ event, blocks = defaultEventDetailsBlocks }: Even
             return (
               <EventMetaBlock key={block}>
                 <AvailableEventLocations locations={event.locations} />
-              </EventMetaBlock>
-            );
-          case EventDetailBlocks.WHATSAPP_CONTACT:
-            if (!event?.metadata?.whatsappNumber) return null;
-            return (
-              <EventMetaBlock key={block}>
-                <WhatsappChat whatsappNumber={event.metadata.whatsappNumber} />
               </EventMetaBlock>
             );
 

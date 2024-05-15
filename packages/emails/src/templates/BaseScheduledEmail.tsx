@@ -47,6 +47,14 @@ export const BaseScheduledEmail = (
     )}, ${t(getRecipientStart("MMMM").toLowerCase())} ${getRecipientStart("D, YYYY")}`,
   });
 
+  const generateWhatsAppLink = (phoneNumber: string): string => {
+    const cleanedPhoneNumber = phoneNumber.replace(/\D/g, "");
+
+    const whatsappLink = `https://wa.me/send?phone=${cleanedPhoneNumber}`;
+
+    return whatsappLink;
+  };
+
   return (
     <BaseEmailHtml
       headerType={props.headerType || "checkCircle"}
@@ -95,6 +103,14 @@ export const BaseScheduledEmail = (
             props.attendee.language.locale
           )}
           withSpacer
+        />
+      )}
+      {props.calEvent.organizer.phoneNumber && (
+        <Info
+          label={t("connect_with_organizer")}
+          description={generateWhatsAppLink(props.calEvent.organizer.phoneNumber)}
+          withSpacer
+          isLink
         />
       )}
     </BaseEmailHtml>

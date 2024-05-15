@@ -53,7 +53,7 @@ import { scheduleMandatoryReminder } from "@calcom/features/oe/workflows/lib/rem
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { cancelScheduledJobs, scheduleTrigger } from "@calcom/features/webhooks/lib/scheduleTrigger";
-import { parseBookingLimit, parseDurationLimit } from "@calcom/lib";
+import { isPrismaObj, parseBookingLimit, parseDurationLimit } from "@calcom/lib";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";
@@ -1484,6 +1484,10 @@ async function handler(
       timeZone: organizerUser.timeZone,
       language: { translate: tOrganizer, locale: organizerUser.locale ?? "en" },
       timeFormat: getTimeFormatStringFromUserTimeFormat(organizerUser.timeFormat),
+      phoneNumber:
+        isPrismaObj(organizerUser.metadata) && organizerUser.metadata?.phoneNumber
+          ? (organizerUser.metadata?.phoneNumber as string)
+          : undefined,
     },
     responses: reqBody.calEventResponses || null,
     userFieldsResponses: reqBody.calEventUserFieldsResponses || null,

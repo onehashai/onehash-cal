@@ -9,6 +9,7 @@ export const Info = (props: {
   withSpacer?: boolean;
   lineThrough?: boolean;
   formatted?: boolean;
+  isLink?: boolean;
 }) => {
   if (!props.description || props.description === "") return null;
 
@@ -21,27 +22,43 @@ export const Info = (props: {
       {props.withSpacer && <Spacer />}
       <div>
         <p style={{ color: "#101010" }}>{props.label}</p>
-        <p
-          style={{
-            color: "#101010",
-            fontWeight: 400,
-            lineHeight: "24px",
-            whiteSpace: "pre-wrap",
-            textDecoration: props.lineThrough ? "line-through" : undefined,
-          }}>
-          {props.formatted ? (
-            <p
-              className="dark:text-darkgray-600 mt-2 text-sm text-gray-500 [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
-              dangerouslySetInnerHTML={{
-                __html: safeDescription
-                  .replaceAll("<p>", `<p style="${descriptionCSS}">`)
-                  .replaceAll("<li>", `<li style="${descriptionCSS}">`),
-              }}
-            />
-          ) : (
-            props.description
-          )}
-        </p>
+        {props.isLink ? (
+          <a
+            href={props.description as string}
+            target="_blank"
+            style={{
+              color: "#101010",
+              fontWeight: 400,
+              lineHeight: "24px",
+              whiteSpace: "pre-wrap",
+              textDecoration: props.lineThrough ? "line-through" : undefined,
+            }}>
+            {props.description}
+          </a>
+        ) : (
+          <p
+            style={{
+              color: "#101010",
+              fontWeight: 400,
+              lineHeight: "24px",
+              whiteSpace: "pre-wrap",
+              textDecoration: props.lineThrough ? "line-through" : undefined,
+            }}>
+            {props.formatted ? (
+              <p
+                className="dark:text-darkgray-600 mt-2 text-sm text-gray-500 [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
+                dangerouslySetInnerHTML={{
+                  __html: safeDescription
+                    .replaceAll("<p>", `<p style="${descriptionCSS}">`)
+                    .replaceAll("<li>", `<li style="${descriptionCSS}">`),
+                }}
+              />
+            ) : (
+              props.description
+            )}
+          </p>
+        )}
+
         {props.extraInfo}
       </div>
     </>

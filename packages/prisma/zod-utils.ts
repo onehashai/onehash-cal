@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { UnitTypeLongPlural } from "dayjs";
+import { parsePhoneNumber } from "libphonenumber-js";
 import type { TFunction } from "next-i18next";
 import z, { ZodNullable, ZodObject, ZodOptional } from "zod";
 import type {
@@ -345,6 +346,21 @@ export const userMetadata = z
       })
       .optional(),
     currentOnboardingStep: z.string().optional(),
+    phoneNumber: z
+      .string()
+      .transform((phNum) => {
+        // Validate and parse the phone number
+        const phoneNumber = parsePhoneNumber(phNum);
+
+        // If the phone number is invalid, return null
+        if (!phoneNumber || !phoneNumber.isValid()) {
+          return null;
+        }
+
+        // Otherwise, return the formatted phone number
+        return phoneNumber.formatInternational();
+      })
+      .optional(),
   })
   .nullable();
 
