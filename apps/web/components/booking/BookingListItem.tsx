@@ -322,6 +322,7 @@ function BookingListItem(booking: BookingItemProps) {
   const [expanded, setExpanded] = useState(false);
 
   const meetingNote: string | undefined = bookingMetadataSchema.parse(booking?.metadata || {})?.meetingNote;
+  const attendeePhoneNo = booking.responses?.phone as string | undefined;
   const [notes, setNotes] = useState<string>(meetingNote || "");
 
   const [showRTE, setShowRTE] = useState(false);
@@ -360,6 +361,27 @@ function BookingListItem(booking: BookingItemProps) {
   };
 
   const reinviteeAttendeeLink = createReinviteeAttendeeLink();
+
+  const openWhatsAppChat = (phoneNumber: string) => {
+    // Dimensions and other properties of the popup window
+    const width = 800;
+    const height = 600;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    const options = `width=${width},height=${height},left=${left},top=${top},resizable,scrollbars=yes,status=1`;
+
+    const generateWhatsAppLink = (phoneNumber: string): string => {
+      const cleanedPhoneNumber = phoneNumber.replace(/\D/g, "");
+
+      const whatsappLink = `https://wa.me/send?phone=${cleanedPhoneNumber}`;
+
+      return whatsappLink;
+    };
+    //Generating the whatsapp link
+    const url = generateWhatsAppLink(phoneNumber);
+    // Open the popup window with the provided URL and options
+    window.open(url, "_blank", options);
+  };
 
   return (
     <>
@@ -656,7 +678,7 @@ function BookingListItem(booking: BookingItemProps) {
                   <p className="text-emphasis text-sm leading-6">Invitee Email</p>
                 </div>
                 <div>
-                  {booking.attendees.map((attendee: any, i: number) => (
+                  {booking.attendees.map((attendee: any) => (
                     <p key={attendee.email} className="text-subtle text-sm">
                       {attendee.email}
                     </p>
@@ -733,6 +755,15 @@ function BookingListItem(booking: BookingItemProps) {
                 onClick={() => setShowRTE(true)}>
                 {t("meeting_notes")}
               </Button>
+
+              {attendeePhoneNo && (
+                <Button
+                  className="flex w-full justify-center "
+                  color="secondary"
+                  onClick={() => openWhatsAppChat(attendeePhoneNo)}>
+                  {t("whatsapp_chat")}
+                </Button>
+              )}
               {isPast && (
                 <Button
                   className="flex w-full justify-center "
