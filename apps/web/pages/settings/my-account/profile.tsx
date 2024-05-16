@@ -6,7 +6,7 @@ import { isValidPhoneNumber } from "libphonenumber-js";
 import { pick, get } from "lodash";
 import { signOut, useSession } from "next-auth/react";
 import type { BaseSyntheticEvent } from "react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Controller, useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 
@@ -48,6 +48,7 @@ import {
   TextField,
   Badge,
   PhoneInput,
+  InfoBadge,
 } from "@calcom/ui";
 import { UserAvatar } from "@calcom/ui";
 import { AlertTriangle, Trash2, Plus } from "@calcom/ui/components/icon";
@@ -582,12 +583,7 @@ const ProfileForm = ({
     );
   };
 
-  const [numberVerified, setNumberVerified] = useState(false);
-  useEffect(() => {
-    const phoneNumber = formMethods.getValues("phoneNumber");
-    if (!phoneNumber) return;
-    setNumberVerified(getNumberVerificationStatus(phoneNumber));
-  }, [verifiedNumbers.length]);
+  const [numberVerified, setNumberVerified] = useState(defaultValues.phoneNumber != "");
 
   const [isNumberValid, setIsNumberValid] = useState<boolean>(
     formMethods.getValues("phoneNumber") != ""
@@ -753,8 +749,12 @@ const ProfileForm = ({
             {t("add_email")}
           </Button>
         </div>
-        <div className="mt-6 w-full md:w-1/2">
-          <div className="mt-3 flex">
+        <div className="mt-3 w-full md:w-1/2">
+          <Label className="flex">
+            <p className="text-sm ">{t("phone_number")}</p>
+            <InfoBadge content={t("number_in_international_format")} />
+          </Label>
+          <div className="flex">
             <PhoneInput
               className=" h-fit rounded-r-none border-r-transparent"
               value={formMethods.getValues("phoneNumber")}
@@ -765,19 +765,6 @@ const ProfileForm = ({
                 setNumberVerified(getNumberVerificationStatus(phoneNumber));
               }}
             />
-            {/* <TextField
-              {...formMethods.register("phoneNumber")}
-              className="rounded-r-none border-r-transparent"
-              placeholder={t("phone_number_placeholder")}
-              label={t("phone_number")}
-              addOnLeading={<Phone className="w-4" />}
-              onChange={(val) => {
-                formMethods.setValue("phoneNumber", val?.target?.value || "", { shouldDirty: true });
-                const phoneNumber = val?.target?.value || "";
-                setIsNumberValid(isValidPhoneNumber(phoneNumber));
-                setNumberVerified(getNumberVerificationStatus(phoneNumber));
-              }}
-            /> */}
             <Button
               color="secondary"
               className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
