@@ -47,9 +47,10 @@ import {
   SkeletonText,
   TextField,
   Badge,
+  PhoneInput,
 } from "@calcom/ui";
 import { UserAvatar } from "@calcom/ui";
-import { AlertTriangle, Trash2, Plus, Phone } from "@calcom/ui/components/icon";
+import { AlertTriangle, Trash2, Plus } from "@calcom/ui/components/icon";
 
 import PageWrapper from "@components/PageWrapper";
 import TwoFactor from "@components/auth/TwoFactor";
@@ -752,9 +753,19 @@ const ProfileForm = ({
             {t("add_email")}
           </Button>
         </div>
-        <div className="mt-6">
+        <div className="mt-6 w-full md:w-1/2">
           <div className="mt-3 flex">
-            <TextField
+            <PhoneInput
+              className=" h-fit rounded-r-none border-r-transparent"
+              value={formMethods.getValues("phoneNumber")}
+              onChange={(val) => {
+                formMethods.setValue("phoneNumber", val || "", { shouldDirty: true });
+                const phoneNumber = val || "";
+                setIsNumberValid(isValidPhoneNumber(phoneNumber));
+                setNumberVerified(getNumberVerificationStatus(phoneNumber));
+              }}
+            />
+            {/* <TextField
               {...formMethods.register("phoneNumber")}
               className="rounded-r-none border-r-transparent"
               placeholder={t("phone_number_placeholder")}
@@ -766,10 +777,10 @@ const ProfileForm = ({
                 setIsNumberValid(isValidPhoneNumber(phoneNumber));
                 setNumberVerified(getNumberVerificationStatus(phoneNumber));
               }}
-            />
+            /> */}
             <Button
               color="secondary"
-              className="-ml-[3px] mt-[22px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+              className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
               disabled={!isNumberValid || numberVerified}
               loading={sendVerificationCodeMutation.isPending}
               onClick={() =>
