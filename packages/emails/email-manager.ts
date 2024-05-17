@@ -86,11 +86,9 @@ export const sendScheduledEmails = async (
       }
     }
   }
-
   if (!attendeeEmailDisabled) {
     emailsToSend.push(
       ...calEvent.attendees.map((attendee) => {
-        attendee.isAttendee = true;
         return sendEmail(
           () =>
             new AttendeeScheduledEmail(

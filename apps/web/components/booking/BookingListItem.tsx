@@ -651,7 +651,7 @@ function BookingListItem(booking: BookingItemProps) {
             <div className="flex flex-col gap-2 ">
               <div className="flex items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-sm leading-6">Event Type </p>
+                  <p className="text-emphasis text-sm leading-6">{t("event_type")} </p>
                 </div>
                 <div>
                   <p className="text-subtle text-sm">{booking.eventType.title}</p>
@@ -660,7 +660,7 @@ function BookingListItem(booking: BookingItemProps) {
 
               <div className="flex flex-row items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-sm leading-6">Invitee </p>
+                  <p className="text-emphasis text-sm leading-6">{t("invitee_name")} </p>
                 </div>
                 <div>
                   {booking.attendees.map((attendee: any, i: number) => (
@@ -675,7 +675,7 @@ function BookingListItem(booking: BookingItemProps) {
 
               <div className="flex flex-row items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-sm leading-6">Invitee Email</p>
+                  <p className="text-emphasis text-sm leading-6">{t("invitee_email")}</p>
                 </div>
                 <div>
                   {booking.attendees.map((attendee: any) => (
@@ -688,7 +688,7 @@ function BookingListItem(booking: BookingItemProps) {
 
               <div className="flex items-center">
                 <div className="mr-4">
-                  <p className="text-emphasis text-sm ">Invitee Timezone </p>
+                  <p className="text-emphasis text-sm ">{t("invitee_timezone")} </p>
                 </div>
                 <div>
                   <p className="text-subtle text-sm">{booking.attendees[0].timeZone}</p>
@@ -698,7 +698,7 @@ function BookingListItem(booking: BookingItemProps) {
               {booking.status === BookingStatus.CANCELLED && (
                 <div className="flex items-center">
                   <div className="mr-4">
-                    <p className="text-emphasis text-sm ">Cancellation Reason </p>
+                    <p className="text-emphasis text-sm ">{t("cancellation_reason")} </p>
                   </div>
                   <div>
                     <p className="text-subtle text-sm">{booking.cancellationReason ?? "N/A"}</p>
