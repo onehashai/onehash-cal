@@ -552,12 +552,19 @@ const ProfileForm = ({
         emailPrimary: z.boolean().optional(),
       })
     ),
-    metadata: z.object({
-      phoneNumber: z
-        .string()
-        .refine((val) => isValidPhoneNumber(val), { message: t("invalid_phone_number") })
-        .optional(),
-    }),
+    metadata: z
+      .object({
+        phoneNumber: z
+          .string()
+          .refine(
+            (val) => {
+              return val === "" || isValidPhoneNumber(val);
+            },
+            { message: t("invalid_phone_number") }
+          )
+          .optional(),
+      })
+      .optional(),
   });
   const formMethods = useForm<FormValues>({
     defaultValues,
@@ -624,7 +631,11 @@ const ProfileForm = ({
   });
 
   const handleFormSubmit = (values: FormValues) => {
-    if (formMethods.formState.dirtyFields.metadata.phoneNumber === true && !numberVerified) {
+    if (
+      formMethods.formState.dirtyFields.metadata &&
+      formMethods.formState.dirtyFields.metadata.phoneNumber === true &&
+      !numberVerified
+    ) {
       showToast(t("please_verify_phone_number"), "error");
       return;
     }
@@ -633,6 +644,7 @@ const ProfileForm = ({
     const updatedValues: FormValues = {
       ...values,
     };
+    console.log("updatedValues", updatedValues);
 
     // If the primary email is changed, we will need to update
     const primaryEmailIndex = updatedValues.secondaryEmails.findIndex(
@@ -780,12 +792,15 @@ const ProfileForm = ({
               loading={sendVerificationCodeMutation.isPending}
               onClick={() =>
                 sendVerificationCodeMutation.mutate({
-                  phoneNumber: formMethods.getValues("phoneNumber"),
+                  phoneNumber: formMethods.getValues("metadata.phoneNumber"),
                 })
               }>
               {t("send_code")}
             </Button>
           </div>
+          {formMethods.formState.errors.metadata?.phoneNumber && (
+            <div className="mt-1 text-sm text-red-600">{t("invalid_phone_number")}</div>
+          )}
           {numberVerified ? (
             <div className="mt-1">
               <Badge variant="green">{t("number_verified")}</Badge>
