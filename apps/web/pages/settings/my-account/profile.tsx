@@ -97,7 +97,9 @@ export type FormValues = {
   email: string;
   bio: string;
   secondaryEmails: Email[];
-  phoneNumber: string;
+  metadata: {
+    phoneNumber: string;
+  };
 };
 
 const ProfileView = () => {
@@ -292,8 +294,12 @@ const ProfileView = () => {
         emailPrimary: false,
       })),
     ],
-    phoneNumber:
-      isPrismaObj(user.metadata) && user.metadata?.phoneNumber ? (user.metadata?.phoneNumber as string) : "",
+    metadata: {
+      phoneNumber:
+        isPrismaObj(user.metadata) && user.metadata?.phoneNumber
+          ? (user.metadata?.phoneNumber as string)
+          : "",
+    },
   };
 
   return (
@@ -546,10 +552,12 @@ const ProfileForm = ({
         emailPrimary: z.boolean().optional(),
       })
     ),
-    phoneNumber: z
-      .string()
-      .refine((val) => isValidPhoneNumber(val), { message: t("invalid_phone_number") })
-      .optional(),
+    metadata: z.object({
+      phoneNumber: z
+        .string()
+        .refine((val) => isValidPhoneNumber(val), { message: t("invalid_phone_number") })
+        .optional(),
+    }),
   });
   const formMethods = useForm<FormValues>({
     defaultValues,
@@ -583,11 +591,11 @@ const ProfileForm = ({
     );
   };
 
-  const [numberVerified, setNumberVerified] = useState(defaultValues.phoneNumber != "");
+  const [numberVerified, setNumberVerified] = useState(defaultValues.metadata.phoneNumber != "");
 
   const [isNumberValid, setIsNumberValid] = useState<boolean>(
-    formMethods.getValues("phoneNumber") != ""
-      ? isValidPhoneNumber(formMethods.getValues("phoneNumber"))
+    formMethods.getValues("metadata.phoneNumber") != ""
+      ? isValidPhoneNumber(formMethods.getValues("metadata.phoneNumber"))
       : false
   );
 
@@ -616,7 +624,7 @@ const ProfileForm = ({
   });
 
   const handleFormSubmit = (values: FormValues) => {
-    if (formMethods.formState.dirtyFields.phoneNumber === true && !numberVerified) {
+    if (formMethods.formState.dirtyFields.metadata.phoneNumber === true && !numberVerified) {
       showToast(t("please_verify_phone_number"), "error");
       return;
     }
@@ -757,9 +765,9 @@ const ProfileForm = ({
           <div className="flex">
             <PhoneInput
               className=" h-fit rounded-r-none border-r-transparent"
-              value={formMethods.getValues("phoneNumber")}
+              value={formMethods.getValues("metadata.phoneNumber")}
               onChange={(val) => {
-                formMethods.setValue("phoneNumber", val || "", { shouldDirty: true });
+                formMethods.setValue("metadata.phoneNumber", val || "", { shouldDirty: true });
                 const phoneNumber = val || "";
                 setIsNumberValid(isValidPhoneNumber(phoneNumber));
                 setNumberVerified(getNumberVerificationStatus(phoneNumber));
@@ -802,7 +810,7 @@ const ProfileForm = ({
                   loading={verifyPhoneNumberMutation.isPending}
                   onClick={() => {
                     verifyPhoneNumberMutation.mutate({
-                      phoneNumber: formMethods.getValues("phoneNumber") || "",
+                      phoneNumber: formMethods.getValues("metadata.phoneNumber") || "",
                       code: verificationCode,
                       teamId: undefined,
                     });
