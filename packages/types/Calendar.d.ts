@@ -36,6 +36,8 @@ export type Person = {
   locale?: string | null;
   timeFormat?: TimeFormat;
   bookingSeat?: BookingSeat | null;
+  phoneNumber?: string;
+  isAttendee?: boolean;
 };
 
 export type TeamMember = {

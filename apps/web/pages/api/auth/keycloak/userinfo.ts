@@ -58,6 +58,8 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       where: { userId: session.user.id },
     });
     return res.status(200).json({ message: "Session expired. Please log in again." });
+  } else {
+    return res.status(200).json({ message: "Session is active" });
   }
 }
 

@@ -329,12 +329,16 @@ const UserSettings = (props: IUserSettingsProps) => {
     await utils.viewer.me.invalidate();
     nextStep();
   };
+
   const mutation = trpc.viewer.updateProfile.useMutation({
     onSuccess: onSuccess,
   });
 
   const onSubmit = handleSubmit((data) => {
     mutation.mutate({
+      metadata: {
+        currentOnboardingStep: "connected-calendar",
+      },
       name: data.name,
       timeZone: selectedTimeZone,
     });
@@ -394,6 +398,7 @@ const UserSettings = (props: IUserSettingsProps) => {
               }
             }}
             options={designationTypeOptions}
+            // defaultValue={user?.metadata?.designation || designationTypeOptions[0]}
           />
         </div>
         {/* Timezone select field */}

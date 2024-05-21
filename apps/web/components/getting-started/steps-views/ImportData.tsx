@@ -58,6 +58,9 @@ const ImportData = () => {
     telemetry.event(telemetryEventTypes.onboardingFinished);
 
     mutation.mutate({
+      metadata: {
+        currentOnboardingStep: undefined,
+      },
       completedOnboarding: true,
     });
   };

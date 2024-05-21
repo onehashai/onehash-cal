@@ -14,10 +14,8 @@ const excludeNullValues = (value: unknown) => !!value;
 
 function RenderIcon({
   eventLocationType,
-  isTooltip,
 }: {
   eventLocationType: DefaultEventLocationType | EventLocationTypeFromApp;
-  isTooltip: boolean;
 }) {
   return (
     <img
@@ -47,7 +45,7 @@ function RenderLocationTooltip({ locations }: { locations: LocationObject[] }) {
           const translatedLocation = getTranslatedLocation(location, eventLocationType, t);
           return (
             <div key={`${location.type}-${index}`} className="font-sm flex flex-row items-center">
-              <RenderIcon eventLocationType={eventLocationType} isTooltip />
+              <RenderIcon eventLocationType={eventLocationType} />
               <p className="line-clamp-1">{translatedLocation}</p>
             </div>
           );
@@ -81,7 +79,7 @@ export function AvailableEventLocations({ locations }: { locations: LocationObje
           {eventLocationType.iconUrl === "/link.svg" ? (
             <Link className="text-default h-4 w-4 ltr:mr-[10px] rtl:ml-[10px]" />
           ) : (
-            <RenderIcon eventLocationType={eventLocationType} isTooltip={false} />
+            <RenderIcon eventLocationType={eventLocationType} />
           )}
           <Tooltip content={translatedLocation}>
             <p className="line-clamp-1">{translatedLocation}</p>
