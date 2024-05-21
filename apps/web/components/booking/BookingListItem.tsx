@@ -685,6 +685,16 @@ function BookingListItem(booking: BookingItemProps) {
                   ))}
                 </div>
               </div>
+              {attendeePhoneNo && (
+                <div className="flex flex-row items-center">
+                  <div className="mr-4">
+                    <p className="text-emphasis text-sm leading-6">{t("invitee_phone")}</p>
+                  </div>
+                  <div>
+                    <p className="text-subtle text-sm">{attendeePhoneNo}</p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center">
                 <div className="mr-4">
