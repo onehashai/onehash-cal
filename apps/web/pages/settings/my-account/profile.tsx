@@ -11,6 +11,7 @@ import { Controller, useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
+import federatedLogout from "@calcom/features/auth/lib/federatedLogout";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { isPrismaObj } from "@calcom/lib";
@@ -180,11 +181,7 @@ const ProfileView = () => {
     showToast(t("Your account was deleted"), "success");
 
     setHasDeleteErrors(false); // dismiss any open errors
-    if (process.env.NEXT_PUBLIC_WEBAPP_URL === "https://app.cal.com") {
-      signOut({ callbackUrl: "/auth/logout?survey=true" });
-    } else {
-      signOut({ callbackUrl: "/auth/logout" });
-    }
+    await federatedLogout();
   };
 
   const confirmPasswordMutation = trpc.viewer.auth.verifyPassword.useMutation({
