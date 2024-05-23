@@ -1,7 +1,7 @@
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { List, showToast } from "@calcom/ui";
+import { List, showToast, Button } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
 
 import { AppConnectionItem } from "../components/AppConnectionItem";
@@ -95,7 +95,7 @@ const ConnectedCalendars = (props: IConnectCalendarsProps) => {
 
       {queryIntegrations.isPending && <StepConnectionLoader />}
 
-      <button
+      <Button
         type="button"
         data-testid="save-calendar-button"
         className={classNames(
@@ -103,10 +103,11 @@ const ConnectedCalendars = (props: IConnectCalendarsProps) => {
           disabledNextButton ? "cursor-not-allowed opacity-20" : ""
         )}
         onClick={() => handleNextStep()}
+        loading={mutation.isPending}
         disabled={disabledNextButton}>
         {firstCalendar ? `${t("continue")}` : `${t("next_step_text")}`}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
-      </button>
+      </Button>
     </>
   );
 };

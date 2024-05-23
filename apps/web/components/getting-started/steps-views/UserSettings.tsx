@@ -435,7 +435,8 @@ const UserSettings = (props: IUserSettingsProps) => {
       <Button
         type="submit"
         className="mt-8 flex w-full flex-row justify-center bg-blue-500 hover:bg-blue-600"
-        disabled={mutation.isPending || selectedBusiness === null || isUsernameInvalid}>
+        disabled={mutation.isPending || selectedBusiness === null || isUsernameInvalid}
+        loading={mutation.isPending}>
         {t("next_step_text")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>

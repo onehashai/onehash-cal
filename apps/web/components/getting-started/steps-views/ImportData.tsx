@@ -90,7 +90,7 @@ const ImportData = () => {
         )}
       </List>
 
-      <button
+      <Button
         type="button"
         data-testid="save-calendar-button"
         className={classNames(
@@ -98,10 +98,11 @@ const ImportData = () => {
           importing ? "cursor-not-allowed opacity-20" : ""
         )}
         onClick={handleFinish}
+        loading={mutation.isPending}
         disabled={importing}>
         {t("finish")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
-      </button>
+      </Button>
     </>
   );
 };
