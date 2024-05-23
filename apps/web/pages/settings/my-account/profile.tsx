@@ -774,9 +774,8 @@ const ProfileForm = ({
             <p className="text-sm ">{t("phone_number")}</p>
             <InfoBadge content={t("number_in_international_format")} />
           </Label>
-          <div className="flex">
+          <div className="flex gap-3">
             <PhoneInput
-              className=" h-fit rounded-r-none border-r-transparent"
               value={formMethods.getValues("metadata.phoneNumber")}
               onChange={(val) => {
                 formMethods.setValue("metadata.phoneNumber", val || "", { shouldDirty: true });
@@ -787,7 +786,7 @@ const ProfileForm = ({
             />
             <Button
               color="secondary"
-              className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+              className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
               disabled={!isNumberValid || numberVerified}
               loading={sendVerificationCodeMutation.isPending}
               onClick={() =>
@@ -807,9 +806,9 @@ const ProfileForm = ({
             </div>
           ) : (
             <>
-              <div className="mt-3 flex">
+              <div className="mt-3 flex gap-3">
                 <TextField
-                  className="rounded-r-none border-r-transparent"
+                  className="h-[38px]"
                   placeholder="Verification code"
                   disabled={otpSent === false || verifyPhoneNumberMutation.isPending}
                   value={verificationCode}
@@ -820,7 +819,7 @@ const ProfileForm = ({
                 />
                 <Button
                   color="secondary"
-                  className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+                  className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block "
                   disabled={!verificationCode}
                   loading={verifyPhoneNumberMutation.isPending}
                   onClick={() => {

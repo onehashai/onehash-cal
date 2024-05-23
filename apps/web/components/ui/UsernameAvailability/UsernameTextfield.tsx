@@ -113,7 +113,7 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
   return (
     <div>
       <div className="flex rounded-md">
-        <div className="relative w-full">
+        <div className="relative w-full ">
           <TextField
             ref={usernameRef}
             name="username"
@@ -122,7 +122,7 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
             autoCapitalize="none"
             autoCorrect="none"
             className={classNames(
-              "mb-0 mt-0 rounded-md rounded-l-none",
+              "mb-0 mt-0 rounded-md rounded-l-none ",
               markAsError
                 ? "focus:shadow-0 focus:ring-shadow-0 border-red-500 focus:border-red-500 focus:outline-none focus:ring-0"
                 : ""
