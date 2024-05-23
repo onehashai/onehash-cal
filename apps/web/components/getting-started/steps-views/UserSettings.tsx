@@ -10,7 +10,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
 import type { TCreateInputSchema } from "@calcom/trpc/server/routers/viewer/eventTypes/create.schema";
-import { Button, TimezoneSelect, Input, Select } from "@calcom/ui";
+import { Button, TimezoneSelect, Input, Select, showToast } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
 
 import { UsernameAvailabilityField } from "@components/ui/UsernameAvailability";
@@ -357,11 +357,24 @@ const UserSettings = (props: IUserSettingsProps) => {
     { value: "others", label: t("others") },
   ];
 
+  const [isUsernameInvalid, setIsUsernameInvalid] = useState<boolean>(false);
+
   return (
     <form onSubmit={onSubmit}>
       <div className="space-y-6">
         {/* Username textfield: when not coming from signup */}
-        {!props.hideUsername && <UsernameAvailabilityField />}
+        {!props.hideUsername && (
+          <UsernameAvailabilityField
+            onSuccessMutation={async () => {
+              showToast(t("settings_updated_successfully"), "success");
+              await utils.viewer.me.invalidate();
+            }}
+            onErrorMutation={() => {
+              showToast(t("error_updating_settings"), "error");
+            }}
+            setIsUsernameInvalid={setIsUsernameInvalid}
+          />
+        )}
 
         {/* Full name textfield */}
         <div className="w-full">
@@ -422,7 +435,7 @@ const UserSettings = (props: IUserSettingsProps) => {
       <Button
         type="submit"
         className="mt-8 flex w-full flex-row justify-center bg-blue-500 hover:bg-blue-600"
-        disabled={mutation.isPending || selectedBusiness === null}>
+        disabled={mutation.isPending || selectedBusiness === null || isUsernameInvalid}>
         {t("next_step_text")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>

@@ -78,6 +78,8 @@ function useAddAppMutation(_type: App["type"] | null, allOptions?: UseAddAppMuta
         ...(teamId && { teamId }),
       };
 
+      console.log("returnTo", state.returnTo);
+
       const stateStr = encodeURIComponent(JSON.stringify(state));
       const searchParams = `?state=${stateStr}${teamId ? `&teamId=${teamId}` : ""}`;
 
