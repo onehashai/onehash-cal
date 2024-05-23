@@ -7,6 +7,21 @@ export default async function federatedLogout() {
     if (status.result === 204) {
       await signOut();
     }
+    console.error("Failed to logout user from Keycloak", status);
+  } catch (error) {
+    console.log(error);
+    alert(error);
+  }
+}
+
+export async function logoutAndDeleteUser(deleteAccount: () => Promise<void>) {
+  try {
+    const res = await fetch("/api/auth/federated-logout");
+    const status = await res.json();
+    if (status.result === 204) {
+      await deleteAccount();
+    }
+    console.error("Failed to logout user from Keycloak", status);
   } catch (error) {
     console.log(error);
     alert(error);
