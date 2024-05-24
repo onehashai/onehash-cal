@@ -19,16 +19,11 @@ import type { InstallAppButtonProps } from "./types";
 export const InstallAppButtonWithoutPlanCheck = (
   props: {
     type: App["type"];
+    redirectUrl?: string;
   } & InstallAppButtonProps
 ) => {
-  const getCookie = (name: string): string | undefined => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-  };
-
   const mutation = useAddAppMutation(null, {
-    returnTo: getCookie("return_to"),
+    returnTo: props.redirectUrl,
   });
   const key = deriveAppDictKeyFromType(props.type, InstallAppButtonMap);
   const InstallAppButtonComponent = InstallAppButtonMap[key as keyof typeof InstallAppButtonMap];

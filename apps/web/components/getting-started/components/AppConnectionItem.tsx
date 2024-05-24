@@ -22,6 +22,7 @@ const AppConnectionItem = (props: IAppConnectionItem) => {
       </div>
       <InstallAppButtonWithoutPlanCheck
         type={type}
+        redirectUrl={window.location.href}
         render={(buttonProps) => (
           <Button
             {...buttonProps}
