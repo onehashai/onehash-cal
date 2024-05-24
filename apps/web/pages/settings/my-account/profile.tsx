@@ -231,21 +231,20 @@ const ProfileView = () => {
   const [isAccountDeleting, setIsAccountDeleting] = useState(false);
   const onConfirmButton = (e: Event | React.MouseEvent<HTMLElement, MouseEvent>) => {
     e.preventDefault();
+    const deleteAccount = async () => {
+      if (isCALIdentityProvider) {
+        const totpCode = form.getValues("totpCode");
+        const password = passwordRef.current.value;
+        deleteMeMutation.mutate({ password, totpCode });
+      } else {
+        deleteMeWithoutPasswordMutation.mutate();
+      }
+    };
     setIsAccountDeleting(true);
-    try {
-      const deleteAccount = async () => {
-        if (isCALIdentityProvider) {
-          const totpCode = form.getValues("totpCode");
-          const password = passwordRef.current.value;
-          deleteMeMutation.mutate({ password, totpCode });
-        } else {
-          deleteMeWithoutPasswordMutation.mutate();
-        }
-      };
-      logoutAndDeleteUser(deleteAccount);
-    } finally {
+
+    logoutAndDeleteUser(deleteAccount).finally(() => {
       setIsAccountDeleting(false);
-    }
+    });
   };
 
   const onConfirm = ({ totpCode }: DeleteAccountValues, e: BaseSyntheticEvent | undefined) => {
