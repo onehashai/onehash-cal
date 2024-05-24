@@ -21,7 +21,15 @@ export const InstallAppButtonWithoutPlanCheck = (
     type: App["type"];
   } & InstallAppButtonProps
 ) => {
-  const mutation = useAddAppMutation(null);
+  const getCookie = (name: string): string | undefined => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(";").shift();
+  };
+
+  const mutation = useAddAppMutation(null, {
+    returnTo: getCookie("return_to"),
+  });
   const key = deriveAppDictKeyFromType(props.type, InstallAppButtonMap);
   const InstallAppButtonComponent = InstallAppButtonMap[key as keyof typeof InstallAppButtonMap];
   if (!InstallAppButtonComponent)

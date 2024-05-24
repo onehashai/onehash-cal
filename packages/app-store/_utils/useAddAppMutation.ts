@@ -65,9 +65,9 @@ function useAddAppMutation(_type: App["type"] | null, allOptions?: UseAddAppMuta
         throw new Error("Could not install Google Meet");
 
       const state: IntegrationOAuthCallbackState = {
-        returnTo:
-          returnTo ||
-          WEBAPP_URL +
+        returnTo: returnTo
+          ? returnTo
+          : WEBAPP_URL +
             getInstalledAppPath(
               { variant: variables && variables.variant, slug: variables && variables.slug },
               location.search
@@ -78,11 +78,8 @@ function useAddAppMutation(_type: App["type"] | null, allOptions?: UseAddAppMuta
         ...(teamId && { teamId }),
       };
 
-      console.log("returnTo", state.returnTo);
-
       const stateStr = encodeURIComponent(JSON.stringify(state));
       const searchParams = `?state=${stateStr}${teamId ? `&teamId=${teamId}` : ""}`;
-      //console.log
       const res = await fetch(`/api/integrations/${type}/add${searchParams}`);
 
       if (!res.ok) {
