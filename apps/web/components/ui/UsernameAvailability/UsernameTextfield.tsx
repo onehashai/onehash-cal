@@ -47,12 +47,19 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     () =>
       debounce(async (username) => {
         // TODO: Support orgSlug
-        const { data } = await fetchUsername(username, null);
-        setMarkAsError(!data.available);
-        setUsernameIsAvailable(data.available);
-        setIsUsernameInvalid && setIsUsernameInvalid(!data.available);
+        try {
+          const { data } = await fetchUsername(username, null);
+          setMarkAsError(!data.available);
+          setUsernameIsAvailable(data.available);
+          if (setIsUsernameInvalid) setIsUsernameInvalid(!data.available);
+        } catch (error) {
+          console.error("Error fetching username:", error);
+          setMarkAsError(true);
+          setUsernameIsAvailable(false);
+          if (setIsUsernameInvalid) setIsUsernameInvalid(true);
+        }
       }, 150),
-    []
+    [setIsUsernameInvalid]
   );
 
   useEffect(() => {
@@ -68,9 +75,9 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     } else {
       setUsernameIsAvailable(false);
       setMarkAsError(false);
-      setIsUsernameInvalid && setIsUsernameInvalid(false);
+      if (setIsUsernameInvalid) setIsUsernameInvalid(false);
     }
-  }, [inputUsernameValue, debouncedApiCall, currentUsername]);
+  }, [inputUsernameValue, debouncedApiCall, currentUsername, setIsUsernameInvalid]);
 
   const updateUsernameMutation = trpc.viewer.updateProfile.useMutation({
     onSuccess: async () => {
