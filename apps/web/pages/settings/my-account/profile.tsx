@@ -11,6 +11,7 @@ import { Controller, useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
+import { logoutAndDeleteUser } from "@calcom/features/auth/lib/federatedLogout";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { isPrismaObj } from "@calcom/lib";
@@ -180,11 +181,7 @@ const ProfileView = () => {
     showToast(t("Your account was deleted"), "success");
 
     setHasDeleteErrors(false); // dismiss any open errors
-    if (process.env.NEXT_PUBLIC_WEBAPP_URL === "https://app.cal.com") {
-      signOut({ callbackUrl: "/auth/logout?survey=true" });
-    } else {
-      signOut({ callbackUrl: "/auth/logout" });
-    }
+    await signOut();
   };
 
   const confirmPasswordMutation = trpc.viewer.auth.verifyPassword.useMutation({
@@ -231,15 +228,23 @@ const ProfileView = () => {
     if (tempFormValues) updateProfileMutation.mutate(tempFormValues);
   };
 
+  const [isAccountDeleting, setIsAccountDeleting] = useState(false);
   const onConfirmButton = (e: Event | React.MouseEvent<HTMLElement, MouseEvent>) => {
     e.preventDefault();
-    if (isCALIdentityProvider) {
-      const totpCode = form.getValues("totpCode");
-      const password = passwordRef.current.value;
-      deleteMeMutation.mutate({ password, totpCode });
-    } else {
-      deleteMeWithoutPasswordMutation.mutate();
-    }
+    const deleteAccount = async () => {
+      if (isCALIdentityProvider) {
+        const totpCode = form.getValues("totpCode");
+        const password = passwordRef.current.value;
+        deleteMeMutation.mutate({ password, totpCode });
+      } else {
+        deleteMeWithoutPasswordMutation.mutate();
+      }
+    };
+    setIsAccountDeleting(true);
+
+    logoutAndDeleteUser(deleteAccount).finally(() => {
+      setIsAccountDeleting(false);
+    });
   };
 
   const onConfirm = ({ totpCode }: DeleteAccountValues, e: BaseSyntheticEvent | undefined) => {
@@ -394,7 +399,8 @@ const ProfileView = () => {
               <Button
                 color="primary"
                 data-testid="delete-account-confirm"
-                onClick={(e) => onConfirmButton(e)}>
+                onClick={(e) => onConfirmButton(e)}
+                loading={isAccountDeleting}>
                 {t("delete_my_account")}
               </Button>
             </DialogFooter>
@@ -774,9 +780,8 @@ const ProfileForm = ({
             <p className="text-sm ">{t("phone_number")}</p>
             <InfoBadge content={t("number_in_international_format")} />
           </Label>
-          <div className="flex">
+          <div className="flex gap-3">
             <PhoneInput
-              className=" h-fit rounded-r-none border-r-transparent"
               value={formMethods.getValues("metadata.phoneNumber")}
               onChange={(val) => {
                 formMethods.setValue("metadata.phoneNumber", val || "", { shouldDirty: true });
@@ -787,7 +792,7 @@ const ProfileForm = ({
             />
             <Button
               color="secondary"
-              className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+              className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
               disabled={!isNumberValid || numberVerified}
               loading={sendVerificationCodeMutation.isPending}
               onClick={() =>
@@ -807,9 +812,9 @@ const ProfileForm = ({
             </div>
           ) : (
             <>
-              <div className="mt-3 flex">
+              <div className="mt-3 flex gap-3">
                 <TextField
-                  className="rounded-r-none border-r-transparent"
+                  className="h-[38px]"
                   placeholder="Verification code"
                   disabled={otpSent === false || verifyPhoneNumberMutation.isPending}
                   value={verificationCode}
@@ -820,7 +825,7 @@ const ProfileForm = ({
                 />
                 <Button
                   color="secondary"
-                  className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+                  className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block "
                   disabled={!verificationCode}
                   loading={verifyPhoneNumberMutation.isPending}
                   onClick={() => {

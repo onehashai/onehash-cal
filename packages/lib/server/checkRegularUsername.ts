@@ -1,6 +1,7 @@
 import slugify from "@calcom/lib/slugify";
 
 import { ProfileRepository } from "./repository/profile";
+import { UserRepository } from "./repository/user";
 import { isUsernameReservedDueToMigration } from "./username";
 
 export async function checkRegularUsername(_username: string, currentOrgDomain?: string | null) {
@@ -14,9 +15,14 @@ export async function checkRegularUsername(_username: string, currentOrgDomain?:
         orgSlug: currentOrgDomain,
         usernames: [username],
       })
-    : null;
+    : await UserRepository.findUsersByUsername({
+        usernameList: [username],
+        orgSlug: null,
+      });
 
-  const user = profiles?.length ? profiles[0].user : null;
+  console.log("profiles", profiles);
+
+  const user = profiles?.length > 0;
 
   if (user) {
     return {

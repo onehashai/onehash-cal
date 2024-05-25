@@ -2,7 +2,7 @@ import classNames from "classnames";
 // eslint-disable-next-line no-restricted-imports
 import { debounce, noop } from "lodash";
 import { useSession } from "next-auth/react";
-import type { RefCallback } from "react";
+import type { Dispatch, RefCallback, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchUsername } from "@calcom/lib/fetchUsername";
@@ -21,6 +21,7 @@ interface ICustomUsernameProps {
   setInputUsernameValue: (value: string) => void;
   onSuccessMutation?: () => void;
   onErrorMutation?: (error: TRPCClientErrorLike<AppRouter>) => void;
+  setIsUsernameInvalid?: Dispatch<SetStateAction<boolean>>;
 }
 
 const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.ComponentProps<typeof TextField>>) => {
@@ -35,6 +36,7 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     usernameRef,
     onSuccessMutation,
     onErrorMutation,
+    setIsUsernameInvalid,
     ...rest
   } = props;
   const [usernameIsAvailable, setUsernameIsAvailable] = useState(false);
@@ -48,6 +50,7 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
         const { data } = await fetchUsername(username, null);
         setMarkAsError(!data.available);
         setUsernameIsAvailable(data.available);
+        setIsUsernameInvalid && setIsUsernameInvalid(!data.available);
       }, 150),
     []
   );
@@ -64,6 +67,8 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
       debouncedApiCall(inputUsernameValue);
     } else {
       setUsernameIsAvailable(false);
+      setMarkAsError(false);
+      setIsUsernameInvalid && setIsUsernameInvalid(false);
     }
   }, [inputUsernameValue, debouncedApiCall, currentUsername]);
 
@@ -113,7 +118,7 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
   return (
     <div>
       <div className="flex rounded-md">
-        <div className="relative w-full">
+        <div className="relative w-full ">
           <TextField
             ref={usernameRef}
             name="username"
@@ -122,7 +127,7 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
             autoCapitalize="none"
             autoCorrect="none"
             className={classNames(
-              "mb-0 mt-0 rounded-md rounded-l-none",
+              "mb-0 mt-0 rounded-md rounded-l-none ",
               markAsError
                 ? "focus:shadow-0 focus:ring-shadow-0 border-red-500 focus:border-red-500 focus:outline-none focus:ring-0"
                 : ""
@@ -148,11 +153,10 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
       </div>
       {markAsError && <p className="mt-1 text-xs text-red-500">{t("username_already_taken")}</p>}
 
-      {usernameIsAvailable && currentUsername !== inputUsernameValue && (
-        <div className="mt-2 flex justify-end md:hidden">
-          <ActionButtons />
-        </div>
-      )}
+      <div className="mt-2 flex justify-end md:hidden">
+        <ActionButtons />
+      </div>
+
       <Dialog open={openDialogSaveUsername}>
         <DialogContent type="confirmation" Icon={Edit2} title={t("confirm_username_change_dialog_title")}>
           <div className="flex flex-row">

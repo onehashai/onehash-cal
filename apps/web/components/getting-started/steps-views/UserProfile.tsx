@@ -112,7 +112,8 @@ const UserProfile = (props: IUserProfileProps) => {
       <Button
         EndIcon={ArrowRight}
         type="submit"
-        className="mt-8 w-full items-center justify-center bg-blue-500 hover:bg-blue-600">
+        className="mt-8 w-full items-center justify-center bg-blue-500 hover:bg-blue-600"
+        loading={mutation.isPending}>
         {t("next_step_text")}
       </Button>
     </form>

@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
+import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
@@ -14,6 +15,7 @@ import useRouterQuery from "@lib/hooks/useRouterQuery";
 interface UsernameAvailabilityFieldProps {
   onSuccessMutation?: () => void;
   onErrorMutation?: (error: TRPCClientErrorLike<AppRouter>) => void;
+  setIsUsernameInvalid?: Dispatch<SetStateAction<boolean>>;
 }
 
 export const getUsernameAvailabilityComponent = (isPremium: boolean) => {
@@ -25,6 +27,7 @@ export const getUsernameAvailabilityComponent = (isPremium: boolean) => {
 export const UsernameAvailabilityField = ({
   onSuccessMutation,
   onErrorMutation,
+  setIsUsernameInvalid,
 }: UsernameAvailabilityFieldProps) => {
   const searchParams = useSearchParams();
   const [user] = trpc.viewer.me.useSuspenseQuery();
@@ -63,6 +66,7 @@ export const UsernameAvailabilityField = ({
             onErrorMutation={onErrorMutation}
             disabled={!!user.organization?.id}
             addOnLeading={`${usernamePrefix}/`}
+            setIsUsernameInvalid={setIsUsernameInvalid}
           />
         );
       }}

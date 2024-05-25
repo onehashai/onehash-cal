@@ -1,7 +1,7 @@
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { List, showToast } from "@calcom/ui";
+import { List, showToast, Button } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
 
 import { AppConnectionItem } from "../components/AppConnectionItem";
@@ -65,7 +65,7 @@ const ConnectedVideoStep = (props: ConnectedAppStepProps) => {
       )}
 
       {isPending && <StepConnectionLoader />}
-      <button
+      <Button
         type="button"
         data-testid="save-video-button"
         className={classNames(
@@ -73,10 +73,11 @@ const ConnectedVideoStep = (props: ConnectedAppStepProps) => {
           !hasAnyInstalledVideoApps ? "cursor-not-allowed opacity-20" : ""
         )}
         disabled={!hasAnyInstalledVideoApps}
-        onClick={() => handleNextStep()}>
+        onClick={() => handleNextStep()}
+        loading={mutation.isPending}>
         {t("next_step_text")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
-      </button>
+      </Button>
     </>
   );
 };

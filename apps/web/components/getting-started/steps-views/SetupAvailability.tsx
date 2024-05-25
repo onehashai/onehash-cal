@@ -94,7 +94,8 @@ const SetupAvailability = (props: ISetupAvailabilityProps) => {
           data-testid="save-availability"
           type="submit"
           className="mt-2 w-full justify-center bg-blue-500 p-2 text-sm hover:bg-blue-600 sm:mt-8"
-          disabled={availabilityForm.formState.isSubmitting}>
+          disabled={availabilityForm.formState.isSubmitting}
+          loading={mutation.isPending}>
           {t("next_step_text")} <ArrowRight className="ml-2 h-4 w-4 self-center" />
         </Button>
       </div>

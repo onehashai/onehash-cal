@@ -57,6 +57,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
           message: "You must grant all permissions to use this integration",
         });
       }
+
       res.redirect(
         getSafeRedirectUrl(state.onErrorReturnTo) ??
           getSafeRedirectUrl(state?.returnTo) ??
@@ -126,6 +127,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
         errorMessage = "account_already_linked";
       }
       await prisma.credential.delete({ where: { id: credential.id } });
+
       res.redirect(
         `${
           getSafeRedirectUrl(state?.onErrorReturnTo) ??

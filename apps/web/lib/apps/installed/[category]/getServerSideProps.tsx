@@ -10,13 +10,13 @@ export const querySchema = z.object({
 });
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
-  // get return-to cookie and redirect if needed
+  // get return_to cookie and redirect if needed
   const { cookies } = ctx.req;
 
-  const returnTo = cookies["return-to"];
+  const returnTo = cookies["return_to"];
 
   if (cookies && returnTo) {
-    ctx.res.setHeader("Set-Cookie", "return-to=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT");
+    ctx.res.setHeader("Set-Cookie", "return_to=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT");
     const redirect = {
       redirect: {
         destination: `${returnTo}`,
