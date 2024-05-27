@@ -2,7 +2,7 @@ import classNames from "classnames";
 // eslint-disable-next-line no-restricted-imports
 import { debounce, noop } from "lodash";
 import { useSession } from "next-auth/react";
-import type { Dispatch, RefCallback, SetStateAction } from "react";
+import type { RefCallback } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchUsername } from "@calcom/lib/fetchUsername";
@@ -21,7 +21,6 @@ interface ICustomUsernameProps {
   setInputUsernameValue: (value: string) => void;
   onSuccessMutation?: () => void;
   onErrorMutation?: (error: TRPCClientErrorLike<AppRouter>) => void;
-  setIsUsernameInvalid?: Dispatch<SetStateAction<boolean>>;
 }
 
 const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.ComponentProps<typeof TextField>>) => {
@@ -36,7 +35,6 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     usernameRef,
     onSuccessMutation,
     onErrorMutation,
-    setIsUsernameInvalid,
     ...rest
   } = props;
   const [usernameIsAvailable, setUsernameIsAvailable] = useState(false);
@@ -51,15 +49,13 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
           const { data } = await fetchUsername(username, null);
           setMarkAsError(!data.available);
           setUsernameIsAvailable(data.available);
-          if (setIsUsernameInvalid) setIsUsernameInvalid(!data.available);
         } catch (error) {
           console.error("Error fetching username:", error);
           setMarkAsError(true);
           setUsernameIsAvailable(false);
-          if (setIsUsernameInvalid) setIsUsernameInvalid(true);
         }
-      }, 150),
-    [setIsUsernameInvalid]
+      }, 300),
+    []
   );
 
   useEffect(() => {
@@ -75,9 +71,8 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     } else {
       setUsernameIsAvailable(false);
       setMarkAsError(false);
-      if (setIsUsernameInvalid) setIsUsernameInvalid(false);
     }
-  }, [inputUsernameValue, debouncedApiCall, currentUsername, setIsUsernameInvalid]);
+  }, [inputUsernameValue, debouncedApiCall, currentUsername]);
 
   const updateUsernameMutation = trpc.viewer.updateProfile.useMutation({
     onSuccess: async () => {

@@ -357,8 +357,6 @@ const UserSettings = (props: IUserSettingsProps) => {
     { value: "others", label: t("others") },
   ];
 
-  const [isUsernameInvalid, setIsUsernameInvalid] = useState<boolean>(false);
-
   return (
     <form onSubmit={onSubmit}>
       <div className="space-y-6">
@@ -372,7 +370,6 @@ const UserSettings = (props: IUserSettingsProps) => {
             onErrorMutation={() => {
               showToast(t("error_updating_settings"), "error");
             }}
-            setIsUsernameInvalid={setIsUsernameInvalid}
           />
         )}
 
@@ -435,7 +432,7 @@ const UserSettings = (props: IUserSettingsProps) => {
       <Button
         type="submit"
         className="mt-8 flex w-full flex-row justify-center bg-blue-500 hover:bg-blue-600"
-        disabled={mutation.isPending || selectedBusiness === null || isUsernameInvalid}
+        disabled={mutation.isPending || selectedBusiness === null}
         loading={mutation.isPending}>
         {t("next_step_text")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
