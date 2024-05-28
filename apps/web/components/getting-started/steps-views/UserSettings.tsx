@@ -13,13 +13,17 @@ import type { TCreateInputSchema } from "@calcom/trpc/server/routers/viewer/even
 import { Button, TimezoneSelect, Input, Select, showToast } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
 
-import * as fbq from "@lib/fpixel";
-
 import { UsernameAvailabilityField } from "@components/ui/UsernameAvailability";
 
 interface IUserSettingsProps {
   nextStep: () => void;
   hideUsername?: boolean;
+}
+
+declare global {
+  interface Window {
+    fbq: (command: "trackCustom", event: string) => void;
+  }
 }
 
 type TProfessionTypeAndEventTypes = {
@@ -306,7 +310,16 @@ const UserSettings = (props: IUserSettingsProps) => {
   }, [telemetry]);
 
   useEffect(() => {
-    fbq.event("Registration_Completed");
+    const trackCustomEvent = () => {
+      if (window.fbq) {
+        window.fbq("trackCustom", "Registration_Completed");
+      } else {
+        // Retry after a delay if fbq is not available
+        setTimeout(trackCustomEvent, 100);
+      }
+    };
+
+    trackCustomEvent();
   }, []);
 
   const utils = trpc.useContext();
