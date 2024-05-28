@@ -448,7 +448,6 @@ export const AUTH_OPTIONS: AuthOptions = {
       account,
     }) {
       log.debug("callbacks:jwt", safeStringify({ token, user, account, trigger, session }));
-
       // The data available in 'session' depends on what data was supplied in update method call of session
       if (trigger === "update") {
         return {
@@ -503,7 +502,7 @@ export const AUTH_OPTIONS: AuthOptions = {
         }
 
         const profileOrg = profile?.organization;
-
+        token.id_token = account?.id_token;
         return {
           ...existingUserWithoutTeamsField,
           ...token,
@@ -582,7 +581,7 @@ export const AUTH_OPTIONS: AuthOptions = {
         if (!existingUser) {
           return await autoMergeIdentities();
         }
-
+        token.id_token = account?.id_token;
         return {
           ...token,
           id: existingUser.id,
@@ -607,6 +606,7 @@ export const AUTH_OPTIONS: AuthOptions = {
       log.debug("callbacks:session - Session callback called", safeStringify({ session, token, user }));
       const hasValidLicense = await checkLicense(prisma);
       const profileId = token.profileId;
+      session.id_token = token.id_token;
       const calendsoSession: Session = {
         ...session,
         profileId,

@@ -15784,10 +15784,12 @@ __metadata:
     i18n-unused: ^0.13.0
     jest-diff: ^29.5.0
     jsdom: ^22.0.0
+    keycloak-js: ^24.0.4
     lint-staged: ^12.5.0
     lucide-react: ^0.171.0
     mailhog: ^4.16.0
     node-ical: ^0.16.1
+    nookies: ^2.5.2
     prettier: ^2.8.6
     prismock: ^1.21.1
     tsc-absolute: ^1.0.0
@@ -16930,7 +16932,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cookie@npm:^0.4.2":
+"cookie@npm:^0.4.1, cookie@npm:^0.4.2":
   version: 0.4.2
   resolution: "cookie@npm:0.4.2"
   checksum: a00833c998bedf8e787b4c342defe5fa419abd96b32f4464f718b91022586b8f1bafbddd499288e75c037642493c83083da426c6a9080d309e3bd90fd11baa9b
@@ -23550,6 +23552,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-sha256@npm:^0.11.0":
+  version: 0.11.0
+  resolution: "js-sha256@npm:0.11.0"
+  checksum: 742d34a0c6eb15247309f1c74889b5a51df01a96e4307375b420fbe973f2f25585012b4d3c8fa52a1b18546153d12587e6463bb725dc1bc58686da03e892c334
+  languageName: node
+  linkType: hard
+
 "js-tiktoken@npm:^1.0.7":
   version: 1.0.7
   resolution: "js-tiktoken@npm:1.0.7"
@@ -24000,6 +24009,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jwt-decode@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "jwt-decode@npm:4.0.0"
+  checksum: 390e2edcb31a92e86c8cbdd1edeea4c0d62acd371f8a8f0a8878e499390c0ecf4c658b365c4e941e4ef37d0170e4ca650aaa49f99a45c0b9695a235b210154b0
+  languageName: node
+  linkType: hard
+
 "kbar@npm:^0.1.0-beta.36":
   version: 0.1.0-beta.36
   resolution: "kbar@npm:0.1.0-beta.36"
@@ -24020,6 +24036,16 @@ __metadata:
   version: 1.0.2
   resolution: "kebab-case@npm:1.0.2"
   checksum: bf01164e11c544ee9b3aa1a91c2e7d6aa6b3356b834a5e885d43f36db14aae5d347cd4a298a566133321b82fde6bac6b597f148ac19bfd3d3fc81e1034a79729
+  languageName: node
+  linkType: hard
+
+"keycloak-js@npm:^24.0.4":
+  version: 24.0.4
+  resolution: "keycloak-js@npm:24.0.4"
+  dependencies:
+    js-sha256: ^0.11.0
+    jwt-decode: ^4.0.0
+  checksum: 8040cb06241c85ecb0d84405c15ee202feac721017a5cc70ceb3bb898fe58ca58d7bc3d15266e86e5792692d909430e76c628b05495456fda717005311a2112e
   languageName: node
   linkType: hard
 
@@ -26919,6 +26945,16 @@ __metadata:
   version: 6.7.8
   resolution: "nodemailer@npm:6.7.8"
   checksum: 92d4a1d48813825989c7f5fc7cbcf5ba8d1a8acf8e10e420b4aa7670ade7abd0c543cc6cf8adf14e44c62552e26efb37b2a15a9af90a515fa90b40ffc71c433e
+  languageName: node
+  linkType: hard
+
+"nookies@npm:^2.5.2":
+  version: 2.5.2
+  resolution: "nookies@npm:2.5.2"
+  dependencies:
+    cookie: ^0.4.1
+    set-cookie-parser: ^2.4.6
+  checksum: 4cc6fd8d0ab9fce840ccdb161eefe9dee581f441429fc729f279924491ebd1c12c220f889b6e315d66f8ea00bef944966969c966c957a6b9918ced7d7f9cc8a8
   languageName: node
   linkType: hard
 

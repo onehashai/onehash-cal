@@ -7,7 +7,6 @@ import { ssrInit } from "@server/lib/ssr";
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
   const ssr = await ssrInit(context);
   const session = await getServerSession({ req: context.req, res: context.res });
-
   if (!session) {
     return {
       redirect: {

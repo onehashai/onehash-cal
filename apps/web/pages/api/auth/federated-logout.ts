@@ -1,78 +1,45 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 
-import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import prisma from "@calcom/prisma";
+import { localStorage } from "@calcom/lib/webstorage";
 
-const logoutUserFromKeycloak = async (refresh_token: string, access_token: string) => {
-  const clientId = process.env.KEYCLOAK_CLIENT_ID;
-  const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET;
-  const endsessionURL = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/logout`;
+function logoutParams(token: string): Record<string, string> {
+  return {
+    id_token_hint: token,
+    post_logout_redirect_uri: process.env.NEXT_PUBLIC_WEBAPP_URL || "",
+  };
+}
 
-  try {
-    const response = await fetch(endsessionURL, {
-      method: "POST",
-      body: new URLSearchParams({
-        client_id: clientId ?? "",
-        client_secret: clientSecret ?? "",
-        refresh_token: refresh_token,
-      }),
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-    if (!response.ok) {
-      console.error(response);
-      throw new Error("Failed to logout user from Keycloak");
-    }
-    return response.status;
-  } catch (err) {
-    console.log(err);
-  }
-};
+function handleEmptyToken() {
+  const response = { error: "No session present" };
+  const responseHeaders = { status: 400 };
+  return NextResponse.json(response, responseHeaders);
+}
+
+function sendEndSessionEndpointToURL(token: string) {
+  const endSessionEndPoint = new URL(`${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/logout`);
+  const params: Record<string, string> = logoutParams(token);
+  const endSessionParams = new URLSearchParams(params);
+  const response = { url: `${endSessionEndPoint.href}?${endSessionParams}` };
+  console.log("response: ", response);
+  return NextResponse.json(response);
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getServerSession({ req, res });
-  if (!session) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-
-  if (!session.user?.id) {
-    console.error("Session is missing a user id.");
-    return res.status(500).json({ error: ErrorCode.InternalServerError });
-  }
-
-  const accounts = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { accounts: true },
-  });
-
-  if (!accounts) {
-    console.error("Account is missing.");
-    return res.status(500).json({ error: ErrorCode.InternalServerError });
-  }
-  let refreshToken;
-  let accessToken;
-  accounts.accounts.forEach((account) => {
-    refreshToken = account.refresh_token;
-    accessToken = account.access_token;
-  });
-  if (refreshToken && accessToken) {
-    try {
-      const result = await logoutUserFromKeycloak(refreshToken, accessToken);
-      if (result === 204) {
-        await prisma.account.deleteMany({
-          where: { userId: session.user.id },
-        });
-        return res.status(200).json({ result });
-      }
-      return res.status(500).json({ message: "Invalid Response from Keycloak" });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: error });
+  try {
+    const session = await getServerSession({ req, res });
+    if (!session) {
+      return res.status(401).json({ message: "Not authenticated" });
     }
-  } else {
-    return res.status(400).json({ message: "Refresh Token missing or invalid" });
+
+    const idToken = localStorage.getItem("keycloak_id_token");
+    console.log("idToken", idToken);
+    if (idToken) {
+      return sendEndSessionEndpointToURL(idToken);
+    }
+    return handleEmptyToken();
+  } catch (error) {
+    return res.status(500);
   }
 }

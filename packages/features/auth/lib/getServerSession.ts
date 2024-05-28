@@ -105,6 +105,7 @@ export async function getServerSession(options: {
     },
     profileId: token.profileId,
     upId,
+    id_token: token.id_token,
   };
 
   if (token?.impersonatedBy?.id) {
