@@ -13,6 +13,8 @@ import type { TCreateInputSchema } from "@calcom/trpc/server/routers/viewer/even
 import { Button, TimezoneSelect, Input, Select, showToast } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
 
+import * as fbq from "@lib/fpixel";
+
 import { UsernameAvailabilityField } from "@components/ui/UsernameAvailability";
 
 interface IUserSettingsProps {
@@ -303,6 +305,10 @@ const UserSettings = (props: IUserSettingsProps) => {
     telemetry.event(telemetryEventTypes.onboardingStarted);
   }, [telemetry]);
 
+  useEffect(() => {
+    fbq.event("Registration_Completed");
+  }, []);
+
   const utils = trpc.useContext();
   const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
 
@@ -357,8 +363,6 @@ const UserSettings = (props: IUserSettingsProps) => {
     { value: "others", label: t("others") },
   ];
 
-  const [isUsernameInvalid, setIsUsernameInvalid] = useState<boolean>(false);
-
   return (
     <form onSubmit={onSubmit}>
       <div className="space-y-6">
@@ -372,7 +376,6 @@ const UserSettings = (props: IUserSettingsProps) => {
             onErrorMutation={() => {
               showToast(t("error_updating_settings"), "error");
             }}
-            setIsUsernameInvalid={setIsUsernameInvalid}
           />
         )}
 
@@ -435,7 +438,7 @@ const UserSettings = (props: IUserSettingsProps) => {
       <Button
         type="submit"
         className="mt-8 flex w-full flex-row justify-center bg-blue-500 hover:bg-blue-600"
-        disabled={mutation.isPending || selectedBusiness === null || isUsernameInvalid}
+        disabled={mutation.isPending || selectedBusiness === null}
         loading={mutation.isPending}>
         {t("next_step_text")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />

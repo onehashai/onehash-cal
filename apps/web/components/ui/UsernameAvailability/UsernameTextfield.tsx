@@ -2,7 +2,7 @@ import classNames from "classnames";
 // eslint-disable-next-line no-restricted-imports
 import { debounce, noop } from "lodash";
 import { useSession } from "next-auth/react";
-import type { Dispatch, RefCallback, SetStateAction } from "react";
+import type { RefCallback } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchUsername } from "@calcom/lib/fetchUsername";
@@ -21,7 +21,6 @@ interface ICustomUsernameProps {
   setInputUsernameValue: (value: string) => void;
   onSuccessMutation?: () => void;
   onErrorMutation?: (error: TRPCClientErrorLike<AppRouter>) => void;
-  setIsUsernameInvalid?: Dispatch<SetStateAction<boolean>>;
 }
 
 const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.ComponentProps<typeof TextField>>) => {
@@ -36,7 +35,6 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     usernameRef,
     onSuccessMutation,
     onErrorMutation,
-    setIsUsernameInvalid,
     ...rest
   } = props;
   const [usernameIsAvailable, setUsernameIsAvailable] = useState(false);
@@ -47,11 +45,16 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     () =>
       debounce(async (username) => {
         // TODO: Support orgSlug
-        const { data } = await fetchUsername(username, null);
-        setMarkAsError(!data.available);
-        setUsernameIsAvailable(data.available);
-        setIsUsernameInvalid && setIsUsernameInvalid(!data.available);
-      }, 150),
+        try {
+          const { data } = await fetchUsername(username, null);
+          setMarkAsError(!data.available);
+          setUsernameIsAvailable(data.available);
+        } catch (error) {
+          console.error("Error fetching username:", error);
+          setMarkAsError(true);
+          setUsernameIsAvailable(false);
+        }
+      }, 300),
     []
   );
 
@@ -68,7 +71,6 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     } else {
       setUsernameIsAvailable(false);
       setMarkAsError(false);
-      setIsUsernameInvalid && setIsUsernameInvalid(false);
     }
   }, [inputUsernameValue, debouncedApiCall, currentUsername]);
 
