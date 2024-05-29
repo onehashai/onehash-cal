@@ -303,6 +303,10 @@ const UserSettings = (props: IUserSettingsProps) => {
     telemetry.event(telemetryEventTypes.onboardingStarted);
   }, [telemetry]);
 
+  useEffect(() => {
+    fbq("trackCustom", "Registration_Completed");
+  }, []);
+
   const utils = trpc.useContext();
   const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
 
