@@ -20,12 +20,6 @@ interface IUserSettingsProps {
   hideUsername?: boolean;
 }
 
-declare global {
-  interface Window {
-    fbq: (command: "trackCustom", event: string) => void;
-  }
-}
-
 type TProfessionTypeAndEventTypes = {
   [key: string]: TCreateInputSchema[];
 };
@@ -308,19 +302,6 @@ const UserSettings = (props: IUserSettingsProps) => {
   useEffect(() => {
     telemetry.event(telemetryEventTypes.onboardingStarted);
   }, [telemetry]);
-
-  useEffect(() => {
-    const trackCustomEvent = () => {
-      if (window.fbq) {
-        window.fbq("trackCustom", "Registration_Completed");
-      } else {
-        // Retry after a delay if fbq is not available
-        setTimeout(trackCustomEvent, 100);
-      }
-    };
-
-    trackCustomEvent();
-  }, []);
 
   const utils = trpc.useContext();
   const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
