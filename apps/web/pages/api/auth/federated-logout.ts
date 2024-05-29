@@ -1,20 +1,15 @@
+import { withAppDirSsr } from "app/WithAppDirSsr";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { NextResponse } from "next/server";
 
-import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { localStorage } from "@calcom/lib/webstorage";
+import { getServerSideProps } from "@lib/federated-logout/getServerSideProps";
+import { type inferSSRProps } from "@lib/types/inferSSRProps";
 
 function logoutParams(token: string): Record<string, string> {
   return {
     id_token_hint: token,
     post_logout_redirect_uri: process.env.NEXT_PUBLIC_WEBAPP_URL || "",
   };
-}
-
-function handleEmptyToken() {
-  const response = { error: "No session present" };
-  const responseHeaders = { status: 400 };
-  return NextResponse.json(response, responseHeaders);
 }
 
 function sendEndSessionEndpointToURL(token: string) {
@@ -28,17 +23,13 @@ function sendEndSessionEndpointToURL(token: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const session = await getServerSession({ req, res });
-    if (!session) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const idToken = localStorage.getItem("keycloak_id_token");
-    console.log("idToken", idToken);
-    if (idToken) {
-      return sendEndSessionEndpointToURL(idToken);
-    }
-    return handleEmptyToken();
+    const getData = withAppDirSsr<inferSSRProps<typeof getServerSideProps>>(getServerSideProps);
+    console.log("getData", getData);
+    console.log(getServerSideProps);
+    // if (cookieStore["keycloak-id_token"]) {
+    //   return sendEndSessionEndpointToURL(cookieStore["keycloak-id_token"]);
+    // }
+    return res.status(200).json({ message: "Keycloak token id not found" });
   } catch (error) {
     return res.status(500);
   }

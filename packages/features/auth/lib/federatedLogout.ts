@@ -14,6 +14,6 @@ export default async function federatedLogout() {
     console.log(error);
     alert(error);
     await signOut({ redirect: false });
-    window.location.href = "/";
+    window.location.href = "/auth/login";
   }
 }

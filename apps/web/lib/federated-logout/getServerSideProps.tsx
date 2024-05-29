@@ -3,17 +3,11 @@ import nookies from "nookies";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 
-import { ssrInit } from "@server/lib/ssr";
-
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
-  const ssr = await ssrInit(context);
   const session = await getServerSession({ req: context.req, res: context.res });
-  if (session?.id_token) {
-    nookies.set(context, "keycloak-id_token", session.id_token, {
-      path: "/",
-      httpOnly: true,
-    });
-  }
+
+  const cookies = nookies.get(context);
+  console.log(cookies);
 
   if (!session) {
     return {
@@ -24,5 +18,5 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     };
   }
 
-  return { props: { trpcState: ssr.dehydrate() } };
+  return { props: { cookies: cookies } };
 };
