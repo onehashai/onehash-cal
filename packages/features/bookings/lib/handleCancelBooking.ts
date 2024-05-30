@@ -1,8 +1,5 @@
 import type { Prisma, WorkflowReminder } from "@prisma/client";
 import type { NextApiRequest } from "next";
-import getWebhooks from "webhooks/lib/getWebhooks";
-import type { EventTypeInfo } from "webhooks/lib/sendPayload";
-import sendPayload from "webhooks/lib/sendPayload";
 
 import { FAKE_DAILY_CREDENTIAL } from "@calcom/app-store/dailyvideo/lib/VideoApiAdapter";
 import { DailyLocationType } from "@calcom/app-store/locations";
@@ -14,6 +11,9 @@ import { deleteScheduledEmailReminder } from "@calcom/features/oe/workflows/lib/
 import { deleteScheduledSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/smsReminderManager";
 import { deleteScheduledWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/managers/whatsappReminderManager";
 import { sendCancelledReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
+import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
+import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
+import sendPayload from "@calcom/features/webhooks/lib/sendPayload";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import { HttpError } from "@calcom/lib/http-error";
@@ -415,13 +415,11 @@ async function handler(req: CustomRequest) {
   const eventManager = new EventManager({ ...bookingToDelete.user, credentials });
   await eventManager.cancelEvent(evt, bookingToDelete.references, isBookingInRecurringSeries);
 
-  const bookingReferenceDeletes = await prisma.bookingReference.deleteMany({
+  await prisma.bookingReference.deleteMany({
     where: {
       bookingId: bookingToDelete.id,
     },
   });
-
-  console.log("Deleted booking references", bookingReferenceDeletes);
 
   const workflowReminderPromises = [];
 
