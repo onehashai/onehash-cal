@@ -503,6 +503,8 @@ export const AUTH_OPTIONS: AuthOptions = {
 
         const profileOrg = profile?.organization;
         token.id_token = account?.id_token;
+        token.access_token = account?.access_token;
+        token.refresh_token = account?.refresh_token;
         return {
           ...existingUserWithoutTeamsField,
           ...token,
@@ -582,6 +584,8 @@ export const AUTH_OPTIONS: AuthOptions = {
           return await autoMergeIdentities();
         }
         token.id_token = account?.id_token;
+        token.access_token = account?.access_token;
+        token.refresh_token = account?.refresh_token;
         return {
           ...token,
           id: existingUser.id,
@@ -607,6 +611,8 @@ export const AUTH_OPTIONS: AuthOptions = {
       const hasValidLicense = await checkLicense(prisma);
       const profileId = token.profileId;
       session.id_token = token.id_token;
+      session.access_token = token.access_token;
+      session.refresh_token = token.refresh_token;
       const calendsoSession: Session = {
         ...session,
         profileId,

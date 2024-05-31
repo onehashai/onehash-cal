@@ -6,10 +6,10 @@ export default async function federatedLogout() {
     const data = await response.json();
     if (response.ok) {
       await signOut({ redirect: false });
-      window.location.href = data.url;
+      window.location.href = data.data;
       return;
     }
-    throw new Error(data.error);
+    await signOut();
   } catch (error) {
     console.log(error);
     alert(error);
