@@ -4,6 +4,7 @@ import nookies from "nookies";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN, KEYCLOAK_TOKEN_SECRET } from "@calcom/lib/constants";
 import { symmetricEncrypt } from "@calcom/lib/crypto";
+import prisma from "@calcom/prisma";
 
 function RedirectPage() {
   return;
