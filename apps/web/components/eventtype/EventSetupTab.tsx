@@ -472,6 +472,7 @@ export const EventSetupTab = (
             </Label>
             <DescriptionEditor isEditable={!descriptionLockedProps.disabled} />
           </div>
+
           <TextField
             required
             label={t("URL")}

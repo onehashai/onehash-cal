@@ -20,11 +20,11 @@ export type SingleValueLocationOption = SingleValue<LocationOption>;
 
 export type GroupOptionType = GroupBase<LocationOption>;
 
-const OptionWithIcon = ({ icon, label }: { icon?: string; label: string }) => {
+export const OptionWithIcon = ({ icon, label }: { icon?: string; label?: string }) => {
   return (
     <div className="flex items-center gap-3">
       {icon && <img src={icon} alt="cover" className={classNames("h-3.5 w-3.5", invertLogoOnDark(icon))} />}
-      <span className={classNames("text-sm font-medium")}>{label}</span>
+      {label && <span className={classNames("text-sm font-medium")}>{label}</span>}
     </div>
   );
 };

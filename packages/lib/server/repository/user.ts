@@ -118,7 +118,6 @@ export class UserRepository {
     });
 
     log.debug("findUsersByUsername", safeStringify({ where, profiles }));
-
     return (
       await prisma.user.findMany({
         select: userSelect,

@@ -19,9 +19,12 @@ import type { InstallAppButtonProps } from "./types";
 export const InstallAppButtonWithoutPlanCheck = (
   props: {
     type: App["type"];
+    redirectUrl?: string;
   } & InstallAppButtonProps
 ) => {
-  const mutation = useAddAppMutation(null);
+  const mutation = useAddAppMutation(null, {
+    returnTo: props.redirectUrl,
+  });
   const key = deriveAppDictKeyFromType(props.type, InstallAppButtonMap);
   const InstallAppButtonComponent = InstallAppButtonMap[key as keyof typeof InstallAppButtonMap];
   if (!InstallAppButtonComponent)

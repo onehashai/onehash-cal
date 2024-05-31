@@ -6,7 +6,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { TRPCClientErrorLike } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import type { AppRouter } from "@calcom/trpc/server/routers/_app";
-import { Button, Form } from "@calcom/ui";
+import { Button, Form, showToast } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
 
 interface ISetupAvailabilityProps {
@@ -34,16 +34,34 @@ const SetupAvailability = (props: ISetupAvailabilityProps) => {
     },
   });
 
+  const mutation = trpc.viewer.updateProfile.useMutation({
+    onSuccess: async (_data, _context) => {
+      nextStep();
+    },
+    onError: () => {
+      showToast(t("problem_saving_user_profile"), "error");
+    },
+  });
+
+  const handleNextStep = () => {
+    mutation.mutate({
+      metadata: {
+        currentOnboardingStep: "user-profile",
+      },
+    });
+  };
+
   const mutationOptions = {
     onError: (error: TRPCClientErrorLike<AppRouter>) => {
       throw new Error(error.message);
     },
     onSuccess: () => {
-      nextStep();
+      handleNextStep();
     },
   };
   const createSchedule = trpc.viewer.availability.schedule.create.useMutation(mutationOptions);
   const updateSchedule = trpc.viewer.availability.schedule.update.useMutation(mutationOptions);
+
   return (
     <Form
       className="bg-default dark:text-inverted text-emphasis w-full [--cal-brand-accent:#fafafa] dark:bg-opacity-5"
@@ -76,7 +94,8 @@ const SetupAvailability = (props: ISetupAvailabilityProps) => {
           data-testid="save-availability"
           type="submit"
           className="mt-2 w-full justify-center bg-blue-500 p-2 text-sm hover:bg-blue-600 sm:mt-8"
-          disabled={availabilityForm.formState.isSubmitting}>
+          disabled={availabilityForm.formState.isSubmitting}
+          loading={mutation.isPending}>
           {t("next_step_text")} <ArrowRight className="ml-2 h-4 w-4 self-center" />
         </Button>
       </div>

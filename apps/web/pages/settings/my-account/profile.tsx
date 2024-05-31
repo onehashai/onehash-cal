@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 // eslint-disable-next-line no-restricted-imports
 import { pick, get } from "lodash";
 import { signOut, useSession } from "next-auth/react";
@@ -10,11 +11,14 @@ import { Controller, useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
+import { logoutAndDeleteUser } from "@calcom/features/auth/lib/federatedLogout";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
+import { isPrismaObj } from "@calcom/lib";
 import { APP_NAME, FULL_NAME_LENGTH_MAX_LIMIT } from "@calcom/lib/constants";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { HttpError } from "@calcom/lib/http-error";
 import { md } from "@calcom/lib/markdownIt";
 import turndown from "@calcom/lib/turndownService";
 import { IdentityProvider } from "@calcom/prisma/enums";
@@ -43,6 +47,9 @@ import {
   SkeletonContainer,
   SkeletonText,
   TextField,
+  Badge,
+  PhoneInput,
+  InfoBadge,
 } from "@calcom/ui";
 import { UserAvatar } from "@calcom/ui";
 import { AlertTriangle, Trash2, Plus } from "@calcom/ui/components/icon";
@@ -91,6 +98,9 @@ export type FormValues = {
   email: string;
   bio: string;
   secondaryEmails: Email[];
+  metadata: {
+    phoneNumber: string;
+  };
 };
 
 const ProfileView = () => {
@@ -119,7 +129,7 @@ const ProfileView = () => {
       if (res.hasEmailBeenChanged && res.sendEmailVerification) {
         showToast(t("change_of_email_toast", { email: tempFormValues?.email }), "success");
       } else {
-        showToast(t("settings_updated_successfully"), "success");
+        showToast(t("profile_updated_successfully"), "success");
       }
 
       setConfirmAuthEmailChangeWarningDialogOpen(false);
@@ -171,11 +181,7 @@ const ProfileView = () => {
     showToast(t("Your account was deleted"), "success");
 
     setHasDeleteErrors(false); // dismiss any open errors
-    if (process.env.NEXT_PUBLIC_WEBAPP_URL === "https://app.cal.com") {
-      signOut({ callbackUrl: "/auth/logout?survey=true" });
-    } else {
-      signOut({ callbackUrl: "/auth/logout" });
-    }
+    await signOut();
   };
 
   const confirmPasswordMutation = trpc.viewer.auth.verifyPassword.useMutation({
@@ -222,15 +228,23 @@ const ProfileView = () => {
     if (tempFormValues) updateProfileMutation.mutate(tempFormValues);
   };
 
+  const [isAccountDeleting, setIsAccountDeleting] = useState(false);
   const onConfirmButton = (e: Event | React.MouseEvent<HTMLElement, MouseEvent>) => {
     e.preventDefault();
-    if (isCALIdentityProvider) {
-      const totpCode = form.getValues("totpCode");
-      const password = passwordRef.current.value;
-      deleteMeMutation.mutate({ password, totpCode });
-    } else {
-      deleteMeWithoutPasswordMutation.mutate();
-    }
+    const deleteAccount = async () => {
+      if (isCALIdentityProvider) {
+        const totpCode = form.getValues("totpCode");
+        const password = passwordRef.current.value;
+        deleteMeMutation.mutate({ password, totpCode });
+      } else {
+        deleteMeWithoutPasswordMutation.mutate();
+      }
+    };
+    setIsAccountDeleting(true);
+
+    logoutAndDeleteUser(deleteAccount).finally(() => {
+      setIsAccountDeleting(false);
+    });
   };
 
   const onConfirm = ({ totpCode }: DeleteAccountValues, e: BaseSyntheticEvent | undefined) => {
@@ -285,6 +299,12 @@ const ProfileView = () => {
         emailPrimary: false,
       })),
     ],
+    metadata: {
+      phoneNumber:
+        isPrismaObj(user.metadata) && user.metadata?.phoneNumber
+          ? (user.metadata?.phoneNumber as string)
+          : "",
+    },
   };
 
   return (
@@ -379,7 +399,8 @@ const ProfileView = () => {
               <Button
                 color="primary"
                 data-testid="delete-account-confirm"
-                onClick={(e) => onConfirmButton(e)}>
+                onClick={(e) => onConfirmButton(e)}
+                loading={isAccountDeleting}>
                 {t("delete_my_account")}
               </Button>
             </DialogFooter>
@@ -537,11 +558,72 @@ const ProfileForm = ({
         emailPrimary: z.boolean().optional(),
       })
     ),
+    metadata: z
+      .object({
+        phoneNumber: z
+          .string()
+          .refine(
+            (val) => {
+              return val === "" || isValidPhoneNumber(val);
+            },
+            { message: t("invalid_phone_number") }
+          )
+          .optional(),
+      })
+      .optional(),
   });
-
   const formMethods = useForm<FormValues>({
     defaultValues,
     resolver: zodResolver(profileFormSchema),
+  });
+
+  const [otpSent, setOtpSent] = useState(false);
+  const sendVerificationCodeMutation = trpc.viewer.workflows.sendVerificationCode.useMutation({
+    onMutate: () => {
+      setOtpSent(false);
+      setVerificationCode("");
+    },
+    onSuccess: async () => {
+      showToast(t("verification_code_sent"), "success");
+      setOtpSent(true);
+    },
+    onError: async (error) => {
+      showToast(error.message, "error");
+    },
+  });
+
+  const { data: _verifiedNumbers } = trpc.viewer.workflows.getVerifiedNumbers.useQuery({ teamId: undefined });
+
+  const [verificationCode, setVerificationCode] = useState("");
+
+  const verifiedNumbers = _verifiedNumbers?.map((number) => number.phoneNumber) || [];
+
+  const getNumberVerificationStatus = (phoneNumber: string) => {
+    return !!verifiedNumbers.find(
+      (number: string) => number.replace(/\s/g, "") === phoneNumber.replace(/\s/g, "")
+    );
+  };
+
+  const [numberVerified, setNumberVerified] = useState(defaultValues.metadata.phoneNumber != "");
+
+  const [isNumberValid, setIsNumberValid] = useState<boolean>(
+    formMethods.getValues("metadata.phoneNumber") != ""
+      ? isValidPhoneNumber(formMethods.getValues("metadata.phoneNumber"))
+      : false
+  );
+
+  const verifyPhoneNumberMutation = trpc.viewer.workflows.verifyPhoneNumber.useMutation({
+    onSuccess: async (isVerified) => {
+      showToast(isVerified ? t("verified_successfully") : t("wrong_code"), "success");
+      setNumberVerified(isVerified);
+    },
+    onError: (err) => {
+      if (err instanceof HttpError) {
+        const message = `${err.statusCode}: ${err.message}`;
+        showToast(message, "error");
+        setNumberVerified(false);
+      }
+    },
   });
 
   const {
@@ -555,10 +637,20 @@ const ProfileForm = ({
   });
 
   const handleFormSubmit = (values: FormValues) => {
+    if (
+      formMethods.formState.dirtyFields.metadata &&
+      formMethods.formState.dirtyFields.metadata.phoneNumber === true &&
+      !numberVerified
+    ) {
+      showToast(t("please_verify_phone_number"), "error");
+      return;
+    }
     const changedFields = formMethods.formState.dirtyFields?.secondaryEmails || [];
+
     const updatedValues: FormValues = {
       ...values,
     };
+    console.log("updatedValues", updatedValues);
 
     // If the primary email is changed, we will need to update
     const primaryEmailIndex = updatedValues.secondaryEmails.findIndex(
@@ -593,7 +685,7 @@ const ProfileForm = ({
   };
 
   const {
-    formState: { isSubmitting, isDirty },
+    formState: { isSubmitting, isDirty, errors },
   } = formMethods;
 
   const isDisabled = isSubmitting || !isDirty;
@@ -658,7 +750,7 @@ const ProfileForm = ({
               key={field.itemId}
               formMethods={formMethods}
               formMethodFieldName={`secondaryEmails.${index}.email` as keyof FormValues}
-              errorMessage={get(formMethods.formState.errors, `secondaryEmails.${index}.email.message`)}
+              errorMessage={get(errors, `secondaryEmails.${index}.email.message`)}
               emailVerified={Boolean(field.emailVerified)}
               emailPrimary={field.emailPrimary}
               dataTestId={`profile-form-email-${index}`}
@@ -682,6 +774,72 @@ const ProfileForm = ({
             data-testid="add-secondary-email">
             {t("add_email")}
           </Button>
+        </div>
+        <div className="mt-3 w-full md:w-1/2">
+          <Label className="flex">
+            <p className="text-sm ">{t("phone_number")}</p>
+            <InfoBadge content={t("number_in_international_format")} />
+          </Label>
+          <div className="flex gap-3">
+            <PhoneInput
+              value={formMethods.getValues("metadata.phoneNumber")}
+              onChange={(val) => {
+                formMethods.setValue("metadata.phoneNumber", val || "", { shouldDirty: true });
+                const phoneNumber = val || "";
+                setIsNumberValid(isValidPhoneNumber(phoneNumber));
+                setNumberVerified(getNumberVerificationStatus(phoneNumber));
+              }}
+            />
+            <Button
+              color="secondary"
+              className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
+              disabled={!isNumberValid || numberVerified}
+              loading={sendVerificationCodeMutation.isPending}
+              onClick={() =>
+                sendVerificationCodeMutation.mutate({
+                  phoneNumber: formMethods.getValues("metadata.phoneNumber"),
+                })
+              }>
+              {t("send_code")}
+            </Button>
+          </div>
+          {formMethods.formState.errors.metadata?.phoneNumber && (
+            <div className="mt-1 text-sm text-red-600">{t("invalid_phone_number")}</div>
+          )}
+          {numberVerified ? (
+            <div className="mt-1">
+              <Badge variant="green">{t("number_verified")}</Badge>
+            </div>
+          ) : (
+            <>
+              <div className="mt-3 flex gap-3">
+                <TextField
+                  className="h-[38px]"
+                  placeholder="Verification code"
+                  disabled={otpSent === false || verifyPhoneNumberMutation.isPending}
+                  value={verificationCode}
+                  onChange={(e) => {
+                    setVerificationCode(e.target.value);
+                  }}
+                  required
+                />
+                <Button
+                  color="secondary"
+                  className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block "
+                  disabled={!verificationCode}
+                  loading={verifyPhoneNumberMutation.isPending}
+                  onClick={() => {
+                    verifyPhoneNumberMutation.mutate({
+                      phoneNumber: formMethods.getValues("metadata.phoneNumber") || "",
+                      code: verificationCode,
+                      teamId: undefined,
+                    });
+                  }}>
+                  {t("verify")}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
         <div className="mt-6">
           <Label>{t("about")}</Label>

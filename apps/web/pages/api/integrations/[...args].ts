@@ -47,6 +47,7 @@ const defaultIntegrationAddHandler = async ({
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Check that user is authenticated
   req.session = await getServerSession({ req, res });
+  const returnToCookie = req.cookies.return_to;
 
   const { args, teamId } = req.query;
 
@@ -62,7 +63,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const handlers = await handlerMap[handlerKey as keyof typeof handlerMap];
     if (!handlers) throw new HttpError({ statusCode: 404, message: `No handlers found for ${handlerKey}` });
     const handler = handlers[apiEndpoint as keyof typeof handlers] as AppHandler;
-    let redirectUrl = "/apps/installed";
     if (typeof handler === "undefined")
       throw new HttpError({ statusCode: 404, message: `API handler not found` });
 
@@ -70,7 +70,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       await handler(req, res);
     } else {
       await defaultIntegrationAddHandler({ user: req.session?.user, teamId: Number(teamId), ...handler });
-      redirectUrl = handler.redirect?.url || getInstalledAppPath(handler);
+      let redirectUrl = "/apps/installed";
+      redirectUrl = returnToCookie || handler.redirect?.url || getInstalledAppPath(handler);
       res.json({ url: redirectUrl, newTab: handler.redirect?.newTab });
     }
     if (!res.writableEnded) return res.status(200);

@@ -32,6 +32,8 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   console.log("userInfoRes", userInfoRes);
   if (userInfoRes.status !== 200) {
     return res.status(200).json({ message: "Session expired. Please log in again." });
+  } else {
+    return res.status(200).json({ message: "Session is active" });
   }
 }
 

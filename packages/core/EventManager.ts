@@ -18,6 +18,7 @@ import {
 } from "@calcom/lib/piiFreeData";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
+import type { BookingReference } from "@calcom/prisma/client";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
 import { createdEventSchema } from "@calcom/prisma/zod-utils";
 import type { AdditionalInformation, CalendarEvent, NewCalendarEventType } from "@calcom/types/Calendar";
@@ -242,25 +243,36 @@ export default class EventManager {
   }
 
   private async deleteCalendarEventForBookingReference({
-    bookingCalendarReference,
+    reference,
     event,
+    isBookingInRecurringSeries,
   }: {
-    bookingCalendarReference: PartialReference;
+    reference: PartialReference;
     event: CalendarEvent;
+    isBookingInRecurringSeries?: boolean;
   }) {
     log.debug(
       "deleteCalendarEventForBookingReference",
-      safeStringify({ bookingCalendarReference, event: getPiiFreeCalendarEvent(event) })
+      safeStringify({ bookingCalendarReference: reference, event: getPiiFreeCalendarEvent(event) })
     );
 
     const {
-      uid: bookingRefUid,
+      // uid: bookingRefUid,
       externalCalendarId: bookingExternalCalendarId,
       credentialId,
       type: credentialType,
-    } = bookingCalendarReference;
+    } = reference;
 
-    const calendarCredential = await this.getCredentialAndWarnIfNotFound(credentialId, credentialType);
+    const bookingRefUid =
+      isBookingInRecurringSeries && reference?.thirdPartyRecurringEventId
+        ? reference.thirdPartyRecurringEventId
+        : reference.uid;
+
+    const calendarCredential = await this.getCredentialAndWarnIfNotFound(
+      credentialId,
+      this.calendarCredentials,
+      credentialType
+    );
     if (calendarCredential) {
       await deleteEvent({
         credential: calendarCredential,
@@ -271,17 +283,14 @@ export default class EventManager {
     }
   }
 
-  private async deleteVideoEventForBookingReference({
-    bookingVideoReference,
-  }: {
-    bookingVideoReference: PartialReference;
-  }) {
-    log.debug("deleteVideoEventForBookingReference", safeStringify({ bookingVideoReference }));
-    const { uid: bookingRefUid, credentialId } = bookingVideoReference;
+  private async deleteVideoEventForBookingReference({ reference }: { reference: PartialReference }) {
+    log.debug("deleteVideoEventForBookingReference", safeStringify({ bookingVideoReference: reference }));
+    const { uid: bookingRefUid, credentialId } = reference;
 
     const videoCredential = await this.getCredentialAndWarnIfNotFound(
       credentialId,
-      bookingVideoReference.type
+      this.videoCredentials,
+      reference.type
     );
 
     if (videoCredential) {
@@ -289,32 +298,41 @@ export default class EventManager {
     }
   }
 
-  private async getCredentialAndWarnIfNotFound(credentialId: number | null | undefined, type: string) {
-    const credential =
-      typeof credentialId === "number" && credentialId > 0
-        ? await prisma.credential.findUnique({
-            where: {
-              id: credentialId,
-            },
-            select: credentialForCalendarServiceSelect,
+  private async getCredentialAndWarnIfNotFound(
+    credentialId: number | null | undefined,
+    credentials: CredentialPayload[],
+    type: string
+  ) {
+    const credential = credentials.find((cred) => cred.id === credentialId);
+    if (credential) {
+      return credential;
+    } else {
+      const credential =
+        typeof credentialId === "number" && credentialId > 0
+          ? await prisma.credential.findUnique({
+              where: {
+                id: credentialId,
+              },
+              select: credentialForCalendarServiceSelect,
+            })
+          : // Fallback for zero or nullish credentialId which could be the case of Global App e.g. dailyVideo
+            this.videoCredentials.find((cred) => cred.type === type) ||
+            this.calendarCredentials.find((cred) => cred.type === type) ||
+            null;
+
+      if (!credential) {
+        log.error(
+          "getCredentialAndWarnIfNotFound: Could not find credential",
+          safeStringify({
+            credentialId,
+            type,
+            videoCredentials: this.videoCredentials,
           })
-        : // Fallback for zero or nullish credentialId which could be the case of Global App e.g. dailyVideo
-          this.videoCredentials.find((cred) => cred.type === type) ||
-          this.calendarCredentials.find((cred) => cred.type === type) ||
-          null;
+        );
+      }
 
-    if (!credential) {
-      log.error(
-        "getCredentialAndWarnIfNotFound: Could not find credential",
-        safeStringify({
-          credentialId,
-          type,
-          videoCredentials: this.videoCredentials,
-        })
-      );
+      return credential;
     }
-
-    return credential;
   }
 
   /**
@@ -328,7 +346,7 @@ export default class EventManager {
     rescheduleUid: string,
     newBookingId?: number,
     changedOrganizer?: boolean,
-    newDestinationCalendar?: DestinationCalendar[] | null
+    previousHostDestinationCalendar?: DestinationCalendar[] | null
   ): Promise<CreateUpdateResult> {
     const originalEvt = processLocation(event);
     const evt = cloneDeep(originalEvt);
@@ -380,16 +398,21 @@ export default class EventManager {
     if (evt.requiresConfirmation) {
       log.debug("RescheduleRequiresConfirmation: Deleting Event and Meeting for previous booking");
       // As the reschedule requires confirmation, we can't update the events and meetings to new time yet. So, just delete them and let it be handled when organizer confirms the booking.
-      await this.deleteEventsAndMeetings({ booking, event });
+      await this.deleteEventsAndMeetings({
+        event: { ...event, destinationCalendar: previousHostDestinationCalendar },
+        bookingReferences: booking.references,
+      });
     } else {
       if (changedOrganizer) {
         log.debug("RescheduleOrganizerChanged: Deleting Event and Meeting for previous booking");
-        await this.deleteEventsAndMeetings({ booking, event });
+        await this.deleteEventsAndMeetings({
+          event: { ...event, destinationCalendar: previousHostDestinationCalendar },
+          bookingReferences: booking.references,
+        });
 
         log.debug("RescheduleOrganizerChanged: Creating Event and Meeting for for new booking");
 
-        const newEvent = { ...evt, destinationCalendar: newDestinationCalendar };
-        const createdEvent = await this.create(newEvent);
+        const createdEvent = await this.create(originalEvt);
         results.push(...createdEvent.results);
         bookingReferenceChangedOrganizer.push(...createdEvent.referencesToCreate);
       } else {
@@ -442,30 +465,56 @@ export default class EventManager {
     };
   }
 
+  public async cancelEvent(
+    event: CalendarEvent,
+    bookingReferences: Pick<
+      BookingReference,
+      "uid" | "type" | "externalCalendarId" | "credentialId" | "thirdPartyRecurringEventId"
+    >[],
+    isBookingInRecurringSeries?: boolean
+  ) {
+    await this.deleteEventsAndMeetings({
+      event,
+      bookingReferences,
+      isBookingInRecurringSeries,
+    });
+  }
   private async deleteEventsAndMeetings({
     event,
-    booking,
+    bookingReferences,
+    isBookingInRecurringSeries,
   }: {
     event: CalendarEvent;
-    booking: PartialBooking;
+    bookingReferences: PartialReference[];
+    isBookingInRecurringSeries?: boolean;
   }) {
-    const calendarReferences = booking.references.filter((reference) => reference.type.includes("_calendar"));
-    const videoReferences = booking.references.filter((reference) => reference.type.includes("_video"));
+    const calendarReferences = [],
+      videoReferences = [],
+      allPromises = [];
+
+    for (const reference of bookingReferences) {
+      if (reference.type.includes("_calendar")) {
+        calendarReferences.push(reference);
+        allPromises.push(
+          this.deleteCalendarEventForBookingReference({
+            reference,
+            event,
+            isBookingInRecurringSeries,
+          })
+        );
+      }
+
+      if (reference.type.includes("_video")) {
+        videoReferences.push(reference);
+        allPromises.push(
+          this.deleteVideoEventForBookingReference({
+            reference,
+          })
+        );
+      }
+    }
+
     log.debug("deleteEventsAndMeetings", safeStringify({ calendarReferences, videoReferences }));
-    const calendarPromises = calendarReferences.map(async (bookingCalendarReference) => {
-      return await this.deleteCalendarEventForBookingReference({
-        bookingCalendarReference,
-        event,
-      });
-    });
-
-    const videoPromises = videoReferences.map(async (bookingVideoReference) => {
-      return await this.deleteVideoEventForBookingReference({
-        bookingVideoReference,
-      });
-    });
-
-    const allPromises = [...calendarPromises, ...videoPromises];
 
     // Using allSettled to ensure that if one of the promises rejects, the others will still be executed.
     // Because we are just cleaning up the events and meetings, we don't want to throw an error if one of them fails.

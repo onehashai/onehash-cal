@@ -45,6 +45,7 @@ const stepRouteSchema = z.object({
   step: z.array(z.enum(steps)).default([INITIAL_STEP]),
   from: z.string().optional(),
 });
+// const stepSchema = z.enum(steps);
 
 // TODO: Refactor how steps work to be contained in one array/object. Currently we have steps,initalsteps,headers etc. These can all be in one place
 const OnboardingPage = () => {
@@ -54,13 +55,35 @@ const OnboardingPage = () => {
   const router = useRouter();
   const [user] = trpc.viewer.me.useSuspenseQuery();
   const { t } = useLocale();
+  const utils = trpc.useContext();
+
+  const onSuccess = async () => {
+    await utils.viewer.me.invalidate();
+
+    goToIndex(currentStepIndex + 1);
+  };
+  const userMutation = trpc.viewer.updateProfile.useMutation({
+    onSuccess: onSuccess,
+  });
+
+  const handleSkip = () => {
+    userMutation.mutate({
+      metadata: {
+        currentOnboardingStep: steps[currentStepIndex + 1],
+      },
+    });
+  };
 
   const result = stepRouteSchema.safeParse({
     ...params,
     step: Array.isArray(params.step) ? params.step : [params.step],
   });
 
-  const currentStep = result.success ? result.data.step[0] : INITIAL_STEP;
+  const currentStep =
+    //  props.currentOnboardingStep
+    //   ? stepSchema.parse(props.currentOnboardingStep)
+    //   :
+    result.success ? result.data.step[0] : INITIAL_STEP;
   const from = result.success ? result.data.from : "";
   const headers = [
     {
@@ -171,7 +194,8 @@ const OnboardingPage = () => {
                   data-testid="skip-step"
                   onClick={(event) => {
                     event.preventDefault();
-                    goToIndex(currentStepIndex + 1);
+
+                    handleSkip();
                   }}
                   className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium">
                   {headers[currentStepIndex]?.skipText}
