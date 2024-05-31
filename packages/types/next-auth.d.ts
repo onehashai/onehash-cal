@@ -12,6 +12,9 @@ declare module "next-auth" {
     profileId?: number | null;
     upId: string;
     user: User;
+    id_token: string | null | undefined;
+    access_token: string | null | undefined;
+    refresh_token: string | null | undefined;
   }
 
   interface User extends Omit<DefaultUser, "id"> {
@@ -60,5 +63,8 @@ declare module "next-auth/jwt" {
     };
     organizationId?: number | null;
     locale?: string;
+    id_token?: string | null;
+    access_token?: string | null;
+    refresh_token?: string | null;
   }
 }

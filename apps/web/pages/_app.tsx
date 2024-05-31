@@ -24,7 +24,10 @@ function SessionManager({ children }: { children: React.ReactNode }) {
         return response.json();
       })
       .then((data) => {
-        if (data.message === "Session expired. Please log in again." || data.message === "No Session Info.") {
+        if (
+          data.message === "Session expired. Please log in again." ||
+          data.message === "Access Token absent. Please log in again."
+        ) {
           signOut();
         } else {
           sessionStorage.setItem("isSessionActive", "true");
