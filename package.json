@@ -106,7 +106,6 @@
     "@tiptap/extension-underline": "^2.3.0",
     "city-timezones": "^1.2.1",
     "eslint": "^8.34.0",
-    "keycloak-js": "^24.0.4",
     "lucide-react": "^0.171.0",
     "nookies": "^2.5.2",
     "turbo": "^1.10.1"
