@@ -57,7 +57,6 @@ export const MeetingNotesDialog = (props: IMeetingNotesDialog) => {
 };
 
 const Tiptap = ({ onChange, content }: TipTapProps) => {
-  console.log("content", content);
   const handleChange = (newContent: string) => {
     onChange(newContent);
   };

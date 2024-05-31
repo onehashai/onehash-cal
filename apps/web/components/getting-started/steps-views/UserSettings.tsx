@@ -10,8 +10,10 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
 import type { TCreateInputSchema } from "@calcom/trpc/server/routers/viewer/eventTypes/create.schema";
-import { Button, TimezoneSelect, Input, Select } from "@calcom/ui";
+import { Button, TimezoneSelect, Input, Select, showToast } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
+
+import * as fbq from "@lib/fpixel";
 
 import { UsernameAvailabilityField } from "@components/ui/UsernameAvailability";
 
@@ -303,6 +305,10 @@ const UserSettings = (props: IUserSettingsProps) => {
     telemetry.event(telemetryEventTypes.onboardingStarted);
   }, [telemetry]);
 
+  useEffect(() => {
+    fbq.event("Registration_Completed");
+  }, []);
+
   const utils = trpc.useContext();
   const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
 
@@ -329,12 +335,16 @@ const UserSettings = (props: IUserSettingsProps) => {
     await utils.viewer.me.invalidate();
     nextStep();
   };
+
   const mutation = trpc.viewer.updateProfile.useMutation({
     onSuccess: onSuccess,
   });
 
   const onSubmit = handleSubmit((data) => {
     mutation.mutate({
+      metadata: {
+        currentOnboardingStep: "connected-calendar",
+      },
       name: data.name,
       timeZone: selectedTimeZone,
     });
@@ -357,7 +367,17 @@ const UserSettings = (props: IUserSettingsProps) => {
     <form onSubmit={onSubmit}>
       <div className="space-y-6">
         {/* Username textfield: when not coming from signup */}
-        {!props.hideUsername && <UsernameAvailabilityField />}
+        {!props.hideUsername && (
+          <UsernameAvailabilityField
+            onSuccessMutation={async () => {
+              showToast(t("settings_updated_successfully"), "success");
+              await utils.viewer.me.invalidate();
+            }}
+            onErrorMutation={() => {
+              showToast(t("error_updating_settings"), "error");
+            }}
+          />
+        )}
 
         {/* Full name textfield */}
         <div className="w-full">
@@ -394,6 +414,7 @@ const UserSettings = (props: IUserSettingsProps) => {
               }
             }}
             options={designationTypeOptions}
+            // defaultValue={user?.metadata?.designation || designationTypeOptions[0]}
           />
         </div>
         {/* Timezone select field */}
@@ -417,7 +438,8 @@ const UserSettings = (props: IUserSettingsProps) => {
       <Button
         type="submit"
         className="mt-8 flex w-full flex-row justify-center bg-blue-500 hover:bg-blue-600"
-        disabled={mutation.isPending || selectedBusiness === null}>
+        disabled={mutation.isPending || selectedBusiness === null}
+        loading={mutation.isPending}>
         {t("next_step_text")}
         <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>

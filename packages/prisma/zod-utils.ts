@@ -103,6 +103,7 @@ export const EventTypeMetaDataSchema = z
       })
       .optional(),
     bookerLayouts: bookerLayouts.optional(),
+    whatsappNumber: z.string().optional(),
   })
   .nullable();
 
@@ -342,6 +343,11 @@ export const userMetadata = z
         reverted: z.boolean().optional(),
         revertTime: z.string().optional(),
       })
+      .optional(),
+    currentOnboardingStep: z.string().optional(),
+    phoneNumber: z
+      .string()
+
       .optional(),
   })
   .nullable();
