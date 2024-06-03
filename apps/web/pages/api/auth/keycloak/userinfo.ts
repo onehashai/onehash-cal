@@ -18,14 +18,18 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 
   const userInfoEndpoint = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`;
   const keycloak_token_secret = process.env.CALENDSO_ENCRYPTION_KEY || "";
-  const access_token = symmetricDecrypt(req.cookies["keycloak-access_token"] || "", keycloak_token_secret);
+  const access_token = req.cookies["keycloak-access_token"];
   if (!access_token) {
     return res.status(200).json({ message: "Access Token absent. Please log in again." });
   }
+  const decrypted_access_token = symmetricDecrypt(
+    req.cookies["keycloak-access_token"] || "",
+    keycloak_token_secret
+  );
   const userInfoRes = await fetch(userInfoEndpoint, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${access_token}`,
+      Authorization: `Bearer ${decrypted_access_token}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
