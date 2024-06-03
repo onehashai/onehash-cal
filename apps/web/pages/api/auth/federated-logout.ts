@@ -19,9 +19,9 @@ function sendEndSessionEndpointToURL(token: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (req.cookies["keycloak-id_token"]) {
+    if (req.cookies && req.cookies.hasOwnProperty("keycloak_id_token")) {
       const keycloak_token_secret = process.env.CALENDSO_ENCRYPTION_KEY || "";
-      const id_token = symmetricDecrypt(req.cookies["keycloak-id_token"], keycloak_token_secret);
+      const id_token = symmetricDecrypt(req.cookies.keycloak_id_token, keycloak_token_secret);
       const url = sendEndSessionEndpointToURL(id_token);
       res.status(200).json({ data: url });
     }

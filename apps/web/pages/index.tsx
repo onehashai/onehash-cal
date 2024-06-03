@@ -20,7 +20,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   if (session?.id_token) {
     const encoded_token = symmetricEncrypt(session.id_token, keycloak_token_secret);
-    nookies.set(context, "keycloak-id_token", encoded_token, {
+    nookies.set(context, "keycloak_id_token", encoded_token, {
       domain: keycloak_cookie_domain,
       sameSite: useSecureCookies ? "none" : "lax",
       path: "/",
@@ -31,7 +31,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   if (session?.access_token) {
     const encoded_token = symmetricEncrypt(session.access_token, keycloak_token_secret);
-    nookies.set(context, "keycloak-access_token", encoded_token, {
+    nookies.set(context, "keycloak_access_token", encoded_token, {
       domain: keycloak_cookie_domain,
       sameSite: useSecureCookies ? "none" : "lax",
       path: "/",
@@ -42,7 +42,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   if (session?.refresh_token) {
     const encoded_token = symmetricEncrypt(session.refresh_token, keycloak_token_secret);
-    nookies.set(context, "keycloak-refresh_token", encoded_token, {
+    nookies.set(context, "keycloak_refresh_token", encoded_token, {
       domain: keycloak_cookie_domain,
       sameSite: useSecureCookies ? "none" : "lax",
       path: "/",
