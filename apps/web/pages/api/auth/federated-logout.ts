@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { symmetricDecrypt } from "@calcom/lib/crypto";
+import prisma from "@calcom/prisma";
 
 function logoutParams(token: string): Record<string, string> {
   return {
@@ -19,13 +19,29 @@ function sendEndSessionEndpointToURL(token: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (req.cookies["keycloak-id_token"]) {
-      const keycloak_token_secret = process.env.CALENDSO_ENCRYPTION_KEY || "";
-      const id_token = symmetricDecrypt(req.cookies["keycloak-id_token"], keycloak_token_secret);
-      const url = sendEndSessionEndpointToURL(id_token);
+    if (req.cookies["keycloak_token"]) {
+      const keycloak_session = await prisma.keycloakSessionInfo.findUnique({
+        where: {
+          browserToken: req.cookies["keycloak_token"],
+        },
+      });
+      if (!keycloak_session) {
+        return res.status(500).json({ message: "Keycloak Session not found" });
+      }
+
+      const idToken = keycloak_session.metadata?.id_token;
+      if (!idToken) {
+        return res.status(500).json({ message: "id_token not found in metadata" });
+      }
+      const url = sendEndSessionEndpointToURL(idToken);
+      await prisma.keycloakSessionInfo.delete({
+        where: {
+          browserToken: req.cookies["keycloak_token"],
+        },
+      });
       res.status(200).json({ data: url });
     }
-    return res.status(500).json({ message: "Keycloak token id not found" });
+    return res.status(500).json({ message: "keycloak_token not found in browser" });
   } catch (error) {
     return res.status(500);
   }
