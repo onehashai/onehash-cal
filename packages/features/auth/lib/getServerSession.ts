@@ -105,9 +105,7 @@ export async function getServerSession(options: {
     },
     profileId: token.profileId,
     upId,
-    id_token: token.id_token,
-    access_token: token.access_token,
-    refresh_token: token.refresh_token,
+    keycloak_token: token.keycloak_token,
   };
 
   if (token?.impersonatedBy?.id) {

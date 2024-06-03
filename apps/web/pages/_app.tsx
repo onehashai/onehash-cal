@@ -26,7 +26,8 @@ function SessionManager({ children }: { children: React.ReactNode }) {
       .then(async (data) => {
         if (
           data.message === "Session expired. Please log in again." ||
-          data.message === "Access Token absent. Please log in again."
+          data.message === "Access Token absent. Please log in again." ||
+          data.message === "Keycloak Session not found. Please log in again."
         ) {
           await router.push("/event-types");
           hasNavigated.current = true;

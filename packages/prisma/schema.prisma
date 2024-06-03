@@ -1221,3 +1221,11 @@ model SecondaryEmail {
   @@unique([userId, email])
   @@index([userId])
 }
+
+model KeycloakSessionInfo {
+  id           Int    @id @default(autoincrement())
+  browserToken String
+  metadata     Json?
+
+  @@unique([browserToken])
+}
