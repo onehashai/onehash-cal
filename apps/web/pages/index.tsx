@@ -18,31 +18,28 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const keycloak_token_secret = KEYCLOAK_TOKEN_SECRET || "";
   const useSecureCookies = WEBAPP_URL?.startsWith("https://");
 
-  if (session?.id_token) {
-    const encoded_token = symmetricEncrypt(session.id_token, keycloak_token_secret);
-    nookies.set(context, "keycloak_id_token", encoded_token, {
+  if (session?.id_token && session?.access_token && session?.refresh_token) {
+    const id_token_encoded_val = symmetricEncrypt(session.id_token, keycloak_token_secret);
+    nookies.set(context, "keycloak_id_token", id_token_encoded_val, {
       domain: keycloak_cookie_domain,
       sameSite: useSecureCookies ? "none" : "lax",
       path: "/",
       secure: useSecureCookies,
       httpOnly: true,
     });
-  }
 
-  if (session?.access_token) {
-    const encoded_token = symmetricEncrypt(session.access_token, keycloak_token_secret);
-    nookies.set(context, "keycloak_access_token", encoded_token, {
+    const access_token_encoded_val = symmetricEncrypt(session.access_token, keycloak_token_secret);
+    nookies.set(context, "keycloak_access_token", access_token_encoded_val, {
       domain: keycloak_cookie_domain,
       sameSite: useSecureCookies ? "none" : "lax",
       path: "/",
       secure: useSecureCookies,
       httpOnly: true,
     });
-  }
 
-  if (session?.refresh_token) {
-    const encoded_token = symmetricEncrypt(session.refresh_token, keycloak_token_secret);
-    nookies.set(context, "keycloak_refresh_token", encoded_token, {
+    const refresh_token_encoded_val = symmetricEncrypt(session.refresh_token, keycloak_token_secret);
+
+    nookies.set(context, "keycloak_refresh_token", refresh_token_encoded_val, {
       domain: keycloak_cookie_domain,
       sameSite: useSecureCookies ? "none" : "lax",
       path: "/",

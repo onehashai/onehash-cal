@@ -19,10 +19,14 @@ function sendEndSessionEndpointToURL(token: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (req.cookies && req.cookies.hasOwnProperty("keycloak_id_token")) {
+    alert("inside federated-logout");
+    if (req.cookies && req.cookies.keycloak_id_token) {
       const keycloak_token_secret = process.env.CALENDSO_ENCRYPTION_KEY || "";
+      alert(`keycloak_token_secret: ${keycloak_token_secret}`);
       const id_token = symmetricDecrypt(req.cookies.keycloak_id_token, keycloak_token_secret);
+      alert(`id_token: ${id_token}`);
       const url = sendEndSessionEndpointToURL(id_token);
+      alert(`url: ${url}`);
       res.status(200).json({ data: url });
     }
     return res.status(500).json({ message: "Keycloak token id not found" });
