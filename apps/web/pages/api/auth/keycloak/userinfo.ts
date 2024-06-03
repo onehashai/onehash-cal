@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
+import { isPrismaObj } from "@calcom/lib";
 import { defaultHandler, defaultResponder } from "@calcom/lib/server";
 import prisma from "@calcom/prisma";
 
@@ -29,7 +30,8 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   if (!keycloak_session) {
     return res.status(200).json({ message: "Keycloak Session not found. Please log in again." });
   }
-  const access_token = keycloak_session.metadata?.access_token;
+  const access_token =
+    isPrismaObj(keycloak_session.metadata) && (keycloak_session.metadata?.access_token as string);
   const userInfoRes = await fetch(userInfoEndpoint, {
     method: "GET",
     headers: {

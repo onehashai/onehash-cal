@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { isPrismaObj } from "@calcom/lib";
 import prisma from "@calcom/prisma";
 
 function logoutParams(token: string): Record<string, string> {
@@ -29,7 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ message: "Keycloak Session not found" });
       }
 
-      const idToken = keycloak_session.metadata?.id_token;
+      const idToken =
+        isPrismaObj(keycloak_session.metadata) && (keycloak_session.metadata?.id_token as string | undefined);
       if (!idToken) {
         return res.status(500).json({ message: "id_token not found in metadata" });
       }
