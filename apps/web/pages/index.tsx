@@ -2,8 +2,7 @@ import type { GetServerSidePropsContext } from "next";
 import nookies from "nookies";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN, KEYCLOAK_TOKEN_SECRET } from "@calcom/lib/constants";
-import { symmetricEncrypt } from "@calcom/lib/crypto";
+import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 
 function RedirectPage() {
@@ -15,31 +14,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await getServerSession({ req, res });
 
   const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
-  const keycloak_token_secret = KEYCLOAK_TOKEN_SECRET || "";
   const useSecureCookies = WEBAPP_URL?.startsWith("https://");
 
-  if (session?.id_token && session?.access_token && session?.refresh_token) {
-    const id_token_encoded_val = symmetricEncrypt(session.id_token, keycloak_token_secret);
-    nookies.set(context, "keycloak_id_token", id_token_encoded_val, {
-      domain: keycloak_cookie_domain,
-      sameSite: useSecureCookies ? "none" : "lax",
-      path: "/",
-      secure: useSecureCookies,
-      httpOnly: true,
-    });
-
-    const access_token_encoded_val = symmetricEncrypt(session.access_token, keycloak_token_secret);
-    nookies.set(context, "keycloak_access_token", access_token_encoded_val, {
-      domain: keycloak_cookie_domain,
-      sameSite: useSecureCookies ? "none" : "lax",
-      path: "/",
-      secure: useSecureCookies,
-      httpOnly: true,
-    });
-
-    const refresh_token_encoded_val = symmetricEncrypt(session.refresh_token, keycloak_token_secret);
-
-    nookies.set(context, "keycloak_refresh_token", refresh_token_encoded_val, {
+  if (session?.keycloak_token) {
+    nookies.set(context, "keycloak_token", session.keycloak_token, {
       domain: keycloak_cookie_domain,
       sameSite: useSecureCookies ? "none" : "lax",
       path: "/",
