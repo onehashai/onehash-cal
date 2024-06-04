@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           browserToken: req.cookies["keycloak_token"],
         },
       });
-      res.status(200).json({ data: url });
+      return res.status(200).json({ data: url });
     }
     return res.status(500).json({ message: "keycloak_token not found in browser" });
   } catch (error) {
