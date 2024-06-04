@@ -1,78 +1,50 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
-import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
+import { isPrismaObj } from "@calcom/lib";
 import prisma from "@calcom/prisma";
 
-const logoutUserFromKeycloak = async (refresh_token: string, access_token: string) => {
-  const clientId = process.env.KEYCLOAK_CLIENT_ID;
-  const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET;
-  const endsessionURL = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/logout`;
+function logoutParams(token: string): Record<string, string> {
+  return {
+    id_token_hint: token,
+    post_logout_redirect_uri: process.env.NEXT_PUBLIC_WEBAPP_URL || "",
+  };
+}
 
-  try {
-    const response = await fetch(endsessionURL, {
-      method: "POST",
-      body: new URLSearchParams({
-        client_id: clientId ?? "",
-        client_secret: clientSecret ?? "",
-        refresh_token: refresh_token,
-      }),
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-    if (!response.ok) {
-      console.error(response);
-      throw new Error("Failed to logout user from Keycloak");
-    }
-    return response.status;
-  } catch (err) {
-    console.log(err);
-  }
-};
+function sendEndSessionEndpointToURL(token: string) {
+  const endSessionEndPoint = new URL(`${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/logout`);
+  const params: Record<string, string> = logoutParams(token);
+  const endSessionParams = new URLSearchParams(params);
+  const url = `${endSessionEndPoint.href}?${endSessionParams}`;
+  return url;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getServerSession({ req, res });
-  if (!session) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-
-  if (!session.user?.id) {
-    console.error("Session is missing a user id.");
-    return res.status(500).json({ error: ErrorCode.InternalServerError });
-  }
-
-  const accounts = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { accounts: true },
-  });
-
-  if (!accounts) {
-    console.error("Account is missing.");
-    return res.status(500).json({ error: ErrorCode.InternalServerError });
-  }
-  let refreshToken;
-  let accessToken;
-  accounts.accounts.forEach((account) => {
-    refreshToken = account.refresh_token;
-    accessToken = account.access_token;
-  });
-  if (refreshToken && accessToken) {
-    try {
-      const result = await logoutUserFromKeycloak(refreshToken, accessToken);
-      if (result === 204) {
-        await prisma.account.deleteMany({
-          where: { userId: session.user.id },
-        });
-        return res.status(200).json({ result });
+  try {
+    if (req.cookies["keycloak_token"]) {
+      const keycloak_session = await prisma.keycloakSessionInfo.findUnique({
+        where: {
+          browserToken: req.cookies["keycloak_token"],
+        },
+      });
+      if (!keycloak_session) {
+        return res.status(500).json({ message: "Keycloak Session not found" });
       }
-      return res.status(500).json({ message: "Invalid Response from Keycloak" });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: error });
+
+      const idToken =
+        isPrismaObj(keycloak_session.metadata) && (keycloak_session.metadata?.id_token as string | undefined);
+      if (!idToken) {
+        return res.status(500).json({ message: "id_token not found in metadata" });
+      }
+      const url = sendEndSessionEndpointToURL(idToken);
+      await prisma.keycloakSessionInfo.delete({
+        where: {
+          browserToken: req.cookies["keycloak_token"],
+        },
+      });
+      return res.status(200).json({ data: url });
     }
-  } else {
-    return res.status(400).json({ message: "Refresh Token missing or invalid" });
+    return res.status(500).json({ message: "keycloak_token not found in browser" });
+  } catch (error) {
+    return res.status(500);
   }
 }

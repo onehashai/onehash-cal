@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
+import { isPrismaObj } from "@calcom/lib";
 import { defaultHandler, defaultResponder } from "@calcom/lib/server";
 import prisma from "@calcom/prisma";
 
@@ -16,46 +17,33 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(500).json({ error: ErrorCode.InternalServerError });
   }
 
-  const accounts = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { accounts: true },
-  });
-
-  if (!accounts) {
-    console.error("Account is missing.");
-    return res.status(200).json({ message: "No Session Info." });
+  const userInfoEndpoint = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`;
+  const keycloak_token = req.cookies["keycloak_token"];
+  if (!keycloak_token) {
+    return res.status(200).json({ message: "Access Token absent. Please log in again." });
   }
-  let accessToken;
-  accounts.accounts.forEach((account) => {
-    accessToken = account.access_token;
+  const keycloak_session = await prisma.keycloakSessionInfo.findUnique({
+    where: {
+      browserToken: req.cookies["keycloak_token"],
+    },
   });
-
-  if (!accessToken) {
-    console.error("Access Token is missing.");
-    return res.status(500).json({ error: ErrorCode.InternalServerError });
+  if (!keycloak_session) {
+    return res.status(200).json({ message: "Keycloak Session not found. Please log in again." });
   }
-
-  const clientId = process.env.KEYCLOAK_CLIENT_ID || "";
-  const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET || "";
-  const introspectEndpoint = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token/introspect`;
-  const params = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    token: accessToken,
-  });
-  const introspectRes = await fetch(introspectEndpoint, {
-    method: "POST",
-    body: params.toString(),
+  const access_token =
+    isPrismaObj(keycloak_session.metadata) && (keycloak_session.metadata?.access_token as string);
+  const userInfoRes = await fetch(userInfoEndpoint, {
+    method: "GET",
     headers: {
+      Authorization: `Bearer ${access_token}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
-
-  const introspectData = await introspectRes.json();
-  if (introspectData.active === false) {
-    // Session expired, delete the account
-    await prisma.account.deleteMany({
-      where: { userId: session.user.id },
+  if (userInfoRes.status !== 200) {
+    await prisma.keycloakSessionInfo.delete({
+      where: {
+        browserToken: req.cookies["keycloak_token"],
+      },
     });
     return res.status(200).json({ message: "Session expired. Please log in again." });
   } else {

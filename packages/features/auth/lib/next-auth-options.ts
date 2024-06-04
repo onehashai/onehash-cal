@@ -448,8 +448,20 @@ export const AUTH_OPTIONS: AuthOptions = {
       account,
     }) {
       log.debug("callbacks:jwt", safeStringify({ token, user, account, trigger, session }));
-
       // The data available in 'session' depends on what data was supplied in update method call of session
+
+      // Saving session in Keycloak Session Modal
+      let browser_token = "";
+      if (account?.id_token) {
+        browser_token = randomString(256);
+        await prisma.keycloakSessionInfo.create({
+          data: {
+            browserToken: browser_token,
+            metadata: account,
+          },
+        });
+      }
+
       if (trigger === "update") {
         return {
           ...token,
@@ -503,7 +515,7 @@ export const AUTH_OPTIONS: AuthOptions = {
         }
 
         const profileOrg = profile?.organization;
-
+        token.keycloak_token = browser_token;
         return {
           ...existingUserWithoutTeamsField,
           ...token,
@@ -582,7 +594,7 @@ export const AUTH_OPTIONS: AuthOptions = {
         if (!existingUser) {
           return await autoMergeIdentities();
         }
-
+        token.keycloak_token = browser_token;
         return {
           ...token,
           id: existingUser.id,
@@ -607,6 +619,7 @@ export const AUTH_OPTIONS: AuthOptions = {
       log.debug("callbacks:session - Session callback called", safeStringify({ session, token, user }));
       const hasValidLicense = await checkLicense(prisma);
       const profileId = token.profileId;
+      session.keycloak_token = token.keycloak_token;
       const calendsoSession: Session = {
         ...session,
         profileId,
@@ -638,12 +651,13 @@ export const AUTH_OPTIONS: AuthOptions = {
         profile,
         account,
       } = params;
-      if ("refresh_expires_in" in account) {
+      if (account && "refresh_expires_in" in account) {
         delete account.refresh_expires_in;
       }
-      if ("not-before-policy" in account) {
+      if (account && "not-before-policy" in account) {
         delete account["not-before-policy"];
       }
+
       log.debug("callbacks:signin", safeStringify(params));
 
       if (account?.provider === "email") {
