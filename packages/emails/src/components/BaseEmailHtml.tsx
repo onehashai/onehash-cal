@@ -223,8 +223,9 @@ export const BaseEmailHtml = (props: {
                       style={{ textDecoration: "none", color: "#000000" }}>
                       <div
                         style={{
+                          marginTop: "36px",
                           fontFamily: "Roboto, Helvetica, sans-serif",
-                          fontSize: 13,
+                          fontSize: 16,
                           lineHeight: 1,
                           textAlign: "left",
                           color: "#000000",
