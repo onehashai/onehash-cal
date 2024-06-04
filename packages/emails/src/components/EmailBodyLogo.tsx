@@ -40,8 +40,7 @@ const EmailBodyLogo = () => {
                   align="center"
                   style={{
                     fontSize: "0px",
-                    padding: "10px 25px",
-                    paddingTop: "32px",
+
                     wordBreak: "break-word",
                   }}>
                   <Row border="0" style={{ borderCollapse: "collapse", borderSpacing: "0px" }}>
@@ -55,6 +54,7 @@ const EmailBodyLogo = () => {
                             display: "block",
                             outline: "none",
                             textDecoration: "none",
+                            clipPath: "inset(35% 0 40% 0)",
                             height: "200px",
                             width: "100%",
                             fontSize: "13px",

@@ -212,8 +212,6 @@ export const BaseEmailHtml = (props: {
                 align="center"
                 style={{
                   fontSize: "0px",
-                  padding: "10px 25px",
-                  paddingTop: "32px",
                   wordBreak: "break-word",
                 }}>
                 <Row border="0" style={{ borderCollapse: "collapse", borderSpacing: "0px" }}>
@@ -223,7 +221,16 @@ export const BaseEmailHtml = (props: {
                       target="_blank"
                       rel="noreferrer"
                       style={{ textDecoration: "none", color: "#000000" }}>
-                      <span style={{ fontSize: "16px" }}>Scheduling by OneHash Cal</span>
+                      <div
+                        style={{
+                          fontFamily: "Roboto, Helvetica, sans-serif",
+                          fontSize: 13,
+                          lineHeight: 1,
+                          textAlign: "left",
+                          color: "#000000",
+                        }}>
+                        Scheduling by OneHash Cal 📆
+                      </div>
                     </a>
                   </td>
                 </Row>
