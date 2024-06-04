@@ -196,6 +196,40 @@ export const BaseEmailHtml = (props: {
               </Row>
             </div>
           </div>
+          {/* Marketing div */}
+          <div
+            className="mj-column-per-100 mj-outlook-group-fix"
+            style={{
+              fontSize: "0px",
+              textAlign: "left",
+              direction: "ltr",
+              display: "inline-block",
+              verticalAlign: "top",
+              width: "100%",
+            }}>
+            <Row border="0" style={{ verticalAlign: "top" }} width="100%">
+              <td
+                align="center"
+                style={{
+                  fontSize: "0px",
+                  padding: "10px 25px",
+                  paddingTop: "32px",
+                  wordBreak: "break-word",
+                }}>
+                <Row border="0" style={{ borderCollapse: "collapse", borderSpacing: "0px" }}>
+                  <td style={{ verticalAlign: "middle" }}>
+                    <a
+                      href="https://www.onehash.ai/cal"
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ textDecoration: "none", color: "#000000" }}>
+                      <span style={{ fontSize: "16px" }}>Scheduling by OneHash Cal</span>
+                    </a>
+                  </td>
+                </Row>
+              </td>
+            </Row>
+          </div>
           <EmailBodyLogo />
           <RawHtml html="<!--[if mso | IE]></td></tr></table><![endif]-->" />
         </div>
