@@ -63,7 +63,7 @@ const SkeletonLoader = ({ title, description }: { title: string; description: st
 const PasswordView = ({ user }: PasswordViewProps) => {
   const { data } = useSession();
   const { t } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const metadata = userMetadataSchema.safeParse(user?.metadata);
   const initialSessionTimeout = metadata.success ? metadata.data?.sessionTimeout : undefined;
 
@@ -124,6 +124,15 @@ const PasswordView = ({ user }: PasswordViewProps) => {
     },
   });
 
+  const createAccountPasswordMutation = trpc.viewer.auth.createAccountPassword.useMutation({
+    onSuccess: () => {
+      showToast(t("password_reset_email", { email: user.email }), "success");
+    },
+    onError: (error) => {
+      showToast(`${t("error_creating_account_password")}, ${t(error.message)}`, "error");
+    },
+  });
+
   const formMethods = useForm<ChangePasswordSessionFormValues>({
     defaultValues: {
       oldPassword: "",
@@ -141,6 +150,7 @@ const PasswordView = ({ user }: PasswordViewProps) => {
         { shouldFocus: true }
       );
     }
+
     if (!newPassword.length) {
       formMethods.setError(
         "newPassword",
@@ -170,7 +180,7 @@ const PasswordView = ({ user }: PasswordViewProps) => {
   return (
     <>
       <Meta title={t("password")} description={t("password_description")} borderInShellHeader={true} />
-      {user && user.identityProvider !== IdentityProvider.CAL ? (
+      {user && user.identityProvider !== IdentityProvider.CAL && !user.passwordAdded ? (
         <div className="border-subtle rounded-b-xl border border-t-0 px-4 py-6 sm:px-6">
           <h2 className="font-cal text-emphasis text-lg font-medium leading-6">
             {t("account_managed_by_identity_provider", {
@@ -307,7 +317,7 @@ const PasswordView = ({ user }: PasswordViewProps) => {
 };
 
 const PasswordViewWrapper = () => {
-  const { data: user, isPending } = trpc.viewer.me.useQuery();
+  const { data: user, isPending } = trpc.viewer.me.useQuery({ includePasswordAdded: true });
   const { t } = useLocale();
   if (isPending || !user)
     return <SkeletonLoader title={t("password")} description={t("password_description")} />;

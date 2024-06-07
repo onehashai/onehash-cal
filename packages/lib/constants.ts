@@ -94,9 +94,11 @@ export const IS_STRIPE_ENABLED = !!(
   process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY &&
   process.env.STRIPE_PRIVATE_KEY
 );
-/** Self hosted shouldn't checkout when creating teams unless required */
-//TODO:Set this to true once we enable teams billing
-export const IS_TEAM_BILLING_ENABLED = !!(IS_STRIPE_ENABLED && false);
+/** This has correct value only server side. When you want to use client side, go for IS_TEAM_BILLING_ENABLED_CLIENT. I think we should use the _CLIENT one only everywhere so that it works reliably everywhere on client as well as server  */
+export const IS_TEAM_BILLING_ENABLED = !!(IS_STRIPE_ENABLED && HOSTED_CAL_FEATURES && false);
+export const IS_TEAM_BILLING_ENABLED_CLIENT =
+  !!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY && HOSTED_CAL_FEATURES && false;
+
 export const FULL_NAME_LENGTH_MAX_LIMIT = 50;
 export const MINUTES_TO_BOOK = process.env.NEXT_PUBLIC_MINUTES_TO_BOOK || "5";
 export const ENABLE_PROFILE_SWITCHER = process.env.NEXT_PUBLIC_ENABLE_PROFILE_SWITCHER === "1";
@@ -110,10 +112,13 @@ export const ORGANIZATION_MIN_SEATS = 30;
 export const IS_MAILHOG_ENABLED = process.env.E2E_TEST_MAILHOG_ENABLED === "1";
 export const CALCOM_VERSION = process.env.NEXT_PUBLIC_CALCOM_VERSION as string;
 
+export const APP_CREDENTIAL_SHARING_ENABLED =
+  !!process.env.CALCOM_CREDENTIAL_SYNC_SECRET && !!process.env.CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY;
 export const CREDENTIAL_SYNC_SECRET = process.env.CALCOM_CREDENTIAL_SYNC_SECRET;
 export const CREDENTIAL_SYNC_SECRET_HEADER_NAME =
-  process.env.CALCOM_CREDENTIAL_SYNC_SECRET_HEADER_NAME || "calcom-credential-sync-secret";
-export const APP_CREDENTIAL_SHARING_ENABLED = CREDENTIAL_SYNC_SECRET && CREDENTIAL_SYNC_SECRET_HEADER_NAME;
+  process.env.CALCOM_CREDENTIAL_SYNC_HEADER_NAME || "calcom-credential-sync-secret";
+
+export const CREDENTIAL_SYNC_ENDPOINT = process.env.CALCOM_CREDENTIAL_SYNC_ENDPOINT;
 
 // OneHash default brand color
 export const DEFAULT_LIGHT_BRAND_COLOR = "#007ee5";
@@ -155,3 +160,20 @@ export const ONEHASH_CHAT_URL = process.env.NEXT_PUBLIC_ONEHASH_CHAT_URL;
 export const ONEHASH_CRM_URL = process.env.NEXT_PUBLIC_ONEHASH_CRM_URL;
 export const ONEHASH_ERP_URL = process.env.NEXT_PUBLIC_ONEHASH_ERP_URL;
 export const KEYCLOAK_COOKIE_DOMAIN = process.env.NEXTAUTH_COOKIE_DOMAIN;
+export const CLOUDFLARE_SITE_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_SITEKEY;
+export const MINIMUM_NUMBER_OF_ORG_SEATS = 30;
+export const ORG_SELF_SERVE_ENABLED = process.env.NEXT_PUBLIC_ORG_SELF_SERVE_ENABLED === "1";
+export const ORG_MINIMUM_PUBLISHED_TEAMS_SELF_SERVE = 2;
+/**
+ * The maximum number of days we should check for if we don't find all required bookable days
+ * Counter start from current day and we would like to not go beyond 2 months(max days possible) from current day.
+ */
+export const ROLLING_WINDOW_PERIOD_MAX_DAYS_TO_CHECK = 30 + 31;
+
+export const TRANSCRIPTION_STARTED_ICON = IS_PRODUCTION
+  ? `${WEBAPP_URL}/sparkles-red.svg`
+  : `https://app.cal.com/sparkles-red.svg`;
+
+export const TRANSCRIPTION_STOPPED_ICON = IS_PRODUCTION
+  ? `${WEBAPP_URL}/sparkles.svg`
+  : `https://app.cal.com/sparkles.svg`;

@@ -15,6 +15,14 @@
     {
       "path": "/api/cron/workflows/scheduleWhatsappReminders",
       "schedule": "0 0 */3 * *"
+    },
+    {
+      "path": "/api/tasks/cron",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/tasks/cleanup",
+      "schedule": "0 0 * * *"
     }
   ],
   "functions": {

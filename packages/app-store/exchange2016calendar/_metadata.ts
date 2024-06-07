@@ -18,6 +18,7 @@ export const metadata = {
   url: "https://www.onehash.ai",
   email: "support@onehash.ai",
   dirName: "exchange2016calendar",
+  isOAuth: false,
 } as AppMeta;
 
 export default metadata;

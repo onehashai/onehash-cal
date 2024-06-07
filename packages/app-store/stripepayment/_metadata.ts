@@ -23,6 +23,7 @@ export const metadata = {
   extendsFeature: "EventType",
   email: "support@onehash.ai",
   dirName: "stripepayment",
+  isOAuth: true,
 } as AppMeta;
 
 export default metadata;

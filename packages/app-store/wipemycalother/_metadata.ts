@@ -18,6 +18,7 @@ export const metadata = {
   variant: "other",
   email: "support@onehash.ai",
   dirName: "wipemycalother",
+  isOAuth: false,
 } as AppMeta;
 
 export default metadata;

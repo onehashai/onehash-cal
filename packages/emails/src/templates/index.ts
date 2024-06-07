@@ -27,6 +27,7 @@ export { VerifyAccountEmail } from "./VerifyAccountEmail";
 export { VerifyEmailByCode } from "./VerifyEmailByCode";
 export * from "@calcom/app-store/routing-forms/emails/components";
 export { DailyVideoDownloadRecordingEmail } from "./DailyVideoDownloadRecordingEmail";
+export { DailyVideoDownloadTranscriptEmail } from "./DailyVideoDownloadTranscriptEmail";
 export { OrganisationAccountVerifyEmail } from "./OrganizationAccountVerifyEmail";
 export { OrgAutoInviteEmail } from "./OrgAutoInviteEmail";
 export { MonthlyDigestEmail } from "./MonthlyDigestEmail";
@@ -35,3 +36,5 @@ export { BookingRedirectEmailNotification } from "./BookingRedirectEmailNotifica
 export { WelcomeUserEmail } from "./WelcomeUserEmail";
 export { ImportDataEmail } from "./ImportDataEmail";
 export { VerifyEmailChangeEmail } from "./VerifyEmailChangeEmail";
+export { OrganizationCreationEmail } from "./OrganizationCreationEmail";
+export { OrganizationAdminNoSlotsEmail } from "./OrganizationAdminNoSlots";

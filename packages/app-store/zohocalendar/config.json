@@ -10,5 +10,6 @@
   "logo": "icon.svg",
   "publisher": "OneHash Cal",
   "url": "https://www.onehash.ai",
-  "email": "support@onehash.ai"
+  "email": "support@onehash.ai",
+  "isAuth": true
 }

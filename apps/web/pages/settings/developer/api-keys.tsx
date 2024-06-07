@@ -16,7 +16,6 @@ import {
   SkeletonContainer,
   SkeletonText,
 } from "@calcom/ui";
-import { Link as LinkIcon, Plus } from "@calcom/ui/components/icon";
 
 import PageWrapper from "@components/PageWrapper";
 
@@ -46,7 +45,7 @@ const ApiKeysView = () => {
     return (
       <Button
         color="secondary"
-        StartIcon={Plus}
+        StartIcon="plus"
         onClick={() => {
           setApiKeyToEdit(undefined);
           setApiKeyModal(true);

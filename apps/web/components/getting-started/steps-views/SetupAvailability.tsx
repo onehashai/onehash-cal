@@ -6,8 +6,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { TRPCClientErrorLike } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import type { AppRouter } from "@calcom/trpc/server/routers/_app";
-import { Button, Form, showToast } from "@calcom/ui";
-import { ArrowRight } from "@calcom/ui/components/icon";
+import { Button, Form, Icon, showToast } from "@calcom/ui";
 
 interface ISetupAvailabilityProps {
   nextStep: () => void;
@@ -93,10 +92,10 @@ const SetupAvailability = (props: ISetupAvailabilityProps) => {
         <Button
           data-testid="save-availability"
           type="submit"
-          className="mt-2 w-full justify-center bg-blue-500 p-2 text-sm hover:bg-blue-600 sm:mt-8"
-          disabled={availabilityForm.formState.isSubmitting}
-          loading={mutation.isPending}>
-          {t("next_step_text")} <ArrowRight className="ml-2 h-4 w-4 self-center" />
+          className="mt-2 w-full justify-center p-2 text-sm sm:mt-8"
+          loading={availabilityForm.formState.isSubmitting}
+          disabled={availabilityForm.formState.isSubmitting}>
+          {t("next_step_text")} <Icon name="arrow-right" className="ml-2 h-4 w-4 self-center" />
         </Button>
       </div>
     </Form>

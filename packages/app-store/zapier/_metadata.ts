@@ -17,6 +17,7 @@ export const metadata = {
   variant: "automation",
   email: "support@onehash.ai",
   dirName: "zapier",
+  isOAuth: false,
 } as AppMeta;
 
 export default metadata;

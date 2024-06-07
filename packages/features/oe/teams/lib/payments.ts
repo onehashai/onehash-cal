@@ -2,8 +2,9 @@ import { z } from "zod";
 
 import { getStripeCustomerIdFromUserId } from "@calcom/app-store/stripepayment/lib/customer";
 import stripe from "@calcom/app-store/stripepayment/lib/server";
-import { WEBAPP_URL } from "@calcom/lib/constants";
+import { IS_PRODUCTION, WEBAPP_URL } from "@calcom/lib/constants";
 import { ORGANIZATION_MIN_SEATS } from "@calcom/lib/constants";
+import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
@@ -115,6 +116,110 @@ export const purchaseTeamSubscription = async (input: {
     },
   });
   return { url: session.url };
+};
+
+/**
+ * Used to generate a checkout session when creating a new org (parent team) or backwards compatibility for old teams
+ */
+export const purchaseTeamOrOrgSubscription = async (input: {
+  teamId: number;
+  /**
+   * The actual number of seats in the team.
+   * The seats that we would charge for could be more than this depending on the MINIMUM_NUMBER_OF_ORG_SEATS in case of an organization
+   * For a team it would be the same as this value
+   */
+  seatsUsed: number;
+  /**
+   * If provided, this is the exact number we would charge for.
+   */
+  seatsToChargeFor?: number | null;
+  userId: number;
+  isOrg?: boolean;
+  pricePerSeat: number | null;
+}) => {
+  const { teamId, seatsToChargeFor, seatsUsed, userId, isOrg, pricePerSeat } = input;
+  const { url } = await checkIfTeamPaymentRequired({ teamId });
+  if (url) return { url };
+
+  // For orgs, enforce minimum of MINIMUM_NUMBER_OF_ORG_SEATS seats if `seatsToChargeFor` not set
+  const seats = isOrg ? Math.max(seatsUsed, MINIMUM_NUMBER_OF_ORG_SEATS) : seatsUsed;
+  const quantity = seatsToChargeFor ? seatsToChargeFor : seats;
+
+  const customer = await getStripeCustomerIdFromUserId(userId);
+
+  const session = await stripe.checkout.sessions.create({
+    customer,
+    mode: "subscription",
+    allow_promotion_codes: true,
+    success_url: `${WEBAPP_URL}/api/teams/${teamId}/upgrade?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${WEBAPP_URL}/settings/my-account/profile`,
+    line_items: [
+      {
+        price: await getPriceId(),
+        quantity: quantity,
+      },
+    ],
+    customer_update: {
+      address: "auto",
+    },
+    // Disabled when testing locally as usually developer doesn't setup Tax in Stripe Test mode
+    automatic_tax: {
+      enabled: IS_PRODUCTION,
+    },
+    metadata: {
+      teamId,
+    },
+    subscription_data: {
+      metadata: {
+        teamId,
+      },
+    },
+  });
+  return { url: session.url };
+
+  /**
+   * Determines the priceId depending on if a custom price is required or not.
+   * If the organization has a custom price per seat, it will create a new price in stripe and return its ID.
+   */
+  async function getPriceId() {
+    const fixedPriceId = isOrg
+      ? process.env.STRIPE_ORG_MONTHLY_PRICE_ID
+      : process.env.STRIPE_TEAM_MONTHLY_PRICE_ID;
+
+    if (!fixedPriceId) {
+      throw new Error(
+        "You need to have STRIPE_ORG_MONTHLY_PRICE_ID and STRIPE_TEAM_MONTHLY_PRICE_ID env variables set"
+      );
+    }
+
+    log.debug("Getting price ID", safeStringify({ fixedPriceId, isOrg, teamId, pricePerSeat }));
+
+    if (!pricePerSeat) {
+      return fixedPriceId;
+    }
+
+    const priceObj = await stripe.prices.retrieve(fixedPriceId);
+    if (!priceObj) throw new Error(`No price found for ID ${fixedPriceId}`);
+    try {
+      const customPriceObj = await stripe.prices.create({
+        nickname: `Custom price for ${isOrg ? "Organization" : "Team"} ID: ${teamId}`,
+        unit_amount: pricePerSeat * 100, // Stripe expects the amount in cents
+        // Use the same currency as in the fixed price to avoid hardcoding it.
+        currency: priceObj.currency,
+        recurring: { interval: "month" }, // Define your subscription interval
+        product: typeof priceObj.product === "string" ? priceObj.product : priceObj.product.id,
+        tax_behavior: "exclusive",
+      });
+      return customPriceObj.id;
+    } catch (e) {
+      log.error(
+        `Error creating custom price for ${isOrg ? "Organization" : "Team"} ID: ${teamId}`,
+        safeStringify(e)
+      );
+
+      throw new Error("Error in creation of custom price");
+    }
+  }
 };
 
 const getTeamWithPaymentMetadata = async (teamId: number) => {
