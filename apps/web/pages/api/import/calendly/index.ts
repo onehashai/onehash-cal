@@ -667,7 +667,7 @@ async function confirmUpcomingImportedBookings(bookingIds: number[], userIntID: 
     if (!user) throw new Error("Event organizer not found");
     // Fetch user credentials and translation
     const [credentials, tOrganizer] = await Promise.all([
-      getUsersCredentials(userIntID),
+      getUsersCredentials(user),
       getTranslation(user.locale ?? "en", "common"),
     ]);
     const userWithCredentials = { ...user, credentials };
