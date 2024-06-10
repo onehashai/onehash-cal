@@ -30,18 +30,6 @@ import {
   showToast,
   Tooltip,
 } from "@calcom/ui";
-import {
-  Check,
-  Edit2,
-  ExternalLink,
-  Globe,
-  Link as LinkIcon,
-  LogOut,
-  MoreHorizontal,
-  Send,
-  Trash,
-  X,
-} from "@calcom/ui/components/icon";
 
 import { TeamRole } from "./TeamPill";
 
@@ -207,7 +195,7 @@ export default function TeamListItem(props: Props) {
                   type="button"
                   color="secondary"
                   data-testid={`accept-invitation-${team.id}`}
-                  StartIcon={Check}
+                  StartIcon="check"
                   className="me-2 ms-2"
                   onClick={acceptInvite}>
                   {t("accept")}
@@ -216,16 +204,16 @@ export default function TeamListItem(props: Props) {
               <div className="block sm:hidden">
                 <Dropdown>
                   <DropdownMenuTrigger asChild>
-                    <Button type="button" color="minimal" variant="icon" StartIcon={MoreHorizontal} />
+                    <Button type="button" color="minimal" variant="icon" StartIcon="ellipsis" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem>
-                      <DropdownItem type="button" StartIcon={Check} onClick={acceptInvite}>
+                      <DropdownItem type="button" StartIcon="check" onClick={acceptInvite}>
                         {t("accept")}
                       </DropdownItem>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <DropdownItem color="destructive" type="button" StartIcon={X} onClick={declineInvite}>
+                      <DropdownItem color="destructive" type="button" StartIcon="x" onClick={declineInvite}>
                         {t("reject")}
                       </DropdownItem>
                     </DropdownMenuItem>
@@ -251,7 +239,7 @@ export default function TeamListItem(props: Props) {
                         showToast(t("link_copied"), "success");
                       }}
                       variant="icon"
-                      StartIcon={LinkIcon}
+                      StartIcon="link"
                     />
                   </Tooltip>
                 )}
@@ -262,7 +250,7 @@ export default function TeamListItem(props: Props) {
                       type="button"
                       color="secondary"
                       variant="icon"
-                      StartIcon={MoreHorizontal}
+                      StartIcon="ellipsis"
                     />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent hidden={hideDropdown}>
@@ -271,7 +259,7 @@ export default function TeamListItem(props: Props) {
                         <DropdownItem
                           type="button"
                           href={`/settings/teams/${team.id}/profile`}
-                          StartIcon={Edit2}>
+                          StartIcon="pencil">
                           {t("edit_team") as string}
                         </DropdownItem>
                       </DropdownMenuItem>
@@ -286,7 +274,7 @@ export default function TeamListItem(props: Props) {
                             orgSlug: team.parent ? team.parent.slug : null,
                             teamSlug: team.slug,
                           })}`}
-                          StartIcon={ExternalLink}>
+                          StartIcon="external-link">
                           {t("preview_team") as string}
                         </DropdownItem>
                       </DropdownMenuItem>
@@ -298,7 +286,7 @@ export default function TeamListItem(props: Props) {
                           onClick={() => {
                             setOpenMemberInvitationModal(true);
                           }}
-                          StartIcon={Send}>
+                          StartIcon="send">
                           {t("invite_team_member") as string}
                         </DropdownItem>
                       </DropdownMenuItem>
@@ -311,7 +299,7 @@ export default function TeamListItem(props: Props) {
                             <DropdownItem
                               color="destructive"
                               type="button"
-                              StartIcon={Trash}
+                              StartIcon="trash"
                               onClick={(e) => {
                                 e.stopPropagation();
                               }}>
@@ -339,7 +327,7 @@ export default function TeamListItem(props: Props) {
                             <DropdownItem
                               color="destructive"
                               type="button"
-                              StartIcon={LogOut}
+                              StartIcon="log-out"
                               onClick={(e) => {
                                 e.stopPropagation();
                               }}>
@@ -386,7 +374,7 @@ const TeamPublishButton = ({ teamId }: { teamId: number }) => {
         onClick={() => {
           publishTeamMutation.mutate({ teamId });
         }}
-        StartIcon={Globe}>
+        StartIcon="globe">
         {t("team_publish")}
       </DropdownItem>
     </DropdownMenuItem>

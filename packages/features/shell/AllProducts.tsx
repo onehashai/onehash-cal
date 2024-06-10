@@ -11,8 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuPortal,
   DropdownMenuTrigger,
+  Icon,
 } from "@calcom/ui";
-import { ChevronRight, MessageCircle, LineChart, HeartHandshake, Boxes } from "@calcom/ui/components/icon";
 
 const AllProducts = () => {
   const [expanded, setIsExpanded] = useState(false);
@@ -38,17 +38,18 @@ const AllProducts = () => {
               "border-subtle rounded-md border border-t-0 font-semibold md:border-none md:font-normal"
             )}>
             <div className="flex gap-3 md:hidden md:gap-2 lg:flex ">
-              <Boxes className="h-4 w-4" />
+              <Icon name="boxes" className="h-4 w-4" />
               <span>{t("all_products")}</span>
             </div>
-
-            <ChevronRight
+            <Icon
+              name="chevron-right"
               strokeWidth="2"
               className={classNames(
                 "text-muted h-4 w-4",
                 expanded ? "rotate-90 transform" : " rotate-0 transform"
               )}
             />
+            ,
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuPortal>
@@ -61,7 +62,7 @@ const AllProducts = () => {
             <>
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon={() => <MessageCircle className="text-default h-4 w-4" />}
+                  StartIcon={() => <Icon name="message" className="text-default h-4 w-4" />}
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_CHAT_URL}
@@ -74,7 +75,7 @@ const AllProducts = () => {
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon={() => <HeartHandshake className="text-default h-4 w-4" />}
+                  StartIcon={() => <Icon name="heart-handshake" className="text-default h-4 w-4" />}
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_CRM_URL}
@@ -88,7 +89,7 @@ const AllProducts = () => {
 
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon={() => <LineChart className="text-default h-4 w-4" />}
+                  StartIcon={() => <Icon name="line-chart" className="text-default h-4 w-4" />}
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_ERP_URL}

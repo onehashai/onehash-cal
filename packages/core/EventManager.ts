@@ -19,7 +19,6 @@ import {
 } from "@calcom/lib/piiFreeData";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
-import type { BookingReference } from "@calcom/prisma/client";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
 import { createdEventSchema } from "@calcom/prisma/zod-utils";
 import type { AdditionalInformation, CalendarEvent, NewCalendarEventType } from "@calcom/types/Calendar";
@@ -493,10 +492,6 @@ export default class EventManager {
       isBookingInRecurringSeries,
     });
   }
-<<<<<<< HEAD
-=======
-
->>>>>>> upstream/main
   private async deleteEventsAndMeetings({
     event,
     bookingReferences,
