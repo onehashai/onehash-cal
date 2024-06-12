@@ -62,7 +62,7 @@ const AllProducts = () => {
             <>
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon={() => <Icon name="message" className="text-default h-4 w-4" />}
+                  StartIcon="message"
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_CHAT_URL}
@@ -75,7 +75,7 @@ const AllProducts = () => {
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon={() => <Icon name="heart-handshake" className="text-default h-4 w-4" />}
+                  StartIcon="heart-handshake"
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_CRM_URL}
@@ -89,7 +89,7 @@ const AllProducts = () => {
 
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon={() => <Icon name="line-chart" className="text-default h-4 w-4" />}
+                  StartIcon="line-chart"
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_ERP_URL}

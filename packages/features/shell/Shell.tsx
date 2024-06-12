@@ -370,7 +370,6 @@ export default function Shell(props: LayoutProps) {
   // useLogoutOnLogoutPage();
   useRedirectToOnboardingIfNeeded();
   useAppTheme();
-
   return !props.isPublic ? (
     <KBarWrapper withKBar>
       <Layout {...props} />

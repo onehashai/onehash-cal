@@ -125,7 +125,7 @@ const SlotItem = ({
           data-time={slot.time}
           onClick={onButtonClick}
           className={classNames(
-            `min-h-9 hover:border-brand-default mb-2 flex h-auto w-full flex-grow flex-col justify-center py-2`,
+            `hover:border-brand-default mb-2 flex h-auto min-h-9 w-full flex-grow flex-col justify-center py-2`,
             selectedSlots?.includes(slot.time) && "border-brand-default",
             `${customClassNames}`
           )}
@@ -216,7 +216,7 @@ export const AvailableTimes = ({
       <div className="h-full pb-4">
         {!slots.length && (
           <div
-            data-testId="no-slots-available"
+            data-testid="no-slots-available"
             className="bg-subtle border-subtle flex h-full flex-col items-center rounded-md border p-6 dark:bg-transparent">
             <Icon name="calendar-x-2" className="text-muted mb-2 h-4 w-4" />
             <p className={classNames("text-muted", showTimeFormatToggle ? "-mt-1 text-lg" : "text-sm")}>

@@ -2913,7 +2913,7 @@ __metadata:
     autoprefixer: ^10.4.19
     class-variance-authority: ^0.4.0
     clsx: ^2.0.0
-    lucide-react: ^0.364.0
+    lucide-react: ^0.394.0
     postcss: ^8.4.38
     postcss-import: ^16.1.0
     postcss-prefixer: ^3.0.0
@@ -4046,7 +4046,7 @@ __metadata:
     cmk: ^0.1.1
     date-fns: ^3.6.0
     downshift: ^6.1.9
-    lucide-react: ^0.364.0
+    lucide-react: ^0.394.0
     next: ^13.5.4
     next-seo: ^6.0.0
     react: ^18.2.0
@@ -17895,7 +17895,7 @@ __metadata:
     jest-diff: ^29.5.0
     jsdom: ^22.0.0
     lint-staged: ^12.5.0
-    lucide-react: ^0.171.0
+    lucide-react: ^0.394.0
     mailhog: ^4.16.0
     next-router-mock: ^0.9.12
     node-ical: ^0.16.1
@@ -28476,21 +28476,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:^0.171.0":
-  version: 0.171.0
-  resolution: "lucide-react@npm:0.171.0"
+"lucide-react@npm:^0.394.0":
+  version: 0.394.0
+  resolution: "lucide-react@npm:0.394.0"
   peerDependencies:
     react: ^16.5.1 || ^17.0.0 || ^18.0.0
-  checksum: 768ffe368c52a518ee339203d86ff4479989ab4d79c0716f721900c4bb7392ef6ff7a14807f6a685abd74d27f4c1778170bff77a0ab4c3e06c17944b557d8300
-  languageName: node
-  linkType: hard
-
-"lucide-react@npm:^0.364.0":
-  version: 0.364.0
-  resolution: "lucide-react@npm:0.364.0"
-  peerDependencies:
-    react: ^16.5.1 || ^17.0.0 || ^18.0.0
-  checksum: 954f6274df46ffa172130d9e60eb630a377435c7dbf0ddb5ceebf284602dde3b99755dcd5c0757e697ee734a32c808a3cd2c25ad88fec1d8f627a2317f00e3e6
+  checksum: b46d50f4ed7377f10aa34d14315404abfd6c6ad8ed18151763c444c9a0f5721e479ee1dc78760d0d2c2d245c7d725d8d13a774331409710160e71905386e6043
   languageName: node
   linkType: hard
 
