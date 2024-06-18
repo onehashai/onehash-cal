@@ -788,35 +788,38 @@ const ProfileForm = ({
             {t("add_email")}
           </Button>
         </div>
-        <div className="mt-3 w-full md:w-1/2">
+        <div className="mt-3 w-full">
           <Label className="flex">
             <p className="text-sm ">{t("phone_number")}</p>
             <InfoBadge content={t("number_in_international_format")} />
           </Label>
           <div className="flex gap-3">
-            <PhoneInput
-              value={formMethods.getValues("metadata.phoneNumber")}
-              onChange={(val) => {
-                formMethods.setValue("metadata.phoneNumber", val || "", { shouldDirty: true });
-                const phoneNumber = val || "";
-                setIsNumberValid(isValidPhoneNumber(phoneNumber));
-                setNumberVerified(getNumberVerificationStatus(phoneNumber));
-              }}
-            />
-            {numberVerified ? (
-              <Button
-                color="secondary"
-                className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
-                disabled={!isNumberValid || numberVerified}
-                loading={sendVerificationCodeMutation.isPending}
-                onClick={() =>
-                  sendVerificationCodeMutation.mutate({
-                    phoneNumber: formMethods.getValues("metadata.phoneNumber"),
-                  })
-                }>
-                {t("send_code")}
-              </Button>
-            ) : (
+            <div className="w-full md:w-1/3">
+              <PhoneInput
+                value={formMethods.getValues("metadata.phoneNumber")}
+                onChange={(val) => {
+                  formMethods.setValue("metadata.phoneNumber", val || "", { shouldDirty: true });
+                  const phoneNumber = val || "";
+                  setIsNumberValid(isValidPhoneNumber(phoneNumber));
+                  setNumberVerified(getNumberVerificationStatus(phoneNumber));
+                }}
+              />
+            </div>
+
+            <Button
+              color="secondary"
+              className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
+              disabled={!isNumberValid || numberVerified}
+              loading={sendVerificationCodeMutation.isPending}
+              onClick={() =>
+                sendVerificationCodeMutation.mutate({
+                  phoneNumber: formMethods.getValues("metadata.phoneNumber"),
+                })
+              }>
+              {t("send_code")}
+            </Button>
+
+            {isNumberValid && defaultValues.metadata.phoneNumber != "" && (
               <Button
                 color="destructive"
                 className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "

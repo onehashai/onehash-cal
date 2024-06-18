@@ -98,7 +98,7 @@ const ApiKeysView = () => {
                 </>
               ) : (
                 <EmptyScreen
-                  Icon={LinkIcon}
+                  Icon="link"
                   headline={t("create_first_api_key")}
                   description={t("create_first_api_key_description", { appName: APP_NAME })}
                   buttonRaw={<NewApiKeyButton />}

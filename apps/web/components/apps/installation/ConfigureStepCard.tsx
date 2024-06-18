@@ -1,5 +1,4 @@
 import type { TEventType, TEventTypesForm } from "@pages/apps/installation/[[...step]]";
-import { X } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import type { FC } from "react";
 import React, { forwardRef, useEffect, useRef, useState } from "react";
@@ -13,7 +12,7 @@ import type { EventTypeAppsList } from "@calcom/app-store/utils";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { AppCategories } from "@calcom/prisma/enums";
 import type { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
-import { Button, Form } from "@calcom/ui";
+import { Button, Form, Icon } from "@calcom/ui";
 
 import useAppsData from "@lib/hooks/useAppsData";
 
@@ -91,7 +90,7 @@ const EventTypeAppSettingsForm = forwardRef<HTMLButtonElement, EventTypeAppSetti
           onSubmit(data);
         }}>
         <div>
-          <div className="sm:border-subtle bg-default relative border p-4 dark:bg-black sm:rounded-md">
+          <div className="sm:border-subtle bg-default relative border p-4 sm:rounded-md dark:bg-black">
             <div>
               <span className="text-default font-semibold ltr:mr-1 rtl:ml-1">{eventType.title}</span>{" "}
               <small className="text-subtle hidden font-normal sm:inline">
@@ -99,7 +98,8 @@ const EventTypeAppSettingsForm = forwardRef<HTMLButtonElement, EventTypeAppSetti
               </small>
             </div>
             <EventTypeAppSettingsWrapper {...props} />
-            <X
+            <Icon
+              name="x"
               data-testid={`remove-event-type-${eventType.id}`}
               className="absolute right-4 top-4 h-4 w-4 cursor-pointer"
               onClick={() => !loading && handleDelete()}

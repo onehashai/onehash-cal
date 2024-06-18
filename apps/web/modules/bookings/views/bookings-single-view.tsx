@@ -55,6 +55,7 @@ import {
   Button,
   EmailInput,
   HeadSeo,
+  useBrandTheme,
   TextArea,
   showToast,
   EmptyScreen,
@@ -101,7 +102,7 @@ const useBrandColors = ({
   useBrandTheme(brandTheme);
 };
 
-export default function BookingDetailsView(props: PageProps) {
+export default function Success(props: PageProps) {
   const { t } = useLocale();
   const router = useRouter();
   const routerQuery = useRouterQuery();
@@ -402,7 +403,7 @@ export default function BookingDetailsView(props: PageProps) {
                 {!isFeedbackMode && (
                   <>
                     <div
-                      className={classNames(isRoundRobin && "min-w-32 min-h-24 relative mx-auto h-24 w-32")}>
+                      className={classNames(isRoundRobin && "relative mx-auto h-24 min-h-24 w-32 min-w-32")}>
                       {isRoundRobin && bookingInfo.user && (
                         <Avatar
                           className="mx-auto flex items-center justify-center"
@@ -961,7 +962,7 @@ export default function BookingDetailsView(props: PageProps) {
               </div>
               {isGmail && !isFeedbackMode && (
                 <Alert
-                  className="main -mb-20 mt-4 inline-block ltr:text-left rtl:text-right sm:-mt-4 sm:mb-4 sm:w-full sm:max-w-xl sm:align-middle"
+                  className="main -mb-20 mt-4 inline-block sm:-mt-4 sm:mb-4 sm:w-full sm:max-w-xl sm:align-middle ltr:text-left rtl:text-right"
                   severity="warning"
                   message={
                     <div>
@@ -969,7 +970,7 @@ export default function BookingDetailsView(props: PageProps) {
                       <span className="underline">
                         <a
                           target="_blank"
-                          href="https://www.onehash.ai/blogs/google-s-new-spam-policy-may-be-affecting-your-invitations">
+                          href="https://cal.com/blog/google-s-new-spam-policy-may-be-affecting-your-invitations">
                           {t("resolve")}
                         </a>
                       </span>
@@ -1011,8 +1012,8 @@ const DisplayLocation = ({
     <p className={className}>{locationToDisplay}</p>
   );
 
-BookingDetailsView.isBookingPage = true;
-BookingDetailsView.PageWrapper = PageWrapper;
+Success.isBookingPage = true;
+Success.PageWrapper = PageWrapper;
 
 type RecurringBookingsProps = {
   eventType: PageProps["eventType"];

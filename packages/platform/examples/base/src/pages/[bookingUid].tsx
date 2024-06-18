@@ -1,12 +1,12 @@
 import { Navbar } from "@/components/Navbar";
 import { CheckCircle2Icon } from "lucide-react";
-import { X } from "lucide-react";
 import { Inter } from "next/font/google";
 // eslint-disable-next-line @calcom/eslint/deprecated-imports-next-router
 import { useRouter } from "next/router";
 
 import { useGetBooking, useCancelBooking } from "@calcom/atoms";
 import dayjs from "@calcom/dayjs";
+import { Icon } from "@calcom/ui";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,7 +44,7 @@ export default function Bookings(props: { calUsername: string; calEmail: string 
             </div>
           ) : (
             <div className="mx-2 my-4 flex flex-col items-center justify-center text-center">
-              <X className="my-5 flex h-[40px] w-[40px] rounded-full bg-red-400" />
+              <Icon name="x" className="my-5 flex h-[40px] w-[40px] rounded-full bg-red-400" />
               <h4 className="text-2xl font-bold">This event is cancelled</h4>
             </div>
           )}

@@ -123,7 +123,7 @@ export function TeamsListing() {
           <TeamList teams={teams} />
         ) : (
           <EmptyScreen
-            Icon={Users}
+            Icon="users"
             headline={t("create_team_to_get_started")}
             description={t("create_first_team_and_invite_others")}
             buttonRaw={
