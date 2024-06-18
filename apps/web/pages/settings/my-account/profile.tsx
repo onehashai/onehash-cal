@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 // eslint-disable-next-line no-restricted-imports
-import { get, pick } from "lodash";
+import { pick } from "lodash";
 import { signOut, useSession } from "next-auth/react";
 import type { BaseSyntheticEvent } from "react";
 import React, { useRef, useState } from "react";
@@ -649,21 +649,12 @@ const ProfileForm = ({
     keyName: "itemId",
   });
 
-  const getUpdatedFormValues = (values: FormValues) => {
-    if (
-      formMethods.formState.dirtyFields.metadata &&
-      formMethods.formState.dirtyFields.metadata.phoneNumber === true &&
-      !numberVerified
-    ) {
-      showToast(t("please_verify_phone_number"), "error");
-      return;
-    }
+  const getUpdatedFormValues = (values: FormValues): ExtendedFormValues => {
     const changedFields = formMethods.formState.dirtyFields?.secondaryEmails || [];
 
     const updatedValues: FormValues = {
       ...values,
     };
-    console.log("updatedValues", updatedValues);
 
     // If the primary email is changed, we will need to update
     const primaryEmailIndex = updatedValues.secondaryEmails.findIndex(
@@ -699,6 +690,14 @@ const ProfileForm = ({
   };
 
   const handleFormSubmit = (values: FormValues) => {
+    if (
+      formMethods.formState.dirtyFields.metadata &&
+      formMethods.formState.dirtyFields.metadata.phoneNumber === true &&
+      !numberVerified
+    ) {
+      showToast(t("please_verify_phone_number"), "error");
+      return;
+    }
     onSubmit(getUpdatedFormValues(values));
   };
 
@@ -764,7 +763,7 @@ const ProfileForm = ({
               key={field.itemId}
               formMethods={formMethods}
               formMethodFieldName={`secondaryEmails.${index}.email` as keyof FormValues}
-              errorMessage={get(errors, `secondaryEmails.${index}.email.message`)}
+              errorMessage={errors.secondaryEmails?.[index]?.email?.message || ""}
               emailVerified={Boolean(field.emailVerified)}
               emailPrimary={field.emailPrimary}
               dataTestId={`profile-form-email-${index}`}
@@ -804,18 +803,32 @@ const ProfileForm = ({
                 setNumberVerified(getNumberVerificationStatus(phoneNumber));
               }}
             />
-            <Button
-              color="secondary"
-              className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
-              disabled={!isNumberValid || numberVerified}
-              loading={sendVerificationCodeMutation.isPending}
-              onClick={() =>
-                sendVerificationCodeMutation.mutate({
-                  phoneNumber: formMethods.getValues("metadata.phoneNumber"),
-                })
-              }>
-              {t("send_code")}
-            </Button>
+            {numberVerified ? (
+              <Button
+                color="secondary"
+                className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
+                disabled={!isNumberValid || numberVerified}
+                loading={sendVerificationCodeMutation.isPending}
+                onClick={() =>
+                  sendVerificationCodeMutation.mutate({
+                    phoneNumber: formMethods.getValues("metadata.phoneNumber"),
+                  })
+                }>
+                {t("send_code")}
+              </Button>
+            ) : (
+              <Button
+                color="destructive"
+                className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
+                disabled={!isNumberValid}
+                onClick={() => {
+                  formMethods.setValue("metadata.phoneNumber", "", { shouldDirty: true });
+                  setIsNumberValid(false);
+                  onSubmit(getUpdatedFormValues(formMethods.getValues()));
+                }}>
+                {t("delete")}
+              </Button>
+            )}
           </div>
           {formMethods.formState.errors.metadata?.phoneNumber && (
             <div className="mt-1 text-sm text-red-600">{t("invalid_phone_number")}</div>
