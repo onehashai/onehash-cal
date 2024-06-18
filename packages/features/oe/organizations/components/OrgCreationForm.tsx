@@ -10,7 +10,6 @@ import slugify from "@calcom/lib/slugify";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
 import { Button, Form, TextField, Alert } from "@calcom/ui";
-import { ArrowRight } from "@calcom/ui/components/icon";
 
 function extractDomainFromEmail(email: string) {
   let out = "";
@@ -191,7 +190,7 @@ export const CreateANewOrganizationForm = ({ slug }: { slug?: string }) => {
               newOrganizationFormMethods.formState.isSubmitting || createOrganizationMutation.isPending
             }
             color="primary"
-            EndIcon={ArrowRight}
+            EndIcon="arrow-right"
             type="submit"
             form="createOrg"
             className="w-full justify-center">

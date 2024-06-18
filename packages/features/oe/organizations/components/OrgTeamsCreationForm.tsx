@@ -7,8 +7,7 @@ import { classNames } from "@calcom/lib";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import { trpc } from "@calcom/trpc/react";
-import { Button, showToast, TextField } from "@calcom/ui";
-import { ArrowRight, Plus, X } from "@calcom/ui/components/icon";
+import { Button, showToast, TextField, Icon } from "@calcom/ui";
 
 const querySchema = z.object({
   id: z.string().transform((val) => parseInt(val)),
@@ -118,7 +117,10 @@ export const AddNewTeamsForm = () => {
                     className="group/remove mx-2 px-0 hover:bg-transparent"
                     onClick={() => handleRemoveInput(index)}
                     aria-label="Remove Team">
-                    <X className="bg-subtle text group-hover/remove:text-inverted group-hover/remove:bg-inverted h-5 w-5 rounded-full p-1" />
+                    <Icon
+                      name="x"
+                      className="bg-subtle text group-hover/remove:text-inverted group-hover/remove:bg-inverted h-5 w-5 rounded-full p-1"
+                    />
                   </Button>
                 )
               }
@@ -130,7 +132,7 @@ export const AddNewTeamsForm = () => {
         {counter === 5 && <p className="text-subtle my-2 text-sm">{t("org_max_team_warnings")}</p>}
         {counter < 5 && (
           <Button
-            StartIcon={Plus}
+            StartIcon="plus"
             color="secondary"
             disabled={createTeamsMutation.isPending}
             onClick={handleCounterIncrease}
@@ -140,7 +142,7 @@ export const AddNewTeamsForm = () => {
           </Button>
         )}
         <Button
-          EndIcon={ArrowRight}
+          EndIcon="arrow-right"
           color="primary"
           className="mt-6 w-full justify-center"
           disabled={!formState.isValid || createTeamsMutation.isPending || createTeamsMutation.isSuccess}

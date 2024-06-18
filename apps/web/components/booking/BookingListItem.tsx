@@ -50,7 +50,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from "@calcom/ui";
-import { ChevronRight, ExternalLink } from "@calcom/ui/components/icon";
 
 import { ChargeCardDialog } from "@components/dialog/ChargeCardDialog";
 import { EditLocationDialog } from "@components/dialog/EditLocationDialog";
@@ -470,7 +469,7 @@ function BookingListItem(booking: BookingItemProps) {
           setExpanded(!expanded);
         }}
         className="hover:bg-muted group flex cursor-pointer flex-col sm:flex-row">
-        <td className="hidden align-top ltr:pl-6 rtl:pr-6 sm:table-cell sm:min-w-[12rem]">
+        <td className="hidden align-top sm:table-cell sm:min-w-[12rem] ltr:pl-6 rtl:pr-6">
           <div className="cursor-pointer py-4">
             <div className="text-emphasis text-sm leading-6">{startTime}</div>
             <div className="text-subtle text-sm">
@@ -581,17 +580,17 @@ function BookingListItem(booking: BookingItemProps) {
               </div>
 
               {isPending && (
-                <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="orange">
+                <Badge className="sm:hidden ltr:mr-2 rtl:ml-2" variant="orange">
                   {t("unconfirmed")}
                 </Badge>
               )}
               {booking.eventType?.team && (
-                <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="gray">
+                <Badge className="sm:hidden ltr:mr-2 rtl:ml-2" variant="gray">
                   {booking.eventType.team.name}
                 </Badge>
               )}
               {showPendingPayment && (
-                <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="orange">
+                <Badge className="sm:hidden ltr:mr-2 rtl:ml-2" variant="orange">
                   {t("pending_payment")}
                 </Badge>
               )}
@@ -611,7 +610,7 @@ function BookingListItem(booking: BookingItemProps) {
               <div
                 title={title}
                 className={classNames(
-                  "max-w-10/12 sm:max-w-56 text-emphasis text-sm font-medium leading-6 md:max-w-full",
+                  "max-w-10/12 text-emphasis text-sm font-medium leading-6 sm:max-w-56 md:max-w-full",
                   isCancelled ? "line-through" : ""
                 )}>
                 {title}
@@ -625,7 +624,7 @@ function BookingListItem(booking: BookingItemProps) {
               </div>
               {booking.description && (
                 <div
-                  className="max-w-10/12 sm:max-w-32 md:max-w-52 xl:max-w-80 text-default truncate text-sm"
+                  className="max-w-10/12 text-default truncate text-sm sm:max-w-32 md:max-w-52 xl:max-w-80"
                   title={booking.description}>
                   &quot;{booking.description}&quot;
                 </div>
@@ -647,7 +646,7 @@ function BookingListItem(booking: BookingItemProps) {
             </div>
           </div>
         </td>
-        <td className="flex min-h-full w-full items-center  justify-end space-x-2 py-4 pl-4 text-right text-sm font-medium ltr:pr-4 rtl:space-x-reverse rtl:pl-4 sm:pl-0">
+        <td className="flex min-h-full w-full items-center  justify-end space-x-2 py-4 pl-4 text-right text-sm font-medium sm:pl-0 ltr:pr-4 rtl:space-x-reverse rtl:pl-4">
           {isUpcoming && !isCancelled ? (
             <>
               {isPending && userId === booking.user?.id && <TableActions actions={pendingActions} />}
@@ -671,7 +670,8 @@ function BookingListItem(booking: BookingItemProps) {
           )}
           <div className="text-md flex pl-3 ">
             <p className="mt-px">{t("details")}</p>
-            <ChevronRight
+            <Icon
+              name="chevron-right"
               strokeWidth="2"
               className={classNames(" ", expanded ? "rotate-90 transform" : "rotate-0 transform")}
             />
@@ -1210,7 +1210,7 @@ const DisplayLocation = ({
       className={classNames("text-default flex items-center gap-2", className)}
       rel="noreferrer">
       {providerName || "Link"}
-      <ExternalLink className="text-default inline h-4 w-4" />
+      <Icon name="external-link" className="text-default inline h-4 w-4" />
     </a>
   ) : (
     <p className={className}>{locationToDisplay}</p>

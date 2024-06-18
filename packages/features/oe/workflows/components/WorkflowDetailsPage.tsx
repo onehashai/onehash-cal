@@ -11,8 +11,7 @@ import type { WorkflowActions } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import type { MultiSelectCheckboxesOptionType as Option } from "@calcom/ui";
-import { Button, Label, MultiSelectCheckboxes, TextField } from "@calcom/ui";
-import { ArrowDown, Trash2 } from "@calcom/ui/components/icon";
+import { Button, Label, MultiSelectCheckboxes, TextField, Icon } from "@calcom/ui";
 
 import { isSMSAction, isWhatsappAction } from "../lib/actionHelperFunctions";
 import type { FormValues } from "../pages/workflow";
@@ -153,7 +152,7 @@ export default function WorkflowDetailsPage(props: Props) {
           {!props.readOnly && (
             <Button
               type="button"
-              StartIcon={Trash2}
+              StartIcon="trash-2"
               color="destructive"
               className="border"
               onClick={() => setDeleteDialogOpen(true)}>
@@ -196,7 +195,7 @@ export default function WorkflowDetailsPage(props: Props) {
           {!props.readOnly && (
             <>
               <div className="my-3 flex justify-center">
-                <ArrowDown className="text-subtle stroke-[1.5px] text-3xl" />
+                <Icon name="arrow-down" className="text-subtle stroke-[1.5px] text-3xl" />
               </div>
               <div className="flex justify-center">
                 <Button

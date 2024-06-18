@@ -130,7 +130,6 @@ async function getBookingToDelete(id: number | undefined, uid: string | undefine
     },
   });
 }
-const log = logger.getSubLogger({ prefix: ["handleCancelBooking"] });
 
 export type CustomRequest = NextApiRequest & {
   userId?: number;
@@ -446,10 +445,6 @@ async function handler(req: CustomRequest) {
     bookingToDelete.recurringEventId &&
     allRemainingBookings
   );
-  const credentials = await getAllCredentials(bookingToDelete.user, bookingToDelete.eventType);
-  const eventManager = new EventManager({ ...bookingToDelete.user, credentials });
-  await eventManager.cancelEvent(evt, bookingToDelete.references, isBookingInRecurringSeries);
-
   const bookingToDeleteEventTypeMetadata = EventTypeMetaDataSchema.parse(
     bookingToDelete.eventType?.metadata || null
   );
@@ -462,7 +457,6 @@ async function handler(req: CustomRequest) {
   const eventManager = new EventManager({ ...bookingToDelete.user, credentials });
 
   await eventManager.cancelEvent(evt, bookingToDelete.references, isBookingInRecurringSeries);
-
 
   const webhookTriggerPromises = [];
   const workflowReminderPromises = [];
@@ -486,7 +480,6 @@ async function handler(req: CustomRequest) {
   await Promise.all([...webhookTriggerPromises, ...workflowReminderPromises]).catch((error) => {
     log.error("An error occurred when deleting workflow reminders and webhook triggers", error);
   });
-
 
   try {
     // TODO: if emails fail try to requeue them

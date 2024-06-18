@@ -27,7 +27,6 @@ import {
   Tooltip,
 } from "@calcom/ui";
 import { UserAvatar } from "@calcom/ui";
-import { ExternalLink, MoreHorizontal, Edit2, Lock, UserX } from "@calcom/ui/components/icon";
 
 import MemberChangeRoleModal from "./MemberChangeRoleModal";
 import TeamAvailabilityModal from "./TeamAvailabilityModal";
@@ -207,7 +206,7 @@ export default function MemberListItem(props: Props) {
                     color="secondary"
                     className={classNames(!editMode ? "rounded-r-md" : "")}
                     variant="icon"
-                    StartIcon={ExternalLink}
+                    StartIcon="external-link"
                     disabled={!props.member.accepted}
                   />
                 </Tooltip>
@@ -219,7 +218,7 @@ export default function MemberListItem(props: Props) {
                       className="radix-state-open:rounded-r-md"
                       color="secondary"
                       variant="icon"
-                      StartIcon={MoreHorizontal}
+                      StartIcon="more-horizontal"
                     />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -227,7 +226,7 @@ export default function MemberListItem(props: Props) {
                       <DropdownItem
                         type="button"
                         onClick={() => setShowChangeMemberRoleModal(true)}
-                        StartIcon={Edit2}>
+                        StartIcon="pencil">
                         {t("edit")}
                       </DropdownItem>
                     </DropdownMenuItem>
@@ -237,7 +236,7 @@ export default function MemberListItem(props: Props) {
                           <DropdownItem
                             type="button"
                             onClick={() => setShowImpersonateModal(true)}
-                            StartIcon={Lock}>
+                            StartIcon="lock">
                             {t("impersonate")}
                           </DropdownItem>
                         </DropdownMenuItem>
@@ -265,7 +264,7 @@ export default function MemberListItem(props: Props) {
                         type="button"
                         onClick={() => setShowDeleteModal(true)}
                         color="destructive"
-                        StartIcon={UserX}>
+                        StartIcon="user-x">
                         {t("remove")}
                       </DropdownItem>
                     </DropdownMenuItem>
@@ -276,7 +275,7 @@ export default function MemberListItem(props: Props) {
             <div className="flex md:hidden">
               <Dropdown>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="icon" color="minimal" StartIcon={MoreHorizontal} />
+                  <Button type="button" variant="icon" color="minimal" StartIcon="more-horizontal" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem className="outline-none">
@@ -285,7 +284,7 @@ export default function MemberListItem(props: Props) {
                       href={!props.member.accepted ? undefined : `/${props.member.username}`}
                       target="_blank"
                       type="button"
-                      StartIcon={ExternalLink}>
+                      StartIcon="external-link">
                       {t("view_public_page")}
                     </DropdownItem>
                   </DropdownMenuItem>
@@ -295,7 +294,7 @@ export default function MemberListItem(props: Props) {
                         <DropdownItem
                           type="button"
                           onClick={() => setShowChangeMemberRoleModal(true)}
-                          StartIcon={Edit2}>
+                          StartIcon="pencil">
                           {t("edit")}
                         </DropdownItem>
                       </DropdownMenuItem>
@@ -304,7 +303,7 @@ export default function MemberListItem(props: Props) {
                           type="button"
                           color="destructive"
                           onClick={() => setShowDeleteModal(true)}
-                          StartIcon={UserX}>
+                          StartIcon="user-x">
                           {t("remove")}
                         </DropdownItem>
                       </DropdownMenuItem>

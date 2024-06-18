@@ -15,8 +15,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import type { RouterOutputs } from "@calcom/trpc/react";
-import { Button, Form, Meta, showToast, SettingsToggle, Avatar, ImageUploader } from "@calcom/ui";
-import { Plus } from "@calcom/ui/components/icon";
+import { Button, Form, Meta, showToast, SettingsToggle, Avatar, ImageUploader, Icon } from "@calcom/ui";
 
 type BrandColorsFormValues = {
   brandColor: string;
@@ -90,7 +89,7 @@ const OrgAppearanceView = ({
               <Avatar
                 alt="calVideoLogo"
                 imageSrc={currentOrg?.calVideoLogo}
-                fallback={<Plus className="text-subtle h-6 w-6" />}
+                fallback={<Icon name="plus" className="text-subtle h-6 w-6" />}
                 size="lg"
               />
               <div className="ms-4">

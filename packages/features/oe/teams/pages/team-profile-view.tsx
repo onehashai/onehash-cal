@@ -42,7 +42,6 @@ import {
   SkeletonAvatar,
   SkeletonButton,
 } from "@calcom/ui";
-import { ExternalLink, Link as LinkIcon, LogOut, Trash2 } from "@calcom/ui/components/icon";
 
 import { getLayout } from "../../../settings/layouts/SettingsLayout";
 
@@ -180,10 +179,10 @@ const ProfileView = () => {
           </div>
           <div>
             <Link href={permalink} passHref={true} target="_blank">
-              <LinkIconButton Icon={ExternalLink}>{t("preview")}</LinkIconButton>
+              <LinkIconButton Icon="external-link">{t("preview")}</LinkIconButton>
             </Link>
             <LinkIconButton
-              Icon={LinkIcon}
+              Icon="link"
               onClick={() => {
                 navigator.clipboard.writeText(permalink);
                 showToast("Copied to clipboard", "success");
@@ -207,7 +206,7 @@ const ProfileView = () => {
               <Button
                 color="destructive"
                 className="border"
-                StartIcon={Trash2}
+                StartIcon="trash-2"
                 data-testid="disband-team-button">
                 {t("disband_team")}
               </Button>
@@ -225,7 +224,7 @@ const ProfileView = () => {
         <Dialog>
           <SectionBottomActions align="end">
             <DialogTrigger asChild>
-              <Button color="destructive" className="border" StartIcon={LogOut}>
+              <Button color="destructive" className="border" StartIcon="log-out">
                 {t("leave_team")}
               </Button>
             </DialogTrigger>

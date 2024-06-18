@@ -27,7 +27,6 @@ import {
   SkeletonContainer,
   SkeletonText,
 } from "@calcom/ui";
-import { ExternalLink } from "@calcom/ui/components/icon";
 
 import PageWrapper from "@components/PageWrapper";
 
@@ -199,7 +198,7 @@ const PasswordView = ({ user }: PasswordViewProps) => {
                   : identityProviderNameMap[user.identityProvider],
             })}
           </p>
-          <Button color="primary" href={userHref} target="_blank" EndIcon={ExternalLink}>
+          <Button color="primary" href={userHref} target="_blank" EndIcon="external-link">
             {t("OneHash account")}
           </Button>
         </div>
