@@ -184,6 +184,21 @@ export const ensureBookingInputsHaveSystemFields = ({
       ],
     },
     {
+      defaultLabel: "phone_number",
+      type: "phone",
+      name: "phone",
+      editable: "system-but-optional",
+      required: false,
+      defaultPlaceholder: "enter_phone_number",
+      sources: [
+        {
+          label: "Default",
+          id: "default",
+          type: "default",
+        },
+      ],
+    },
+    {
       defaultLabel: "location",
       type: "radioInput",
       name: "location",
@@ -232,21 +247,6 @@ export const ensureBookingInputsHaveSystemFields = ({
       ],
     },
 
-    {
-      defaultLabel: "phone_number",
-      type: "phone",
-      name: "phone",
-      editable: "system-but-optional",
-      required: false,
-      defaultPlaceholder: "enter_phone_number",
-      sources: [
-        {
-          label: "Default",
-          id: "default",
-          type: "default",
-        },
-      ],
-    },
     {
       defaultLabel: "additional_notes",
       type: "textarea",

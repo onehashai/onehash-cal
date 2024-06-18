@@ -74,28 +74,13 @@ export async function getBookings({
     teamIds: {
       AND: [
         {
-          OR: [
-            {
-              eventType: {
-                team: {
-                  id: {
-                    in: filters?.teamIds,
-                  },
-                },
+          eventType: {
+            team: {
+              id: {
+                in: filters?.teamIds,
               },
             },
-            {
-              eventType: {
-                parent: {
-                  team: {
-                    id: {
-                      in: filters?.teamIds,
-                    },
-                  },
-                },
-              },
-            },
-          ],
+          },
         },
       ],
     },
@@ -137,22 +122,9 @@ export async function getBookings({
     eventTypeIds: {
       AND: [
         {
-          OR: [
-            {
-              eventTypeId: {
-                in: filters?.eventTypeIds,
-              },
-            },
-            {
-              eventType: {
-                parent: {
-                  id: {
-                    in: filters?.eventTypeIds,
-                  },
-                },
-              },
-            },
-          ],
+          eventTypeId: {
+            in: filters?.eventTypeIds,
+          },
         },
       ],
     },

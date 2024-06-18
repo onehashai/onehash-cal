@@ -106,6 +106,7 @@
   "please_verify_phone_number":"Please verify your phone number",
   "running_late":"Running Late?",
   "connect_with_organizer":"Connect with the organizer via WhatsApp",
+  "connect_with_attendee":"Connect with {{name}} via WhatsApp",
   "identity_provider": "Identity provider",
   "trial_days_left": "You have $t(day, {\"count\": {{days}} }) left on your PRO trial",
   "day_one": "{{count}} day",

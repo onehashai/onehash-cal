@@ -158,7 +158,7 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
                         {form.name}
                       </h1>
                       {form.description ? (
-                        <p className="min-h-10 text-subtle text-sm ltr:mr-4 rtl:ml-4">{form.description}</p>
+                        <p className="text-subtle min-h-10 text-sm ltr:mr-4 rtl:ml-4">{form.description}</p>
                       ) : null}
                     </div>
                     <FormInputFields form={form} response={response} setResponse={setResponse} />

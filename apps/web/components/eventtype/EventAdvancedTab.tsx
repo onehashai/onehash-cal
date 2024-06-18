@@ -367,7 +367,7 @@ export const EventAdvancedTab = ({ eventType, team }: Pick<EventTypeSetupProps, 
             target="_blank"
             rel="noreferrer"
             href="https://www.onehash.ai/cal">
-            <Info className="ml-1.5 h-4 w-4 cursor-pointer" />
+            <Icon name="info" className="ml-1.5 h-4 w-4 cursor-pointer" />
           </a>
         }
         {...shouldLockDisableProps("hashedLink")}
