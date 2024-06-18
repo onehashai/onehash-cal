@@ -142,7 +142,7 @@ const WorkflowListItem = (props: ItemProps) => {
           <div className="flex-none">
             <Link href={`/workflows/${workflow.id}`} passHref={true} target="_blank">
               <Button type="button" color="minimal" className="mr-4">
-                <div className="hidden ltr:mr-2 rtl:ml-2 sm:block">{t("edit")}</div>
+                <div className="hidden sm:block ltr:mr-2 rtl:ml-2">{t("edit")}</div>
                 <Icon name="external-link" className="text-default -mt-[2px] h-4 w-4 stroke-2" />
               </Button>
             </Link>

@@ -14,10 +14,8 @@ const toPascalCase = (text: string) => text.replace(/(^\w|-\w)/g, clearAndUpper)
 
 const IconDev = ({ name, ...props }: IconProps) => {
   const CamelCaseName = toPascalCase(name);
-  console.log("CamelCaseName", CamelCaseName);
   const LucideIcon = icons[CamelCaseName as keyof typeof icons];
   if (!LucideIcon) {
-    console.log("not found", CamelCaseName);
     return null;
   }
   return <LucideIcon {...props} />;

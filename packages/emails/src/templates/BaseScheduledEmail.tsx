@@ -50,8 +50,11 @@ export const BaseScheduledEmail = (
 
   const generateWhatsAppLink = (phoneNumber: string): string => {
     const cleanedPhoneNumber = phoneNumber.replace(/\D/g, "");
+    const urlEndcodedTextMessage = encodeURIComponent(
+      `Hi, I'm running late by 5 minutes. I'll be there soon.`
+    );
 
-    const whatsappLink = `https://wa.me/send?phone=${cleanedPhoneNumber}`;
+    const whatsappLink = `https://api.whatsapp.com/send?phone=${cleanedPhoneNumber}&text=${urlEndcodedTextMessage}`;
 
     return whatsappLink;
   };
@@ -107,14 +110,27 @@ export const BaseScheduledEmail = (
           withSpacer
         />
       )}
-      {props.attendee.isAttendee && props.calEvent.organizer.phoneNumber && (
-        <Info
-          label={t("running_late")}
-          description={t("connect_with_organizer")}
-          withSpacer
-          link={generateWhatsAppLink(props.calEvent.organizer.phoneNumber)}
-        />
-      )}
+      {props.attendee.isAttendee
+        ? props.calEvent.organizer.phoneNumber && (
+            <Info
+              label={t("running_late")}
+              description={t("connect_with_organizer")}
+              withSpacer
+              link={generateWhatsAppLink(props.calEvent.organizer.phoneNumber)}
+            />
+          )
+        : props.calEvent.attendees.map(
+            (attendee, index) =>
+              attendee.phoneNumber && (
+                <Info
+                  key={index}
+                  label={t("running_late")}
+                  description={t("connect_with_attendee", { name: attendee.name })}
+                  withSpacer
+                  link={generateWhatsAppLink(attendee.phoneNumber)}
+                />
+              )
+          )}
     </BaseEmailHtml>
   );
 };
