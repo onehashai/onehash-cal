@@ -1,6 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "pipeline": {
+  "tasks": {
     "@calcom/prisma#build": {
       "cache": false,
       "dependsOn": ["post-install"]
@@ -113,7 +113,7 @@
         "NEXT_PUBLIC_ONEHASH_CHAT_URL",
         "NEXT_PUBLIC_ONEHASH_CRM_URL",
         "NEXT_PUBLIC_ONEHASH_ERP_URL",
-
+        "NEXT_PUBLIC_SENTRY_DSN",
         "NEXT_PUBLIC_WEBAPP_URL",
         "NEXT_PUBLIC_WEBSITE_URL",
         "NEXT_PUBLIC_VERCEL_ENV",
@@ -446,6 +446,7 @@
     "NEXT_PUBLIC_HEAD_SCRIPTS",
     "NEXT_PUBLIC_BODY_SCRIPTS",
     "NEXT_PUBLIC_ORG_SELF_SERVE_ENABLED",
-    "NEXT_PUBLIC_API_V2_ROOT_URL"
+    "NEXT_PUBLIC_API_V2_ROOT_URL",
+    "NEXT_PUBLIC_SENTRY_DSN"
   ]
 }
