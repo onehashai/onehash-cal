@@ -56,7 +56,7 @@ const teamProfileFormSchema = z.object({
 const OtherTeamProfileView = () => {
   const { t } = useLocale();
   const router = useRouter();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const session = useSession();
   const [firstRender, setFirstRender] = useState(true);
 

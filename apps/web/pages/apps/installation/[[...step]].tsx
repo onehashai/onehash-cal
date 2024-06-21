@@ -111,7 +111,7 @@ const OnboardingPage = ({
   }, [step, configureStep]);
   const stepObj = STEPS_MAP[currentStep];
 
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const formPortalRef = useRef<HTMLDivElement>(null);
 

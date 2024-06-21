@@ -25,7 +25,7 @@ interface IMarkNoShowDialog {
 
 export const MarkNoShowDialog = (props: IMarkNoShowDialog) => {
   const { t } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const { isOpenDialog, setIsOpenDialog, workflows } = props;
   const handleMarkNoShow = () => {

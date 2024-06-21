@@ -10,7 +10,7 @@ export default function LockedSMSView() {
   const [username, setUsername] = useState("");
   const [teamSlug, setTeamSlug] = useState("");
 
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const mutation = trpc.viewer.admin.setSMSLockState.useMutation({
     onSuccess: (data) => {

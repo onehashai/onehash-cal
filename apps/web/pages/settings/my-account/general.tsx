@@ -91,7 +91,7 @@ const GeneralQueryView = () => {
 };
 
 const GeneralView = ({ localeProp, user, travelSchedules }: GeneralViewProps) => {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const {
     t,
     i18n: { language },

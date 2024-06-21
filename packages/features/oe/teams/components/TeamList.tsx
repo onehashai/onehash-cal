@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function TeamList(props: Props) {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const { t } = useLocale();
 

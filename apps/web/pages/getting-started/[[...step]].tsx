@@ -55,7 +55,7 @@ const OnboardingPage = () => {
   const router = useRouter();
   const [user] = trpc.viewer.me.useSuspenseQuery();
   const { t } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const onSuccess = async () => {
     await utils.viewer.me.invalidate();

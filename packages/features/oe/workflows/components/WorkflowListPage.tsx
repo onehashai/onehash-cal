@@ -54,7 +54,7 @@ interface WorkflowListProps {
 
 export default function WorkflowList({ workflows }: WorkflowListProps) {
   const { t } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workflowToDeleteId, setWorkflowToDeleteId] = useState(0);
   const [parent] = useAutoAnimate<HTMLUListElement>();

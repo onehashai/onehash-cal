@@ -1,17 +1,17 @@
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
 
 import { SENDER_ID, SENDER_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { WorkflowTemplates } from "@calcom/prisma/enums";
 import type { WorkflowActions } from "@calcom/prisma/enums";
-import { trpc } from "@calcom/trpc/react";
+import { WorkflowTemplates } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
+import { trpc } from "@calcom/trpc/react";
 import type { MultiSelectCheckboxesOptionType as Option } from "@calcom/ui";
-import { Button, Label, MultiSelectCheckboxes, TextField, Icon } from "@calcom/ui";
+import { Button, Icon, Label, MultiSelectCheckboxes, TextField } from "@calcom/ui";
 
 import { isSMSAction, isWhatsappAction } from "../lib/actionHelperFunctions";
 import type { FormValues } from "../pages/workflow";
@@ -44,6 +44,9 @@ export default function WorkflowDetailsPage(props: Props) {
 
   const { data, isPending } = trpc.viewer.eventTypes.getByViewer.useQuery();
 
+  const searchParams = useSearchParams();
+  const eventTypeId = searchParams?.get("eventTypeId");
+
   const eventTypeOptions = useMemo(
     () =>
       data?.eventTypeGroups.reduce((options, group) => {
@@ -53,12 +56,19 @@ export default function WorkflowDetailsPage(props: Props) {
         if (teamId && teamId !== group.teamId) return options;
         return [
           ...options,
-          ...group.eventTypes.map((eventType) => ({
-            value: String(eventType.id),
-            label: `${eventType.title} ${
-              eventType.children && eventType.children.length ? `(+${eventType.children.length})` : ``
-            }`,
-          })),
+          ...group.eventTypes
+            .filter(
+              (evType) =>
+                !evType.metadata?.managedEventConfig ||
+                !!evType.metadata?.managedEventConfig.unlockedFields?.workflows ||
+                !!teamId
+            )
+            .map((eventType) => ({
+              value: String(eventType.id),
+              label: `${eventType.title} ${
+                eventType.children && eventType.children.length ? `(+${eventType.children.length})` : ``
+              }`,
+            })),
         ];
       }, [] as Option[]) || [],
     [data]
@@ -75,6 +85,16 @@ export default function WorkflowDetailsPage(props: Props) {
       return !duplicate;
     });
   }
+
+  useEffect(() => {
+    const matchingOption = allEventTypeOptions.find((option) => option.value === eventTypeId);
+    if (matchingOption && !selectedEventTypes.find((option) => option.value === eventTypeId)) {
+      const newOptions = [...selectedEventTypes, matchingOption];
+      setSelectedEventTypes(newOptions);
+      form.setValue("activeOn", newOptions);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventTypeId, allEventTypeOptions]);
 
   const addAction = (
     action: WorkflowActions,
