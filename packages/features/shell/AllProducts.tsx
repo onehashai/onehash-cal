@@ -49,7 +49,6 @@ const AllProducts = () => {
                 expanded ? "rotate-90 transform" : " rotate-0 transform"
               )}
             />
-            ,
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuPortal>
