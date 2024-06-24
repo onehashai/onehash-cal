@@ -28,9 +28,6 @@ const UserProfile = (props: IUserProfileProps) => {
 
   const [imageSrc, setImageSrc] = useState<string>(user?.avatar || "");
   const utils = trpc.useUtils();
-  const router = useRouter();
-  const createEventType = trpc.viewer.eventTypes.create.useMutation();
-  const telemetry = useTelemetry();
   const [firstRender, setFirstRender] = useState(true);
 
   const mutation = trpc.viewer.updateProfile.useMutation({

@@ -1,6 +1,5 @@
 import type { User as UserAuth } from "next-auth";
 import { useSession } from "next-auth/react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
@@ -81,6 +80,8 @@ import {
   SkeletonText,
   Tooltip,
   useBrandTheme,
+  PrivacyPolicy,
+  TermsOfUse,
   type IconName,
 } from "@calcom/ui";
 import { Discord } from "@calcom/ui/components/icon/Discord";
@@ -91,10 +92,10 @@ import FreshChatProvider from "../ee/support/lib/freshchat/FreshChatProvider";
 import AllProducts from "./AllProducts";
 import { TeamInviteBadge } from "./TeamInviteBadge";
 
-// need to import without ssr to prevent hydration errors
-const Tips = dynamic(() => import("@calcom/features/tips").then((mod) => mod.Tips), {
-  ssr: false,
-});
+// // need to import without ssr to prevent hydration errors
+// const Tips = dynamic(() => import("@calcom/features/tips").then((mod) => mod.Tips), {
+//   ssr: false,
+// });
 
 /* TODO: Migate this */
 
@@ -1023,7 +1024,7 @@ function SideBar({ bannersHeight, user, isPlatformUser = false }: SideBarProps) 
 
         {!isPlatformUser && (
           <div>
-            <Tips />
+            {/* <Tips /> */}
             {bottomNavItems.map((item, index) => (
               <Tooltip side="right" content={t(item.name)} className="lg:hidden" key={item.name}>
                 <ButtonOrLink
@@ -1059,6 +1060,8 @@ function SideBar({ bannersHeight, user, isPlatformUser = false }: SideBarProps) 
                 </ButtonOrLink>
               </Tooltip>
             ))}
+            <PrivacyPolicy />
+            <TermsOfUse />
             {!IS_VISUAL_REGRESSION_TESTING && <Credits />}
           </div>
         )}
