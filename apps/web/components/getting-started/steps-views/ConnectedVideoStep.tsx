@@ -1,8 +1,7 @@
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { List, showToast, Button } from "@calcom/ui";
-import { ArrowRight } from "@calcom/ui/components/icon";
+import { Icon, List, showToast, Button } from "@calcom/ui";
 
 import { AppConnectionItem } from "../components/AppConnectionItem";
 import { StepConnectionLoader } from "../components/StepConnectionLoader";
@@ -76,7 +75,7 @@ const ConnectedVideoStep = (props: ConnectedAppStepProps) => {
         onClick={() => handleNextStep()}
         loading={mutation.isPending}>
         {t("next_step_text")}
-        <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
+        <Icon name="arrow-right" className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>
     </>
   );

@@ -1,13 +1,12 @@
 import { CalendlyOAuthProvider } from "@onehash/calendly";
 import classNames from "classnames";
-import { ArrowRight, Plus } from "lucide-react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import OauthPopup from "react-oauth-popup";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
-import { List, showToast } from "@calcom/ui";
+import { Icon, List, showToast } from "@calcom/ui";
 import { Button } from "@calcom/ui";
 
 import useCalendlyImport from "@lib/hooks/useCalendlyImport";
@@ -67,7 +66,7 @@ const ImportData = () => {
 
   return (
     <>
-      <List className="bg-default divide-subtle border-subtle mx-1 divide-y rounded-md border p-0 dark:bg-black sm:mx-0">
+      <List className="bg-default divide-subtle border-subtle mx-1 divide-y rounded-md border p-0 sm:mx-0 dark:bg-black">
         {user && (
           <div className=" flex w-full items-center justify-between rounded border border-gray-300 px-4 py-2">
             <p>Import from Calendly</p>
@@ -82,7 +81,7 @@ const ImportData = () => {
                 color="secondary"
                 className=" flex flex-row justify-center"
                 loading={importing}
-                StartIcon={Plus}>
+                StartIcon="plus">
                 {t("import")}
               </Button>
             </OauthPopup>
@@ -101,7 +100,7 @@ const ImportData = () => {
         loading={mutation.isPending}
         disabled={importing}>
         {t("finish")}
-        <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
+        <Icon name="arrow-right" className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>
     </>
   );

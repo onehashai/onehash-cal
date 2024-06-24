@@ -1,6 +1,7 @@
 import { createContext, useContext, createElement } from "react";
 import type z from "zod";
 
+import type { MembershipRole } from "@calcom/prisma/enums";
 import type { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
 /**
@@ -8,7 +9,7 @@ import type { teamMetadataSchema } from "@calcom/prisma/zod-utils";
  *
  * Entries consist of the different properties that constitues a brand for an organization.
  */
-export type OrgBranding =
+export type OrganizationBranding =
   | ({
       /** 1 */
       id: number;
@@ -16,10 +17,13 @@ export type OrgBranding =
       name?: string;
       /** acme */
       slug: string;
+      /** logo url */
+      logoUrl?: string | null;
       /** https://acme.cal.com */
       fullDomain: string;
       /** cal.com */
       domainSuffix: string;
+      role: MembershipRole;
     } & z.infer<typeof teamMetadataSchema>)
   | null
   | undefined;
@@ -27,7 +31,7 @@ export type OrgBranding =
 /**
  * Allows you to access the flags from context
  */
-const OrgBrandingContext = createContext<{ orgBrand: OrgBranding } | null>(null);
+const OrganizationBrandingContext = createContext<{ orgBrand: OrganizationBranding } | null>(null);
 
 /**
  * Accesses the branding for an organization from context.
@@ -37,13 +41,13 @@ const OrgBrandingContext = createContext<{ orgBrand: OrgBranding } | null>(null)
  * @returns `undefined` when data isn't available yet, `null` when there's an error, and the data(which can be `null`) when it's available
  */
 export function useOrgBranding() {
-  const orgBrandingContext = useContext(OrgBrandingContext);
+  const orgBrandingContext = useContext(OrganizationBrandingContext);
   if (!orgBrandingContext) throw new Error("Error: useOrgBranding was used outside of OrgBrandingProvider.");
   return orgBrandingContext.orgBrand;
 }
 
 /**
- * If you want to be able to access the flags from context using `useOrgBranding()`,
+ * If you want to be able to access the flags from context using `useOrganizationBranding()`,
  * you can render the OrgBrandingProvider at the top of your Next.js pages, like so:
  *
  * ```ts
@@ -65,9 +69,9 @@ export function useOrgBranding() {
  * `YourOwnComponent` or further down.
  *
  */
-export function OrgBrandingProvider<F extends { orgBrand: OrgBranding }>(props: {
+export function OrgBrandingProvider<F extends { orgBrand: OrganizationBranding }>(props: {
   value: F;
   children: React.ReactNode;
 }) {
-  return createElement(OrgBrandingContext.Provider, { value: props.value }, props.children);
+  return createElement(OrganizationBrandingContext.Provider, { value: props.value }, props.children);
 }

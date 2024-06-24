@@ -1,5 +1,4 @@
 import { CalendlyOAuthProvider } from "@onehash/calendly";
-import { Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import OauthPopup from "react-oauth-popup";
@@ -31,7 +30,7 @@ const ImportFromCalendlyButton = ({
   const { t } = useLocale();
 
   return (
-    <Button color="secondary" StartIcon={Plus} onClick={importFromCalendly} loading={importing}>
+    <Button color="secondary" StartIcon="plus" onClick={importFromCalendly} loading={importing}>
       {t("import")}
     </Button>
   );
@@ -51,7 +50,7 @@ const AuthorizeCalendlyButton = ({
 
   return (
     <OauthPopup url={authorizationUrl} onCode={onCode} onClose={onClose} height={400} width={600} title="">
-      <Button color="secondary" StartIcon={Plus}>
+      <Button color="secondary" StartIcon="plus">
         {t("import")}
       </Button>
     </OauthPopup>

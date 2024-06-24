@@ -11,5 +11,6 @@
   "publisher": "OneHash",
   "email": "support@onehash.ai",
   "description": "Easily generate a QR code for your links to print, share, or embed.",
-  "__createdUsingCli": true
+  "__createdUsingCli": true,
+  "isOAuth": false
 }

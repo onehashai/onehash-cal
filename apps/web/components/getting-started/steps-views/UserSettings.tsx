@@ -10,8 +10,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
 import type { TCreateInputSchema } from "@calcom/trpc/server/routers/viewer/eventTypes/create.schema";
-import { Button, TimezoneSelect, Input, Select, showToast } from "@calcom/ui";
-import { ArrowRight } from "@calcom/ui/components/icon";
+import { Button, TimezoneSelect, Icon, Input, Select, showToast } from "@calcom/ui";
 
 import * as fbq from "@lib/fpixel";
 
@@ -309,7 +308,7 @@ const UserSettings = (props: IUserSettingsProps) => {
     fbq.event("Registration_Completed");
   }, []);
 
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
 
   const createEventType = trpc.viewer.eventTypes.create.useMutation();
@@ -437,11 +436,11 @@ const UserSettings = (props: IUserSettingsProps) => {
       </div>
       <Button
         type="submit"
-        className="mt-8 flex w-full flex-row justify-center bg-blue-500 hover:bg-blue-600"
-        disabled={mutation.isPending || selectedBusiness === null}
-        loading={mutation.isPending}>
+        className="mt-8 flex w-full flex-row justify-center"
+        loading={mutation.isPending}
+        disabled={mutation.isPending}>
         {t("next_step_text")}
-        <ArrowRight className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
+        <Icon name="arrow-right" className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>
     </form>
   );

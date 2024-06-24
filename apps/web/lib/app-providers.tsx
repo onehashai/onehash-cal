@@ -11,11 +11,11 @@ import type { ParsedUrlQuery } from "querystring";
 import type { PropsWithChildren, ReactNode } from "react";
 import { useEffect } from "react";
 
-import { OrgBrandingProvider } from "@calcom/features/oe/organizations/context/provider";
 import DynamicHelpscoutProvider from "@calcom/features/ee/support/lib/helpscout/providerDynamic";
 import DynamicIntercomProvider from "@calcom/features/ee/support/lib/intercom/providerDynamic";
 import { FeatureProvider } from "@calcom/features/flags/context/provider";
 import { useFlags } from "@calcom/features/flags/hooks";
+import { OrgBrandingProvider } from "@calcom/features/oe/organizations/context/provider";
 import { MetaProvider } from "@calcom/ui";
 
 import useIsBookingPage from "@lib/hooks/useIsBookingPage";
@@ -145,9 +145,10 @@ const CalcomThemeProvider = (props: CalcomThemeProps) => {
   const isEmbedMode = typeof embedNamespace === "string";
 
   const themeProviderProps = getThemeProviderProps({ props, isEmbedMode, embedNamespace });
+  const { key, ...otherProps } = themeProviderProps;
 
   return (
-    <ThemeProvider {...themeProviderProps}>
+    <ThemeProvider {...otherProps}>
       {/* Embed Mode can be detected reliably only on client side here as there can be static generated pages as well which can't determine if it's embed mode at backend */}
       {/* color-scheme makes background:transparent not work in iframe which is required by embed. */}
       {typeof window !== "undefined" && !isEmbedMode && (
@@ -215,7 +216,7 @@ function getThemeProviderProps({
   const isBookingPageThemeSupportRequired = themeSupport === ThemeSupport.Booking;
   const themeBasis = props.themeBasis;
 
-  if ((isBookingPageThemeSupportRequired || isEmbedMode) && !themeBasis) {
+  if (!process.env.NEXT_PUBLIC_IS_E2E && (isBookingPageThemeSupportRequired || isEmbedMode) && !themeBasis) {
     console.warn(
       "`themeBasis` is required for booking page theme support. Not providing it will cause theme flicker."
     );

@@ -29,8 +29,10 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   return { props: {} };
 
   const prisma = await import("@calcom/prisma").then((mod) => mod.default);
+  const emailVerificationEnabled = await getFeatureFlag(prisma, "email-verification");
+  await ssrInit(ctx);
   const signupDisabled = await getFeatureFlag(prisma, "disable-signup");
-  const ssr = await ssrInit(ctx);
+
   const token = z.string().optional().parse(ctx.query.token);
   const redirectUrlData = z
     .string()
@@ -47,8 +49,8 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     redirectUrl,
     isGoogleLoginEnabled: IS_GOOGLE_LOGIN_ENABLED,
     isSAMLLoginEnabled,
-    trpcState: ssr.dehydrate(),
     prepopulateFormValues: undefined,
+    emailVerificationEnabled,
   };
 
   // username + email prepopulated from query params
@@ -56,7 +58,10 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
   if ((process.env.NEXT_PUBLIC_DISABLE_SIGNUP === "true" && !token) || signupDisabled) {
     return {
-      notFound: true,
+      redirect: {
+        permanent: false,
+        destination: `/auth/error?error=Signup is disabled in this instance`,
+      },
     } as const;
   }
 
@@ -101,7 +106,10 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
   if (!verificationToken || verificationToken.expires < new Date()) {
     return {
-      notFound: true,
+      redirect: {
+        permanent: false,
+        destination: `/auth/error?error=Verification Token is missing or has expired`,
+      },
     } as const;
   }
 

@@ -156,7 +156,7 @@ const OrgProfileView = () => {
 };
 
 const OrgProfileForm = ({ defaultValues }: { defaultValues: FormValues }) => {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const { t } = useLocale();
   const [firstRender, setFirstRender] = useState(true);
 

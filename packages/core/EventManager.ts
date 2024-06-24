@@ -1,4 +1,4 @@
-import type { DestinationCalendar } from "@prisma/client";
+import type { DestinationCalendar, BookingReference } from "@prisma/client";
 // eslint-disable-next-line no-restricted-imports
 import { cloneDeep, merge } from "lodash";
 import { v5 as uuidv5 } from "uuid";
@@ -9,6 +9,7 @@ import { FAKE_DAILY_CREDENTIAL } from "@calcom/app-store/dailyvideo/lib/VideoApi
 import { appKeysSchema as calVideoKeysSchema } from "@calcom/app-store/dailyvideo/zod";
 import { getEventLocationTypeFromApp, MeetLocationType } from "@calcom/app-store/locations";
 import getApps from "@calcom/app-store/utils";
+import { getUid } from "@calcom/lib/CalEventParser";
 import logger from "@calcom/lib/logger";
 import {
   getPiiFreeDestinationCalendar,
@@ -18,7 +19,6 @@ import {
 } from "@calcom/lib/piiFreeData";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
-import type { BookingReference } from "@calcom/prisma/client";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
 import { createdEventSchema } from "@calcom/prisma/zod-utils";
 import type { AdditionalInformation, CalendarEvent, NewCalendarEventType } from "@calcom/types/Calendar";
@@ -32,6 +32,7 @@ import type {
 } from "@calcom/types/EventManager";
 
 import { createEvent, updateEvent, deleteEvent } from "./CalendarManager";
+import CrmManager from "./crmManager/crmManager";
 import { createMeeting, updateMeeting, deleteMeeting } from "./videoClient";
 
 const log = logger.getSubLogger({ prefix: ["EventManager"] });
@@ -82,6 +83,7 @@ type createdEventSchema = z.infer<typeof createdEventSchema>;
 export default class EventManager {
   calendarCredentials: CredentialPayload[];
   videoCredentials: CredentialPayload[];
+  crmCredentials: CredentialPayload[];
 
   /**
    * Takes an array of credentials and initializes a new instance of the EventManager.
@@ -96,7 +98,10 @@ export default class EventManager {
     // This includes all calendar-related apps, traditional calendars such as Google Calendar
     // (type google_calendar) and non-traditional calendars such as CRMs like Close.com
     // (type closecom_other_calendar)
-    this.calendarCredentials = appCredentials.filter((cred) => cred.type.endsWith("_calendar"));
+    this.calendarCredentials = appCredentials.filter(
+      // Backwards compatibility until CRM manager is implemented
+      (cred) => cred.type.endsWith("_calendar") && !cred.type.includes("other_calendar")
+    );
     this.videoCredentials = appCredentials
       .filter((cred) => cred.type.endsWith("_video") || cred.type.endsWith("_conferencing"))
       // Whenever a new video connection is added, latest credentials are added with the highest ID.
@@ -105,6 +110,9 @@ export default class EventManager {
       .sort((a, b) => {
         return b.id - a.id;
       });
+    this.crmCredentials = appCredentials.filter(
+      (cred) => cred.type.endsWith("_crm") || cred.type.endsWith("_other_calendar")
+    );
   }
 
   /**
@@ -116,6 +124,7 @@ export default class EventManager {
    */
   public async create(event: CalendarEvent): Promise<CreateUpdateResult> {
     const evt = processLocation(event);
+
     // Fallback to cal video if no location is set
     if (!evt.location) {
       // See if cal video is enabled & has keys
@@ -172,6 +181,8 @@ export default class EventManager {
       return result.type.includes("_calendar");
     };
 
+    results.push(...(await this.createAllCRMEvents(clonedCalEvent)));
+
     // References can be any type: calendar/video
     const referencesToCreate = results.map((result) => {
       let thirdPartyRecurringEventId;
@@ -193,7 +204,7 @@ export default class EventManager {
         meetingPassword: createdEventObj ? createdEventObj.password : result.createdEvent?.password,
         meetingUrl: createdEventObj ? createdEventObj.onlineMeetingUrl : result.createdEvent?.url,
         externalCalendarId: isCalendarType ? result.externalId : undefined,
-        credentialId: isCalendarType ? result.credentialId : undefined,
+        credentialId: result?.credentialId || undefined,
       };
     });
 
@@ -440,6 +451,8 @@ export default class EventManager {
           // Update all calendar events.
           results.push(...(await this.updateAllCalendarEvents(evt, booking, newBookingId)));
         }
+
+        results.push(...(await this.updateAllCRMEvents(evt, booking)));
       }
     }
     const bookingPayment = booking?.payment;
@@ -490,10 +503,11 @@ export default class EventManager {
   }) {
     const calendarReferences = [],
       videoReferences = [],
+      crmReferences = [],
       allPromises = [];
 
     for (const reference of bookingReferences) {
-      if (reference.type.includes("_calendar")) {
+      if (reference.type.includes("_calendar") && !reference.type.includes("other_calendar")) {
         calendarReferences.push(reference);
         allPromises.push(
           this.deleteCalendarEventForBookingReference({
@@ -511,6 +525,11 @@ export default class EventManager {
             reference,
           })
         );
+      }
+
+      if (reference.type.includes("_crm") || reference.type.includes("other_calendar")) {
+        crmReferences.push(reference);
+        allPromises.push(this.deleteCRMEvent({ reference }));
       }
     }
 
@@ -572,6 +591,7 @@ export default class EventManager {
     };
 
     if (event.destinationCalendar && event.destinationCalendar.length > 0) {
+      let eventCreated = false;
       // Since GCal pushes events to multiple calendars we only want to create one event per booking
       let gCalAdded = false;
       const destinationCalendars: DestinationCalendar[] = event.destinationCalendar.reduce(
@@ -591,6 +611,7 @@ export default class EventManager {
         [] as DestinationCalendar[]
       );
       for (const destination of destinationCalendars) {
+        if (eventCreated) break;
         log.silly("Creating Calendar event", JSON.stringify({ destination }));
         if (destination.credentialId) {
           let credential = this.calendarCredentials.find((c) => c.id === destination.credentialId);
@@ -619,6 +640,7 @@ export default class EventManager {
             const createdEvent = await createEvent(credential, event, destination.externalId);
             if (createdEvent) {
               createdEvents.push(createdEvent);
+              eventCreated = true;
             }
           }
         } else {
@@ -644,6 +666,7 @@ export default class EventManager {
               })
             );
             createdEvents.push(await createEvent(firstCalendarCredential, event));
+            eventCreated = true;
           }
         }
       }
@@ -892,6 +915,71 @@ export default class EventManager {
       return Promise.reject(
         `No suitable credentials given for the requested integration name:${event.location}`
       );
+    }
+  }
+
+  private async createAllCRMEvents(event: CalendarEvent) {
+    const createdEvents = [];
+    const uid = getUid(event);
+    for (const credential of this.crmCredentials) {
+      const crm = new CrmManager(credential);
+
+      let success = true;
+      const createdEvent = await crm.createEvent(event).catch((error) => {
+        success = false;
+        log.warn(`Error creating crm event for ${credential.type}`, error);
+      });
+
+      createdEvents.push({
+        type: credential.type,
+        appName: credential.appId || "",
+        uid,
+        success,
+        createdEvent: {
+          id: createdEvent?.id || "",
+          type: credential.type,
+          credentialId: credential.id,
+        },
+        id: createdEvent?.id || "",
+        originalEvent: event,
+        credentialId: credential.id,
+      });
+    }
+    return createdEvents;
+  }
+
+  private async updateAllCRMEvents(event: CalendarEvent, booking: PartialBooking) {
+    const updatedEvents = [];
+
+    // Loop through all booking references and update the corresponding CRM event
+    for (const reference of booking.references) {
+      const credential = this.crmCredentials.find((cred) => cred.id === reference.credentialId);
+      let success = true;
+      if (credential) {
+        const crm = new CrmManager(credential);
+        const updatedEvent = await crm.updateEvent(reference.uid, event).catch((error) => {
+          success = false;
+          log.warn(`Error updating crm event for ${credential.type}`, error);
+        });
+
+        updatedEvents.push({
+          type: credential.type,
+          appName: credential.appId || "",
+          success,
+          uid: updatedEvent?.id || "",
+          originalEvent: event,
+        });
+      }
+    }
+
+    return updatedEvents;
+  }
+
+  private async deleteCRMEvent({ reference }: { reference: PartialReference }) {
+    const credential = this.crmCredentials.find((cred) => cred.id === reference.credentialId);
+    if (credential) {
+      const crm = new CrmManager(credential);
+      await crm.deleteEvent(reference.uid);
     }
   }
 }

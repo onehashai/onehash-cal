@@ -14,7 +14,7 @@ const CreateNewOrganizationPage = ({ querySlug }: inferSSRProps<typeof getServer
   return (
     <>
       <Meta title={t("set_up_your_organization")} description={t("organizations_description")} />
-      <CreateANewOrganizationForm slug={querySlug} />
+      <CreateANewOrganizationForm />
     </>
   );
 };

@@ -20,8 +20,8 @@ import {
   Badge,
   Avatar,
   ArrowButton,
+  Icon,
 } from "@calcom/ui";
-import { Edit2, Link as LinkIcon, MoreHorizontal, Trash2 } from "@calcom/ui/components/icon";
 
 import { getActionIcon } from "../lib/getActionIcon";
 import { DeleteDialog } from "./DeleteDialog";
@@ -54,7 +54,7 @@ interface WorkflowListProps {
 
 export default function WorkflowList({ workflows }: WorkflowListProps) {
   const { t } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workflowToDeleteId, setWorkflowToDeleteId] = useState(0);
   const [parent] = useAutoAnimate<HTMLUListElement>();
@@ -116,7 +116,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                         <div className="flex">
                           <div
                             className={classNames(
-                              "max-w-56 text-emphasis truncate text-sm font-medium leading-6 md:max-w-max",
+                              "text-emphasis max-w-56 truncate text-sm font-medium leading-6 md:max-w-max",
                               workflow.name ? "text-emphasis" : "text-subtle"
                             )}>
                             {workflow.name
@@ -169,7 +169,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                                       </p>
                                     ))}>
                                   <div>
-                                    <LinkIcon className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
+                                    <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
                                     {t("active_on_event_types", {
                                       count: workflow.activeOn.filter((wf) =>
                                         workflow.teamId ? wf.eventType.parentId === null : true
@@ -179,7 +179,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                                 </Tooltip>
                               ) : (
                                 <div>
-                                  <LinkIcon className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
+                                  <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
                                   {t("no_active_event_types")}
                                 </div>
                               )}
@@ -229,7 +229,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                               type="button"
                               color="secondary"
                               variant="icon"
-                              StartIcon={Edit2}
+                              StartIcon="edit-2"
                               disabled={workflow.readOnly}
                               onClick={async () => await router.replace(`/workflows/${workflow.id}`)}
                               data-testid="edit-button"
@@ -244,7 +244,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                               color="secondary"
                               variant="icon"
                               disabled={workflow.readOnly}
-                              StartIcon={Trash2}
+                              StartIcon="trash-2"
                               data-testid="delete-button"
                             />
                           </Tooltip>
@@ -258,14 +258,14 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                                 type="button"
                                 color="minimal"
                                 variant="icon"
-                                StartIcon={MoreHorizontal}
+                                StartIcon="more-horizontal"
                               />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                               <DropdownMenuItem>
                                 <DropdownItem
                                   type="button"
-                                  StartIcon={Edit2}
+                                  StartIcon="edit-2"
                                   onClick={async () => await router.replace(`/workflows/${workflow.id}`)}>
                                   {t("edit")}
                                 </DropdownItem>
@@ -274,7 +274,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                                 <DropdownItem
                                   type="button"
                                   color="destructive"
-                                  StartIcon={Trash2}
+                                  StartIcon="trash-2"
                                   onClick={() => {
                                     setDeleteDialogOpen(true);
                                     setWorkflowToDeleteId(workflow.id);

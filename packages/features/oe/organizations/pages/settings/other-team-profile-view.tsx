@@ -35,7 +35,6 @@ import {
   TextField,
   Editor,
 } from "@calcom/ui";
-import { ExternalLink, Link as LinkIcon, Trash2 } from "@calcom/ui/components/icon";
 
 import { getLayout } from "../../../../settings/layouts/SettingsLayout";
 import { subdomainSuffix } from "../../../organizations/lib/orgDomains";
@@ -57,7 +56,7 @@ const teamProfileFormSchema = z.object({
 const OtherTeamProfileView = () => {
   const { t } = useLocale();
   const router = useRouter();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const session = useSession();
   const [firstRender, setFirstRender] = useState(true);
 
@@ -297,10 +296,10 @@ const OtherTeamProfileView = () => {
               </div>
               <div className="">
                 <Link href={permalink} passHref={true} target="_blank">
-                  <LinkIconButton Icon={ExternalLink}>{t("preview")}</LinkIconButton>
+                  <LinkIconButton Icon="external-link">{t("preview")}</LinkIconButton>
                 </Link>
                 <LinkIconButton
-                  Icon={LinkIcon}
+                  Icon="link"
                   onClick={() => {
                     navigator.clipboard.writeText(permalink);
                     showToast("Copied to clipboard", "success");
@@ -316,7 +315,7 @@ const OtherTeamProfileView = () => {
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button color="destructive" className="border" StartIcon={Trash2}>
+              <Button color="destructive" className="border" StartIcon="trash-2">
                 {t("disband_team")}
               </Button>
             </DialogTrigger>

@@ -15,7 +15,6 @@ import {
   ConfirmationDialogContent,
   Dialog,
 } from "@calcom/ui";
-import { Check, CheckCheck, Trash, Edit, BookOpenCheck } from "@calcom/ui/components/icon";
 
 import { getLayout } from "../../../../../settings/layouts/SettingsLayout";
 import { subdomainSuffix } from "../../../../organizations/lib/orgDomains";
@@ -24,7 +23,7 @@ const { Body, Cell, ColumnTitle, Header, Row } = Table;
 
 function AdminOrgTable() {
   const { t } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const [data] = trpc.viewer.organizations.adminGetAll.useSuspenseQuery();
   const verifyMutation = trpc.viewer.organizations.adminVerify.useMutation({
     onSuccess: async (_data, variables) => {
@@ -145,7 +144,7 @@ function AdminOrgTable() {
                                   orgId: org.id,
                                 });
                               },
-                              icon: Check,
+                              icon: "check",
                             },
                           ]
                         : []),
@@ -162,7 +161,7 @@ function AdminOrgTable() {
                                   },
                                 });
                               },
-                              icon: CheckCheck,
+                              icon: "check-check",
                             },
                           ]
                         : []),
@@ -170,7 +169,7 @@ function AdminOrgTable() {
                         id: "edit",
                         label: t("edit"),
                         href: `/settings/admin/organizations/${org.id}/edit`,
-                        icon: Edit,
+                        icon: "pencil",
                       },
                       ...(!org.slug
                         ? [
@@ -180,7 +179,7 @@ function AdminOrgTable() {
                               onClick: () => {
                                 publishOrg(org);
                               },
-                              icon: BookOpenCheck,
+                              icon: "book-open-check",
                             },
                           ]
                         : []),
@@ -190,7 +189,7 @@ function AdminOrgTable() {
                         onClick: () => {
                           setOrgToDelete(org.id);
                         },
-                        icon: Trash,
+                        icon: "trash",
                       },
                     ]}
                   />
@@ -270,7 +269,7 @@ const DeleteOrgDialog = ({
   );
 };
 
-async function invalidateQueries(utils: ReturnType<typeof trpc.useContext>, data: { orgId: number }) {
+async function invalidateQueries(utils: ReturnType<typeof trpc.useUtils>, data: { orgId: number }) {
   await utils.viewer.organizations.adminGetAll.invalidate();
   await utils.viewer.organizations.adminGet.invalidate({
     id: data.orgId,

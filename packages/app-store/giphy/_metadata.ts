@@ -17,6 +17,7 @@ export const metadata = {
   extendsFeature: "EventType",
   email: "support@onehash.ai",
   dirName: "giphy",
+  isOAuth: false,
 } as AppMeta;
 
 export default metadata;

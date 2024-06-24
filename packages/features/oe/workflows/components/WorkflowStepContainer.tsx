@@ -40,8 +40,8 @@ import {
   AddVariablesDropdown,
   Input,
   Tooltip,
+  Icon,
 } from "@calcom/ui";
-import { ArrowDown, MoreHorizontal, Trash2, HelpCircle, Info } from "@calcom/ui/components/icon";
 
 import {
   isAttendeeAction,
@@ -73,7 +73,7 @@ type WorkflowStepProps = {
 
 export default function WorkflowStepContainer(props: WorkflowStepProps) {
   const { t } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const { step, form, reload, setReload, teamId } = props;
   const { data: _verifiedNumbers } = trpc.viewer.workflows.getVerifiedNumbers.useQuery(
@@ -262,7 +262,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
     return (
       <>
         <div className="flex justify-center">
-          <div className="min-w-80 bg-default border-subtle w-full rounded-md border p-7">
+          <div className="bg-default border-subtle w-full min-w-80 rounded-md border p-7">
             <div className="flex">
               <div className="bg-subtle text-default mt-[3px] flex h-5 w-5 items-center justify-center rounded-full p-1 text-xs font-medium ltr:mr-5 rtl:ml-5">
                 1
@@ -319,7 +319,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                 <TimeTimeUnitInput form={form} disabled={props.readOnly} />
                 {!props.readOnly && (
                   <div className="mt-1 flex text-gray-500">
-                    <Info className="mr-1 mt-0.5 h-4 w-4" />
+                    <Icon name="info" className="mr-1 mt-0.5 h-4 w-4" />
                     <p className="text-sm">{t("testing_workflow_info_message")}</p>
                   </div>
                 )}
@@ -447,10 +447,10 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
     return (
       <>
         <div className="my-3 flex justify-center">
-          <ArrowDown className="text-subtle stroke-[1.5px] text-3xl" />
+          <Icon name="arrow-down" className="text-subtle stroke-[1.5px] text-3xl" />
         </div>
         <div className="flex justify-center">
-          <div className="min-w-80 bg-default border-subtle flex w-full rounded-md border p-7">
+          <div className="bg-default border-subtle flex w-full min-w-80 rounded-md border p-7">
             <div className="w-full">
               <div className="flex">
                 <div className="w-full">
@@ -468,13 +468,13 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                   <div>
                     <Dropdown>
                       <DropdownMenuTrigger asChild>
-                        <Button type="button" color="minimal" variant="icon" StartIcon={MoreHorizontal} />
+                        <Button type="button" color="minimal" variant="icon" StartIcon="more-horizontal" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem>
                           <DropdownItem
                             type="button"
-                            StartIcon={Trash2}
+                            StartIcon="trash-2"
                             color="destructive"
                             onClick={() => {
                               const steps = form.getValues("steps");
@@ -529,7 +529,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                 />
                 {isRequiresConfirmationNeeded ? (
                   <div className="text-attention mb-3 mt-2 flex">
-                    <Info className="mr-1 mt-0.5 h-4 w-4" />
+                    <Icon name="info" className="mr-1 mt-0.5 h-4 w-4" />
                     <p className="text-sm">{t("requires_confirmation_mandatory")}</p>
                   </div>
                 ) : (
@@ -633,7 +633,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                         <div className="flex">
                           <Label>{t("sender_id")}</Label>
                           <Tooltip content={t("sender_id_info")}>
-                            <Info className="ml-2 mr-1 mt-0.5 h-4 w-4 text-gray-500" />
+                            <Icon name="info" className="ml-2 mr-1 mt-0.5 h-4 w-4 text-gray-500" />
                           </Tooltip>
                         </div>
                         <Input
@@ -873,7 +873,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                   <div className="mt-3 ">
                     <button type="button" onClick={() => setIsAdditionalInputsDialogOpen(true)}>
                       <div className="text-default mt-2 flex text-sm">
-                        <HelpCircle className="mt-[3px] h-3 w-3 ltr:mr-2 rtl:ml-2" />
+                        <Icon name="help-circle" className="mt-[3px] h-3 w-3 ltr:mr-2 rtl:ml-2" />
                         <p className="text-left">{t("using_booking_questions_as_variables")}</p>
                       </div>
                     </button>

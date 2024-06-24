@@ -72,6 +72,9 @@ export type NewCalendarEventType = {
   url: string;
   additionalInfo: AdditionalInfo;
   iCalUID?: string | null;
+  location?: string | null;
+  hangoutLink?: string | null;
+  conferenceData?: ConferenceData;
 };
 
 export type CalendarEventType = {
@@ -144,6 +147,7 @@ export type CalEventResponses = Record<
   {
     label: string;
     value: z.infer<typeof bookingResponse>;
+    isHidden?: boolean;
   }
 >;
 
@@ -201,6 +205,10 @@ export interface CalendarEvent {
 
   // It just has responses to only the user fields. It allows to easily iterate over to show only user fields
   userFieldsResponses?: CalEventResponses | null;
+  platformClientId?: string | null;
+  platformRescheduleUrl?: string | null;
+  platformCancelUrl?: string | null;
+  platformBookingUrl?: string | null;
 }
 
 export interface EntryPoint {

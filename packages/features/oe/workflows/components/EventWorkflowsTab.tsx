@@ -11,8 +11,7 @@ import { HttpError } from "@calcom/lib/http-error";
 import { WorkflowActions } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
-import { Button, EmptyScreen, showToast, Switch, Tooltip, Alert } from "@calcom/ui";
-import { ExternalLink, Zap, Lock, Info } from "@calcom/ui/components/icon";
+import { Button, EmptyScreen, showToast, Switch, Tooltip, Alert, Icon } from "@calcom/ui";
 
 import { getActionIcon } from "../lib/getActionIcon";
 import { SkeletonLoaderEventWorkflowsTab } from "./SkeletonLoader";
@@ -41,7 +40,7 @@ const WorkflowListItem = (props: ItemProps) => {
   );
 
   const isActive = activeEventTypeIds.includes(eventType.id);
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const activateEventTypeMutation = trpc.viewer.workflows.activateEventType.useMutation({
     onSuccess: async () => {
@@ -147,8 +146,8 @@ const WorkflowListItem = (props: ItemProps) => {
           <div className="flex-none">
             <Link href={`/workflows/${workflow.id}`} passHref={true} target="_blank">
               <Button type="button" color="minimal" className="mr-4">
-                <div className="hidden ltr:mr-2 rtl:ml-2 sm:block">{t("edit")}</div>
-                <ExternalLink className="text-default -mt-[2px] h-4 w-4 stroke-2" />
+                <div className="hidden sm:block ltr:mr-2 rtl:ml-2">{t("edit")}</div>
+                <Icon name="external-link" className="text-default -mt-[2px] h-4 w-4 stroke-2" />
               </Button>
             </Link>
           </div>
@@ -165,7 +164,7 @@ const WorkflowListItem = (props: ItemProps) => {
           }>
           <div className="flex items-center ltr:mr-2 rtl:ml-2">
             {workflow.readOnly && props.isChildrenManagedEventType && (
-              <Lock className="text-subtle h-4 w-4 ltr:mr-2 rtl:ml-2" />
+              <Icon name="lock" className="text-subtle h-4 w-4 ltr:mr-2 rtl:ml-2" />
             )}
             <Switch
               checked={isActive}
@@ -180,7 +179,7 @@ const WorkflowListItem = (props: ItemProps) => {
 
       {needsRequiresConfirmationWarning ? (
         <div className="text-attention -mb-2 mt-3 flex">
-          <Info className="mr-1 mt-0.5 h-4 w-4" />
+          <Icon name="info" className="mr-1 mt-0.5 h-4 w-4" />
           <p className="text-sm">{t("requires_confirmation_mandatory")}</p>
         </div>
       ) : (
@@ -282,7 +281,7 @@ function EventWorkflowsTab(props: Props) {
           ) : (
             <div className="pt-2 before:border-0">
               <EmptyScreen
-                Icon={Zap}
+                Icon="zap"
                 headline={t("workflows")}
                 description={t("no_workflows_description")}
                 buttonRaw={

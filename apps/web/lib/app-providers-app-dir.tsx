@@ -11,11 +11,11 @@ import type { ReadonlyURLSearchParams } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
-import { OrgBrandingProvider } from "@calcom/features/oe/organizations/context/provider";
 import DynamicHelpscoutProvider from "@calcom/features/ee/support/lib/helpscout/providerDynamic";
 import DynamicIntercomProvider from "@calcom/features/ee/support/lib/intercom/providerDynamic";
 import { FeatureProvider } from "@calcom/features/flags/context/provider";
 import { useFlags } from "@calcom/features/flags/hooks";
+import { OrgBrandingProvider } from "@calcom/features/oe/organizations/context/provider";
 import { MetaProvider } from "@calcom/ui";
 
 import useIsBookingPage from "@lib/hooks/useIsBookingPage";
@@ -195,7 +195,11 @@ function getThemeProviderProps(props: {
 
   const isBookingPageThemeSupportRequired = themeSupport === ThemeSupport.Booking;
 
-  if ((isBookingPageThemeSupportRequired || props.isEmbedMode) && !props.themeBasis) {
+  if (
+    !process.env.NEXT_PUBLIC_IS_E2E &&
+    (isBookingPageThemeSupportRequired || props.isEmbedMode) &&
+    !props.themeBasis
+  ) {
     console.warn(
       "`themeBasis` is required for booking page theme support. Not providing it will cause theme flicker."
     );

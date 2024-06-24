@@ -230,10 +230,12 @@ inferSSRProps<typeof getServerSideProps> & WithNonceProps<{}>) {
                     className="w-full justify-center"
                     disabled={formState.isSubmitting}
                     data-testid="google"
-                    StartIcon={FaGoogle}
+                    CustomStartIcon={<GoogleIcon />}
                     onClick={async (e) => {
                       e.preventDefault();
-                      await signIn("google");
+                      await signIn("google", {
+                        callbackUrl,
+                      });
                     }}>
                     {t("signin_with_google")}
                   </Button>

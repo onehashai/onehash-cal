@@ -10,5 +10,6 @@
   "publisher": "OneHash",
   "email": "support@onehash.ai",
   "description": "Embedded booking pages right into your wordpress page",
-  "__createdUsingCli": true
+  "__createdUsingCli": true,
+  "isAuth": false
 }

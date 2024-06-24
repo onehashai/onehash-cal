@@ -23,8 +23,8 @@ import {
   PhoneInput,
   Select,
   Tooltip,
+  Icon,
 } from "@calcom/ui";
-import { Info } from "@calcom/ui/components/icon";
 
 import { WORKFLOW_ACTIONS } from "../lib/constants";
 import { onlyLettersNumbersSpaces } from "../pages/workflow";
@@ -220,7 +220,7 @@ export const AddActionDialog = (props: IAddActionDialog) => {
                   <div className="flex">
                     <Label>{t("sender_id")}</Label>
                     <Tooltip content={t("sender_id_info")}>
-                      <Info className="ml-2 mr-1 mt-0.5 h-4 w-4 text-gray-500" />
+                      <Icon name="info" className="ml-2 mr-1 mt-0.5 h-4 w-4 text-gray-500" />
                     </Tooltip>
                   </div>
                   <Input type="text" placeholder={SENDER_ID} maxLength={11} {...form.register(`senderId`)} />

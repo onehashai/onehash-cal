@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 
 import type { EventLocationType, getEventLocationValue } from "@calcom/app-store/locations";
 import {
@@ -19,6 +20,7 @@ import classNames from "@calcom/lib/classNames";
 import { formatTime } from "@calcom/lib/date-fns";
 import getPaymentAppData from "@calcom/lib/getPaymentAppData";
 import { useBookerUrl } from "@calcom/lib/hooks/useBookerUrl";
+import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { getEveryFreqFor } from "@calcom/lib/recurringStrings";
 import { BookingStatus } from "@calcom/prisma/enums";
@@ -33,24 +35,21 @@ import {
   DialogClose,
   DialogContent,
   DialogFooter,
+  Icon,
   MeetingTimeInTimezones,
   showToast,
   TableActions,
   TextAreaField,
   Tooltip,
+  Dropdown,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
 } from "@calcom/ui";
-import {
-  Ban,
-  Check,
-  Clock,
-  CreditCard,
-  MapPin,
-  RefreshCcw,
-  Send,
-  X,
-  ChevronRight,
-  ExternalLink,
-} from "@calcom/ui/components/icon";
 
 import { ChargeCardDialog } from "@components/dialog/ChargeCardDialog";
 import { EditLocationDialog } from "@components/dialog/EditLocationDialog";
@@ -81,7 +80,7 @@ function BookingListItem(booking: BookingItemProps) {
     t,
     i18n: { language },
   } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const [rejectionReason, setRejectionReason] = useState<string>("");
   const [rejectionDialogIsOpen, setRejectionDialogIsOpen] = useState(false);
   const [chargeCardDialogIsOpen, setChargeCardDialogIsOpen] = useState(false);
@@ -106,7 +105,7 @@ function BookingListItem(booking: BookingItemProps) {
   });
 
   const isUpcoming = new Date(booking.endTime) >= new Date();
-  const isPast = new Date(booking.endTime) < new Date();
+  const isBookingInPast = new Date(booking.endTime) < new Date();
   const isCancelled = booking.status === BookingStatus.CANCELLED;
   const isConfirmed = booking.status === BookingStatus.ACCEPTED;
   const isRejected = booking.status === BookingStatus.REJECTED;
@@ -169,8 +168,8 @@ function BookingListItem(booking: BookingItemProps) {
       onClick: () => {
         setRejectionDialogIsOpen(true);
       },
-      icon: Ban,
-      disabled: mutation.isLoading,
+      icon: "ban",
+      disabled: mutation.isPending,
     },
     // For bookings with payment, only confirm if the booking is paid for
     ...((isPending && !paymentAppData.enabled) ||
@@ -183,8 +182,8 @@ function BookingListItem(booking: BookingItemProps) {
             onClick: () => {
               bookingConfirm(true);
             },
-            icon: Check,
-            disabled: mutation.isLoading,
+            icon: "check" as const,
+            disabled: mutation.isPending,
           },
         ]
       : []),
@@ -200,7 +199,7 @@ function BookingListItem(booking: BookingItemProps) {
         isTabRecurring && isRecurring ? "&allRemainingBookings=true" : ""
       }${booking.seatsReferences.length ? `&seatReferenceUid=${getSeatReferenceUid()}` : ""}
       `,
-      icon: X,
+      icon: "x" as const,
     },
     {
       id: "edit_booking",
@@ -208,7 +207,7 @@ function BookingListItem(booking: BookingItemProps) {
       actions: [
         {
           id: "reschedule",
-          icon: Clock,
+          icon: "clock" as const,
           label: t("reschedule_booking"),
           href: `${bookerUrl}/reschedule/${booking.uid}${
             booking.seatsReferences.length ? `?seatReferenceUid=${getSeatReferenceUid()}` : ""
@@ -216,7 +215,7 @@ function BookingListItem(booking: BookingItemProps) {
         },
         {
           id: "reschedule_request",
-          icon: Send,
+          icon: "send" as const,
           iconClassName: "rotate-45 w-[16px] -translate-x-0.5 ",
           label: t("send_reschedule_request"),
           onClick: () => {
@@ -229,7 +228,7 @@ function BookingListItem(booking: BookingItemProps) {
           onClick: () => {
             setIsOpenLocationDialog(true);
           },
-          icon: MapPin,
+          icon: "map-pin" as const,
         },
       ],
     },
@@ -243,7 +242,7 @@ function BookingListItem(booking: BookingItemProps) {
       onClick: () => {
         setChargeCardDialogIsOpen(true);
       },
-      icon: CreditCard,
+      icon: "credit-card" as const,
     },
   ];
 
@@ -251,13 +250,13 @@ function BookingListItem(booking: BookingItemProps) {
     bookedActions = bookedActions.filter((action) => action.id !== "edit_booking");
   }
 
-  if (isPast && isPending && !isConfirmed) {
+  if (isBookingInPast && isPending && !isConfirmed) {
     bookedActions = bookedActions.filter((action) => action.id !== "cancel");
   }
 
   const RequestSentMessage = () => {
     return (
-      <Badge startIcon={Send} size="md" variant="gray" data-testid="request_reschedule_sent">
+      <Badge startIcon="send" size="md" variant="gray" data-testid="request_reschedule_sent">
         {t("reschedule_request_sent")}
       </Badge>
     );
@@ -299,9 +298,9 @@ function BookingListItem(booking: BookingItemProps) {
 
   const title = booking.title;
 
-  const showViewRecordingsButton = !!(booking.isRecorded && isPast && isConfirmed);
+  const showViewRecordingsButton = !!(booking.isRecorded && isBookingInPast && isConfirmed);
   const showCheckRecordingButton =
-    isPast &&
+    isBookingInPast &&
     isConfirmed &&
     !booking.isRecorded &&
     (!booking.location || booking.location === "integrations:daily" || booking?.location?.trim() === "");
@@ -372,8 +371,11 @@ function BookingListItem(booking: BookingItemProps) {
 
     const generateWhatsAppLink = (phoneNumber: string): string => {
       const cleanedPhoneNumber = phoneNumber.replace(/\D/g, "");
+      const urlEndcodedTextMessage = encodeURIComponent(
+        `Hi, I'm running late by 5 minutes. I'll be there soon.`
+      );
 
-      const whatsappLink = `https://wa.me/send?phone=${cleanedPhoneNumber}`;
+      const whatsappLink = `https://api.whatsapp.com/send?phone=${cleanedPhoneNumber}&text=${urlEndcodedTextMessage}`;
 
       return whatsappLink;
     };
@@ -383,6 +385,14 @@ function BookingListItem(booking: BookingItemProps) {
     window.open(url, "_blank", options);
   };
 
+  const attendeeList = booking.attendees.map((attendee) => {
+    return {
+      name: attendee.name,
+      email: attendee.email,
+      id: attendee.id,
+      noShow: attendee.noShow || false,
+    };
+  });
   return (
     <>
       <RescheduleDialog
@@ -462,7 +472,7 @@ function BookingListItem(booking: BookingItemProps) {
           setExpanded(!expanded);
         }}
         className="hover:bg-muted group flex cursor-pointer flex-col sm:flex-row">
-        <td className="hidden align-top ltr:pl-6 rtl:pr-6 sm:table-cell sm:min-w-[12rem]">
+        <td className="hidden align-top sm:table-cell sm:min-w-[12rem] ltr:pl-6 rtl:pr-6">
           <div className="cursor-pointer py-4">
             <div className="text-emphasis text-sm leading-6">{startTime}</div>
             <div className="text-subtle text-sm">
@@ -551,68 +561,95 @@ function BookingListItem(booking: BookingItemProps) {
                 />
               </div>
             </div>
-
-            {isPending && (
-              <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="orange">
-                {t("unconfirmed")}
-              </Badge>
-            )}
-            {booking.eventType?.team && (
-              <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="gray">
-                {booking.eventType.team.name}
-              </Badge>
-            )}
-            {showPendingPayment && (
-              <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="orange">
-                {t("pending_payment")}
-              </Badge>
-            )}
-            {recurringDates !== undefined && (
-              <div className="text-muted text-sm sm:hidden">
-                <RecurringBookingsTooltip
-                  userTimeFormat={userTimeFormat}
-                  userTimeZone={userTimeZone}
-                  booking={booking}
-                  recurringDates={recurringDates}
-                />
-              </div>
-            )}
           </div>
+        </td>
+        <td data-testid="title-and-attendees" className={`w-full px-4${isRejected ? " line-through" : ""}`}>
+          <div>
+            {/* Time and Badges for mobile */}
+            <div className="w-full pb-2 pt-4 sm:hidden">
+              <div className="flex w-full items-center justify-between sm:hidden">
+                <div className="text-emphasis text-sm leading-6">{startTime}</div>
+                <div className="text-subtle pr-2 text-sm">
+                  {formatTime(booking.startTime, userTimeFormat, userTimeZone)} -{" "}
+                  {formatTime(booking.endTime, userTimeFormat, userTimeZone)}
+                  <MeetingTimeInTimezones
+                    timeFormat={userTimeFormat}
+                    userTimezone={userTimeZone}
+                    startTime={booking.startTime}
+                    endTime={booking.endTime}
+                    attendees={booking.attendees}
+                  />
+                </div>
+              </div>
 
-          <div className="cursor-pointer py-4">
-            <div
-              title={title}
-              className={classNames(
-                "max-w-10/12 sm:max-w-56 text-emphasis text-sm font-medium leading-6 md:max-w-full",
-                isCancelled ? "line-through" : ""
-              )}>
-              {title}
-              <span> </span>
-
+              {isPending && (
+                <Badge className="sm:hidden ltr:mr-2 rtl:ml-2" variant="orange">
+                  {t("unconfirmed")}
+                </Badge>
+              )}
+              {booking.eventType?.team && (
+                <Badge className="sm:hidden ltr:mr-2 rtl:ml-2" variant="gray">
+                  {booking.eventType.team.name}
+                </Badge>
+              )}
               {showPendingPayment && (
-                <Badge className="hidden sm:inline-flex" variant="orange">
+                <Badge className="sm:hidden ltr:mr-2 rtl:ml-2" variant="orange">
                   {t("pending_payment")}
                 </Badge>
               )}
+              {recurringDates !== undefined && (
+                <div className="text-muted text-sm sm:hidden">
+                  <RecurringBookingsTooltip
+                    userTimeFormat={userTimeFormat}
+                    userTimeZone={userTimeZone}
+                    booking={booking}
+                    recurringDates={recurringDates}
+                  />
+                </div>
+              )}
             </div>
-            {booking.description && (
+
+            <div className="cursor-pointer py-4">
               <div
-                className="max-w-10/12 sm:max-w-32 md:max-w-52 xl:max-w-80 text-default truncate text-sm"
-                title={booking.description}>
-                &quot;{booking.description}&quot;
+                title={title}
+                className={classNames(
+                  "max-w-10/12 text-emphasis text-sm font-medium leading-6 sm:max-w-56 md:max-w-full",
+                  isCancelled ? "line-through" : ""
+                )}>
+                {title}
+                <span> </span>
+
+                {showPendingPayment && (
+                  <Badge className="hidden sm:inline-flex" variant="orange">
+                    {t("pending_payment")}
+                  </Badge>
+                )}
               </div>
-            )}
-            {booking.attendees.length !== 0 && (
-              <DisplayAttendees attendees={booking.attendees} user={booking.user} currentEmail={userEmail} />
-            )}
-            {isCancelled && booking.rescheduled && (
-              <div className="mt-2 inline-block md:hidden">
-                <RequestSentMessage />
-              </div>
-            )}
+              {booking.description && (
+                <div
+                  className="max-w-10/12 text-default truncate text-sm sm:max-w-32 md:max-w-52 xl:max-w-80"
+                  title={booking.description}>
+                  &quot;{booking.description}&quot;
+                </div>
+              )}
+              {booking.attendees.length !== 0 && (
+                <DisplayAttendees
+                  attendees={attendeeList}
+                  user={booking.user}
+                  currentEmail={userEmail}
+                  bookingUid={booking.uid}
+                  isBookingInPast={isBookingInPast}
+                />
+              )}
+              {isCancelled && booking.rescheduled && (
+                <div className="mt-2 inline-block md:hidden">
+                  <RequestSentMessage />
+                </div>
+              )}
+            </div>
           </div>
         </td>
-        <td className="flex min-h-full w-full items-center  justify-end space-x-2 py-4 pl-4 text-right text-sm font-medium ltr:pr-4 rtl:space-x-reverse rtl:pl-4 sm:pl-0">
+        <td className="flex min-h-full w-full items-center  justify-end space-x-2 py-4 pl-4 text-right text-sm font-medium sm:pl-0 ltr:pr-4 rtl:space-x-reverse rtl:pl-4">
           {isUpcoming && !isCancelled ? (
             <>
               {isPending && userId === booking.user?.id && <TableActions actions={pendingActions} />}
@@ -620,7 +657,7 @@ function BookingListItem(booking: BookingItemProps) {
               {isRejected && <div className="text-subtle text-sm">{t("rejected")}</div>}
             </>
           ) : null}
-          {isPast && isPending && !isConfirmed ? <TableActions actions={bookedActions} /> : null}
+          {isBookingInPast && isPending && !isConfirmed ? <TableActions actions={bookedActions} /> : null}
           {(showViewRecordingsButton || showCheckRecordingButton) && (
             <TableActions actions={showRecordingActions} />
           )}
@@ -636,7 +673,8 @@ function BookingListItem(booking: BookingItemProps) {
           )}
           <div className="text-md flex pl-3 ">
             <p className="mt-px">{t("details")}</p>
-            <ChevronRight
+            <Icon
+              name="chevron-right"
               strokeWidth="2"
               className={classNames(" ", expanded ? "rotate-90 transform" : "rotate-0 transform")}
             />
@@ -774,7 +812,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("whatsapp_chat")}
                 </Button>
               )}
-              {isPast && (
+              {isBookingInPast && (
                 <Button
                   className="flex w-full justify-center "
                   color="secondary"
@@ -782,7 +820,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("mark_no_show")}
                 </Button>
               )}
-              {isPast && (
+              {isBookingInPast && (
                 <Button
                   className="flex w-full justify-center"
                   color="secondary"
@@ -849,7 +887,8 @@ const RecurringBookingsTooltip = ({
                 );
               })}>
               <div className="text-default">
-                <RefreshCcw
+                <Icon
+                  name="refresh-ccw"
                   strokeWidth="3"
                   className="text-muted float-left mr-1 mt-1.5 inline-block h-3 w-3"
                 />
@@ -903,13 +942,215 @@ const FirstAttendee = ({
 type AttendeeProps = {
   name?: string;
   email: string;
+  id: number;
+  noShow: boolean;
 };
 
-const Attendee = ({ email, name }: AttendeeProps) => {
+type NoShowProps = {
+  bookingUid: string;
+  isBookingInPast: boolean;
+};
+
+const Attendee = (attendeeProps: AttendeeProps & NoShowProps) => {
+  const { email, name, bookingUid, isBookingInPast, noShow: noShowAttendee } = attendeeProps;
+  const { t } = useLocale();
+
+  const [noShow, setNoShow] = useState(noShowAttendee);
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const { copyToClipboard, isCopied } = useCopy();
+
+  const noShowMutation = trpc.viewer.public.noShow.useMutation({
+    onSuccess: async () => {
+      showToast(
+        t(noShow ? "x_marked_as_no_show" : "x_unmarked_as_no_show", {
+          x: name || email,
+        }),
+        "success"
+      );
+    },
+    onError: (err) => {
+      showToast(err.message, "error");
+    },
+  });
+
+  function toggleNoShow({
+    attendee,
+    bookingUid,
+  }: {
+    attendee: { email: string; noShow: boolean };
+    bookingUid: string;
+  }) {
+    noShowMutation.mutate({ bookingUid, attendees: [attendee] });
+    setNoShow(!noShow);
+  }
+
   return (
-    <a className="hover:text-blue-500" href={`mailto:${email}`} onClick={(e) => e.stopPropagation()}>
-      {name || email}
-    </a>
+    <Dropdown open={openDropdown} onOpenChange={setOpenDropdown}>
+      <DropdownMenuTrigger asChild>
+        <button
+          data-testid="guest"
+          onClick={(e) => e.stopPropagation()}
+          className="radix-state-open:text-blue-500 hover:text-blue-500">
+          {noShow ? (
+            <s>
+              {name || email} <Icon name="eye-off" className="inline h-4" />
+            </s>
+          ) : (
+            <>{name || email}</>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem className="focus:outline-none">
+          <DropdownItem
+            StartIcon="mail"
+            href={`mailto:${email}`}
+            onClick={(e) => {
+              setOpenDropdown(false);
+              e.stopPropagation();
+            }}>
+            <a href={`mailto:${email}`}>{t("email")}</a>
+          </DropdownItem>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="focus:outline-none">
+          <DropdownItem
+            StartIcon={isCopied ? "clipboard-check" : "clipboard"}
+            onClick={(e) => {
+              e.preventDefault();
+              copyToClipboard(email);
+              setOpenDropdown(false);
+              showToast(t("email_copied"), "success");
+            }}>
+            {!isCopied ? t("copy") : t("copied")}
+          </DropdownItem>
+        </DropdownMenuItem>
+        {isBookingInPast && (
+          <DropdownMenuItem className="focus:outline-none">
+            {noShow ? (
+              <DropdownItem
+                data-testid="unmark-no-show"
+                onClick={(e) => {
+                  setOpenDropdown(false);
+                  toggleNoShow({ attendee: { noShow: false, email }, bookingUid });
+                  e.preventDefault();
+                }}
+                StartIcon="eye">
+                {t("unmark_as_no_show")}
+              </DropdownItem>
+            ) : (
+              <DropdownItem
+                data-testid="mark-no-show"
+                onClick={(e) => {
+                  setOpenDropdown(false);
+                  toggleNoShow({ attendee: { noShow: true, email }, bookingUid });
+                  e.preventDefault();
+                }}
+                StartIcon="eye-off">
+                {t("mark_as_no_show")}
+              </DropdownItem>
+            )}
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </Dropdown>
+  );
+};
+
+type GroupedAttendeeProps = {
+  attendees: AttendeeProps[];
+  bookingUid: string;
+};
+
+const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
+  const { bookingUid } = groupedAttendeeProps;
+  const attendees = groupedAttendeeProps.attendees.map((attendee) => {
+    return {
+      id: attendee.id,
+      email: attendee.email,
+      name: attendee.name,
+      noShow: attendee.noShow || false,
+    };
+  });
+  const { t } = useLocale();
+  const noShowMutation = trpc.viewer.public.noShow.useMutation({
+    onSuccess: async () => {
+      showToast(t("no_show_updated"), "success");
+    },
+    onError: (err) => {
+      showToast(err.message, "error");
+    },
+  });
+  const { control, handleSubmit } = useForm<{
+    attendees: AttendeeProps[];
+  }>({
+    defaultValues: {
+      attendees,
+    },
+    mode: "onBlur",
+  });
+
+  const { fields } = useFieldArray({
+    control,
+    name: "attendees",
+  });
+
+  const onSubmit = (data: { attendees: AttendeeProps[] }) => {
+    const filteredData = data.attendees.slice(1);
+    noShowMutation.mutate({ bookingUid, attendees: filteredData });
+    setOpenDropdown(false);
+  };
+
+  const [openDropdown, setOpenDropdown] = useState(false);
+
+  return (
+    <Dropdown open={openDropdown} onOpenChange={setOpenDropdown}>
+      <DropdownMenuTrigger asChild>
+        <button
+          data-testid="more-guests"
+          onClick={(e) => e.stopPropagation()}
+          className="radix-state-open:text-blue-500 hover:text-blue-500 focus:outline-none">
+          {t("plus_more", { count: attendees.length - 1 })}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuLabel className="text-xs font-medium uppercase">
+          {t("mark_as_no_show_title")}
+        </DropdownMenuLabel>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {fields.slice(1).map((field, index) => (
+            <Controller
+              key={field.id}
+              name={`attendees.${index + 1}.noShow`}
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <DropdownMenuCheckboxItem
+                  checked={value || false}
+                  onCheckedChange={onChange}
+                  className="pr-8 focus:outline-none"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onChange(!value);
+                  }}>
+                  <span className={value ? "line-through" : ""}>{field.email}</span>
+                </DropdownMenuCheckboxItem>
+              )}
+            />
+          ))}
+          <DropdownMenuSeparator />
+          <div className=" flex justify-end p-2">
+            <Button
+              data-testid="update-no-show"
+              color="secondary"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit(onSubmit)();
+              }}>
+              {t("mark_as_no_show_title")}
+            </Button>
+          </div>
+        </form>
+      </DropdownMenuContent>
+    </Dropdown>
   );
 };
 
@@ -917,17 +1158,23 @@ const DisplayAttendees = ({
   attendees,
   user,
   currentEmail,
+  bookingUid,
+  isBookingInPast,
 }: {
   attendees: AttendeeProps[];
   user: UserProps | null;
   currentEmail?: string | null;
+  bookingUid: string;
+  isBookingInPast: boolean;
 }) => {
   const { t } = useLocale();
+  attendees.sort((a, b) => a.id - b.id);
+
   return (
     <div className="text-emphasis text-sm">
       {user && <FirstAttendee user={user} currentEmail={currentEmail} />}
       {attendees.length > 1 ? <span>,&nbsp;</span> : <span>&nbsp;{t("and")}&nbsp;</span>}
-      <Attendee {...attendees[0]} />
+      <Attendee {...attendees[0]} bookingUid={bookingUid} isBookingInPast={isBookingInPast} />
       {attendees.length > 1 && (
         <>
           <div className="text-emphasis inline-block text-sm">&nbsp;{t("and")}&nbsp;</div>
@@ -935,13 +1182,13 @@ const DisplayAttendees = ({
             <Tooltip
               content={attendees.slice(1).map((attendee) => (
                 <p key={attendee.email}>
-                  <Attendee {...attendee} />
+                  <Attendee {...attendee} bookingUid={bookingUid} isBookingInPast={isBookingInPast} />
                 </p>
               ))}>
-              <div className="inline-block">{t("plus_more", { count: attendees.length - 1 })}</div>
+              {isBookingInPast && <GroupedAttendees attendees={attendees} bookingUid={bookingUid} />}
             </Tooltip>
           ) : (
-            <Attendee {...attendees[1]} />
+            <Attendee {...attendees[1]} bookingUid={bookingUid} isBookingInPast={isBookingInPast} />
           )}
         </>
       )}
@@ -966,7 +1213,7 @@ const DisplayLocation = ({
       className={classNames("text-default flex items-center gap-2", className)}
       rel="noreferrer">
       {providerName || "Link"}
-      <ExternalLink className="text-default inline h-4 w-4" />
+      <Icon name="external-link" className="text-default inline h-4 w-4" />
     </a>
   ) : (
     <p className={className}>{locationToDisplay}</p>
