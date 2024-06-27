@@ -154,7 +154,7 @@
       "outputs": ["dist/**", "build/**"]
     },
     "dev": {
-      "dependsOn": ["//#env-check:common", "//#env-check:app-store"],
+      "dependsOn": [],
       "cache": false
     },
     "dx": {
