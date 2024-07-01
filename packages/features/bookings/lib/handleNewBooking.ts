@@ -137,6 +137,7 @@ export type Invitee = {
     translate: TFunction;
     locale: string;
   };
+  phoneNumber?: string;
 }[];
 export type OrganizerUser = Awaited<ReturnType<typeof loadUsers>>[number] & {
   isFixed?: boolean;
@@ -532,6 +533,7 @@ export async function getBookingData<T extends z.ZodType>({
   }
   // reqBody.end is no longer an optional property.
   if (reqBody.customInputs) {
+    console.log("insidecustominput");
     // Check if required custom inputs exist
     handleCustomInputs(eventType.customInputs as EventTypeCustomInput[], reqBody.customInputs);
     const reqBodyWithLegacyProps = bookingCreateSchemaLegacyPropsForApi.parse(reqBody);
@@ -548,6 +550,7 @@ export async function getBookingData<T extends z.ZodType>({
       calEventUserFieldsResponses: undefined,
       calEventResponses: undefined,
       customInputs: undefined,
+      phone: reqBodyWithLegacyProps.phone,
     };
   }
   if (!reqBody.responses) {
@@ -573,6 +576,7 @@ export async function getBookingData<T extends z.ZodType>({
     calEventResponses,
     // So TS doesn't complain about unknown properties
     customInputs: undefined,
+    phone: responses.phone,
   };
 }
 
@@ -1033,6 +1037,7 @@ async function handler(
     smsReminderNumber,
     rescheduleReason,
     luckyUsers,
+    phone: phoneNumber,
     ...reqBody
   } = bookingData;
 
@@ -1476,6 +1481,7 @@ async function handler(
       lastName: (typeof bookerName === "object" && bookerName.lastName) || "",
       timeZone: attendeeTimezone,
       language: { translate: tAttendees, locale: attendeeLanguage ?? "en" },
+      phoneNumber: phoneNumber,
     },
   ];
 
@@ -1552,6 +1558,7 @@ async function handler(
     });
   const teamMembers = await Promise.all(teamMemberPromises);
 
+  console.log("Invitee from handleNewBooking", invitee);
   const attendeesList = [...invitee, ...guests];
 
   const responses = reqBody.responses || null;
