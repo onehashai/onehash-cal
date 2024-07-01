@@ -108,7 +108,7 @@ export default function TeamInviteListItem(props: Props) {
             <div className="block sm:hidden">
               <Dropdown>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" color="minimal" variant="icon" StartIcon="more-horizontal" />
+                  <Button type="button" color="minimal" variant="icon" StartIcon="ellipsis" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem>
