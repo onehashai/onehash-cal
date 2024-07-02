@@ -1,10 +1,10 @@
 import { useSession } from "next-auth/react";
 import { Trans } from "next-i18next";
-import { useMemo, useState, useRef } from "react";
 import type { FormEvent } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import TeamInviteFromOrg from "@calcom/features/oe/organizations/components/OrgTeamInvite";
+import TeamInviteFromOrg from "@calcom/ee/organizations/components/TeamInviteFromOrg";
 import { classNames } from "@calcom/lib";
 import { IS_TEAM_BILLING_ENABLED, MAX_NB_INVITES } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -18,13 +18,13 @@ import {
   DialogContent,
   DialogFooter,
   Form,
+  Icon,
   Label,
+  Select,
   showToast,
+  TextAreaField,
   TextField,
   ToggleGroup,
-  Select,
-  TextAreaField,
-  Icon,
 } from "@calcom/ui";
 
 import type { PendingMember } from "../lib/types";
@@ -74,10 +74,21 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
   const { data: currentOrg } = trpc.viewer.organizations.listCurrent.useQuery(undefined, {
     enabled: !!session.data?.user?.org,
   });
-  const isOrgOwner = currentOrg && currentOrg.user.role === MembershipRole.OWNER;
+
+  // Check current org role and not team role
+  const isOrgAdminOrOwner =
+    currentOrg &&
+    (currentOrg.user.role === MembershipRole.OWNER || currentOrg.user.role === MembershipRole.ADMIN);
+
+  const canSeeOrganization = !!(
+    props?.orgMembers &&
+    props.orgMembers?.length > 0 &&
+    currentOrg?.isPrivate &&
+    isOrgAdminOrOwner
+  );
 
   const [modalImportMode, setModalInputMode] = useState<ModalMode>(
-    props?.orgMembers && props.orgMembers?.length > 0 ? "ORGANIZATION" : "INDIVIDUAL"
+    canSeeOrganization ? "ORGANIZATION" : "INDIVIDUAL"
   );
 
   const createInviteMutation = trpc.viewer.teams.createInvite.useMutation({
@@ -98,12 +109,12 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
     ];
 
     // Adjust options for organizations where the user isn't the owner
-    if (isOrg && !isOrgOwner) {
+    if (isOrg && !isOrgAdminOrOwner) {
       return options.filter((option) => option.value !== MembershipRole.OWNER);
     }
 
     return options;
-  }, [t, isOrgOwner, isOrg]);
+  }, [t, isOrgAdminOrOwner, isOrg]);
 
   const toggleGroupOptions = useMemo(() => {
     const array = [
@@ -112,9 +123,9 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
         label: t("invite_team_individual_segment"),
         iconLeft: <Icon name="user" />,
       },
-      { value: "BULK", label: t("invite_team_bulk_segment"), iconLeft: <Icon name="user" /> },
+      { value: "BULK", label: t("invite_team_bulk_segment"), iconLeft: <Icon name="users" /> },
     ];
-    if (props?.orgMembers && props.orgMembers?.length > 0) {
+    if (canSeeOrganization) {
       array.unshift({
         value: "ORGANIZATION",
         label: t("organization"),
@@ -122,7 +133,7 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
       });
     }
     return array;
-  }, [t, props.orgMembers]);
+  }, [t, canSeeOrganization]);
 
   const newMemberFormMethods = useForm<NewMemberForm>();
 
