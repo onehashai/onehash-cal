@@ -1,5 +1,5 @@
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import type { Workflow, WorkflowStep, Membership } from "@prisma/client";
+import type { Membership, Workflow, WorkflowStep } from "@prisma/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -9,18 +9,18 @@ import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import {
+  ArrowButton,
+  Avatar,
+  Badge,
   Button,
   ButtonGroup,
   Dropdown,
+  DropdownItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownItem,
   DropdownMenuTrigger,
-  Tooltip,
-  Badge,
-  Avatar,
-  ArrowButton,
   Icon,
+  Tooltip,
 } from "@calcom/ui";
 
 import { getActionIcon } from "../lib/getActionIcon";
@@ -47,20 +47,18 @@ export type WorkflowType = Workflow & {
   }[];
   readOnly?: boolean;
 };
-
-interface WorkflowListProps {
-  workflows: WorkflowType[];
+interface Props {
+  workflows: WorkflowType[] | undefined;
 }
-
-export default function WorkflowList({ workflows }: WorkflowListProps) {
+export default function WorkflowListPage({ workflows }: Props) {
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workflowToDeleteId, setWorkflowToDeleteId] = useState(0);
+  const [workflowToDeleteId, setwWorkflowToDeleteId] = useState(0);
   const [parent] = useAutoAnimate<HTMLUListElement>();
   const router = useRouter();
 
-  const workflowOrderMutation = trpc.viewer.workflowOrder.useMutation({
+  const mutation = trpc.viewer.workflowOrder.useMutation({
     onError: async (err) => {
       console.error(err.message);
       await utils.viewer.workflows.filteredList.cancel();
@@ -72,7 +70,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
   });
 
   async function moveWorkflow(index: number, increment: 1 | -1) {
-    const types = workflows;
+    const types = workflows!;
 
     const newList = [...types];
 
@@ -85,14 +83,14 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
 
     await utils.viewer.appRoutingForms.forms.cancel();
 
-    workflowOrderMutation.mutate({
+    mutation.mutate({
       ids: newList?.map((type) => type.id),
     });
   }
 
   return (
     <>
-      {workflows.length > 0 ? (
+      {workflows && workflows.length > 0 ? (
         <div className="bg-default border-subtle overflow-hidden rounded-md border sm:mx-0">
           <ul className="divide-subtle !static w-full divide-y" data-testid="workflow-list" ref={parent}>
             {workflows.map((workflow, index) => {
@@ -229,7 +227,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                               type="button"
                               color="secondary"
                               variant="icon"
-                              StartIcon="edit-2"
+                              StartIcon="pencil"
                               disabled={workflow.readOnly}
                               onClick={async () => await router.replace(`/workflows/${workflow.id}`)}
                               data-testid="edit-button"
@@ -239,7 +237,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                             <Button
                               onClick={() => {
                                 setDeleteDialogOpen(true);
-                                setWorkflowToDeleteId(workflow.id);
+                                setwWorkflowToDeleteId(workflow.id);
                               }}
                               color="secondary"
                               variant="icon"
@@ -260,7 +258,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                               <DropdownMenuItem>
                                 <DropdownItem
                                   type="button"
-                                  StartIcon="edit-2"
+                                  StartIcon="pencil"
                                   onClick={async () => await router.replace(`/workflows/${workflow.id}`)}>
                                   {t("edit")}
                                 </DropdownItem>
@@ -272,7 +270,7 @@ export default function WorkflowList({ workflows }: WorkflowListProps) {
                                   StartIcon="trash-2"
                                   onClick={() => {
                                     setDeleteDialogOpen(true);
-                                    setWorkflowToDeleteId(workflow.id);
+                                    setwWorkflowToDeleteId(workflow.id);
                                   }}>
                                   {t("delete")}
                                 </DropdownItem>

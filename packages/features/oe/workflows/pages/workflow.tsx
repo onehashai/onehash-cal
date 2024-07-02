@@ -26,7 +26,7 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import type { MultiSelectCheckboxesOptionType as Option } from "@calcom/ui";
 import { Alert, Badge, Button, Form, showToast } from "@calcom/ui";
 
-import SkeletonLoader from "../components/SkeletonLoaderEdit.tsx";
+import SkeletonLoader from "../components/SkeletonLoaderEdit";
 import WorkflowDetailsPage from "../components/WorkflowDetailsPage";
 import { isSMSAction, isSMSOrWhatsappAction } from "../lib/actionHelperFunctions";
 import { getTranslatedText, translateVariablesToEnglish } from "../lib/variableTranslations";
@@ -206,7 +206,7 @@ function WorkflowPage() {
     },
   });
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (values: FormValues) => {
     let activeOnEventTypeIds: number[] = [];
     let isEmpty = false;
     let isVerified = true;
@@ -281,10 +281,9 @@ function WorkflowPage() {
       utils.viewer.workflows.getVerifiedNumbers.invalidate();
     }
   };
-
   return session.data ? (
     <Shell withoutMain backPath="/workflows">
-      <Form form={form} handleSubmit={handlSubmit}>
+      <Form form={form} handleSubmit={handleSubmit}>
         <ShellMain
           backPath="/workflows"
           title={workflow && workflow.name ? workflow.name : "Untitled"}
