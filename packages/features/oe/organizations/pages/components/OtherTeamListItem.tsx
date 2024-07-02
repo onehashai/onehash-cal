@@ -101,7 +101,7 @@ export default function OtherTeamListItem(props: Props) {
                     <DropdownItem
                       type="button"
                       href={`/settings/teams/other/${team.id}/profile`}
-                      StartIcon="edit-2">
+                      StartIcon="pencil">
                       {t("edit_team") as string}
                     </DropdownItem>
                   </DropdownMenuItem>
