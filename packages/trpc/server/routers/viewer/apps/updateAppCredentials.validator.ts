@@ -4,6 +4,7 @@ import type { UpdateAppCredentialsOptions } from "./updateAppCredentials.handler
 
 const validators = {
   paypal: () => import("@calcom/paypal/lib/updateAppCredentials.validator"),
+  razorpay: () => import("@calcom/app-store/razorpay/lib/updateAppCredentials.validator"),
 };
 
 export const handleCustomValidations = async ({

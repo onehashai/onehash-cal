@@ -56,6 +56,7 @@ export const apiHandlers = {
   posthog: import("./posthog/api"),
   qr_code: import("./qr_code/api"),
   raycast: import("./raycast/api"),
+  razorpay: import("./razorpay/api"),
   riverside: import("./riverside/api"),
   roam: import("./roam/api"),
   "routing-forms": import("./routing-forms/api"),
