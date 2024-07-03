@@ -114,7 +114,7 @@ export default function WorkflowListPage({ workflows }: Props) {
                         <div className="flex">
                           <div
                             className={classNames(
-                              "max-w-56 text-emphasis truncate text-sm font-medium leading-6 md:max-w-max",
+                              "text-emphasis max-w-56 truncate text-sm font-medium leading-6 md:max-w-max",
                               workflow.name ? "text-emphasis" : "text-subtle"
                             )}>
                             {workflow.name

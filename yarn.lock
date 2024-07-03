@@ -3755,6 +3755,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@calcom/razorpayapp@workspace:packages/app-store/razorpay":
+  version: 0.0.0-use.local
+  resolution: "@calcom/razorpayapp@workspace:packages/app-store/razorpay"
+  dependencies:
+    "@calcom/app-store": "*"
+    "@calcom/dayjs": "*"
+    "@calcom/emails": "*"
+    "@calcom/features": "*"
+    "@calcom/lib": "*"
+    "@calcom/prisma": "*"
+    "@calcom/types": "*"
+    razorpay: ^2.9.4
+    uuid: ^8.3.2
+    zod: ^3.22.4
+  languageName: unknown
+  linkType: soft
+
 "@calcom/riverside@workspace:packages/app-store/riverside":
   version: 0.0.0-use.local
   resolution: "@calcom/riverside@workspace:packages/app-store/riverside"
@@ -16902,7 +16919,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:*, axios@npm:^1.4.0, axios@npm:^1.6.5, axios@npm:^1.6.7":
+"axios@npm:*, axios@npm:^1.4.0, axios@npm:^1.6.5, axios@npm:^1.6.7, axios@npm:^1.6.8":
   version: 1.7.2
   resolution: "axios@npm:1.7.2"
   dependencies:
@@ -33742,6 +33759,15 @@ __metadata:
     iconv-lite: 0.4.24
     unpipe: 1.0.0
   checksum: ba1583c8d8a48e8fbb7a873fdbb2df66ea4ff83775421bfe21ee120140949ab048200668c47d9ae3880012f6e217052690628cf679ddfbd82c9fc9358d574676
+  languageName: node
+  linkType: hard
+
+"razorpay@npm:^2.9.4":
+  version: 2.9.4
+  resolution: "razorpay@npm:2.9.4"
+  dependencies:
+    axios: ^1.6.8
+  checksum: 0d61f21ad32a487af79b2acb4645dfc5e7703fbceb3f7bdd64be5503eaffb53e145995445cf943d7161e0ad2908b661746255623664691cceedbebcc0ef7df75
   languageName: node
   linkType: hard
 

@@ -154,7 +154,6 @@
       "outputs": ["dist/**", "build/**"]
     },
     "dev": {
-      "dependsOn": [],
       "cache": false
     },
     "dx": {
@@ -457,6 +456,7 @@
     "NEXT_PUBLIC_CALENDLY_API_BASE_URL",
     "NEXT_PUBLIC_CALENDLY_OAUTH_URL",
     "NEXT_PUBLIC_CALENDLY_REDIRECT_URI",
-    "NEXT_PUBLIC_CALENDLY_CLIENT_ID"
+    "NEXT_PUBLIC_CALENDLY_CLIENT_ID",
+    "RAZORPAY_WEBHOOK_SECRET"
   ]
 }

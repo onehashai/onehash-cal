@@ -274,7 +274,7 @@ function EventTypeSingleLayout({
         info: `${activeWebhooksNumber} ${t("active")}`,
       });
     }
-    const hidden = true; // hidden while in alpha trial. you can access it with tabName=ai
+    const hidden = false; // hidden for us
     if (team && hidden) {
       navigation.push({
         name: "Cal.ai",

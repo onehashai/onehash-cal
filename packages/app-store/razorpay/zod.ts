@@ -32,7 +32,4 @@ export const appDataSchema = eventTypeAppCardZod.merge(
     credentialId: z.number().optional(),
   })
 );
-export const appKeysSchema = z.object({
-  key_id: z.string(),
-  key_secret: z.string(),
-});
+export const appKeysSchema = z.object({});
