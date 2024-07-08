@@ -8,7 +8,6 @@ import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
 import KeyCloakProvider from "next-auth/providers/keycloak";
 
-import checkLicense from "@calcom/features/ee/common/server/checkLicense";
 import createUsersAndConnectToOrg from "@calcom/features/ee/dsync/lib/users/createUsersAndConnectToOrg";
 import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/ImpersonationProvider";
 import { clientSecretVerifier, hostedCal, isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
@@ -661,7 +660,7 @@ export const AUTH_OPTIONS: AuthOptions = {
     },
     async session({ session, token, user }) {
       log.debug("callbacks:session - Session callback called", safeStringify({ session, token, user }));
-      const hasValidLicense = await checkLicense(prisma);
+      const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await checkLicense(prisma) : true;
       const profileId = token.profileId;
       session.keycloak_token = token.keycloak_token;
       const calendsoSession: Session = {
