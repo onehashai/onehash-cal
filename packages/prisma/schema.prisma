@@ -267,8 +267,6 @@ model User {
   organization               Team?                        @relation("scope", fields: [organizationId], references: [id])
   platformOAuthClients       PlatformOAuthClient[]        @relation("PlatformOAuthClientToUser")
   eventTypes                 EventType[]                  @relation("user_eventtype")
-  isPlatformManaged          Boolean                      @default(false)
-  smsLockState               SMSLockState                 @default(UNLOCKED)
 
   @@unique([email, username])
   @@unique([username, organizationId])
