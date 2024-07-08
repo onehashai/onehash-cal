@@ -38,7 +38,7 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({
       switchOnClick={(enabled) => {
         setRequirePayment(enabled);
       }}
-      description={<>Add Paypal payment to your events</>}
+      description={<>Add Razorpay payment to your events</>}
       disableSwitch={shouldDisableSwitch}
       switchTooltip={shouldDisableSwitch ? t("other_payment_app_enabled") : undefined}>
       <>

@@ -22,11 +22,9 @@ class RazorpayWrapper {
 
   async test(): Promise<boolean> {
     try {
-      const res = await this.instance.payments.all();
-      console.log(res);
+      await this.instance.payments.all();
       return true;
     } catch (error) {
-      console.error(error);
       return false;
     }
   }
@@ -56,14 +54,12 @@ class RazorpayWrapper {
   //Webh
   async createWebhook(): Promise<string> {
     try {
-      const result = await this.instance.webhooks.create(
-        {
-          url: `${WEBAPP_URL}/api/integrations/razorpay/webhook`,
-          secret: process.env.RAZORPAY_WEBHOOK_SECRET as string,
-          events: ["order.paid"],
-        },
-        this.merchantId
-      );
+      const result = await this.instance.webhooks.create({
+        url: `${WEBAPP_URL}/api/integrations/razorpay/webhook`,
+        secret: process.env.RAZORPAY_WEBHOOK_SECRET as string,
+        events: ["order.paid"],
+      });
+      console.log("Webhook created", result.id);
       return result.id as string;
     } catch (e) {
       console.log("Error creating webhook", e);
@@ -74,17 +70,15 @@ class RazorpayWrapper {
 
   async listWebhooks(): Promise<string[]> {
     try {
-      const res = await this.instance.webhooks.all(
-        {
-          count: 100,
-        },
-        this.merchantId
-      );
+      console.log();
+      const res = await this.instance.webhooks.all({
+        count: 100,
+      });
       const { items: webhooks } = res;
 
       return webhooks
         .filter((webhook: { id: string; url: string }) => {
-          return webhook.url.includes("api/integrations/paypal/webhook");
+          return webhook.url.includes("api/integrations/razorpay/webhook");
         })
         .map((webhook: { id: string }) => webhook.id);
     } catch (e) {

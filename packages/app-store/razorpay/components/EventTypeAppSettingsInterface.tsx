@@ -9,7 +9,7 @@ import type { EventTypeAppSettingsComponent } from "@calcom/app-store/types";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Alert, Select, TextField } from "@calcom/ui";
 
-import { PaypalPaymentOptions as paymentOptions } from "../zod";
+import { RazorpayPaymentOptions as paymentOptions } from "../zod";
 
 type Option = { value: string; label: string };
 

@@ -158,6 +158,7 @@ const OnboardingPage = ({
   const handleSelectAccount = async (teamId?: number) => {
     try {
       setIsSelectingAccount(true);
+      console.log("appSlug", appMetadata.slug);
       if (appMetadata.isOAuth) {
         const state = JSON.stringify({
           appOnboardingRedirectUrl: getAppOnboardingRedirectUrl(appMetadata.slug, teamId),

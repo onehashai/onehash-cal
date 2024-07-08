@@ -9,6 +9,7 @@ import { Button, showToast, TextField } from "@calcom/ui";
 import { Icon } from "@calcom/ui";
 
 export default function RazorpaySetup() {
+  const [newMerchantId, setNewMerchantId] = useState("");
   const [newClientId, setNewClientId] = useState("");
   const [newSecretKey, setNewSecretKey] = useState("");
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function RazorpaySetup() {
       router.push("/event-types");
     },
     onError: (error) => {
+      console.log("in onError", error);
       showToast(error.message, "error");
     },
   });
@@ -37,10 +39,19 @@ export default function RazorpaySetup() {
         <div className="bg-default border-subtle m-auto max-w-[43em] overflow-auto rounded border pb-10 md:p-10">
           <div className="ml-2 md:ml-5 ltr:mr-2 rtl:ml-2">
             <div className="invisible md:visible">
-              <img className="h-11" src="/api/app-store/razorpay/icon.svg" alt="Razorpay Payment Logo" />
+              <img className="h-11" src="/api/app-store/razorpay/icon.png" alt="Razorpay Payment Logo" />
               <p className="text-default mt-5 text-lg">Razorpay</p>
             </div>
             <form autoComplete="off" className="mt-5">
+              <TextField
+                label="Merchant Id"
+                type="text"
+                name="merchant_id"
+                id="merchant_id"
+                value={newMerchantId}
+                onChange={(e) => setNewMerchantId(e.target.value)}
+                role="presentation"
+              />
               <TextField
                 label="Client Id"
                 type="text"
@@ -72,6 +83,7 @@ export default function RazorpaySetup() {
                       key: {
                         key_id: newClientId,
                         key_secret: newSecretKey,
+                        merchant_id: newMerchantId,
                       },
                     });
                   }}>

@@ -22,6 +22,7 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
     props: {
       keyId,
       keySecret,
+      merchantId,
     },
   };
 };
