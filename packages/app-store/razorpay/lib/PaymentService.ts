@@ -20,7 +20,7 @@ export const razorpayCredentialKeysSchema = z.object({
   webhook_id: z.string(),
 });
 
-export class PaymentService implements IAbstractPaymentService {
+export default class PaymentService implements IAbstractPaymentService {
   private credentials: z.infer<typeof razorpayCredentialKeysSchema> | null;
 
   constructor(credentials: { key: Prisma.JsonValue }) {
@@ -37,25 +37,16 @@ export class PaymentService implements IAbstractPaymentService {
     bookingId: Booking["id"]
   ) {
     try {
-      const booking = await prisma.booking.findFirst({
-        select: {
-          uid: true,
-          title: true,
-        },
-        where: {
-          id: bookingId,
-        },
-      });
-      if (!booking || !this.credentials) {
-        throw new Error();
+      if (!this.credentials) {
+        throw new Error("Razorpay: Credentials are not set for the payment service");
       }
 
       const uid = uuidv4();
 
       const razorpayClient = new Razorpay({
-        keyId: this.credentials.key_id,
-        keySecret: this.credentials.key_secret,
-        merchantId: this.credentials.merchant_id,
+        key_id: this.credentials.key_id,
+        key_secret: this.credentials.key_secret,
+        merchant_id: this.credentials.merchant_id,
       });
 
       const orderResult = await razorpayClient.createOrder({
@@ -84,9 +75,9 @@ export class PaymentService implements IAbstractPaymentService {
             {
               order: orderResult,
               key: {
-                keyId: this.credentials.key_id,
-                keySecret: this.credentials.key_secret,
-                merchantId: this.credentials.merchant_id,
+                key_id: this.credentials.key_id,
+                key_secret: this.credentials.key_secret,
+                merchant_id: this.credentials.merchant_id,
               },
             }
           ) as unknown as Prisma.InputJsonValue,
@@ -139,9 +130,9 @@ export class PaymentService implements IAbstractPaymentService {
       const uid = uuidv4();
 
       const razorpayClient = new Razorpay({
-        keyId: this.credentials.key_id,
-        keySecret: this.credentials.key_secret,
-        merchantId: this.credentials.merchant_id,
+        key_id: this.credentials.key_id,
+        key_secret: this.credentials.key_secret,
+        merchant_id: this.credentials.merchant_id,
       });
       const preference = await razorpayClient.createOrder({
         referenceId: uid,

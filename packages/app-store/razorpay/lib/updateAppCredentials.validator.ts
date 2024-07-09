@@ -20,9 +20,9 @@ const handleRazorpayValidations = async ({ input }: UpdateAppCredentialsOptions)
 
   // Test credentials before saving
   const razorpayClient = new Razorpay({
-    keyId: key.key_id,
-    keySecret: key.key_secret,
-    merchantId: key.merchant_id,
+    key_id: key.key_id,
+    key_secret: key.key_secret,
+    merchant_id: key.merchant_id,
   });
   const test = await razorpayClient.test();
   if (!test) throw new Error("Provided credentials failed to authenticate");
@@ -50,8 +50,8 @@ const handleRazorpayValidations = async ({ input }: UpdateAppCredentialsOptions)
   }
 
   return {
-    client_id: key.key_id,
-    secret_key: key.key_secret,
+    key_id: key.key_id,
+    key_secret: key.key_secret,
     webhook_id: webhookId,
     merchant_id: key.merchant_id,
   };

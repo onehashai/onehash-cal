@@ -171,7 +171,11 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
                     <AlbyPaymentComponent payment={props.payment} paymentPageProps={props} />
                   )}
                   {props.payment.appId === "razorpay" && !props.payment.success && (
-                    <RazorpayPaymentComponent payment={props.payment} key_id={props.config.key_id} />
+                    <RazorpayPaymentComponent
+                      payment={props.payment}
+                      key_id={props.config.key_id}
+                      bookingId={props.booking.id}
+                    />
                   )}
                   {props.payment.refunded && (
                     <div className="text-default mt-4 text-center dark:text-gray-300">{t("refunded")}</div>

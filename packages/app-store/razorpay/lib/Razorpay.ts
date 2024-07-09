@@ -5,18 +5,26 @@ import { WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 
 class RazorpayWrapper {
-  keyId: string;
-  keySecret: string;
-  merchantId: string;
+  key_id: string;
+  key_secret: string;
+  merchant_id: string;
   instance: Razorpay;
 
-  constructor({ keyId, keySecret, merchantId }: { keyId: string; keySecret: string; merchantId: string }) {
-    this.keyId = keyId;
-    this.keySecret = keySecret;
-    this.merchantId = merchantId;
+  constructor({
+    key_id,
+    key_secret,
+    merchant_id,
+  }: {
+    key_id: string;
+    key_secret: string;
+    merchant_id: string;
+  }) {
+    this.key_id = key_id;
+    this.key_secret = key_secret;
+    this.merchant_id = merchant_id;
     this.instance = new Razorpay({
-      key_id: this.keyId,
-      key_secret: this.keySecret,
+      key_id: this.key_id,
+      key_secret: this.key_secret,
     });
   }
 
@@ -89,7 +97,7 @@ class RazorpayWrapper {
 
   async deleteWebhook({ webhookId }: { webhookId: string }): Promise<boolean> {
     try {
-      await this.instance.webhooks.delete(webhookId, this.merchantId);
+      await this.instance.webhooks.delete(webhookId, this.merchant_id);
       return true;
     } catch (error) {
       console.error(error);

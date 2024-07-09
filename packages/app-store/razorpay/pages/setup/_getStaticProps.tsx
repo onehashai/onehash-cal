@@ -4,25 +4,25 @@ import getAppKeysFromSlug from "../../../_utils/getAppKeysFromSlug";
 
 export const getStaticProps = async (ctx: GetStaticPropsContext) => {
   if (typeof ctx.params?.slug !== "string") return { notFound: true } as const;
-  let keyId = "";
-  let keySecret = "";
-  let merchantId = "";
+  let key_id = "";
+  let key_secret = "";
+  let merchant_id = "";
   const appKeys = await getAppKeysFromSlug("razorpay");
   if (
     typeof appKeys.key_id === "string" &&
     typeof appKeys.key_secret === "string" &&
     typeof appKeys.merchant_id === "string"
   ) {
-    keyId = appKeys.key_id;
-    keySecret = appKeys.key_secret;
-    merchantId = appKeys.merchant_id;
+    key_id = appKeys.key_id;
+    key_secret = appKeys.key_secret;
+    merchant_id = appKeys.merchant_id;
   }
 
   return {
     props: {
-      keyId,
-      keySecret,
-      merchantId,
+      key_id,
+      key_secret,
+      merchant_id,
     },
   };
 };

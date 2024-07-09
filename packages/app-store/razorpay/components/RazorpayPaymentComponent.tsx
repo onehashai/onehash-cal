@@ -4,8 +4,7 @@ import Script from "next/script";
 import { useState } from "react";
 
 import { COMPANY_NAME } from "@calcom/lib/constants";
-import { Button } from "@calcom/ui";
-import { ErrorToast } from "@calcom/ui/components/toast";
+import { Button, showToast } from "@calcom/ui";
 
 declare global {
   interface Window {
@@ -14,15 +13,15 @@ declare global {
 }
 interface IRazorpayPaymentComponentProps {
   payment: {
-    // Will be parsed on render
     currency: string;
     amount: number;
     data: unknown;
   };
   key_id: string;
+  bookingId: string;
 }
 
-export const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) => {
+const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) => {
   const { data: userData } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -53,16 +52,14 @@ export const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) 
       try {
         loadScript("https://checkout.razorpay.com/v1/checkout.js");
       } catch (e) {
-        ErrorToast({
-          message: "Failed to instantiate Razorpay. Please try again.",
-        });
+        showToast("Failed to instantiate Razorpay. Please try again.", "error");
         return;
       }
 
     setIsLoading(true);
     const key = props.key_id;
     const data = await fetch(
-      `/api/order/create?amount=${props.payment.amount}&currency=${props.payment.currency}`
+      `/api/integration/razorpay/create-order?amount=${props.payment.amount}&currency=${props.payment.currency}&bookingId=${props.bookingId}`
     );
     const { order } = await data?.json();
     const options = {
@@ -81,19 +78,22 @@ export const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) 
         razorpay_order_id: string;
         razorpay_signature: string;
       }) {
-        const data = await fetch("/api/order/verify", {
+        const data = await fetch("/api/integration/razorpay/capture", {
           method: "POST",
           body: JSON.stringify({
             razorpayPaymentId: response.razorpay_payment_id,
             razorpayOrderId: response.razorpay_order_id,
             razorpaySignature: response.razorpay_signature,
+            bookingId: props.bookingId,
           }),
         });
 
         const res = await data.json();
-        if (res?.error === false) {
-          // redirect to success page
-          router.push("/success");
+        if (res.isOk) {
+          router.replace(res.redirect);
+        } else {
+          showToast(`Error: ${res.message}`, "error");
+          if (res.redirect) router.replace(res.redirect);
         }
       },
       prefill: {
@@ -106,10 +106,9 @@ export const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) 
     paymentObject.open();
 
     paymentObject.on("payment.failed", function (response) {
-      ErrorToast({
-        message: `Payment failed with error: ${response.error.description}`,
-      });
+      showToast(`Payment failed with error: ${response.error.description}`, "error");
       setIsLoading(false);
+      router.replace(`/booking/${props.bookingId}?paypalPaymentStatus=failed`);
     });
   };
 
@@ -125,4 +124,4 @@ export const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) 
   );
 };
 
-export default PaymentButton;
+export default RazorpayPaymentComponent;
