@@ -31,7 +31,7 @@ import {
   SystemField,
   TITLE_FIELD,
 } from "@calcom/features/bookings/lib/SystemField";
-import { APP_NAME } from "@calcom/lib/constants";
+import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
 import {
   formatToLocalizedDate,
   formatToLocalizedTime,
@@ -833,7 +833,7 @@ export default function Success(props: PageProps) {
                               const target = e.target as typeof e.target & {
                                 email: { value: string };
                               };
-                              router.push(`https://cal.com/signup?email=${target.email.value}`);
+                              router.push(`${WEBAPP_URL}/signup?email=${target.email.value}`);
                             }}
                             className="mt-4 flex">
                             <EmailInput
