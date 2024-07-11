@@ -231,6 +231,8 @@ model User {
   locked                     Boolean                      @default(false)
   appTheme                   String?
   movedToProfileId           Int?                         @unique
+  isPlatformManaged          Boolean                      @default(false)
+  smsLockState               SMSLockState                 @default(UNLOCKED)
   accessCodes                AccessCode[]
   AccessToken                AccessToken[]
   accounts                   Account[]
