@@ -92,6 +92,7 @@ export const DailyVideoDownloadRecordingEmail = (
         <Trans i18nKey="link_valid_for_12_hrs">
           Note: The download link is valid only for 12 hours. You can generate new download link by following
           instructions
+          {/* TODO:UPDATE LINK REFERENCE */}
           <a href="https://cal.com/docs/enterprise-features/teams/cal-video-recordings"> here</a>
         </Trans>
       </p>
