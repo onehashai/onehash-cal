@@ -87,7 +87,7 @@ export default function TeamListItem(props: Props) {
     <div className="item-center flex px-5 py-5">
       <Avatar
         size="md"
-        imageSrc={getPlaceholderAvatar(team?.logo, team?.name as string)}
+        imageSrc={getPlaceholderAvatar(team?.logoUrl, team?.name as string)}
         alt="Team Logo"
         className="inline-flex justify-center"
       />
