@@ -823,7 +823,7 @@ export default function Success(props: PageProps) {
                       <>
                         <hr className="border-subtle mt-8" />
                         <div className="text-default pt-8 text-center text-xs">
-                          <a href="https://cal.com/signup">
+                          <a href={`${WEBAPP_URL}/signup`}>
                             {t("create_booking_link_with_calcom", { appName: APP_NAME })}
                           </a>
 
@@ -970,7 +970,7 @@ export default function Success(props: PageProps) {
                       <span className="underline">
                         <a
                           target="_blank"
-                          href="https://cal.com/blog/google-s-new-spam-policy-may-be-affecting-your-invitations">
+                          href="https://www.onehash.ai/blog/googles-new-spam-policy-may-be-affecting-your-invitations">
                           {t("resolve")}
                         </a>
                       </span>
