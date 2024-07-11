@@ -22,7 +22,7 @@ export const WEBAPP_URL_FOR_OAUTH = IS_PRODUCTION || IS_DEV ? WEBAPP_URL : "http
 
 /** @deprecated use `WEBAPP_URL` */
 export const BASE_URL = WEBAPP_URL;
-export const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://www.onehash.ai";
+export const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://cal.id";
 export const ONEHASH_URL = process.env.NEXT_PUBLIC_ONEHASH_URL || "https://www.onehash.ai";
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "OneHash Cal";
 export const SUPPORT_MAIL_ADDRESS = process.env.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS || "support@onehash.ai";

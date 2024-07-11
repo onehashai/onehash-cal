@@ -99,7 +99,7 @@ export const helpCards: HelpCardInfo[] = [
       "Book our engineering team for a 15 minute onboarding call and debug a problem. Please come prepared with questions.",
     variant: "basic",
     actionButton: {
-      href: "https://i.cal.com/platform",
+      href: "https://cal.id/team/onehash-eng",
       child: "Schedule a call",
     },
   },

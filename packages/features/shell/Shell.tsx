@@ -673,6 +673,7 @@ const platformNavigation: NavigationItemType[] = [
   },
   {
     name: "Documentation",
+    //TODO:UPDATE LINK REFERENCE
     href: "https://docs.cal.com/docs/platform",
     icon: "bar-chart",
     target: "_blank",
@@ -685,12 +686,14 @@ const platformNavigation: NavigationItemType[] = [
   },
   {
     name: "Atoms",
+    //TODO:UPDATE LINK REFERENCE
     href: "https://docs.cal.com/docs/platform#atoms",
     icon: "atom",
     target: "_blank",
   },
   {
     name: MORE_SEPARATOR_NAME,
+    //TODO:UPDATE LINK REFERENCE
     href: "https://docs.cal.com/docs/platform/faq",
     icon: "ellipsis",
     target: "_blank",

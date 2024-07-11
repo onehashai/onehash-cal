@@ -109,6 +109,7 @@ const tabs: VerticalTabItemProps[] = [
       },
       // {
       //   name: "admin_api",
+      //   // TODO:UPDATE LINK REFERENCE
       //   href: "https://cal.com/docs/enterprise-features/api/api-reference/bookings#admin-access",
       // },
     ],
