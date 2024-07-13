@@ -108,7 +108,7 @@ const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) => {
     paymentObject.on("payment.failed", function (response) {
       showToast(`Payment failed with error: ${response.error.description}`, "error");
       setIsLoading(false);
-      router.replace(`/booking/${props.bookingId}?paypalPaymentStatus=failed`);
+      router.replace(`/booking/${props.bookingId}?razorpayPaymentStatus=failed`);
     });
   };
 

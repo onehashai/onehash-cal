@@ -4,6 +4,10 @@ import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 
+export enum WebhookEvents {
+  PAYMENT_CAPTURED = "payment.captured",
+}
+
 class RazorpayWrapper {
   key_id: string;
   key_secret: string;
@@ -65,7 +69,7 @@ class RazorpayWrapper {
       const result = await this.instance.webhooks.create({
         url: `${WEBAPP_URL}/api/integrations/razorpay/webhook`,
         secret: process.env.RAZORPAY_WEBHOOK_SECRET as string,
-        events: ["order.paid"],
+        events: [WebhookEvents.PAYMENT_CAPTURED],
       });
       console.log("Webhook created", result.id);
       return result.id as string;
@@ -105,7 +109,7 @@ class RazorpayWrapper {
     return false;
   }
 
-  verifyWebhook({
+  static verifyWebhook({
     body,
     signature,
     webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET,

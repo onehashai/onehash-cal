@@ -30,8 +30,6 @@ const handleRazorpayValidations = async ({ input }: UpdateAppCredentialsOptions)
   // Delete all existing webhooks
   const webhooksToDelete = await razorpayClient.listWebhooks();
 
-  console.log("Deleting webhooks", webhooksToDelete);
-
   if (webhooksToDelete) {
     const promises = webhooksToDelete.map((webhook) =>
       razorpayClient.deleteWebhook({
@@ -40,7 +38,6 @@ const handleRazorpayValidations = async ({ input }: UpdateAppCredentialsOptions)
     );
     await Promise.all(promises);
   }
-  throw new Error("Not implemented");
   // Create webhook for this installation
   const webhookId = await razorpayClient.createWebhook();
   if (!webhookId) {

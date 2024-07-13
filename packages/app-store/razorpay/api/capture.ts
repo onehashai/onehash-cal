@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.json({
         message: "Payment signature mismatch",
         isOk: false,
-        redirect: `/booking/${bookingId}?paypalPaymentStatus=failed`,
+        redirect: `/booking/${bookingId}?razorpayPaymentStatus=failed`,
       });
     }
     const payment = await prisma.payment.findUnique({
@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.json({
         message: "Payment was not initiated from our system",
         isOk: false,
-        redirect: `/booking/${bookingId}?paypalPaymentStatus=failed`,
+        redirect: `/booking/${bookingId}?razorpayPaymentStatus=failed`,
       });
     }
     await handlePaymentSuccess(payment.id, Number(bookingId));
