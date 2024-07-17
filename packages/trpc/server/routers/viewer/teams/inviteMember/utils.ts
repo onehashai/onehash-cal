@@ -380,17 +380,20 @@ export async function createMemberships({
   try {
     await prisma.membership.createMany({
       data: invitees.flatMap((invitee) => {
-        const organizationRole = invitee?.teams?.[0]?.role;
+        //TODO:Logic of assignig role as per the role of user in 0th index team not clear
+        // const organizationRole = invitee?.teams?.[0]?.role;
+        // const role =
+        //   organizationRole === MembershipRole.ADMIN || organizationRole === MembershipRole.OWNER
+        //     ? organizationRole
+        //     : invitee.newRole;
+        const role = invitee.newRole;
         const data = [];
         // membership for the team
         data.push({
           teamId: input.teamId,
           userId: invitee.id,
           accepted,
-          role:
-            organizationRole === MembershipRole.ADMIN || organizationRole === MembershipRole.OWNER
-              ? organizationRole
-              : invitee.newRole,
+          role: role,
         });
 
         // membership for the org
