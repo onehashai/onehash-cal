@@ -1,6 +1,5 @@
 //WEBHOOK EVENTS ASSOCIATED EXAMPLE PAYLOADS : https://razorpay.com/docs/webhooks/payloads/payments/
 import type { NextApiRequest, NextApiResponse } from "next";
-import { findPaymentCredentials } from "razorpay/lib/getAppConfigsByBookingID";
 import { z } from "zod";
 
 import { default as Razorpay, WebhookEvents } from "@calcom/app-store/razorpay/lib/Razorpay";
@@ -9,6 +8,8 @@ import { getErrorFromUnknown } from "@calcom/lib/errors";
 import { HttpError as HttpCode } from "@calcom/lib/http-error";
 import { handlePaymentSuccess } from "@calcom/lib/payment/handlePaymentSuccess";
 import prisma from "@calcom/prisma";
+
+import { findPaymentCredentials } from "../lib/getAppConfigsByBookingID";
 
 export const config = {
   api: {

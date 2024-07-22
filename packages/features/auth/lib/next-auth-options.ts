@@ -1,5 +1,4 @@
 import type { Membership, Team, UserPermissionRole } from "@prisma/client";
-import checkLicense from "ee/common/server/checkLicense";
 import type { AuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { encode } from "next-auth/jwt";
