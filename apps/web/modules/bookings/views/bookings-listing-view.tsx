@@ -110,7 +110,9 @@ export default function Bookings() {
   const allBookingsQuery = trpc.viewer.bookings.get.useInfiniteQuery(
     {
       limit: 10,
-      filters: {},
+      filters: {
+        status: filterQuery.status ?? status,
+      },
     },
     {
       // first render has status `undefined`

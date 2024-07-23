@@ -19,7 +19,7 @@ const PoweredByCal = ({ logoOnly }: { logoOnly?: boolean }) => {
           <>
             <img
               className="relative -mt-px inline h-[10px] w-auto dark:invert"
-              src="/api/logo"
+              src="/cal-logo-word.svg"
               alt="Cal Logo"
             />
           </>

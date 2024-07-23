@@ -115,6 +115,7 @@ const DeleteDialogButton = ({
           className={buttonClassName}
           disabled={disabled}
           tooltip={disabled ? t("requires_at_least_one_schedule") : t("delete")}
+          tooltipSide="bottom"
         />
       </DialogTrigger>
 
@@ -204,7 +205,7 @@ const SmallScreenSideBar = ({ open, children }: { open: boolean; children: JSX.E
     <div
       className={classNames(
         open
-          ? "fadeIn fixed inset-0 z-50 bg-neutral-800 bg-opacity-70 transition-opacity dark:bg-opacity-70 sm:hidden"
+          ? "fadeIn fixed inset-0 z-50 bg-neutral-800 bg-opacity-70 transition-opacity sm:hidden dark:bg-opacity-70"
           : ""
       )}>
       <div
@@ -340,7 +341,7 @@ export function AvailabilitySettings({
               <div
                 className={classNames(
                   openSidebar
-                    ? "fadeIn fixed inset-0 z-50 bg-neutral-800 bg-opacity-70 transition-opacity dark:bg-opacity-70 sm:hidden"
+                    ? "fadeIn fixed inset-0 z-50 bg-neutral-800 bg-opacity-70 transition-opacity sm:hidden dark:bg-opacity-70"
                     : ""
                 )}>
                 <div
@@ -398,8 +399,8 @@ export function AvailabilitySettings({
                     />
                   </div>
 
-                  <div className="min-w-40 col-span-3 space-y-2 px-2 py-4 lg:col-span-1">
-                    <div className="xl:max-w-80 w-full pr-4 sm:ml-0 sm:mr-36 sm:p-0">
+                  <div className="col-span-3 min-w-40 space-y-2 px-2 py-4 lg:col-span-1">
+                    <div className="w-full pr-4 sm:ml-0 sm:mr-36 sm:p-0 xl:max-w-80">
                       <div>
                         <Skeleton
                           as={Label}
@@ -522,8 +523,8 @@ export function AvailabilitySettings({
               <></>
             )}
           </div>
-          <div className="min-w-40 col-span-3 hidden space-y-2 md:block lg:col-span-1">
-            <div className="xl:max-w-80 w-full pr-4 sm:ml-0 sm:mr-36 sm:p-0">
+          <div className="col-span-3 hidden min-w-40 space-y-2 md:block lg:col-span-1">
+            <div className="w-full pr-4 sm:ml-0 sm:mr-36 sm:p-0 xl:max-w-80">
               <div>
                 <Skeleton
                   as={Label}
