@@ -15,9 +15,17 @@ export type PhoneInputProps = {
   name?: string;
   disabled?: boolean;
   onChange: (value: string) => void;
+  autoFormat?: boolean;
 };
 
-function BasePhoneInput({ name, className = "", onChange, value, ...rest }: PhoneInputProps) {
+function BasePhoneInput({
+  name,
+  className = "",
+  onChange,
+  value,
+  autoFormat = false,
+  ...rest
+}: PhoneInputProps) {
   const defaultCountry = useDefaultCountry();
 
   return (
@@ -55,6 +63,7 @@ function BasePhoneInput({ name, className = "", onChange, value, ...rest }: Phon
         marginLeft: "-4px",
       }}
       dropdownStyle={{ width: "max-content" }}
+      autoFormat={autoFormat}
     />
   );
 }

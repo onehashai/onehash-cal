@@ -2,6 +2,7 @@
 
 import classNames from "classnames";
 import type { InferGetServerSidePropsType } from "next";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Toaster } from "react-hot-toast";
 
@@ -23,6 +24,7 @@ import { type getServerSideProps } from "./users-public-view.getServerSideProps"
 
 export function UserPage(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { users, profile, eventTypes, markdownStrippedBio, entity } = props;
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   const [user] = users; //To be used when we only have a single user, not dynamic group
   useTheme(profile.theme);
@@ -157,6 +159,9 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
           </div>
 
           {isEventListEmpty && <EmptyPage name={profile.name || "User"} />}
+          <div key="logo" className={classNames("flex w-full justify-center [&_img]:h-[32px]")}>
+            <PoweredBy logoOnly />
+          </div>
         </main>
         <Toaster position="bottom-right" />
       </div>

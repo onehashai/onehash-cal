@@ -683,7 +683,7 @@
   "your_full_name": "Your full name",
   "no_name": "No name",
   "enter_number_between_range": "Please enter a number between 1 and {{maxOccurences}}",
-  "email_address": "Email address",
+  "email_address": "Email Address",
   "enter_valid_email": "Please enter a valid email",
   "please_schedule_future_call": " Please schedule a future call if we're not available in {{seconds}} seconds",
   "location": "Location",
