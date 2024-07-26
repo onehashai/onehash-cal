@@ -41,9 +41,9 @@ export default function FormInputFields(props: Props) {
         });
         return (
           <div key={field.id} className="mb-4 block flex-col sm:flex ">
-            <div className="min-w-48 mb-2 flex-grow">
+            <div className="mb-2 min-w-48 flex-grow">
               <label id="slug-label" htmlFor="slug" className="text-default flex text-sm font-medium">
-                {field.label}
+                {field.required ? `${field.label}*` : field.label}
               </label>
             </div>
             <Component

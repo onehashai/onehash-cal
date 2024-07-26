@@ -13,28 +13,28 @@ export default function OneHashChatScript() {
   useEffect(() => {
     window.chatwootSettings = {
       hideMessageBubble: false,
-      position: "left",
+      position: "right",
       locale: "en",
       type: "expanded",
     };
   }, []);
 
-  const handleScriptLoad = () => {
-    const elements = document.querySelectorAll(".woot-widget-bubble.woot-elements--left");
-    console.log("elements", elements);
-    elements.forEach((element) => {
-      const el = element as HTMLElement;
-      adjustChatWidgetPosition(el);
-    });
+  // const handleScriptLoad = () => {
+  //   const elements = document.querySelectorAll(".woot-widget-bubble.woot-elements--left");
+  //   console.log("elements", elements);
+  //   elements.forEach((element) => {
+  //     const el = element as HTMLElement;
+  //     adjustChatWidgetPosition(el);
+  //   });
 
-    // Adjust position on window resize
-    window.addEventListener("resize", () => {
-      elements.forEach((element) => {
-        const el = element as HTMLElement;
-        adjustChatWidgetPosition(el);
-      });
-    });
-  };
+  //   // Adjust position on window resize
+  //   window.addEventListener("resize", () => {
+  //     elements.forEach((element) => {
+  //       const el = element as HTMLElement;
+  //       adjustChatWidgetPosition(el);
+  //     });
+  //   });
+  // };
 
   const adjustChatWidgetPosition = (element: HTMLElement) => {
     // Get viewport height
@@ -63,9 +63,9 @@ export default function OneHashChatScript() {
           baseUrl: "https://chat.onehash.ai",
         });
 
-        setTimeout(() => {
-          handleScriptLoad();
-        }, 1000);
+        // setTimeout(() => {
+        //   handleScriptLoad();
+        // }, 1000);
       }}
     />
   );
