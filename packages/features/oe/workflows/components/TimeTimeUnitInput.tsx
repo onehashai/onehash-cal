@@ -45,7 +45,7 @@ export const TimeTimeUnitInput = (props: Props) => {
                   <div className="mr-1 w-3/4">
                     {timeUnit ? t(`${timeUnit.toLowerCase()}_timeUnit`) : "undefined"}{" "}
                   </div>
-                  <div className="w-1/4 pt-1">
+                  <div className=" pt-1">
                     <Icon name="chevron-down" />
                   </div>
                 </button>

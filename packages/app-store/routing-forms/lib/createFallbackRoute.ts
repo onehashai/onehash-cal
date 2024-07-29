@@ -9,7 +9,7 @@ export const createFallbackRoute = (): Exclude<SerializableRoute, GlobalRoute> =
     isFallback: true,
     action: {
       type: "customPageMessage",
-      value: "Thank you for your interest! We will be in touch soon.",
+      value: "TEst",
     },
     queryValue: { id: uuid, type: "group" },
   };
