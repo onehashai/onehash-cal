@@ -111,7 +111,7 @@ export default function Bookings() {
     {
       limit: 10,
       filters: {
-        status: filterQuery.status ?? status,
+        status: "all",
       },
     },
     {
@@ -137,7 +137,6 @@ export default function Bookings() {
     const fetchAllBookings = async () => {
       const data = await allBookingsQuery.fetchNextPage();
       allBookings = allBookings.concat(data.data?.pages.map((page) => page.bookings).flat() ?? []);
-
       // Recursively fetching next page if available
       if (data.hasNextPage) {
         await fetchAllBookings();
@@ -172,8 +171,11 @@ export default function Bookings() {
         startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("D MMMM YYYY");
       }
 
-      const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} -
-        ${formatTime(booking.endTime, user?.timeFormat, user?.timeZone)}`;
+      const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} to ${formatTime(
+        booking.endTime,
+        user?.timeFormat,
+        user?.timeZone
+      )}`;
 
       allBookingsWithType.push({ ...booking, type, startDate, interval });
     });

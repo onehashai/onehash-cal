@@ -159,7 +159,7 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
           </div>
 
           {isEventListEmpty && <EmptyPage name={profile.name || "User"} />}
-          <div key="logo" className={classNames("flex w-full justify-center [&_img]:h-[32px]")}>
+          <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
             <PoweredBy logoOnly />
           </div>
         </main>

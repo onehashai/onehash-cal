@@ -11,7 +11,7 @@ export default function ExportBookingsButton({ handleExportBookings }: ExportBoo
 
   return (
     <Button color="secondary" onClick={() => handleExportBookings()} className="mb-4">
-      <Icon name="arrow-up-right-from-circle" className="h-4 w-4" />
+      <Icon name="circle-arrow-out-up-right" className="h-4 w-4" />
       <Tooltip content={t("export_bookings_desc")}>
         <div className="mx-2">{t("export_bookings")}</div>
       </Tooltip>
