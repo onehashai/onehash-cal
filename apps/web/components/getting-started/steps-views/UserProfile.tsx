@@ -44,8 +44,9 @@ const UserProfile = (props: IUserProfileProps) => {
   });
   const onSubmit = handleSubmit((data: { bio: string }) => {
     const { bio } = data;
-
+    const enteredAvatar = avatarRef.current?.value;
     mutation.mutate({
+      avatarUrl: enteredAvatar,
       metadata: {
         currentOnboardingStep: "import-data",
       },
@@ -55,10 +56,6 @@ const UserProfile = (props: IUserProfileProps) => {
 
   async function updateProfileHandler(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const enteredAvatar = avatarRef.current?.value;
-    mutation.mutate({
-      avatarUrl: enteredAvatar,
-    });
   }
 
   return (
@@ -113,7 +110,7 @@ const UserProfile = (props: IUserProfileProps) => {
         EndIcon="arrow-right"
         type="submit"
         className="mt-8 w-full items-center justify-center">
-        {t("finish")}
+        {t("next_step_text")}
       </Button>
     </form>
   );

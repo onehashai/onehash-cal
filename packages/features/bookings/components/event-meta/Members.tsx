@@ -4,7 +4,7 @@ import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { getBookerBaseUrlSync } from "@calcom/lib/getBookerUrl/client";
 import { getTeamUrlSync } from "@calcom/lib/getBookerUrl/client";
 import { SchedulingType } from "@calcom/prisma/enums";
-import { AvatarGroup } from "@calcom/ui";
+import { AvatarGroup, Icon } from "@calcom/ui";
 
 import type { PublicEvent } from "../../types";
 
@@ -50,6 +50,11 @@ export const EventMembers = ({ schedulingType, users, profile, entity }: EventMe
 
   return (
     <>
+      <Icon
+        name="arrow-left"
+        className=" text-subtle mb-3 h-4 w-4"
+        onClick={() => window.history.length > 1 && window.history.go(-1)}
+      />
       <AvatarGroup
         size="sm"
         className="border-muted"
@@ -65,7 +70,6 @@ export const EventMembers = ({ schedulingType, users, profile, entity }: EventMe
           })),
         ]}
       />
-
       <p className="text-subtle mt-2 text-sm font-semibold">
         {showOnlyProfileName
           ? profile.name

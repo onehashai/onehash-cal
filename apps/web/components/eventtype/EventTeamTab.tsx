@@ -116,6 +116,7 @@ const FixedHosts = ({
           </div>
           <div className="border-subtle rounded-b-md border border-t-0">
             <AddMembersWithSwitch
+              placeholder={t("select_host_placeholder")}
               teamMembers={teamMembers}
               value={value}
               onChange={onChange}
@@ -157,6 +158,7 @@ const FixedHosts = ({
           childrenClassName="lg:ml-0">
           <div className="border-subtle flex flex-col gap-6 rounded-bl-md rounded-br-md border border-t-0">
             <AddMembersWithSwitch
+              placeholder={t("select_host_placeholder")}
               teamMembers={teamMembers}
               value={value}
               onChange={onChange}
@@ -208,6 +210,7 @@ const RoundRobinHosts = ({
       </div>
       <div className="border-subtle rounded-b-md border border-t-0">
         <AddMembersWithSwitch
+          placeholder={t("select_host_placeholder")}
           teamMembers={teamMembers}
           value={value}
           onChange={onChange}

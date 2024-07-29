@@ -4,6 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/r
 import classNames from "classnames";
 import { createEvent } from "ics";
 import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -194,6 +195,7 @@ export default function Success(props: PageProps) {
   const sendFeedback = async (rating: string, comment: string) => {
     mutation.mutate({ bookingUid: bookingInfo.uid, rating: rateValue, comment: comment });
   };
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   function setIsCancellationMode(value: boolean) {
     const _searchParams = new URLSearchParams(searchParams ?? undefined);
@@ -822,9 +824,10 @@ export default function Success(props: PageProps) {
                     {session === null && !(userIsOwner || props.hideBranding) && (
                       <>
                         <hr className="border-subtle mt-8" />
-                        <div className="text-default pt-8 text-center text-xs">
-                          <a href={`${WEBAPP_URL}/signup`}>
+                        <div className="text-default pt-3 text-center text-xs">
+                          <a href={`${WEBAPP_URL}/signup`} className="text-[14px] font-medium text-blue-500">
                             {t("create_booking_link_with_calcom", { appName: APP_NAME })}
+                            <Icon name="external-link" className="ml-1 inline-block h-4 w-4" />
                           </a>
 
                           <form
@@ -960,6 +963,7 @@ export default function Success(props: PageProps) {
                     </>
                   ))}
               </div>
+
               {isGmail && !isFeedbackMode && (
                 <Alert
                   className="main -mb-20 mt-4 inline-block sm:-mt-4 sm:mb-4 sm:w-full sm:max-w-xl sm:align-middle ltr:text-left rtl:text-right"
@@ -982,6 +986,9 @@ export default function Success(props: PageProps) {
               )}
             </div>
           </div>
+        </div>
+        <div key="logo" className={classNames("flex w-full justify-center [&_img]:h-[32px]")}>
+          <PoweredBy logoOnly />
         </div>
       </main>
       <Toaster position="bottom-right" />

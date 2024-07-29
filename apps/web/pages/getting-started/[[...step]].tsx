@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Head from "next/head";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense } from "react";
@@ -22,6 +23,7 @@ import UserProfile from "@components/getting-started/steps-views/UserProfile";
 import { UserSettings } from "@components/getting-started/steps-views/UserSettings";
 
 export { getServerSideProps } from "@lib/getting-started/[[...step]]/getServerSideProps";
+const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
 const INITIAL_STEP = "user-settings";
 const steps = [
@@ -202,6 +204,9 @@ const OnboardingPage = () => {
                 </Button>
               </div>
             )}
+          </div>
+          <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+            <PoweredBy logoOnly />
           </div>
         </div>
       </div>
