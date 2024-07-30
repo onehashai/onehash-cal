@@ -75,6 +75,7 @@ const descriptionByStatus: Record<NonNullable<BookingListingStatus>, string> = {
   past: "past_bookings",
   cancelled: "cancelled_bookings",
   unconfirmed: "unconfirmed_bookings",
+  all: "all",
 };
 
 const querySchema = z.object({
@@ -177,7 +178,13 @@ export default function Bookings() {
         user?.timeZone
       )}`;
 
-      allBookingsWithType.push({ ...booking, type, startDate, interval });
+      allBookingsWithType.push({
+        ...booking,
+        type,
+        startDate: `"${startDate}"`,
+        interval,
+        description: `"${booking.description}"`,
+      });
     });
 
     const header = [
