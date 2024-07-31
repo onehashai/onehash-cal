@@ -2,6 +2,7 @@ import type { TFunction } from "next-i18next";
 import short from "short-uuid";
 import { v5 as uuidv5 } from "uuid";
 
+import { getRunningLateLink } from "@calcom/features/bookings/lib/getRunningLateLink";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
 import { WEBAPP_URL } from "./constants";
@@ -292,6 +293,22 @@ ${calEvent.paymentInfo.link}
     : ""
 }
   `.trim();
+};
+
+export const getRunningLateSection = (calEvent: CalendarEvent, t: TFunction) => {
+  if (calEvent.organizer.hasOrganized) {
+    return calEvent.attendees.map((attendee) => {
+      if (!attendee.phoneNumber) return "";
+      return ` ${t("running_late")}:
+        <a href="${getRunningLateLink()}" > ${t("connect_with_attendee", { name: attendee.name })} </a>`;
+    });
+  }
+  if (calEvent.organizer.phoneNumber) {
+    return `
+  ${t("running_late")}:
+  <a href="${getRunningLateLink(calEvent.organizer.phoneNumber)}">${t("connect_with_organizer")}</a>
+    `;
+  }
 };
 
 export const getCancellationReason = (calEvent: CalendarEvent, t: TFunction) => {

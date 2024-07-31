@@ -1630,6 +1630,7 @@ async function handler(
         isPrismaObj(organizerUser.metadata) && organizerUser.metadata?.phoneNumber
           ? (organizerUser.metadata?.phoneNumber as string)
           : undefined,
+      hasOrganized: true,
     },
     responses: reqBody.calEventResponses || null,
     userFieldsResponses: reqBody.calEventUserFieldsResponses || null,
