@@ -24,6 +24,7 @@ export default class OrganizerScheduledEmail extends BaseEmail {
     this.t = this.calEvent.organizer.language.translate;
     this.newSeat = input.newSeat;
     this.teamMember = input.teamMember;
+    this.calEvent.organizer.hasOrganized = true;
   }
 
   protected async getNodeMailerPayload(): Promise<Record<string, unknown>> {

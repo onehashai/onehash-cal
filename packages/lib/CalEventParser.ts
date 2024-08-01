@@ -297,21 +297,13 @@ ${getRunningLateSection(calEvent, t)}
 };
 
 export const getRunningLateSection = (calEvent: CalendarEvent, t: TFunction) => {
-  if (calEvent.organizer.hasOrganized) {
-    return calEvent.attendees.map((attendee) => {
-      if (!attendee.phoneNumber) return "";
-      return ` ${t("running_late")}:
-        <a href="${getRunningLateLink(attendee.phoneNumber)}" > ${t("connect_with_attendee", {
-        name: attendee.name,
-      })} </a>`;
-    });
-  }
-  if (calEvent.organizer.phoneNumber) {
-    return `
-  ${t("running_late")}:
-  <a href="${getRunningLateLink(calEvent.organizer.phoneNumber)}">${t("connect_with_organizer")}</a>
-    `;
-  }
+  return calEvent.attendees.map((attendee) => {
+    if (!attendee.phoneNumber) return "";
+    return `${t("running_late")}:
+      <a href="${getRunningLateLink(attendee.phoneNumber)}" > ${t("connect_with_attendee", {
+      name: attendee.name,
+    })} </a>`;
+  });
 };
 
 export const getCancellationReason = (calEvent: CalendarEvent, t: TFunction) => {
