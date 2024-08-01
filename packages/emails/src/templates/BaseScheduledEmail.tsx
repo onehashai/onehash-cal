@@ -100,7 +100,7 @@ export const BaseScheduledEmail = (
           withSpacer
         />
       )}
-      {props.calEvent.hasOrganized
+      {props.calEvent.organizer.hasOrganized
         ? props.calEvent.attendees.map(
             (attendee, index) =>
               attendee.phoneNumber && (

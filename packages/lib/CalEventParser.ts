@@ -2,7 +2,7 @@ import type { TFunction } from "next-i18next";
 import short from "short-uuid";
 import { v5 as uuidv5 } from "uuid";
 
-import { getRunningLateLink } from "@calcom/features/bookings/lib/getRunningLateLink";
+import getRunningLateLink from "@calcom/features/bookings/lib/getRunningLateLink";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
 import { WEBAPP_URL } from "./constants";
@@ -292,6 +292,7 @@ ${calEvent.paymentInfo.link}
 `
     : ""
 }
+${getRunningLateSection(calEvent, t)}
   `.trim();
 };
 
@@ -300,7 +301,9 @@ export const getRunningLateSection = (calEvent: CalendarEvent, t: TFunction) => 
     return calEvent.attendees.map((attendee) => {
       if (!attendee.phoneNumber) return "";
       return ` ${t("running_late")}:
-        <a href="${getRunningLateLink()}" > ${t("connect_with_attendee", { name: attendee.name })} </a>`;
+        <a href="${getRunningLateLink(attendee.phoneNumber)}" > ${t("connect_with_attendee", {
+        name: attendee.name,
+      })} </a>`;
     });
   }
   if (calEvent.organizer.phoneNumber) {
