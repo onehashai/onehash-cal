@@ -37,7 +37,6 @@ export type Person = {
   timeFormat?: TimeFormat;
   bookingSeat?: BookingSeat | null;
   phoneNumber?: string;
-  hasOrganized?: boolean;
 };
 
 export type TeamMember = {
