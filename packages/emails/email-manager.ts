@@ -82,7 +82,6 @@ export const sendScheduledEmails = async (
 ) => {
   const formattedCalEvent = formatCalEvent(calEvent);
   const emailsToSend: Promise<unknown>[] = [];
-  console.log("attendees", formattedCalEvent.attendees);
 
   if (!hostEmailDisabled) {
     emailsToSend.push(sendEmail(() => new OrganizerScheduledEmail({ calEvent: formattedCalEvent })));

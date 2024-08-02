@@ -1,6 +1,7 @@
 import type { TFunction } from "next-i18next";
 
 import dayjs from "@calcom/dayjs";
+import getRunningLateLink from "@calcom/features/bookings/lib/getRunningLateLink";
 import { formatPrice } from "@calcom/lib/price";
 import { TimeFormat } from "@calcom/lib/timeFormat";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
@@ -47,17 +48,6 @@ export const BaseScheduledEmail = (
       getRecipientStart("dddd").toLowerCase()
     )}, ${t(getRecipientStart("MMMM").toLowerCase())} ${getRecipientStart("D, YYYY")}`,
   });
-
-  const generateWhatsAppLink = (phoneNumber: string): string => {
-    const cleanedPhoneNumber = phoneNumber.replace(/\D/g, "");
-    const urlEndcodedTextMessage = encodeURIComponent(
-      `Hi, I'm running late by 5 minutes. I'll be there soon.`
-    );
-
-    const whatsappLink = `https://api.whatsapp.com/send?phone=${cleanedPhoneNumber}&text=${urlEndcodedTextMessage}`;
-
-    return whatsappLink;
-  };
 
   return (
     <BaseEmailHtml
@@ -110,16 +100,8 @@ export const BaseScheduledEmail = (
           withSpacer
         />
       )}
-      {props.attendee.isAttendee
-        ? props.calEvent.organizer.phoneNumber && (
-            <Info
-              label={t("running_late")}
-              description={t("connect_with_organizer")}
-              withSpacer
-              link={generateWhatsAppLink(props.calEvent.organizer.phoneNumber)}
-            />
-          )
-        : props.calEvent.attendees.map(
+      {props.isOrganizer
+        ? props.calEvent.attendees.map(
             (attendee, index) =>
               attendee.phoneNumber && (
                 <Info
@@ -127,9 +109,17 @@ export const BaseScheduledEmail = (
                   label={t("running_late")}
                   description={t("connect_with_attendee", { name: attendee.name })}
                   withSpacer
-                  link={generateWhatsAppLink(attendee.phoneNumber)}
+                  link={getRunningLateLink(attendee.phoneNumber)}
                 />
               )
+          )
+        : props.calEvent.organizer.phoneNumber && (
+            <Info
+              label={t("running_late")}
+              description={t("connect_with_organizer")}
+              withSpacer
+              link={getRunningLateLink(props.calEvent.organizer.phoneNumber)}
+            />
           )}
     </BaseEmailHtml>
   );
