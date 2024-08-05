@@ -338,6 +338,7 @@ export const useBookerStore = create<BookerStore>((set, get) => ({
   selectedTimeslot: getQueryParam("slot") || null,
   setSelectedTimeslot: (selectedTimeslot: string | null) => {
     set({ selectedTimeslot });
+    document.cookie = `selectedTime=${selectedTimeslot};path=/;max-age=3600;SameSite=Lax`;
     updateQueryParam("slot", selectedTimeslot ?? "", false);
   },
   formValues: {},

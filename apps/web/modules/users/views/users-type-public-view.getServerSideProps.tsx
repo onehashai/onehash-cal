@@ -263,6 +263,28 @@ const paramsSchema = z.object({
 // Booker page fetches a tiny bit of data server side, to determine early
 // whether the page should show an away state or dynamic booking not allowed.
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+  const { req } = context;
+
+  const selectedTime = req.cookies["selectedTime"] || "";
+  const slot = context.query.slot || "";
+
+  if (slot && slot !== selectedTime) {
+    const protocol = req.headers["x-forwarded-proto"] || "http";
+    const host = req.headers["host"];
+    const originalUrl = req.url;
+    const fullUrl = `${protocol}://${host}${originalUrl}`;
+    if (fullUrl) {
+      const url = new URL(fullUrl);
+      url.searchParams.delete("slot");
+      return {
+        redirect: {
+          permanent: false,
+          destination: url.toString(),
+        },
+      };
+    }
+  }
+
   const { user } = paramsSchema.parse(context.params);
   const isDynamicGroup = user.length > 1;
 

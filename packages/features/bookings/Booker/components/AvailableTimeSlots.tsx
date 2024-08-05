@@ -85,7 +85,7 @@ export const AvailableTimeSlots = ({
     ? nonEmptyScheduleDaysFromSelectedDate.slice(0, extraDays)
     : [];
 
-  const slotsPerDay = useSlotsForAvailableDates(dates, schedule?.slots);
+  const currentSchedule = useSlotsForAvailableDates(dates, schedule?.slots);
 
   return (
     <>
@@ -93,20 +93,20 @@ export const AvailableTimeSlots = ({
         {isLoading ? (
           <div className="mb-3 h-8" />
         ) : (
-          slotsPerDay.length > 0 &&
-          slotsPerDay.map((slots) => (
+          currentSchedule.length > 0 &&
+          currentSchedule.map((schedule) => (
             <AvailableTimesHeader
               customClassNames={{
                 availableTimeSlotsHeaderContainer: customClassNames?.availableTimeSlotsHeaderContainer,
                 availableTimeSlotsTitle: customClassNames?.availableTimeSlotsTitle,
                 availableTimeSlotsTimeFormatToggle: customClassNames?.availableTimeSlotsTimeFormatToggle,
               }}
-              key={slots.date}
-              date={dayjs(slots.date)}
+              key={schedule.date}
+              date={dayjs(schedule.date)}
               showTimeFormatToggle={!isColumnView}
               availableMonth={
-                dayjs(selectedDate).format("MM") !== dayjs(slots.date).format("MM")
-                  ? dayjs(slots.date).format("MMM")
+                dayjs(selectedDate).format("MM") !== dayjs(schedule.date).format("MM")
+                  ? dayjs(schedule.date).format("MMM")
                   : undefined
               }
             />
@@ -124,15 +124,15 @@ export const AvailableTimeSlots = ({
         {isLoading && // Shows exact amount of days as skeleton.
           Array.from({ length: 1 + (extraDays ?? 0) }).map((_, i) => <AvailableTimesSkeleton key={i} />)}
         {!isLoading &&
-          slotsPerDay.length > 0 &&
-          slotsPerDay.map((slots) => (
-            <div key={slots.date} className="scroll-bar h-full w-full overflow-y-auto overflow-x-hidden">
+          currentSchedule.length > 0 &&
+          currentSchedule.map((schedule) => (
+            <div key={schedule.date} className="scroll-bar h-full w-full overflow-y-auto overflow-x-hidden">
               <AvailableTimes
                 className={customClassNames?.availableTimeSlotsContainer}
                 customClassNames={customClassNames?.availableTimes}
                 showTimeFormatToggle={!isColumnView}
                 onTimeSelect={onTimeSelect}
-                slots={slots.slots}
+                slots={schedule.slots}
                 seatsPerTimeSlot={seatsPerTimeSlot}
                 showAvailableSeatsCount={showAvailableSeatsCount}
                 event={event}
