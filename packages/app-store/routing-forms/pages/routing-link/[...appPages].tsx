@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Head from "next/head";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
@@ -50,6 +51,7 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
     brandColor: profile.brandColor,
     darkBrandColor: profile.darkBrandColor,
   });
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   const [response, setResponse] = usePrefilledResponse(form);
 
@@ -172,6 +174,9 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
                       </Button>
                     </div>
                   </form>
+                </div>
+                <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+                  <PoweredBy logoOnly />
                 </div>
               </div>
             </div>

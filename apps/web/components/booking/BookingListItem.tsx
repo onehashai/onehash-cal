@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 
 import type { EventLocationType, getEventLocationValue } from "@calcom/app-store/locations";
@@ -337,29 +337,34 @@ function BookingListItem(booking: BookingItemProps) {
     saveNotesMutation.mutate({ bookingId: booking.id, meetingNote: notes });
   };
 
-  const createReinviteeAttendeeLink = () => {
-    const ownerSlug = booking.eventType.team ? booking.eventType.team.slug : booking.user?.username;
-    const eventSlug = booking.eventType.slug;
-    const bookingUrl = `${bookerUrl}/${ownerSlug}/${eventSlug}`;
+  const [reinviteeAttendeeLink, setReinviteeAttendeeLink] = useState<string>("");
+  useEffect(() => {
+    const createReinviteeAttendeeLink = () => {
+      const ownerSlug = booking.eventType.team ? booking.eventType.team.slug : booking.user?.username;
+      const eventSlug = booking.eventType.slug;
+      const bookingUrl = `${bookerUrl}/${ownerSlug}/${eventSlug}`;
 
-    const queryParams = {
-      name: booking.attendees[0].name,
-      email: booking.attendees[0].email,
+      const queryParams = {
+        name: booking.attendees[0].name,
+        email: booking.attendees[0].email,
+      };
+
+      const urlSearchParams = new URLSearchParams(queryParams);
+
+      const guests = booking.responses?.guests;
+      if (guests && Array.isArray(guests) && guests.length > 0) {
+        guests.forEach((guest) => {
+          urlSearchParams.append("guests", guest);
+        });
+      }
+
+      return `${bookingUrl}?${urlSearchParams}`;
     };
 
-    const urlSearchParams = new URLSearchParams(queryParams);
-
-    const guests = booking.responses?.guests;
-    if (guests && Array.isArray(guests) && guests.length > 0) {
-      guests.forEach((guest) => {
-        urlSearchParams.append("guests", guest);
-      });
+    if (booking.attendees.length > 0) {
+      setReinviteeAttendeeLink(createReinviteeAttendeeLink());
     }
-
-    return `${bookingUrl}?${urlSearchParams}`;
-  };
-
-  const reinviteeAttendeeLink = createReinviteeAttendeeLink();
+  }, [bookerUrl, booking]);
 
   const openWhatsAppChat = (phoneNumber: string) => {
     // Dimensions and other properties of the popup window
@@ -703,7 +708,7 @@ function BookingListItem(booking: BookingItemProps) {
                 <div>
                   {booking.attendees.map((attendee: any, i: number) => (
                     <p key={attendee.email} className="text-subtle text-sm">
-                      {attendee.name}{" "}
+                      {attendee.name && attendee.name}{" "}
                       {booking.payment.length != 0 &&
                         (booking.payment[i].success ? "- [Paid]" : "- [Not Paid]")}
                     </p>
