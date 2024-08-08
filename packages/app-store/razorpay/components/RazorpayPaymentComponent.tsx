@@ -17,7 +17,6 @@ interface IRazorpayPaymentComponentProps {
     amount: number;
     data: unknown;
   };
-  key_id: string;
   bookingId: string;
 }
 
@@ -57,17 +56,16 @@ const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) => {
       }
 
     setIsLoading(true);
-    const key = props.key_id;
     const data = await fetch(
       `/api/integration/razorpay/create-order?amount=${props.payment.amount}&currency=${props.payment.currency}&bookingId=${props.bookingId}`
     );
-    const { order } = await data?.json();
+    const { currency, amount, id, key } = await data?.json();
     const options = {
-      key: key,
+      key,
       name: COMPANY_NAME,
-      currency: order.currency,
-      amount: order.amount,
-      order_id: order.id,
+      currency: currency,
+      amount: amount,
+      order_id: id,
       modal: {
         ondismiss: function () {
           setIsLoading(false);
@@ -105,10 +103,23 @@ const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) => {
     const paymentObject = new window.Razorpay(options);
     paymentObject.open();
 
-    paymentObject.on("payment.failed", function (response) {
-      showToast(`Payment failed with error: ${response.error.description}`, "error");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    paymentObject.on("payment.failed", async function (response: any) {
+      const res =
+        await fetch(`/api/integration/razorpay/validate?paymentId=${response.error.metadata.order_id}&
+        bookingId=${props.bookingId}
+        `);
+      if (res.ok) {
+        const { isCaptured } = await res.json();
+        if (isCaptured) {
+          router.replace(`/booking/${props.bookingId}?razorpayPaymentStatus=success`);
+        } else {
+          showToast(`Payment failed with error: ${response.error.description}`, "error");
+          router.replace(`/booking/${props.bookingId}?razorpayPaymentStatus=failed
+          }`);
+        }
+      }
       setIsLoading(false);
-      router.replace(`/booking/${props.bookingId}?razorpayPaymentStatus=failed`);
     });
   };
 

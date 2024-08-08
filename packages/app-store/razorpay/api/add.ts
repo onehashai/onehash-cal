@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { RAZORPAY_CLIENT_ID, RAZORPAY_REDIRECT_URL, RAZORPAY_STATE_KEY } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 
 import config from "../config.json";
@@ -17,22 +18,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
     if (alreadyInstalled) {
-      throw new Error("Already installed");
+      return res.status(200).json({ url: "/apps/installation/accounts?slug=razorpay" });
     }
-    const installation = await prisma.credential.create({
-      data: {
-        type: appType,
-        key: {},
-        userId: req.session.user.id,
-        appId: config.slug,
-      },
-    });
+    const params = {
+      client_id: RAZORPAY_CLIENT_ID,
+      response_type: "code",
+      redirect_uri: RAZORPAY_REDIRECT_URL,
+      scope: "read_write",
+      state: RAZORPAY_STATE_KEY,
+    };
 
-    if (!installation) {
-      throw new Error("Unable to create user credential for Razorpay");
-    }
-    return res.status(200).json({ url: "/apps/razorpay/setup" });
+    const queryString = new URLSearchParams(params).toString();
+    const url = `https://auth.razorpay.com/authorize?${queryString}`;
+    console.log("url", url);
+    return res.status(200).json({ url });
   } catch (error: unknown) {
+    console.error("getRazorpayOnboardingUrl", error);
     if (error instanceof Error) {
       return res.status(500).json({ message: error.message });
     }

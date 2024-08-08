@@ -1,45 +1,147 @@
-import Razorpay from "razorpay";
-import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils";
+import type { AxiosInstance, AxiosResponse } from "axios";
+import axios from "axios";
+import crypto from "crypto";
 
-import { WEBAPP_URL } from "@calcom/lib/constants";
-import logger from "@calcom/lib/logger";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
+import { RAZORPAY_CLIENT_ID, RAZORPAY_CLIENT_SECRET, RAZORPAY_WEBHOOK_SECRET } from "@calcom/lib/constants";
+import { prisma } from "@calcom/prisma";
 
 export enum WebhookEvents {
-  PAYMENT_CAPTURED = "payment.captured",
+  APP_REVOKED = "account.app.authorization_revoked",
+}
+const razorpay_auth_base_url = "https://auth.razorpay.com";
+const razorpay_api_base_url = "https://api.razorpay.com/v1";
+
+interface RazorpayWrapperOptions {
+  access_token: string;
+  refresh_token: string;
+  user_id: number;
 }
 
 class RazorpayWrapper {
-  key_id: string;
-  key_secret: string;
-  merchant_id: string;
-  instance: Razorpay;
+  private access_token: string;
+  private refresh_token: string;
 
-  constructor({
-    key_id,
-    key_secret,
-    merchant_id,
-  }: {
-    key_id: string;
-    key_secret: string;
-    merchant_id: string;
-  }) {
-    this.key_id = key_id;
-    this.key_secret = key_secret;
-    this.merchant_id = merchant_id;
-    this.instance = new Razorpay({
-      key_id: this.key_id,
-      key_secret: this.key_secret,
+  private user_id: number;
+  private axiosInstance: AxiosInstance;
+
+  constructor({ access_token, refresh_token, user_id }: RazorpayWrapperOptions) {
+    this.access_token = access_token;
+    this.refresh_token = refresh_token;
+
+    this.user_id = user_id;
+    this.axiosInstance = axios.create({
+      baseURL: razorpay_api_base_url,
+      headers: {
+        Authorization: `Bearer ${this.access_token}`,
+        "Content-Type": "application/json",
+      },
     });
+
+    this.setupInterceptors();
+  }
+
+  private setupInterceptors() {
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        if (this.access_token) {
+          config.headers.Authorization = `Bearer ${this.access_token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Response interceptor to handle token refresh
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response?.status >= 400 && error.response?.status < 500) {
+          try {
+            await this.refreshAccessToken();
+
+            const originalRequest = error.config;
+            originalRequest.headers.Authorization = `Bearer ${this.access_token}`;
+            return this.axiosInstance(originalRequest);
+          } catch (refreshError) {
+            console.error("Error refreshing token:", refreshError);
+            return Promise.reject(refreshError);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  private async handleUpdateToken({
+    access_token,
+    refresh_token,
+    public_token,
+  }: {
+    access_token: string;
+    refresh_token: string;
+    public_token: string;
+  }) {
+    try {
+      const existingCredential = await prisma.credential.findFirst({
+        where: { userId: this.user_id, appId: "razorpay" },
+        select: { key: true, id: true },
+      });
+
+      if (!existingCredential) {
+        throw new Error("Credential not found");
+      }
+
+      const keys = isPrismaObjOrUndefined(existingCredential.key);
+      if (!keys) {
+        throw new Error("Keys not found");
+      }
+      const updatedKey = {
+        ...keys,
+        access_token,
+        refresh_token,
+        public_token,
+      };
+
+      await prisma.credential.update({
+        where: { id: existingCredential.id },
+        data: { key: updatedKey },
+      });
+
+      this.access_token = access_token;
+      this.refresh_token = refresh_token;
+    } catch (e) {
+      console.error("Failed to update credentials:", e);
+      throw new Error("Failed to update credentials");
+    }
+  }
+
+  private async refreshAccessToken() {
+    try {
+      const response: AxiosResponse<{ access_token: string; refresh_token: string; public_token: string }> =
+        await axios.post(`${razorpay_auth_base_url}/token`, {
+          client_id: RAZORPAY_CLIENT_ID,
+          client_secret: RAZORPAY_CLIENT_SECRET,
+          grant_type: "refresh_token",
+          refresh_token: this.refresh_token,
+        });
+      await this.handleUpdateToken(response.data);
+    } catch (error) {
+      console.error("Failed to refresh token:", error);
+      throw new Error("Failed to refresh token");
+    }
   }
 
   async test(): Promise<boolean> {
     try {
-      await this.instance.payments.all();
+      await this.axiosInstance.get("/payments");
       return true;
     } catch (error) {
+      console.error("Test failed:", error);
       return false;
     }
   }
+
   // Orders
   async createOrder({
     referenceId,
@@ -51,146 +153,56 @@ class RazorpayWrapper {
     currency: string;
   }): Promise<CreateOrderResponse> {
     try {
-      const order = await this.instance.orders.create({
+      const res = await this.axiosInstance.post("/orders", {
         currency,
         amount,
         receipt: referenceId,
       });
-      return order as CreateOrderResponse;
+      return res.data as CreateOrderResponse;
     } catch (error) {
-      console.error(error);
-    }
-    return {} as CreateOrderResponse;
-  }
-
-  //Webh
-  async createWebhook(): Promise<string> {
-    try {
-      const result = await this.instance.webhooks.create({
-        url: `${WEBAPP_URL}/api/integrations/razorpay/webhook`,
-        secret: process.env.RAZORPAY_WEBHOOK_SECRET as string,
-        events: [WebhookEvents.PAYMENT_CAPTURED],
-      });
-      console.log("Webhook created", result.id);
-      return result.id as string;
-    } catch (e) {
-      console.log("Error creating webhook", e);
-      logger.error("Error creating webhook", e);
-      throw e;
+      console.error("Error creating order:", error);
+      throw new Error("Error creating order");
     }
   }
 
-  async listWebhooks(): Promise<string[]> {
+  //Payments
+  async checkIfPaymentCaptured(paymentId: string): Promise<boolean> {
     try {
-      console.log();
-      const res = await this.instance.webhooks.all({
-        count: 100,
-      });
-      const { items: webhooks } = res;
-
-      return webhooks
-        .filter((webhook: { id: string; url: string }) => {
-          return webhook.url.includes("api/integrations/razorpay/webhook");
-        })
-        .map((webhook: { id: string }) => webhook.id);
-    } catch (e) {
-      console.error(e);
-    }
-    return [];
-  }
-
-  async deleteWebhook({ webhookId }: { webhookId: string }): Promise<boolean> {
-    try {
-      await this.instance.webhooks.delete(webhookId, this.merchant_id);
-      return true;
+      const res = await this.axiosInstance.get(`/payments/${paymentId}`);
+      return res.data.captured;
     } catch (error) {
-      console.error(error);
+      console.error("Error checking payment:", error);
+      throw new Error("Error checking if payment is captured");
     }
-    return false;
   }
 
-  static verifyWebhook({
-    body,
-    signature,
-    webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET,
-  }: WebhookEventVerifyRequest): boolean {
-    if (!webhookSecret) {
+  //Webhook
+
+  static verifyWebhook({ body, signature }: WebhookEventVerifyRequest): boolean {
+    if (!RAZORPAY_WEBHOOK_SECRET) {
       throw new Error("Webhook secret is required");
     }
-    return validateWebhookSignature(body, signature, webhookSecret);
+
+    if (!body || !signature || !RAZORPAY_WEBHOOK_SECRET) {
+      throw Error(
+        "Invalid Parameters: Please give request body," +
+          "signature sent in X-Razorpay-Signature header and " +
+          "webhook secret from dashboard as parameters"
+      );
+    }
+
+    const expectedSignature = crypto.createHmac("sha256", RAZORPAY_WEBHOOK_SECRET).update(body).digest("hex");
+
+    return expectedSignature === signature;
   }
-
-  //   async test(): Promise<boolean> {
-  //     // Always get a new access token
-  //     try {
-  //       await this.getAccessToken();
-  //     } catch (error) {
-  //       console.error(error);
-  //       return false;
-  //     }
-  //     return true;
-  //   }
-
-  //   async captureOrder(orderId: string): Promise<boolean> {
-  //     try {
-  //       const captureResult = await this.fetcher(`/v2/checkout/orders/${orderId}/capture`, {
-  //         method: "POST",
-  //       });
-  //       if (captureResult.ok) {
-  //         const result = await captureResult.json();
-  //         if (result?.status === "COMPLETED") {
-  //           // Get payment reference id
-
-  //           const payment = await prisma.payment.findFirst({
-  //             where: {
-  //               externalId: orderId,
-  //             },
-  //             select: {
-  //               id: true,
-  //               bookingId: true,
-  //               data: true,
-  //             },
-  //           });
-
-  //           if (!payment) {
-  //             throw new Error("Payment not found");
-  //           }
-
-  //           await prisma.payment.update({
-  //             where: {
-  //               id: payment?.id,
-  //             },
-  //             data: {
-  //               success: true,
-  //               data: Object.assign(
-  //                 {},
-  //                 { ...(payment?.data as Record<string, string | number>), capture: result.id }
-  //               ) as unknown as Prisma.InputJsonValue,
-  //             },
-  //           });
-
-  //           // Update booking as paid
-  //           await prisma.booking.update({
-  //             where: {
-  //               id: payment.bookingId,
-  //             },
-  //             data: {
-  //               status: "ACCEPTED",
-  //             },
-  //           });
-
-  //           return true;
-  //         }
-  //       }
-  //     } catch (error) {
-  //       console.error(error);
-  //       throw error;
-  //     }
-  //     return false;
-  //   }
 }
 
 export default RazorpayWrapper;
+
+interface WebhookEventVerifyRequest {
+  body: string;
+  signature: string;
+}
 
 interface CreateOrderResponse {
   id: string;
@@ -224,19 +236,4 @@ interface CreateOrderResponse {
    * For example, `12:30 p.m. Thali meals (Gaurav Kumar)`.
    */
   description: string;
-}
-
-interface WebhookEventVerifyRequest {
-  /*
-  Json stringified body of the webhook event.
-  */
-  body: string;
-  /*
-  Signature sent in X-Razorpay-Signature header
-  */
-  signature: string;
-  /*
-  The webhook secret used to sign the webhook event.
-  */
-  webhookSecret?: string;
 }

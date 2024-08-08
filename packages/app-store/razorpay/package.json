@@ -14,7 +14,6 @@
     "@calcom/lib": "*",
     "@calcom/prisma": "*",
     "@calcom/types": "*",
-    "razorpay": "^2.9.4",
     "uuid": "^8.3.2",
     "zod": "^3.22.4"
   },

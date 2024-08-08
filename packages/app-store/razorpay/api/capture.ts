@@ -2,6 +2,7 @@ import crypto from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
+import { RAZORPAY_CLIENT_SECRET } from "@calcom/lib/constants";
 import { handlePaymentSuccess } from "@calcom/lib/payment/handlePaymentSuccess";
 import prisma from "@calcom/prisma";
 
@@ -31,7 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const signature = generatedSignature({
       razorpayOrderId,
       razorpayPaymentId,
-      keySecret: credentials.key_secret,
     });
     if (signature !== razorpaySignature) {
       return res.json({
@@ -65,17 +65,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 const generatedSignature = ({
   razorpayOrderId,
   razorpayPaymentId,
-  keySecret,
 }: {
   razorpayOrderId: string;
   razorpayPaymentId: string;
-  keySecret: string;
 }) => {
-  if (!keySecret) {
+  if (!RAZORPAY_CLIENT_SECRET) {
     throw new Error("Razorpay key secret is not defined in environment variables.");
   }
   const sig = crypto
-    .createHmac("sha256", keySecret)
+    .createHmac("sha256", RAZORPAY_CLIENT_SECRET)
     .update(`${razorpayOrderId}|${razorpayPaymentId}`)
     .digest("hex");
   return sig;

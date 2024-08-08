@@ -6,10 +6,7 @@ import { default as Razorpay, WebhookEvents } from "@calcom/app-store/razorpay/l
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import { HttpError as HttpCode } from "@calcom/lib/http-error";
-import { handlePaymentSuccess } from "@calcom/lib/payment/handlePaymentSuccess";
-import prisma from "@calcom/prisma";
-
-import { findPaymentCredentials } from "../lib/getAppConfigsByBookingID";
+import { prisma } from "@calcom/prisma";
 
 export const config = {
   api: {
@@ -17,33 +14,51 @@ export const config = {
   },
 };
 
-export async function handleRazorpayPaymentSuccess(orderId: string) {
-  const payment = await prisma.payment.findFirst({
+// export async function handleRazorpayPaymentSuccess(orderId: string) {
+//   const payment = await prisma.payment.findFirst({
+//     where: {
+//       externalId: orderId,
+//     },
+//     select: {
+//       id: true,
+//       bookingId: true,
+//     },
+//   });
+
+//   if (!payment?.bookingId) throw new HttpCode({ statusCode: 204, message: "Payment not found" });
+
+//   const booking = await prisma.booking.findUnique({
+//     where: {
+//       id: payment.bookingId,
+//     },
+//     select: {
+//       id: true,
+//     },
+//   });
+
+//   if (!booking) throw new HttpCode({ statusCode: 204, message: "No booking found" });
+//   // Probably booking it's already paid from /capture but we need to send confirmation email
+//   const foundCredentials = await findPaymentCredentials(booking.id);
+//   if (!foundCredentials) throw new HttpCode({ statusCode: 204, message: "No credentials found" });
+//   return await handlePaymentSuccess(payment.id, payment.bookingId);
+// }
+
+async function handleAppRevoked(accountId: string) {
+  const credentials = await prisma.credential.findFirst({
     where: {
-      externalId: orderId,
-    },
-    select: {
-      id: true,
-      bookingId: true,
+      key: {
+        path: ["account_id"],
+        equals: accountId,
+      },
     },
   });
-
-  if (!payment?.bookingId) throw new HttpCode({ statusCode: 204, message: "Payment not found" });
-
-  const booking = await prisma.booking.findUnique({
+  if (!credentials) throw new HttpCode({ statusCode: 204, message: "No credentials found" });
+  await prisma.credential.delete({
     where: {
-      id: payment.bookingId,
-    },
-    select: {
-      id: true,
+      id: credentials.id,
     },
   });
-
-  if (!booking) throw new HttpCode({ statusCode: 204, message: "No booking found" });
-  // Probably booking it's already paid from /capture but we need to send confirmation email
-  const foundCredentials = await findPaymentCredentials(booking.id);
-  if (!foundCredentials) throw new HttpCode({ statusCode: 204, message: "No credentials found" });
-  return await handlePaymentSuccess(payment.id, payment.bookingId);
+  return;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -64,10 +79,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error("Razorpay webhook signature mismatch");
       throw new HttpCode({ statusCode: 400, message: "Bad Request" });
     }
-    const { event, payload } = req.body;
+    const { event, account_id } = req.body;
     switch (event) {
-      case WebhookEvents.PAYMENT_CAPTURED:
-        await handleRazorpayPaymentSuccess(payload.payment.entity.order_id);
+      case WebhookEvents.APP_REVOKED:
+        await handleAppRevoked(account_id);
         break;
       default:
         console.error("Razorpay webhook event not handled");

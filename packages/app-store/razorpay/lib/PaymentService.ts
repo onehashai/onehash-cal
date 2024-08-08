@@ -14,17 +14,19 @@ import { paymentOptionEnum } from "../zod";
 const log = logger.getSubLogger({ prefix: ["payment-service:razorpay"] });
 
 export const razorpayCredentialKeysSchema = z.object({
-  key_id: z.string(),
-  key_secret: z.string(),
-  merchant_id: z.string(),
-  webhook_id: z.string(),
+  keys: z.object({
+    access_token: z.string(),
+    refresh_token: z.string(),
+    public_token: z.string(),
+    account_id: z.string(),
+  }),
+  userId: z.number(),
 });
-
 export default class PaymentService implements IAbstractPaymentService {
   private credentials: z.infer<typeof razorpayCredentialKeysSchema> | null;
 
-  constructor(credentials: { key: Prisma.JsonValue }) {
-    const keyParsing = razorpayCredentialKeysSchema.safeParse(credentials.key);
+  constructor(credentials: { keys: Prisma.JsonValue; userId: number }) {
+    const keyParsing = razorpayCredentialKeysSchema.safeParse(credentials);
     if (keyParsing.success) {
       this.credentials = keyParsing.data;
     } else {
@@ -44,9 +46,9 @@ export default class PaymentService implements IAbstractPaymentService {
       const uid = uuidv4();
 
       const razorpayClient = new Razorpay({
-        key_id: this.credentials.key_id,
-        key_secret: this.credentials.key_secret,
-        merchant_id: this.credentials.merchant_id,
+        access_token: this.credentials.keys.access_token,
+        refresh_token: this.credentials.keys.refresh_token,
+        user_id: this.credentials.userId,
       });
 
       const orderResult = await razorpayClient.createOrder({
@@ -75,9 +77,7 @@ export default class PaymentService implements IAbstractPaymentService {
             {
               order: orderResult,
               key: {
-                key_id: this.credentials.key_id,
-                key_secret: this.credentials.key_secret,
-                merchant_id: this.credentials.merchant_id,
+                merchant_id: this.credentials.keys.account_id,
               },
             }
           ) as unknown as Prisma.InputJsonValue,
@@ -130,9 +130,9 @@ export default class PaymentService implements IAbstractPaymentService {
       const uid = uuidv4();
 
       const razorpayClient = new Razorpay({
-        key_id: this.credentials.key_id,
-        key_secret: this.credentials.key_secret,
-        merchant_id: this.credentials.merchant_id,
+        access_token: this.credentials.keys.access_token,
+        refresh_token: this.credentials.keys.refresh_token,
+        user_id: this.credentials.userId,
       });
       const preference = await razorpayClient.createOrder({
         referenceId: uid,

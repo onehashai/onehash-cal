@@ -6,7 +6,6 @@ import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
 import { doesAppSupportTeamInstall } from "@calcom/app-store/utils";
 import { Spinner } from "@calcom/features/calendars/weeklyview/components/spinner/Spinner";
 import type { UserAdminTeams } from "@calcom/features/oe/teams/lib/getUserAdminTeams";
-import { WEBAPP_URL } from "@calcom/lib/constants";
 import { AppOnboardingSteps } from "@calcom/lib/apps/appOnboardingSteps";
 import { getAppOnboardingUrl } from "@calcom/lib/apps/getAppOnboardingUrl";
 import { shouldRedirectToAppOnboarding } from "@calcom/lib/apps/shouldRedirectToAppOnboarding";
@@ -64,11 +63,14 @@ export const InstallAppButtonChild = ({
   const appMetadata = appStoreMetadata[dirName as keyof typeof appStoreMetadata];
   const redirectToAppOnboarding = useMemo(() => shouldRedirectToAppOnboarding(appMetadata), [appMetadata]);
 
-  const _onClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+  const _onClick = async (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
     if (redirectToAppOnboarding) {
-      router.push(
-        getAppOnboardingUrl({ slug: addAppMutationInput.slug, step: AppOnboardingSteps.ACCOUNTS_STEP })
-      );
+      const res = await getAppOnboardingUrl({
+        slug: addAppMutationInput.slug,
+        step: AppOnboardingSteps.ACCOUNTS_STEP,
+      });
+
+      router.push(res);
     } else if (onClick) {
       onClick(e);
     }

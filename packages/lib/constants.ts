@@ -177,3 +177,10 @@ export const TRANSCRIPTION_STARTED_ICON = IS_PRODUCTION
 export const TRANSCRIPTION_STOPPED_ICON = IS_PRODUCTION
   ? `${WEBAPP_URL}/sparkles.svg`
   : `https://app.cal.com/sparkles.svg`;
+
+export const RAZORPAY_CLIENT_ID = process.env.NEXT_PUBLIC_RAZORPAY_CLIENT_ID;
+export const RAZORPAY_CLIENT_SECRET = process.env.RAZORPAY_CLIENT_SECRET;
+export const RAZORPAY_STATE_KEY = process.env.RAZORPAY_SECRET;
+export const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_SECRET;
+export const RAZORPAY_REDIRECT_URL = `${WEBAPP_URL}/apps/installation/accounts`;
+// export const RAZORPAY_REDIRECT_URL = `https://66f2-103-171-99-41.ngrok-free.app/apps/installation/accounts`;

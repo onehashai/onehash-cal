@@ -16,7 +16,6 @@ export const AppSetupMap = {
   sendgrid: dynamic(() => import("../../sendgrid/pages/setup")),
   stripe: dynamic(() => import("../../stripepayment/pages/setup")),
   paypal: dynamic(() => import("../../paypal/pages/setup")),
-  razorpay: dynamic(() => import("../../razorpay/pages/setup")),
 };
 
 export const AppSetupPage = (props: { slug: string }) => {

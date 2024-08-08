@@ -2,18 +2,17 @@ import { z } from "zod";
 
 import prisma from "@calcom/prisma";
 
-const razorpayCredentialKeysSchema = z.object({
-  key_id: z.string(),
-  key_secret: z.string(),
-  webhook_id: z.string().optional().default(""),
-  merchant_id: z.string().optional().default(""),
+export const razorpayCredentialKeysSchema = z.object({
+  access_token: z.string(),
+  refresh_token: z.string(),
+  public_token: z.string(),
+  account_id: z.string(),
 });
 
 export const findPaymentCredentials = async (
   bookingId: number
-): Promise<{ key_id: string; key_secret: string; webhook_id: string; merchant_id: string }> => {
+): Promise<z.infer<typeof razorpayCredentialKeysSchema>> => {
   try {
-    // @TODO: what about team bookings with razorpay?
     const userFromBooking = await prisma.booking.findFirst({
       where: {
         id: bookingId,
@@ -44,10 +43,10 @@ export const findPaymentCredentials = async (
     }
 
     return {
-      key_id: parsedCredentials.data.key_id,
-      key_secret: parsedCredentials.data.key_secret,
-      merchant_id: parsedCredentials.data.merchant_id,
-      webhook_id: parsedCredentials.data.webhook_id,
+      access_token: parsedCredentials.data.access_token,
+      refresh_token: parsedCredentials.data.refresh_token,
+      public_token: parsedCredentials.data.public_token,
+      account_id: parsedCredentials.data.account_id,
     };
   } catch (err) {
     console.error(err);
