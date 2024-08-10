@@ -709,8 +709,6 @@ function BookingListItem(booking: BookingItemProps) {
                   {booking.attendees.map((attendee: any, i: number) => (
                     <p key={attendee.email} className="text-subtle text-sm">
                       {attendee.name && attendee.name}{" "}
-                      {booking.payment.length != 0 &&
-                        (booking.payment[i].success ? "- [Paid]" : "- [Not Paid]")}
                     </p>
                   ))}
                 </div>

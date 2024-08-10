@@ -58,7 +58,6 @@ export class PaymentService implements IAbstractPaymentService {
       }
 
       const uid = uuidv4();
-      console.log("insideRazorpayCreate", uid, bookingId, payment);
 
       const paymentLinkRes = await this.razorpay.createPaymentLink({
         bookingUid,
@@ -106,7 +105,6 @@ export class PaymentService implements IAbstractPaymentService {
         throw new Error();
       }
 
-      console.log("paymentData", paymentData);
       return paymentData;
     } catch (error) {
       log.error("Razorpay: Payment could not be created for bookingId", bookingId, safeStringify(error));

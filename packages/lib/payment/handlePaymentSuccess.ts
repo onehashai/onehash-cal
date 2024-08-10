@@ -64,7 +64,6 @@ export async function handlePaymentSuccess(
   }
 
   const paymentMetaData = {
-    success: true,
     ...(isPrismaObjOrUndefined(existingPayment.data) || {}),
     ...(paymentData || {}),
   };
@@ -74,6 +73,7 @@ export async function handlePaymentSuccess(
       id: paymentId,
     },
     data: {
+      success: true,
       data: paymentMetaData,
     },
   });

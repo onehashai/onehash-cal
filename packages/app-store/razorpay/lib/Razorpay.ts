@@ -4,9 +4,9 @@ import crypto from "crypto";
 
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import {
-  IS_PRODUCTION,
   RAZORPAY_CLIENT_ID,
   RAZORPAY_CLIENT_SECRET,
+  RAZORPAY_UPI_ENABLED,
   RAZORPAY_WEBHOOK_SECRET,
   WEBAPP_URL,
 } from "@calcom/lib/constants";
@@ -181,7 +181,7 @@ class RazorpayWrapper {
         customer,
         callback_url: `${WEBAPP_URL}/booking/${bookingUid}`,
         callback_method: "get",
-        upi_link: IS_PRODUCTION,
+        upi_link: RAZORPAY_UPI_ENABLED,
       })
     );
   }
