@@ -231,6 +231,8 @@ model User {
   locked                     Boolean                      @default(false)
   appTheme                   String?
   movedToProfileId           Int?                         @unique
+  isPlatformManaged          Boolean                      @default(false)
+  smsLockState               SMSLockState                 @default(UNLOCKED)
   accessCodes                AccessCode[]
   AccessToken                AccessToken[]
   accounts                   Account[]
@@ -267,8 +269,6 @@ model User {
   organization               Team?                        @relation("scope", fields: [organizationId], references: [id])
   platformOAuthClients       PlatformOAuthClient[]        @relation("PlatformOAuthClientToUser")
   eventTypes                 EventType[]                  @relation("user_eventtype")
-  isPlatformManaged          Boolean                      @default(false)
-  smsLockState               SMSLockState                 @default(UNLOCKED)
 
   @@unique([email, username])
   @@unique([username, organizationId])

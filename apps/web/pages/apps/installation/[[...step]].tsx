@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import checkForMultiplePaymentApps from "@calcom/app-store/_utils/payments/checkForMultiplePaymentApps";
 import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
+import { handleRazorpayOAuthRedirect } from "@calcom/app-store/razorpay/lib";
 import type { EventTypeAppSettingsComponentProps, EventTypeModel } from "@calcom/app-store/types";
 import { getLocale } from "@calcom/features/auth/lib/getLocale";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
@@ -159,8 +160,9 @@ const OnboardingPage = ({
     try {
       setIsSelectingAccount(true);
       if (appMetadata.isOAuth) {
+        const url = await getAppOnboardingRedirectUrl(appMetadata.slug, teamId);
         const state = JSON.stringify({
-          appOnboardingRedirectUrl: getAppOnboardingRedirectUrl(appMetadata.slug, teamId),
+          appOnboardingRedirectUrl: url,
           teamId,
         });
 
@@ -185,13 +187,12 @@ const OnboardingPage = ({
             "Content-Type": "application/json",
           },
         });
-        router.push(
-          getAppOnboardingUrl({
-            slug: appMetadata.slug,
-            step: AppOnboardingSteps.EVENT_TYPES_STEP,
-            teamId,
-          })
-        );
+        const url = await getAppOnboardingUrl({
+          slug: appMetadata.slug,
+          step: AppOnboardingSteps.EVENT_TYPES_STEP,
+          teamId,
+        });
+        router.push(url);
       }
     } catch (error) {
       setIsSelectingAccount(false);
@@ -425,18 +426,18 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   try {
     let eventTypes: TEventType[] | null = null;
     const { req, res, query, params } = context;
+    const session = await getServerSession({ req, res });
+    if (!session?.user?.id) throw new Error(ERROR_MESSAGES.userNotAuthed);
+    const parsedAppSlug = await handleRazorpayOAuthRedirect(query, session.user.id);
     const stepsEnum = z.enum(STEPS);
-    const parsedAppSlug = z.coerce.string().parse(query?.slug);
     const parsedStepParam = z.coerce.string().parse(params?.step);
     const parsedTeamIdParam = z.coerce.number().optional().parse(query?.teamId);
     const _ = stepsEnum.parse(parsedStepParam);
-    const session = await getServerSession({ req, res });
     const locale = await getLocale(context.req);
     const app = await getAppBySlug(parsedAppSlug);
     const appMetadata = appStoreMetadata[app.dirName as keyof typeof appStoreMetadata];
     const hasEventTypes = appMetadata?.extendsFeature === "EventType";
 
-    if (!session?.user?.id) throw new Error(ERROR_MESSAGES.userNotAuthed);
     if (!hasEventTypes) {
       throw new Error(ERROR_MESSAGES.appNotExtendsEventType);
     }

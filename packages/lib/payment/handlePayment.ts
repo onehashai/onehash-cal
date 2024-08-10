@@ -65,6 +65,7 @@ const handlePayment = async (
       bookerName,
       bookerEmail,
       paymentOption,
+      booking.uid,
       selectedEventType.title,
       evt.title
     );

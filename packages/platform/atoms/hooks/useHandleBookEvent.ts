@@ -84,7 +84,6 @@ export const useHandleBookEvent = ({
         teamMemberEmail,
         orgSlug: orgSlug ? orgSlug : undefined,
       };
-
       if (isInstantMeeting) {
         handleInstantBooking(mapBookingToMutationInput(bookingInput));
       } else if (event.data?.recurringEvent?.freq && recurringEventCount && !rescheduleUid) {

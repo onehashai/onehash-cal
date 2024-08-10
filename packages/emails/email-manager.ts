@@ -5,6 +5,7 @@ import type { TFunction } from "next-i18next";
 import type { EventNameObjectType } from "@calcom/core/event";
 import { getEventName } from "@calcom/core/event";
 import type BaseEmail from "@calcom/emails/templates/_base-email";
+import { IS_DEV } from "@calcom/lib/constants";
 import { formatCalEvent } from "@calcom/lib/formatCalendarEvent";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
@@ -64,6 +65,8 @@ import TeamInviteEmail from "./templates/team-invite-email";
 import WelcomeUserEmail from "./templates/welcome-user-email";
 
 const sendEmail = (prepare: () => BaseEmail) => {
+  if (IS_DEV) return Promise.resolve();
+
   return new Promise((resolve, reject) => {
     try {
       const email = prepare();
