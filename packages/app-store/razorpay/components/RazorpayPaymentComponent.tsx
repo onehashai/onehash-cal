@@ -56,16 +56,14 @@ const RazorpayPaymentComponent = (props: IRazorpayPaymentComponentProps) => {
       }
 
     setIsLoading(true);
-    const data = await fetch(
-      `/api/integration/razorpay/create-order?amount=${props.payment.amount}&currency=${props.payment.currency}&bookingId=${props.bookingId}`
-    );
-    const { currency, amount, id, key } = await data?.json();
+    const data = await fetch(`/api/integration/razorpay/get-order?bookingId=${props.bookingId}`);
+    const { currency, amount, order_id, key } = await data?.json();
     const options = {
       key,
       name: COMPANY_NAME,
-      currency: currency,
-      amount: amount,
-      order_id: id,
+      currency,
+      amount,
+      order_id,
       modal: {
         ondismiss: function () {
           setIsLoading(false);

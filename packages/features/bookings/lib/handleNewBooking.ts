@@ -533,7 +533,6 @@ export async function getBookingData<T extends z.ZodType>({
   }
   // reqBody.end is no longer an optional property.
   if (reqBody.customInputs) {
-    console.log("insidecustominput");
     // Check if required custom inputs exist
     handleCustomInputs(eventType.customInputs as EventTypeCustomInput[], reqBody.customInputs);
     const reqBodyWithLegacyProps = bookingCreateSchemaLegacyPropsForApi.parse(reqBody);
@@ -1558,7 +1557,6 @@ async function handler(
     });
   const teamMembers = await Promise.all(teamMemberPromises);
 
-  console.log("Invitee from handleNewBooking", invitee);
   const attendeesList = [...invitee, ...guests];
 
   const responses = reqBody.responses || null;
@@ -2384,6 +2382,7 @@ async function handler(
       paymentRequired: true,
       paymentUid: payment?.uid,
       paymentId: payment?.id,
+      paymentLink: (isPrismaObjOrUndefined(payment?.data)?.paymentLink as string) || undefined,
     };
   }
 

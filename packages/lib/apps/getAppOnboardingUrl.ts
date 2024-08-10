@@ -1,6 +1,6 @@
 import { stringify } from "querystring";
 
-import type { AppOnboardingSteps } from "@calcom/lib/apps/appOnboardingSteps";
+import { AppOnboardingSteps } from "@calcom/lib/apps/appOnboardingSteps";
 
 export const getAppOnboardingUrl = async ({
   slug,
@@ -13,7 +13,7 @@ export const getAppOnboardingUrl = async ({
   teamId?: number;
   eventTypeIds?: number[];
 }): Promise<string> => {
-  if (slug === "razorpay") {
+  if (slug === "razorpay" && step === AppOnboardingSteps.ACCOUNTS_STEP) {
     const res = await fetch("/api/integrations/razorpay/add", {
       method: "GET",
       headers: {

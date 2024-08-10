@@ -1,14 +1,21 @@
-import type { AxiosInstance, AxiosResponse } from "axios";
+import type { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 import axios from "axios";
 import crypto from "crypto";
 
 import { isPrismaObjOrUndefined } from "@calcom/lib";
-import { RAZORPAY_CLIENT_ID, RAZORPAY_CLIENT_SECRET, RAZORPAY_WEBHOOK_SECRET } from "@calcom/lib/constants";
+import {
+  IS_PRODUCTION,
+  RAZORPAY_CLIENT_ID,
+  RAZORPAY_CLIENT_SECRET,
+  RAZORPAY_WEBHOOK_SECRET,
+  WEBAPP_URL,
+} from "@calcom/lib/constants";
 import { prisma } from "@calcom/prisma";
 
 export enum WebhookEvents {
   APP_REVOKED = "account.app.authorization_revoked",
 }
+
 const razorpay_auth_base_url = "https://auth.razorpay.com";
 const razorpay_api_base_url = "https://api.razorpay.com/v1";
 
@@ -21,15 +28,15 @@ interface RazorpayWrapperOptions {
 class RazorpayWrapper {
   private access_token: string;
   private refresh_token: string;
-
   private user_id: number;
   private axiosInstance: AxiosInstance;
+  private isRefreshing = false;
 
   constructor({ access_token, refresh_token, user_id }: RazorpayWrapperOptions) {
     this.access_token = access_token;
     this.refresh_token = refresh_token;
-
     this.user_id = user_id;
+
     this.axiosInstance = axios.create({
       baseURL: razorpay_api_base_url,
       headers: {
@@ -37,40 +44,6 @@ class RazorpayWrapper {
         "Content-Type": "application/json",
       },
     });
-
-    this.setupInterceptors();
-  }
-
-  private setupInterceptors() {
-    this.axiosInstance.interceptors.request.use(
-      (config) => {
-        if (this.access_token) {
-          config.headers.Authorization = `Bearer ${this.access_token}`;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Response interceptor to handle token refresh
-    this.axiosInstance.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        if (error.response?.status >= 400 && error.response?.status < 500) {
-          try {
-            await this.refreshAccessToken();
-
-            const originalRequest = error.config;
-            originalRequest.headers.Authorization = `Bearer ${this.access_token}`;
-            return this.axiosInstance(originalRequest);
-          } catch (refreshError) {
-            console.error("Error refreshing token:", refreshError);
-            return Promise.reject(refreshError);
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
   }
 
   private async handleUpdateToken({
@@ -96,6 +69,7 @@ class RazorpayWrapper {
       if (!keys) {
         throw new Error("Keys not found");
       }
+
       const updatedKey = {
         ...keys,
         access_token,
@@ -125,6 +99,8 @@ class RazorpayWrapper {
           grant_type: "refresh_token",
           refresh_token: this.refresh_token,
         });
+
+      console.log("refreshAccessToken response", response.data);
       await this.handleUpdateToken(response.data);
     } catch (error) {
       console.error("Failed to refresh token:", error);
@@ -132,52 +108,97 @@ class RazorpayWrapper {
     }
   }
 
-  async test(): Promise<boolean> {
+  private async handleRequest<T>(request: () => Promise<AxiosResponse<T>>): Promise<T> {
     try {
-      await this.axiosInstance.get("/payments");
-      return true;
+      const response = await request();
+      return response.data;
     } catch (error) {
-      console.error("Test failed:", error);
-      return false;
+      // Type assertion to AxiosError
+      const axiosError = error as AxiosError;
+
+      if (axiosError.response?.status === 401) {
+        // Unauthorized
+        if (!this.isRefreshing) {
+          this.isRefreshing = true;
+          try {
+            await this.refreshAccessToken();
+            const retryResponse = await request();
+            return retryResponse.data;
+          } catch (refreshError) {
+            console.error("Error refreshing token:", refreshError);
+            throw refreshError;
+          } finally {
+            this.isRefreshing = false;
+          }
+        } else {
+          return new Promise<T>((resolve, reject) => {
+            const checkTokenRefresh = () => {
+              if (!this.isRefreshing) {
+                this.handleRequest(request).then(resolve).catch(reject);
+              } else {
+                setTimeout(checkTokenRefresh, 100);
+              }
+            };
+            checkTokenRefresh();
+          });
+        }
+      }
+
+      console.error("Request failed:", axiosError);
+      throw axiosError;
     }
   }
 
-  // Orders
-  async createOrder({
-    referenceId,
+  async test(): Promise<boolean> {
+    return this.handleRequest(() => this.axiosInstance.get("/payments"))
+      .then(() => true)
+      .catch(() => false);
+  }
+
+  // Payments
+
+  async createPaymentLink({
+    bookingUid,
     amount,
     currency,
+    reference_id,
+    customer,
   }: {
-    referenceId: string;
+    bookingUid: string;
     amount: number;
     currency: string;
-  }): Promise<CreateOrderResponse> {
-    try {
-      const res = await this.axiosInstance.post("/orders", {
-        currency,
+    reference_id: string;
+    customer: {
+      name: string;
+      email: string;
+    };
+  }): Promise<CreatePaymentLinkResponse> {
+    return this.handleRequest(() =>
+      this.axiosInstance.post("/payment_links", {
         amount,
-        receipt: referenceId,
-      });
-      return res.data as CreateOrderResponse;
-    } catch (error) {
-      console.error("Error creating order:", error);
-      throw new Error("Error creating order");
-    }
+        currency,
+        reference_id,
+        customer,
+        callback_url: `${WEBAPP_URL}/booking/${bookingUid}`,
+        callback_method: "get",
+        upi_link: IS_PRODUCTION,
+      })
+    );
   }
 
-  //Payments
-  async checkIfPaymentCaptured(paymentId: string): Promise<boolean> {
-    try {
-      const res = await this.axiosInstance.get(`/payments/${paymentId}`);
-      return res.data.captured;
-    } catch (error) {
-      console.error("Error checking payment:", error);
-      throw new Error("Error checking if payment is captured");
-    }
+  async initiateRefund(paymentId: string): Promise<boolean> {
+    const response = await this.handleRequest(() => this.axiosInstance.post(`/payments/${paymentId}/refund`));
+    return response.status === "processed";
   }
 
-  //Webhook
+  async handleCancelPayment(paymentLinkId: string): Promise<boolean> {
+    const response = await this.handleRequest(() =>
+      this.axiosInstance.post(`/payment_links/${paymentLinkId}/cancel`)
+    );
+    return response.status === "cancelled";
+  }
 
+  // Webhook
   static verifyWebhook({ body, signature }: WebhookEventVerifyRequest): boolean {
     if (!RAZORPAY_WEBHOOK_SECRET) {
       throw new Error("Webhook secret is required");
@@ -204,36 +225,12 @@ interface WebhookEventVerifyRequest {
   signature: string;
 }
 
-interface CreateOrderResponse {
+interface CreatePaymentLinkResponse {
   id: string;
-  /**
-   * Indicates the type of entity.
-   */
-  entity: string;
-  /**
-   * The amount paid against the order.
-   */
+  reference_id: string;
+  short_url: string;
+  user_id: string;
+  currency: string;
+  amount: number;
   amount_paid: number;
-  /**
-   * The amount pending against the order.
-   */
-  amount_due: number;
-  /**
-   * The status of the order.
-   */
-  status: "created" | "attempted" | "paid";
-  /**
-   * The number of payment attempts, successful and failed,
-   * that have been made against this order.
-   */
-  attempts: number;
-  /**
-   * Indicates the Unix timestamp when this order was created.
-   */
-  created_at: number;
-  /**
-   * A description that appears on the hosted page.
-   * For example, `12:30 p.m. Thali meals (Gaurav Kumar)`.
-   */
-  description: string;
 }

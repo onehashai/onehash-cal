@@ -19,6 +19,7 @@ export interface IAbstractPaymentService {
     bookerName: string | null,
     bookerEmail: string,
     paymentOption: PaymentOption,
+    bookingUid: string,
     eventTitle?: string,
     bookingTitle?: string
   ): Promise<Payment>;

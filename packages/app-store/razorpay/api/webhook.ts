@@ -14,35 +14,6 @@ export const config = {
   },
 };
 
-// export async function handleRazorpayPaymentSuccess(orderId: string) {
-//   const payment = await prisma.payment.findFirst({
-//     where: {
-//       externalId: orderId,
-//     },
-//     select: {
-//       id: true,
-//       bookingId: true,
-//     },
-//   });
-
-//   if (!payment?.bookingId) throw new HttpCode({ statusCode: 204, message: "Payment not found" });
-
-//   const booking = await prisma.booking.findUnique({
-//     where: {
-//       id: payment.bookingId,
-//     },
-//     select: {
-//       id: true,
-//     },
-//   });
-
-//   if (!booking) throw new HttpCode({ statusCode: 204, message: "No booking found" });
-//   // Probably booking it's already paid from /capture but we need to send confirmation email
-//   const foundCredentials = await findPaymentCredentials(booking.id);
-//   if (!foundCredentials) throw new HttpCode({ statusCode: 204, message: "No credentials found" });
-//   return await handlePaymentSuccess(payment.id, payment.bookingId);
-// }
-
 async function handleAppRevoked(accountId: string) {
   const credentials = await prisma.credential.findFirst({
     where: {

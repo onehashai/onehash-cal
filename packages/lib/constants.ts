@@ -5,7 +5,7 @@ const RENDER_URL = process.env.RENDER_EXTERNAL_URL ? `https://${process.env.REND
 export const CALCOM_ENV = process.env.CALCOM_ENV || process.env.NODE_ENV;
 export const IS_PRODUCTION = CALCOM_ENV === "production";
 export const IS_PRODUCTION_BUILD = process.env.NODE_ENV === "production";
-const IS_DEV = CALCOM_ENV === "development";
+export const IS_DEV = CALCOM_ENV === "development";
 
 /** https://app.cal.com */
 export const WEBAPP_URL =
@@ -181,6 +181,7 @@ export const TRANSCRIPTION_STOPPED_ICON = IS_PRODUCTION
 export const RAZORPAY_CLIENT_ID = process.env.NEXT_PUBLIC_RAZORPAY_CLIENT_ID;
 export const RAZORPAY_CLIENT_SECRET = process.env.RAZORPAY_CLIENT_SECRET;
 export const RAZORPAY_STATE_KEY = process.env.RAZORPAY_SECRET;
+
 export const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_SECRET;
 export const RAZORPAY_REDIRECT_URL = `${WEBAPP_URL}/apps/installation/accounts`;
 // export const RAZORPAY_REDIRECT_URL = `https://66f2-103-171-99-41.ngrok-free.app/apps/installation/accounts`;

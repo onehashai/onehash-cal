@@ -11,6 +11,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   const appType = config.type;
   try {
+    if (!RAZORPAY_CLIENT_ID || !RAZORPAY_REDIRECT_URL || !RAZORPAY_STATE_KEY) {
+      throw new Error("Razorpay credentials not defined properly");
+    }
     const alreadyInstalled = await prisma.credential.findFirst({
       where: {
         type: appType,
@@ -20,17 +23,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (alreadyInstalled) {
       return res.status(200).json({ url: "/apps/installation/accounts?slug=razorpay" });
     }
+
     const params = {
-      client_id: RAZORPAY_CLIENT_ID,
+      client_id: RAZORPAY_CLIENT_ID as string,
       response_type: "code",
-      redirect_uri: RAZORPAY_REDIRECT_URL,
+      redirect_uri: RAZORPAY_REDIRECT_URL as string,
       scope: "read_write",
-      state: RAZORPAY_STATE_KEY,
+      state: RAZORPAY_STATE_KEY as string,
     };
 
     const queryString = new URLSearchParams(params).toString();
     const url = `https://auth.razorpay.com/authorize?${queryString}`;
-    console.log("url", url);
+
     return res.status(200).json({ url });
   } catch (error: unknown) {
     console.error("getRazorpayOnboardingUrl", error);
