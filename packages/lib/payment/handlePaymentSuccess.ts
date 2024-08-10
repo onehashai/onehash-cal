@@ -63,6 +63,13 @@ export async function handlePaymentSuccess(
     });
   }
 
+  if (existingPayment.success) {
+    throw new HttpCode({
+      statusCode: 200,
+      message: `Booking with id '${booking.id}' was paid and confirmed.`,
+    });
+  }
+
   const paymentMetaData = {
     ...(isPrismaObjOrUndefined(existingPayment.data) || {}),
     ...(paymentData || {}),
@@ -106,9 +113,4 @@ export async function handlePaymentSuccess(
   } else {
     await sendScheduledEmails({ ...evt });
   }
-
-  throw new HttpCode({
-    statusCode: 200,
-    message: `Booking with id '${booking.id}' was paid and confirmed.`,
-  });
 }

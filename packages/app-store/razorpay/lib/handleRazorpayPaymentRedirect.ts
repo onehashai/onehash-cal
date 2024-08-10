@@ -1,7 +1,6 @@
 import crypto from "crypto";
 
 import { RAZORPAY_CLIENT_SECRET } from "@calcom/lib/constants";
-import { HttpError as HttpCode } from "@calcom/lib/http-error";
 import { handlePaymentSuccess } from "@calcom/lib/payment/handlePaymentSuccess";
 import prisma from "@calcom/prisma";
 
@@ -79,12 +78,6 @@ const handleRazorpayPaymentRedirect = async (params: PaymentParams): Promise<str
     return "success";
   } catch (e) {
     console.error("Error handling payment success redirect:", e);
-    if (e instanceof HttpCode) {
-      if (e.statusCode === 200) {
-        return "success";
-      }
-      return "error";
-    }
     return "error";
   }
 };
