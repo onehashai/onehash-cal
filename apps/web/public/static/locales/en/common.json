@@ -107,7 +107,7 @@
   "running_late":"Running Late?",
   "connect_with_organizer":"Connect with the organizer via WhatsApp",
   "connect_with_attendee":"Connect with {{name}} via WhatsApp",
-  "autorefund":"Enable auto refund for this paid event",
+  "autorefund":"Enable auto refund of this paid event to the booker",
   "autorefund_info":"Enabling auto refund will ensure that event attendees receive a refund if the event is successfully canceled.",
   "select_host_placeholder":"Choose Your Host",
   "identity_provider": "Identity provider",

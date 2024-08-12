@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import { default as Razorpay, WebhookEvents } from "@calcom/app-store/razorpay/lib/Razorpay";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import { HttpError as HttpCode } from "@calcom/lib/http-error";
@@ -13,20 +14,67 @@ export const config = {
     bodyParser: false,
   },
 };
+async function detachAppFromEvents(where) {
+  //detaching razorpay from eventtypes, if any
+  const eventTypes = await prisma.eventType.findMany({
+    where,
+  });
+
+  // Iterate over each EventType record
+  for (const eventType of eventTypes) {
+    const metadata = isPrismaObjOrUndefined(eventType.metadata);
+
+    if (metadata?.apps && metadata?.apps?.razorpay) {
+      delete metadata.apps.razorpay;
+
+      await prisma.eventType.update({
+        where: {
+          id: eventType.id,
+        },
+        data: {
+          metadata: metadata,
+        },
+      });
+    }
+  }
+}
 
 async function handleAppRevoked(accountId: string) {
-  const credentials = await prisma.credential.findFirst({
+  const credential = await prisma.credential.findFirst({
     where: {
       key: {
         path: ["account_id"],
         equals: accountId,
       },
+      appId: "razorpay",
     },
   });
-  if (!credentials) throw new HttpCode({ statusCode: 204, message: "No credentials found" });
+  if (!credential) throw new HttpCode({ statusCode: 204, message: "No credentials found" });
+  const userId = credential.userId;
+
+  if (userId) {
+    await detachAppFromEvents({
+      metadata: {
+        not: null,
+      },
+      userId: userId,
+    });
+  }
+
+  const teamId = credential.teamId;
+  if (teamId) {
+    await detachAppFromEvents({
+      metadata: {
+        not: null,
+      },
+      teamId: teamId,
+    });
+  }
+
+  //removing the razorpay app from user/team account
   await prisma.credential.delete({
     where: {
-      id: credentials.id,
+      id: credential.id,
     },
   });
   return;
