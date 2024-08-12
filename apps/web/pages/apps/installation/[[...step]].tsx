@@ -429,6 +429,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     const session = await getServerSession({ req, res });
     if (!session?.user?.id) throw new Error(ERROR_MESSAGES.userNotAuthed);
     const parsedAppSlug = await handleRazorpayOAuthRedirect(query, session.user.id);
+    if (parsedAppSlug === "razorpay") {
+      return { redirect: { permanent: false, destination: "/apps/installed/payment" } };
+    }
     const stepsEnum = z.enum(STEPS);
     const parsedStepParam = z.coerce.string().parse(params?.step);
     const parsedTeamIdParam = z.coerce.number().optional().parse(query?.teamId);

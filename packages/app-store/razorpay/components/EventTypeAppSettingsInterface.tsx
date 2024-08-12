@@ -21,7 +21,7 @@ const EventTypeAppSettingsInterface: EventTypeAppSettingsComponent = ({
   const price = getAppData("price");
 
   const currency = getAppData("currency");
-  const [selectedCurrency, setSelectedCurrency] = useState(currencyOptions.find((c) => c.value === currency));
+  const [selectedCurrency, setSelectedCurrency] = useState(currencyOptions.find((c) => c.value === "INR"));
   const [currencySymbol, setCurrencySymbol] = useState(
     isAcceptedCurrencyCode(currency) ? currencySymbols[currency] : ""
   );

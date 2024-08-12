@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 //WEBHOOK EVENTS ASSOCIATED EXAMPLE PAYLOADS : https://razorpay.com/docs/webhooks/payloads/payments/
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
@@ -14,7 +15,7 @@ export const config = {
     bodyParser: false,
   },
 };
-async function detachAppFromEvents(where) {
+async function detachAppFromEvents(where: Prisma.EventTypeWhereInput) {
   //detaching razorpay from eventtypes, if any
   const eventTypes = await prisma.eventType.findMany({
     where,
@@ -24,8 +25,8 @@ async function detachAppFromEvents(where) {
   for (const eventType of eventTypes) {
     const metadata = isPrismaObjOrUndefined(eventType.metadata);
 
-    if (metadata?.apps && metadata?.apps?.razorpay) {
-      delete metadata.apps.razorpay;
+    if (metadata?.apps && isPrismaObjOrUndefined(metadata?.apps)?.razorpay) {
+      delete isPrismaObjOrUndefined(metadata.apps)?.razorpay;
 
       await prisma.eventType.update({
         where: {
@@ -55,7 +56,7 @@ async function handleAppRevoked(accountId: string) {
   if (userId) {
     await detachAppFromEvents({
       metadata: {
-        not: null,
+        not: undefined,
       },
       userId: userId,
     });
@@ -65,7 +66,7 @@ async function handleAppRevoked(accountId: string) {
   if (teamId) {
     await detachAppFromEvents({
       metadata: {
-        not: null,
+        not: undefined,
       },
       teamId: teamId,
     });
