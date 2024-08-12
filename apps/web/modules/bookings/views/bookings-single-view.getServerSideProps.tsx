@@ -188,7 +188,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       }
     }
   }
-
   const { currentOrgDomain } = orgDomainConfig(context.req);
   return {
     props: {
@@ -205,6 +204,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       ...(tz && { tz }),
       userTimeFormat,
       requiresLoginToUpdate,
+      isLoggedInUserHost,
     },
   };
 }

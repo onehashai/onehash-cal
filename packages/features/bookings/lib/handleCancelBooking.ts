@@ -137,7 +137,7 @@ export type CustomRequest = NextApiRequest & {
 };
 
 async function handler(req: CustomRequest) {
-  const { id, uid, allRemainingBookings, cancellationReason, seatReferenceUid } =
+  const { id, uid, allRemainingBookings, cancellationReason, seatReferenceUid, autorefund } =
     schemaBookingCancelParams.parse(req.body);
   req.bookingToDelete = await getBookingToDelete(id, uid);
   const {
@@ -292,8 +292,8 @@ async function handler(req: CustomRequest) {
   const result = await cancelAttendeeSeat(req, dataForWebhooks);
   if (result) return { success: true };
 
-  let workflowReminderPromises = [];
-  let webhookTriggerPromises = [];
+  let workflowReminderPromises: Promise<void>[] = [];
+  let webhookTriggerPromises: Promise<void>[] = [];
   await prisma
     .$transaction(
       async (prismaTransaction) => {
@@ -388,15 +388,16 @@ async function handler(req: CustomRequest) {
           updatedBookings.push(updatedBooking);
         }
 
-        // Handle payment cancellation outside of the transaction
-        const paymentCancellationPromises = updatedBookings.map((booking) =>
-          bookingCancelPaymentHandler({
-            payment: booking.payment,
-            eventType: booking.eventType,
-          })
-        );
+        if (autorefund) {
+          const paymentCancellationPromises = updatedBookings.map((booking) =>
+            bookingCancelPaymentHandler({
+              payment: booking.payment,
+              eventType: booking.eventType,
+            })
+          );
 
-        await Promise.all(paymentCancellationPromises);
+          await Promise.all(paymentCancellationPromises);
+        }
 
         // Handle webhook and workflow reminders deletion outside of the transaction
         webhookTriggerPromises = updatedBookings.map((booking) =>

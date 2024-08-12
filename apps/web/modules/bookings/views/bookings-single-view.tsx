@@ -704,6 +704,7 @@ export default function Success(props: PageProps) {
                             allRemainingBookings={allRemainingBookings}
                             seatReferenceUid={seatReferenceUid}
                             bookingCancelledEventProps={bookingCancelledEventProps}
+                            isLoggedInUserHost={props.isLoggedInUserHost || false}
                           />
                         </>
                       ))}
