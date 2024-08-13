@@ -518,16 +518,22 @@ function BookingListItem(booking: BookingItemProps) {
                   )}
               </div>
             )}
-            {isPending && (
-              <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
-                {t("unconfirmed")}
-              </Badge>
-            )}
+            {isPending &&
+              (booking.metadata.paymentStatus === "failed" ? (
+                <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
+                  {t("payment_not_created_error")}
+                </Badge>
+              ) : (
+                <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
+                  {t("unconfirmed")}
+                </Badge>
+              ))}
             {booking.eventType?.team && (
               <Badge className="ltr:mr-2 rtl:ml-2" variant="gray">
                 {booking.eventType.team.name}
               </Badge>
             )}
+
             {booking.paid && !booking.payment[0] ? (
               <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
                 {t("error_collecting_card")}

@@ -2,6 +2,8 @@ import type { AppCategories, Prisma } from "@prisma/client";
 
 import appStore from "@calcom/app-store";
 import type { EventTypeAppsList } from "@calcom/app-store/utils";
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import prisma from "@calcom/prisma";
 import type { CompleteEventType } from "@calcom/prisma/zod";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 import type { IAbstractPaymentService, PaymentApp } from "@calcom/types/PaymentService";
@@ -43,37 +45,55 @@ const handlePayment = async (
     selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].paymentOption || "ON_BOOKING";
 
   let paymentData;
-  if (paymentOption === "HOLD") {
-    paymentData = await paymentInstance.collectCard(
-      {
-        amount: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].price,
-        currency: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].currency,
-      },
-      booking.id,
-      bookerEmail,
-      paymentOption
-    );
-  } else {
-    paymentData = await paymentInstance.create(
-      {
-        amount: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].price,
-        currency: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].currency,
-      },
-      booking.id,
-      booking.userId,
-      booking.user?.username ?? null,
-      bookerName,
-      bookerEmail,
-      paymentOption,
-      booking.uid,
-      selectedEventType.title,
-      evt.title
-    );
+  try {
+    if (paymentOption === "HOLD") {
+      paymentData = await paymentInstance.collectCard(
+        {
+          amount: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].price,
+          currency: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].currency,
+        },
+        booking.id,
+        bookerEmail,
+        paymentOption
+      );
+    } else {
+      paymentData = await paymentInstance.create(
+        {
+          amount: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].price,
+          currency: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].currency,
+        },
+        booking.id,
+        booking.userId,
+        booking.user?.username ?? null,
+        bookerName,
+        bookerEmail,
+        paymentOption,
+        booking.uid,
+        selectedEventType.title,
+        evt.title
+      );
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message === ErrorCode.PaymentCreationFailure) {
+      console.log("Hellothere", e.message);
+
+      await prisma.booking.update({
+        where: {
+          id: booking.id,
+        },
+        data: {
+          metadata: {
+            ...booking.metadata,
+            paymentStatus: "failed",
+          },
+        },
+      });
+    }
   }
 
   if (!paymentData) {
-    console.error("Payment data is null");
-    throw new Error("Payment data is null");
+    console.error("Payment could not be created");
+    throw new Error("Payment could not be created");
   }
   try {
     await paymentInstance.afterPayment(evt, booking, paymentData);

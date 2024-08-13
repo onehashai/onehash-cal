@@ -40,7 +40,8 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({
       }}
       description={<>Add Razorpay payment to your events</>}
       disableSwitch={shouldDisableSwitch}
-      switchTooltip={shouldDisableSwitch ? t("other_payment_app_enabled") : undefined}>
+      switchTooltip={shouldDisableSwitch ? t("other_payment_app_enabled") : undefined}
+      hideSettingsIcon={true}>
       <>
         <EventTypeAppSettingsInterface
           eventType={eventType}
