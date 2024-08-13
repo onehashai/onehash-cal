@@ -68,6 +68,7 @@ export class PaymentService implements IAbstractPaymentService {
           name: bookerName,
           email: bookerEmail,
         },
+        eventTitle: eventTitle || bookingTitle || "",
       });
 
       const paymentData = await prisma.payment.create({

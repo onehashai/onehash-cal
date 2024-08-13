@@ -6,7 +6,6 @@ import { isPrismaObjOrUndefined } from "@calcom/lib";
 import {
   RAZORPAY_CLIENT_ID,
   RAZORPAY_CLIENT_SECRET,
-  RAZORPAY_UPI_ENABLED,
   RAZORPAY_WEBHOOK_SECRET,
   WEBAPP_URL,
 } from "@calcom/lib/constants";
@@ -31,6 +30,7 @@ class RazorpayWrapper {
   private user_id: number;
   private axiosInstance: AxiosInstance;
   private isRefreshing = false;
+  private createPaymentLinkReqBody = {};
 
   constructor({ access_token, refresh_token, user_id }: RazorpayWrapperOptions) {
     this.access_token = access_token;
@@ -144,6 +144,36 @@ class RazorpayWrapper {
         }
       }
 
+      // Handle Bad Request (400) for /payment_links endpoint specifically
+      if (axiosError.response?.status === 400 && axiosError.config.url?.includes("/payment_links")) {
+        console.log("insidePaymentFailed");
+        // Modify the request payload by setting upi_link to false
+        const modifiedRequest = () => {
+          const originalRequestConfig = axiosError.config;
+
+          const modifiedPayload = {
+            ...this.createPaymentLinkReqBody,
+            upi_link: false,
+          };
+
+          // Return a new request with modified payload
+          return this.axiosInstance.post(originalRequestConfig.url!, modifiedPayload, {
+            headers: {
+              Authorization: originalRequestConfig.headers["Authorization"],
+              "Content-Type": originalRequestConfig.headers["Content-Type"],
+            },
+          });
+        };
+
+        try {
+          const retryResponse = await modifiedRequest();
+          return retryResponse.data;
+        } catch (retryError) {
+          console.error("Retry failed:", retryError);
+          throw retryError;
+        }
+      }
+
       console.error("Request failed:", axiosError);
       throw axiosError;
     }
@@ -163,6 +193,7 @@ class RazorpayWrapper {
     currency,
     reference_id,
     customer,
+    eventTitle,
   }: {
     bookingUid: string;
     amount: number;
@@ -172,18 +203,20 @@ class RazorpayWrapper {
       name: string;
       email: string;
     };
+    eventTitle?: string;
   }): Promise<CreatePaymentLinkResponse> {
-    return this.handleRequest(() =>
-      this.axiosInstance.post("/payment_links", {
-        amount,
-        currency,
-        reference_id,
-        customer,
-        callback_url: `${WEBAPP_URL}/booking/${bookingUid}`,
-        callback_method: "get",
-        upi_link: RAZORPAY_UPI_ENABLED,
-      })
-    );
+    this.createPaymentLinkReqBody = {
+      amount,
+      currency,
+      reference_id,
+      customer,
+      callback_url: `${WEBAPP_URL}/booking/${bookingUid}`,
+      callback_method: "get",
+      upi_link: true,
+      description: `Payment for ${eventTitle} booking on OneHash Cal`,
+      expire_by: Math.floor((Date.now() + 30 * 60 * 1000) / 1000),
+    };
+    return this.handleRequest(() => this.axiosInstance.post("/payment_links", this.createPaymentLinkReqBody));
   }
 
   async initiateRefund(paymentId: string): Promise<boolean> {

@@ -75,8 +75,6 @@ const handlePayment = async (
     }
   } catch (e) {
     if (e instanceof Error && e.message === ErrorCode.PaymentCreationFailure) {
-      console.log("Hellothere", e.message);
-
       await prisma.booking.update({
         where: {
           id: booking.id,

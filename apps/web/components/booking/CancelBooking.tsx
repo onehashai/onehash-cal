@@ -12,6 +12,7 @@ type Props = {
     title?: string;
     uid?: string;
     id?: number;
+    isPaid: boolean;
   };
   profile: {
     name: string | null;
@@ -119,7 +120,7 @@ export default function CancelBooking(props: Props) {
                 rows={3}
               />
             </div>
-            {props.isLoggedInUserHost && (
+            {props.isLoggedInUserHost && props.booking.isPaid && (
               <div className="flex w-full justify-between">
                 <label className="text-default font-medium">{t("autorefund")}</label>
                 <Switch
