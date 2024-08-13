@@ -352,7 +352,6 @@ export default function Success(props: PageProps) {
     },
     eventType,
   };
-
   return (
     <div className={isEmbed ? "" : "h-screen"} data-testid="success-page">
       {!isEmbed && !isFeedbackMode && (
@@ -695,7 +694,7 @@ export default function Success(props: PageProps) {
                               uid: bookingInfo?.uid,
                               title: bookingInfo?.title,
                               id: bookingInfo?.id,
-                              isPaid: !props.paymentStatus,
+                              isPaid: props.paymentStatus !== null,
                             }}
                             profile={{ name: props.profile.name, slug: props.profile.slug }}
                             recurringEvent={eventType.recurringEvent}
