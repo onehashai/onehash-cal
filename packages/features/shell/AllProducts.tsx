@@ -61,7 +61,7 @@ const AllProducts = () => {
             <>
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon="message"
+                  StartIcon="message-circle"
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_CHAT_URL}

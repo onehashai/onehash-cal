@@ -70,7 +70,7 @@ export default function MakeSetup({ inviteLink }: InferGetServerSidePropsType<ty
             <div className="invisible md:visible">
               <img className="h-11" src="/api/app-store/make/icon.svg" alt="Make Logo" />
             </div>
-            <div className="ml-2 ltr:mr-2 rtl:ml-2 md:ml-5">
+            <div className="ml-2 md:ml-5 ltr:mr-2 rtl:ml-2">
               <div className="text-default">{t("setting_up_make")}</div>
 
               <>

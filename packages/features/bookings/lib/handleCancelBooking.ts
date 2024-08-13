@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { NextApiRequest } from "next";
 
 import bookingCancelPaymentHandler from "@calcom/app-store/_utils/payments/bookingCancelPaymentHandler";
+import EventManager from "@calcom/core/EventManager";
 import dayjs from "@calcom/dayjs";
 import { sendCancelledEmails } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
@@ -24,9 +25,10 @@ import prisma, { bookingMinimalSelect } from "@calcom/prisma";
 import type { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { BookingStatus, WorkflowMethods } from "@calcom/prisma/enums";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
-import { schemaBookingCancelParams } from "@calcom/prisma/zod-utils";
+import { schemaBookingCancelParams, EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
+import { getAllCredentials } from "./getAllCredentialsForUsersOnEvent/getAllCredentials";
 import cancelAttendeeSeat from "./handleSeats/cancel/cancelAttendeeSeat";
 
 const log = logger.getSubLogger({ prefix: ["handleCancelBooking"] });
@@ -425,6 +427,24 @@ async function handler(req: CustomRequest) {
       log.error("Transaction failed", error);
       throw new HttpError({ statusCode: 500, message: "Internal server error" });
     });
+
+  const isBookingInRecurringSeries = !!(
+    bookingToDelete.eventType?.recurringEvent &&
+    bookingToDelete.recurringEventId &&
+    allRemainingBookings
+  );
+  const bookingToDeleteEventTypeMetadata = EventTypeMetaDataSchema.parse(
+    bookingToDelete.eventType?.metadata || null
+  );
+
+  const credentials = await getAllCredentials(bookingToDelete.user, {
+    ...bookingToDelete.eventType,
+    metadata: bookingToDeleteEventTypeMetadata,
+  });
+
+  const eventManager = new EventManager({ ...bookingToDelete.user, credentials });
+
+  await eventManager.cancelEvent(evt, bookingToDelete.references, isBookingInRecurringSeries);
 
   await Promise.all([...webhookTriggerPromises, ...workflowReminderPromises]);
 
