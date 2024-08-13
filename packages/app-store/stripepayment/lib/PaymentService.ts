@@ -63,6 +63,7 @@ export class PaymentService implements IAbstractPaymentService {
     bookerName: string,
     bookerEmail: string,
     paymentOption: PaymentOption,
+    bookingUid: string,
     eventTitle?: string,
     bookingTitle?: string
   ) {
@@ -291,10 +292,6 @@ export class PaymentService implements IAbstractPaymentService {
     }
   }
 
-  async update(): Promise<Payment> {
-    throw new Error("Method not implemented.");
-  }
-
   async refund(paymentId: Payment["id"]): Promise<Payment> {
     try {
       const payment = await this.getPayment({
@@ -383,6 +380,9 @@ export class PaymentService implements IAbstractPaymentService {
     }
   }
 
+  async update(): Promise<Payment> {
+    throw new Error("Method not implemented.");
+  }
   getPaymentPaidStatus(): Promise<string> {
     throw new Error("Method not implemented.");
   }

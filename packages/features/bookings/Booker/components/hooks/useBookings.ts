@@ -92,7 +92,7 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
   const createBookingMutation = useMutation({
     mutationFn: createBooking,
     onSuccess: (responseData) => {
-      const { uid, paymentUid } = responseData;
+      const { uid, paymentUid, paymentLink } = responseData;
       const fullName = getFullName(bookingForm.getValues("responses.name"));
 
       const users = !!event.data?.hosts?.length
@@ -145,6 +145,11 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
       }
 
       if (paymentUid) {
+        //If the payment provides payment link, redirect to that link directly
+        if (paymentLink) {
+          router.push(paymentLink);
+          return;
+        }
         router.push(
           createPaymentLink({
             paymentUid,

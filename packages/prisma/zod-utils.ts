@@ -308,6 +308,7 @@ export const schemaBookingCancelParams = z.object({
   allRemainingBookings: z.boolean().optional(),
   cancellationReason: z.string().optional(),
   seatReferenceUid: z.string().optional(),
+  autorefund: z.boolean(),
 });
 
 export const vitalSettingsUpdateSchema = z.object({

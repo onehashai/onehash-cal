@@ -163,7 +163,7 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
               />
             )}
       </div>
-      <div className="max-w-44 absolute right-0 mr-4 flex flex-wrap justify-end gap-1">
+      <div className="absolute right-0 mr-4 flex max-w-44 flex-wrap justify-end gap-1">
         {appInstalled ? <Badge variant="green">{t("installed", { count: appAdded })}</Badge> : null}
         {app.isTemplate && (
           <span className="bg-error rounded-md px-2 py-1 text-sm font-normal text-red-800">Template</span>
@@ -218,11 +218,14 @@ const InstallAppButtonChild = ({
   const appMetadata = appStoreMetadata[dirName as keyof typeof appStoreMetadata];
   const redirectToAppOnboarding = useMemo(() => shouldRedirectToAppOnboarding(appMetadata), [appMetadata]);
 
-  const _onClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+  const _onClick = async (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
     if (redirectToAppOnboarding) {
-      router.push(
-        getAppOnboardingUrl({ slug: addAppMutationInput.slug, step: AppOnboardingSteps.ACCOUNTS_STEP })
-      );
+      const res = await getAppOnboardingUrl({
+        slug: addAppMutationInput.slug,
+        step: AppOnboardingSteps.ACCOUNTS_STEP,
+      });
+
+      router.push(res);
     } else if (onClick) {
       onClick(e);
     }

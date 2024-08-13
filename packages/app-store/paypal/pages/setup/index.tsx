@@ -35,7 +35,7 @@ export default function PayPalSetup() {
     <div className="bg-default flex h-screen">
       {showContent ? (
         <div className="bg-default border-subtle m-auto max-w-[43em] overflow-auto rounded border pb-10 md:p-10">
-          <div className="ml-2 ltr:mr-2 rtl:ml-2 md:ml-5">
+          <div className="ml-2 md:ml-5 ltr:mr-2 rtl:ml-2">
             <div className="invisible md:visible">
               <img className="h-11" src="/api/app-store/paypal/icon.svg" alt="Paypal Payment Logo" />
               <p className="text-default mt-5 text-lg">Paypal</p>
@@ -82,7 +82,7 @@ export default function PayPalSetup() {
             <div>
               <p className="text-lgf text-default mt-5 font-bold">Getting started with Paypal APP</p>
               <p className="text-default font-semi mt-2">
-                Here in Cal.com we offer Paypal as one of our payment gateway. You can use your own Paypal
+                Here in OneHash Cal we offer Paypal as one of our payment gateway. You can use your own Paypal
                 Business account to receive payments from your customers enabling and setting up price and
                 currency for each of your event types.
               </p>
