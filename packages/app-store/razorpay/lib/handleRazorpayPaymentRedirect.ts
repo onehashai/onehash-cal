@@ -57,12 +57,12 @@ const handleRazorpayPaymentRedirect = async (params: PaymentParams): Promise<str
 
   try {
     if (!validatePaymentRedirect(params, razorpay_signature)) {
-      console.log("Payment verification failed");
+      console.error("Payment verification failed");
       return "error";
     }
     if (razorpay_payment_link_status !== "paid") {
-      console.log("Payment not paid");
-      return "failure";
+      console.log("Payment not made");
+      return "failed";
     }
 
     const payment = await prisma.payment.findUnique({

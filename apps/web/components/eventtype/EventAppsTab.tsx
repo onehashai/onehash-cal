@@ -87,7 +87,6 @@ export const EventAppsTab = ({ eventType }: { eventType: EventType }) => {
     }
     return appCards;
   });
-
   return (
     <>
       <div>

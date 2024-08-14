@@ -146,7 +146,6 @@ class RazorpayWrapper {
 
       // Handle Bad Request (400) for /payment_links endpoint specifically
       if (axiosError.response?.status === 400 && axiosError.config.url?.includes("/payment_links")) {
-        console.log("insidePaymentFailed");
         // Modify the request payload by setting upi_link to false
         const modifiedRequest = () => {
           const originalRequestConfig = axiosError.config;
@@ -210,7 +209,7 @@ class RazorpayWrapper {
       currency,
       reference_id,
       customer,
-      callback_url: `${WEBAPP_URL}/booking/${bookingUid}`,
+      callback_url: `${WEBAPP_URL}/booking/${bookingUid}/razorpay`,
       callback_method: "get",
       upi_link: true,
       description: `Payment for ${eventTitle} booking on OneHash Cal`,

@@ -9,7 +9,7 @@ import {
   getOrgDomainConfigFromHostname,
   subdomainSuffix,
 } from "@calcom/features/oe/organizations/lib/orgDomains";
-import { DOCS_URL, IS_CALCOM, JOIN_DISCORD, WEBSITE_URL } from "@calcom/lib/constants";
+import { BLOGS_URL, DOCS_URL, IS_CALCOM, JOIN_DISCORD, WEBSITE_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HeadSeo } from "@calcom/ui";
 import { Icon } from "@calcom/ui";
@@ -49,7 +49,7 @@ export default function Custom404() {
       title: t("blog"),
       description: t("blog_description"),
       icon: "book-open" as const,
-      href: `${WEBSITE_URL}/blog`,
+      href: BLOGS_URL,
     },
   ];
 
