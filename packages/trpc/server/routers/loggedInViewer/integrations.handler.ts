@@ -121,14 +121,40 @@ export const integrationsHandler = async ({ ctx, input }: IntegrationsOptions) =
 
     userTeams = [...teamsQuery, ...parentTeams];
 
+    //TODO:check if we want to show team owner apps to team members too[They can modify the app config on event type]
+    // if (teamId) {
+    //   await Promise.all(
+    //     userTeams.map(async (team) => {
+    //       const teamOwner = await prisma.membership.findFirst({
+    //         where: {
+    //           teamId: team.id,
+    //           role: MembershipRole.OWNER,
+    //         },
+    //         select: {
+    //           userId: true,
+    //         },
+    //       });
+    //       if (teamOwner && teamOwner.userId === user.id) {
+    //         const teamOwnerCredentials = await prisma.credential.findMany({
+    //           where: {
+    //             userId: teamOwner.userId,
+    //           },
+    //           select: credentialForCalendarServiceSelect,
+    //         });
+    //         credentials = credentials.concat(teamOwnerCredentials);
+    //       }
+    //     })
+    //   );
+    // }
+
     const teamAppCredentials: CredentialPayload[] = userTeams.flatMap((teamApp) => {
       return teamApp.credentials ? teamApp.credentials.flat() : [];
     });
-    if (!includeTeamInstalledApps || teamId) {
-      credentials = teamAppCredentials;
-    } else {
-      credentials = credentials.concat(teamAppCredentials);
-    }
+    credentials = credentials.concat(teamAppCredentials);
+    // if (!includeTeamInstalledApps || teamId) {
+    //   credentials = teamAppCredentials;
+    // } else {
+    // }
   }
 
   const enabledApps = await getEnabledAppsFromCredentials(credentials, {

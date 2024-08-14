@@ -29,7 +29,6 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({
   const { t } = useLocale();
 
   const shouldDisableSwitch = !requirePayment && otherPaymentAppEnabled;
-
   return (
     <AppCard
       returnTo={WEBAPP_URL + asPath}
@@ -41,6 +40,7 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({
       description={<>Add Razorpay payment to your events</>}
       disableSwitch={shouldDisableSwitch}
       switchTooltip={shouldDisableSwitch ? t("other_payment_app_enabled") : undefined}
+      teamId={eventType.team?.id}
       hideSettingsIcon={true}>
       <>
         <EventTypeAppSettingsInterface
