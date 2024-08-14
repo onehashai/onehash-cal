@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { handleRazorpayPaymentRedirect } from "@calcom/app-store/razorpay/lib";
 
+import { type inferSSRProps } from "@lib/types/inferSSRProps";
+
 const querySchema = z.object({
   app: z.string(),
   uid: z.string(),

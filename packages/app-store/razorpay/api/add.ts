@@ -14,6 +14,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!RAZORPAY_CLIENT_ID || !RAZORPAY_REDIRECT_URL || !RAZORPAY_STATE_KEY) {
       throw new Error("Razorpay credentials not defined properly");
     }
+
+    if (req.query.teamId) {
+      const teamOwner = await prisma.membership.findFirst({
+        where: {
+          teamId: parseInt(req.query.teamId as string),
+          role: "OWNER",
+        },
+        select: {
+          userId: true,
+        },
+      });
+      if (!teamOwner || teamOwner.userId !== req.session.user.id) {
+        return res.status(401).json({ message: "You must be team owner to do this" });
+      }
+    }
     const alreadyInstalled = await prisma.credential.findFirst({
       where: {
         type: appType,
@@ -21,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
     if (alreadyInstalled) {
-      return res.status(200).json({ url: "/apps/installation/accounts?slug=razorpay" });
+      return res.status(200).json({ url: "/apps/installed/payment" });
     }
 
     const params = {

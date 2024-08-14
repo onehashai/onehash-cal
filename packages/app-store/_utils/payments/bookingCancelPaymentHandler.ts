@@ -2,6 +2,7 @@ import type { Payment, EventType } from "@prisma/client";
 
 import appStore from "@calcom/app-store";
 import prisma from "@calcom/prisma";
+import { MembershipRole } from "@calcom/prisma/enums";
 import type { IAbstractPaymentService, PaymentApp } from "@calcom/types/PaymentService";
 
 export interface BookingCancelPaymentHandlerInput {

@@ -9,7 +9,6 @@ import { z } from "zod";
 
 import checkForMultiplePaymentApps from "@calcom/app-store/_utils/payments/checkForMultiplePaymentApps";
 import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
-import { handleRazorpayOAuthRedirect } from "@calcom/app-store/razorpay/lib";
 import type { EventTypeAppSettingsComponentProps, EventTypeModel } from "@calcom/app-store/types";
 import { getLocale } from "@calcom/features/auth/lib/getLocale";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
@@ -428,10 +427,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     const { req, res, query, params } = context;
     const session = await getServerSession({ req, res });
     if (!session?.user?.id) throw new Error(ERROR_MESSAGES.userNotAuthed);
-    const parsedAppSlug = await handleRazorpayOAuthRedirect(query, session.user.id);
-    if (parsedAppSlug === "razorpay") {
-      return { redirect: { permanent: false, destination: "/apps/installed/payment" } };
-    }
+    const parsedAppSlug = z.coerce.string().parse(query?.slug);
     const stepsEnum = z.enum(STEPS);
     const parsedStepParam = z.coerce.string().parse(params?.step);
     const parsedTeamIdParam = z.coerce.number().optional().parse(query?.teamId);
