@@ -22,6 +22,7 @@ import getPaymentAppData from "@calcom/lib/getPaymentAppData";
 import { useBookerUrl } from "@calcom/lib/hooks/useBookerUrl";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { isPrismaObjOrUndefined } from "@calcom/lib/isPrismaObj";
 import { getEveryFreqFor } from "@calcom/lib/recurringStrings";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -519,7 +520,7 @@ function BookingListItem(booking: BookingItemProps) {
               </div>
             )}
             {isPending &&
-              (booking.metadata.paymentStatus === "failed" ? (
+              (isPrismaObjOrUndefined(booking.metadata)?.paymentStatus === "failed" ? (
                 <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
                   {t("payment_not_created_error")}
                 </Badge>
@@ -538,11 +539,18 @@ function BookingListItem(booking: BookingItemProps) {
               <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
                 {t("error_collecting_card")}
               </Badge>
-            ) : booking.paid ? (
-              <Badge className="ltr:mr-2 rtl:ml-2" variant="green" data-testid="paid_badge">
-                {booking.payment[0].paymentOption === "HOLD" ? t("card_held") : t("paid")}
-              </Badge>
-            ) : null}
+            ) : (
+              booking.paid &&
+              (isPrismaObjOrUndefined(booking.metadata)?.paymentStatus === "refunded" ? (
+                <Badge className="ltr:mr-2 rtl:ml-2" variant="green" data-testid="refunded_badge">
+                  {t("refunded")}
+                </Badge>
+              ) : (
+                <Badge className="ltr:mr-2 rtl:ml-2" variant="green" data-testid="paid_badge">
+                  {booking.payment[0].paymentOption === "HOLD" ? t("card_held") : t("paid")}
+                </Badge>
+              ))
+            )}
             {recurringDates !== undefined && (
               <div className="text-muted mt-2 text-sm">
                 <RecurringBookingsTooltip

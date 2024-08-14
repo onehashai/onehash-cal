@@ -338,6 +338,7 @@ async function handler(req: CustomRequest) {
               owner: true,
             },
           },
+          metadata: true,
         };
         if (
           bookingToDelete.eventType?.recurringEvent &&
@@ -391,12 +392,30 @@ async function handler(req: CustomRequest) {
         }
 
         if (autorefund) {
-          const paymentCancellationPromises = updatedBookings.map((booking) =>
-            bookingCancelPaymentHandler({
+          const paymentCancellationPromises = updatedBookings.map((booking) => {
+            if (!booking.payment) {
+              log.warn(`No payment found for booking ${booking.id}`);
+              return Promise.resolve();
+            }
+            const cancelPaymentPromise = bookingCancelPaymentHandler({
               payment: booking.payment,
               eventType: booking.eventType,
-            })
-          );
+            });
+
+            const updateBookingPromise = prismaTransaction.booking.update({
+              where: {
+                id: booking.id,
+              },
+              data: {
+                metadata: {
+                  ...booking.metadata,
+                  paymentStatus: "refunded",
+                },
+              },
+            });
+
+            return Promise.all([cancelPaymentPromise, updateBookingPromise]);
+          });
 
           await Promise.all(paymentCancellationPromises);
         }

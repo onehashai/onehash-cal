@@ -79,6 +79,7 @@ export const DESKTOP_APP_LINK = "https://www.onehash.ai";
 export const JOIN_DISCORD = "https://www.onehash.ai";
 export const POWERED_BY_URL = `${WEBSITE_URL}/?utm_source=embed&utm_medium=powered-by-button`;
 export const DOCS_URL = "https://help.onehash.ai/en/";
+export const BLOGS_URL = "https://www.onehash.ai/blog";
 export const DEVELOPER_DOCS = "https://help.onehash.ai/en/";
 export const SEO_IMG_DEFAULT = `${WEBSITE_URL}/og-image.png`;
 // The Dynamic OG Image is passed through Next's Image API to further optimize it.
@@ -185,4 +186,5 @@ export const RAZORPAY_STATE_KEY = process.env.RAZORPAY_SECRET;
 export const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_SECRET;
 export const RAZORPAY_REDIRECT_URL = `${WEBAPP_URL}/apps/installation/accounts`;
 export const RAZORPAY_UPI_ENABLED = process.env.RAZORPAY_UPI_ENABLED === "true";
+
 // export const RAZORPAY_REDIRECT_URL = `https://66f2-103-171-99-41.ngrok-free.app/apps/installation/accounts`;

@@ -1,7 +1,6 @@
 import type { GetServerSidePropsContext } from "next";
 import { z } from "zod";
 
-import { handleRazorpayPaymentRedirect } from "@calcom/app-store/razorpay/lib";
 import { orgDomainConfig } from "@calcom/ee/organizations/lib/orgDomains";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import getBookingInfo from "@calcom/features/bookings/lib/getBookingInfo";
@@ -31,11 +30,6 @@ const querySchema = z.object({
   isSuccessBookingPage: stringToBoolean,
   formerTime: z.string().optional(),
   seatReferenceUid: z.string().optional(),
-  razorpay_payment_id: z.string().optional(),
-  razorpay_payment_link_id: z.string().optional(),
-  razorpay_payment_link_reference_id: z.string().optional(),
-  razorpay_payment_link_status: z.string().optional(),
-  razorpay_signature: z.string().optional(),
 });
 
 export type PageProps = inferSSRProps<typeof getServerSideProps>;
@@ -66,28 +60,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   if (!parsedQuery.success) return { notFound: true } as const;
   const { eventTypeSlug } = parsedQuery.data;
   let { uid, seatReferenceUid } = parsedQuery.data;
-  if (parsedQuery.data.razorpay_signature) {
-    const paymentStatus = await handleRazorpayPaymentRedirect({
-      razorpay_payment_id: parsedQuery.data.razorpay_payment_id,
-      razorpay_payment_link_id: parsedQuery.data.razorpay_payment_link_id,
-      razorpay_payment_link_reference_id: parsedQuery.data.razorpay_payment_link_reference_id,
-      razorpay_payment_link_status: parsedQuery.data.razorpay_payment_link_status,
-      razorpay_signature: parsedQuery.data.razorpay_signature,
-    });
-    if (paymentStatus !== "success") {
-      if (paymentStatus === "failure") {
-        return {
-          redirect: {
-            destination: `/booking/${uid}?razorpayPaymentStatus=failure`,
-            permanent: false,
-          },
-        };
-      }
-      return {
-        notFound: true,
-      } as const;
-    }
-  }
 
   const maybeBookingUidFromSeat = await maybeGetBookingUidFromSeat(prisma, uid);
   if (maybeBookingUidFromSeat.uid) uid = maybeBookingUidFromSeat.uid;

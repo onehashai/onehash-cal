@@ -12,7 +12,6 @@ export interface BookingCancelPaymentHandlerInput {
 const bookingCancelPaymentHandler = async (booking: BookingCancelPaymentHandlerInput) => {
   if (!!booking.payment.length) {
     let eventTypeOwnerId;
-    console.log("bookingEventOwnerd", booking.eventType.owner.id);
     if (booking.eventType?.owner) {
       eventTypeOwnerId = booking.eventType.owner.id;
     } else if (booking.eventType?.teamId) {
@@ -31,7 +30,6 @@ const bookingCancelPaymentHandler = async (booking: BookingCancelPaymentHandlerI
     if (!eventTypeOwnerId) {
       throw new Error("Event Type owner not found for obtaining payment app credentials");
     }
-    console.log("payment", booking.payment);
     const successPayment = booking.payment.find((payment) => payment.success);
 
     const paymentAppCredentials = await prisma.credential.findMany({
