@@ -2,11 +2,14 @@ import { z } from "zod";
 
 import { getStripeCustomerIdFromUserId } from "@calcom/app-store/stripepayment/lib/customer";
 import stripe from "@calcom/app-store/stripepayment/lib/server";
-import { IS_PRODUCTION, WEBAPP_URL } from "@calcom/lib/constants";
+import { MINIMUM_NUMBER_OF_ORG_SEATS, IS_PRODUCTION, WEBAPP_URL } from "@calcom/lib/constants";
 import { ORGANIZATION_MIN_SEATS } from "@calcom/lib/constants";
+import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
+
+const log = logger.getSubLogger({ prefix: ["teams/lib/payments"] });
 
 const teamPaymentMetadataSchema = z.object({
   paymentId: z.string(),

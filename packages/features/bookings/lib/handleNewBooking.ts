@@ -727,6 +727,7 @@ async function createBooking({
       attendees: true,
       payment: true,
       references: true,
+      metadata: true,
     },
     data: newBookingData,
   };
@@ -1780,8 +1781,9 @@ async function handler(
   let results: EventResult<AdditionalInformation & { url?: string; iCalUID?: string }>[] = [];
   let referencesToCreate: PartialReference[] = [];
 
-  let booking: (Booking & { appsStatus?: AppsStatus[]; paymentUid?: string; paymentId?: number }) | null =
-    null;
+  let booking:
+    | (Booking & { appsStatus?: AppsStatus[]; paymentUid?: string; paymentId?: number; paymentLink?: string })
+    | null = null;
 
   loggerWithEventDetails.debug(
     "Going to create booking in DB now",

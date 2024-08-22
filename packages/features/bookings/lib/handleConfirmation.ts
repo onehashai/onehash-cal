@@ -275,7 +275,6 @@ export async function handleConfirmation(args: {
       await scheduleMandatoryReminder(
         evtOfBooking,
         updatedBookings[index]?.eventType?.workflows || [],
-        false,
         !!updatedBookings[index].eventType?.owner?.hideBranding,
         evt.attendeeSeatId
       );

@@ -2,6 +2,7 @@ import type { AppCategories, Prisma } from "@prisma/client";
 
 import appStore from "@calcom/app-store";
 import type { EventTypeAppsList } from "@calcom/app-store/utils";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import prisma from "@calcom/prisma";
 import type { CompleteEventType } from "@calcom/prisma/zod";
@@ -25,6 +26,7 @@ const handlePayment = async (
     userId: number | null;
     startTime: { toISOString: () => string };
     uid: string;
+    metadata: Prisma.JsonValue;
   },
   bookerName: string,
   bookerEmail: string
@@ -75,13 +77,14 @@ const handlePayment = async (
     }
   } catch (e) {
     if (e instanceof Error && e.message === ErrorCode.PaymentCreationFailure) {
+      const _metadata = isPrismaObjOrUndefined(booking.metadata) ? booking.metadata : {};
       await prisma.booking.update({
         where: {
           id: booking.id,
         },
         data: {
           metadata: {
-            ...booking.metadata,
+            ..._metadata,
             paymentStatus: "failed",
           },
         },

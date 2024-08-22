@@ -1,9 +1,9 @@
 import { hasFilter } from "@calcom/features/filters/lib/hasFilter";
+import type { WorkflowType } from "@calcom/features/oe/workflows/components/WorkflowListPage";
 import type { PrismaClient } from "@calcom/prisma";
 import { Prisma } from "@calcom/prisma/client";
 import { MembershipRole } from "@calcom/prisma/client";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
-import type { WorkflowType } from "@calcom/workflows/components/WorkflowListPage";
 
 import type { TFilteredListInputSchema } from "./filteredList.schema";
 

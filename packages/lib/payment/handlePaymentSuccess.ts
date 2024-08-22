@@ -53,6 +53,7 @@ export async function handlePaymentSuccess(
     },
     select: {
       data: true,
+      success: true,
     },
   });
 
