@@ -145,9 +145,16 @@ class RazorpayWrapper {
       }
 
       // Handle Bad Request (400) for /payment_links endpoint specifically
-      if (axiosError.response?.status === 400 && axiosError.config.url?.includes("/payment_links")) {
+      if (
+        axiosError.response?.status === 400 &&
+        axiosError.config &&
+        axiosError.config.url?.includes("/payment_links")
+      ) {
         // Modify the request payload by setting upi_link to false
         const modifiedRequest = () => {
+          if (!axiosError.config) {
+            throw new Error("Request config not found");
+          }
           const originalRequestConfig = axiosError.config;
 
           const modifiedPayload = {

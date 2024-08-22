@@ -1,4 +1,4 @@
-import type { Payment, EventType } from "@prisma/client";
+import type { Payment } from "@prisma/client";
 
 import appStore from "@calcom/app-store";
 import prisma from "@calcom/prisma";
@@ -7,36 +7,49 @@ import type { IAbstractPaymentService, PaymentApp } from "@calcom/types/PaymentS
 
 export interface BookingCancelPaymentHandlerInput {
   payment: Payment[];
-  eventType: EventType;
+  eventType: {
+    owner: {
+      id: number;
+    };
+    teamId: number;
+  } | null;
 }
 
 const bookingCancelPaymentHandler = async (booking: BookingCancelPaymentHandlerInput) => {
-  if (!!booking.payment.length) {
-    let eventTypeOwnerId;
-    if (booking.eventType?.owner) {
-      eventTypeOwnerId = booking.eventType.owner.id;
-    } else if (booking.eventType?.teamId) {
-      const teamOwner = await prisma.membership.findFirst({
-        where: {
-          teamId: booking.eventType.teamId,
-          role: MembershipRole.OWNER,
-        },
-        select: {
-          userId: true,
-        },
-      });
-      eventTypeOwnerId = teamOwner?.userId;
-    }
+  if (booking.payment.length === 0) {
+    throw new Error("No payments found to process");
+  }
 
-    if (!eventTypeOwnerId) {
-      throw new Error("Event Type owner not found for obtaining payment app credentials");
-    }
-    const successPayment = booking.payment.find((payment) => payment.success);
+  let eventTypeOwnerId;
 
-    const paymentAppCredentials = await prisma.credential.findMany({
+  // Determine event type owner ID
+  if (booking.eventType?.owner) {
+    eventTypeOwnerId = booking.eventType.owner.id;
+  } else if (booking.eventType?.teamId) {
+    const teamOwner = await prisma.membership.findFirst({
+      where: {
+        teamId: booking.eventType.teamId,
+        role: MembershipRole.OWNER,
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    eventTypeOwnerId = teamOwner?.userId;
+  }
+
+  if (!eventTypeOwnerId) {
+    throw new Error("Event Type owner not found for obtaining payment app credentials");
+  }
+
+  // Process each payment
+  for (const payment of booking.payment) {
+    // Retrieve payment app credentials for the current payment
+    const paymentAppCredential = await prisma.credential.findFirst({
       where: {
         userId: eventTypeOwnerId,
-        appId: successPayment.appId,
+        appId: payment.appId,
       },
       select: {
         key: true,
@@ -50,35 +63,39 @@ const bookingCancelPaymentHandler = async (booking: BookingCancelPaymentHandlerI
       },
     });
 
-    const paymentAppCredential = paymentAppCredentials.find((credential) => {
-      return credential.appId === successPayment.appId;
-    });
-
     if (!paymentAppCredential) {
-      throw new Error("Payment app credentials not found");
+      console.warn(`Payment app credentials not found for appId ${payment.appId}`);
+      continue;
     }
 
-    const paymentApp = (await appStore[
-      paymentAppCredential?.app?.dirName as keyof typeof appStore
-    ]?.()) as PaymentApp;
+    // Load the payment app
+    const paymentAppDirName = paymentAppCredential.app?.dirName as keyof typeof appStore;
+    const paymentApp = (await appStore[paymentAppDirName]?.()) as PaymentApp | undefined;
     if (!paymentApp?.lib?.PaymentService) {
-      console.warn(`payment App service of type ${paymentApp} is not implemented`);
-      return null;
+      console.warn(`Payment App service of type ${paymentApp} is not implemented`);
+      continue;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const PaymentService = paymentApp.lib.PaymentService as any;
     const paymentInstance = new PaymentService(paymentAppCredential) as IAbstractPaymentService;
-    if (!successPayment) {
-      const paymentData = await paymentInstance.deletePayment(successPayment.id);
-      if (!paymentData.deleted) {
-        throw new Error("Payment could not be deleted");
+
+    try {
+      if (payment.success) {
+        // Refund successful payments
+        const paymentData = await paymentInstance.refund(payment.id);
+        if (!paymentData.refunded) {
+          console.error(`Payment ${payment.id} could not be refunded`);
+        }
+      } else {
+        // Delete unsuccessful payments
+        const paymentDeleted = await paymentInstance.deletePayment(payment.id);
+        if (!paymentDeleted) {
+          console.error(`Payment ${payment.id} could not be deleted`);
+        }
       }
-    } else {
-      const paymentData = await paymentInstance.refund(successPayment.id);
-      if (!paymentData.refunded) {
-        throw new Error("Payment could not be refunded");
-      }
+    } catch (error) {
+      console.error(`Error processing payment ${payment.id}:`, error);
     }
   }
 };

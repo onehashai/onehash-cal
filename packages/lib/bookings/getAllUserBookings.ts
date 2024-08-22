@@ -110,6 +110,7 @@ const getAllUserBookings = async ({ ctx, filters, bookingListingByStatus, take, 
     typeof bookingListingByStatus,
     Prisma.BookingOrderByWithAggregationInput
   > = {
+    all: { startTime: "asc" },
     upcoming: { startTime: "asc" },
     recurring: { startTime: "asc" },
     past: { startTime: "desc" },

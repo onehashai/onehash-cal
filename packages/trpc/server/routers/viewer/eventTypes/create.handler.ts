@@ -38,7 +38,7 @@ type CreateOptions = {
 };
 
 export const createHandler = async ({ ctx, input }: CreateOptions) => {
-  const { schedulingType, teamId, metadata, locations: inputLocations, ...rest } = input;
+  const { schedulingType, teamId, metadata, locations: inputLocations, scheduleId, length, ...rest } = input;
 
   const userId = ctx.user.id;
   const isManagedEventType = schedulingType === SchedulingType.MANAGED;
@@ -49,11 +49,13 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
 
   const data: Prisma.EventTypeCreateInput = {
     ...rest,
+    length: typeof length === "number" ? length : length[0],
     owner: teamId ? undefined : { connect: { id: userId } },
     metadata: (metadata as Prisma.InputJsonObject) ?? undefined,
     // Only connecting the current user for non-managed event types and non team event types
     users: isManagedEventType || schedulingType ? undefined : { connect: { id: userId } },
     locations,
+    schedule: scheduleId ? { connect: { id: scheduleId } } : undefined,
   };
 
   if (teamId && schedulingType) {
