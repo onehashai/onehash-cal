@@ -727,7 +727,6 @@ async function createBooking({
       attendees: true,
       payment: true,
       references: true,
-      metadata: true,
     },
     data: newBookingData,
   };

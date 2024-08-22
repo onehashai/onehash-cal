@@ -176,7 +176,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       ...(tz && { tz }),
       userTimeFormat,
       requiresLoginToUpdate,
-      isLoggedInUserHost,
+      isLoggedInUserHost: isLoggedInUserHost ?? false,
     },
   };
 }
