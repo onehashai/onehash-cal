@@ -4,7 +4,7 @@ import { ApiTags as DocsTags, ApiExcludeController as DocsExcludeController } fr
 
 @Controller()
 @DocsTags("Health - development only")
-@DocsExcludeController(getEnv("NODE_ENV") === "production")
+@DocsExcludeController(getEnv("NODE_ENV", "development") === "production")
 export class AppController {
   @Get("health")
   @Version(VERSION_NEUTRAL)

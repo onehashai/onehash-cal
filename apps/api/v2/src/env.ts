@@ -19,6 +19,7 @@ export type Environment = {
   CALCOM_LICENSE_KEY: string;
   GET_LICENSE_KEY_URL: string;
   API_KEY_PREFIX: string;
+  IS_BILLING_ENABLED: boolean;
 };
 
 export const getEnv = <K extends keyof Environment>(key: K, fallback?: Environment[K]): Environment[K] => {
@@ -31,5 +32,6 @@ export const getEnv = <K extends keyof Environment>(key: K, fallback?: Environme
     throw new Error(`Missing environment variable: ${key}.`);
   }
 
+  console.log("key", key, "value", value);
   return value;
 };

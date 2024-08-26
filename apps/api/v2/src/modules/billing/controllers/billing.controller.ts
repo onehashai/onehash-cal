@@ -6,6 +6,7 @@ import { OrganizationRolesGuard } from "@/modules/auth/guards/organization-roles
 import { SubscribeToPlanInput } from "@/modules/billing/controllers/inputs/subscribe-to-plan.input";
 import { CheckPlatformBillingResponseDto } from "@/modules/billing/controllers/outputs/CheckPlatformBillingResponse.dto";
 import { SubscribeTeamToBillingResponseDto } from "@/modules/billing/controllers/outputs/SubscribeTeamToBillingResponse.dto";
+import { BillingNotEnabledGuard } from "@/modules/billing/gaurds/billing-not-enabled/billing-not-enabled.guard";
 import { BillingService } from "@/modules/billing/services/billing.service";
 import { PlatformPlan } from "@/modules/billing/types";
 import {
@@ -34,6 +35,7 @@ import { ApiResponse } from "@calcom/platform-types";
   version: API_VERSIONS_VALUES,
 })
 @ApiExcludeController(true)
+@UseGuards(BillingNotEnabledGuard)
 export class BillingController {
   private readonly stripeWhSecret: string;
   private logger = new Logger("Billing Controller");

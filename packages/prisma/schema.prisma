@@ -190,6 +190,7 @@ enum IdentityProvider {
   CAL
   GOOGLE
   SAML
+  KEYCLOAK
 }
 
 model DestinationCalendar {

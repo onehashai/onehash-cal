@@ -37,7 +37,7 @@ import { SUCCESS_STATUS, X_CAL_SECRET_KEY } from "@calcom/platform-constants";
   path: "/v2/oauth/:clientId",
   version: API_VERSIONS_VALUES,
 })
-@DocsExcludeController(getEnv("NODE_ENV") === "production")
+@DocsExcludeController(getEnv("NODE_ENV", "development") === "production")
 @DocsTags("OAuth - development only")
 export class OAuthFlowController {
   constructor(

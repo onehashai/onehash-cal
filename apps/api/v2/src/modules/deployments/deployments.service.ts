@@ -19,6 +19,9 @@ export class DeploymentsService {
   ) {}
 
   async checkLicense() {
+    if (this.configService.get("isBillingEnabled")) {
+      return true;
+    }
     if (this.configService.get("e2e")) {
       return true;
     }

@@ -6,7 +6,7 @@ export type AppConfig = {
     port: number;
     path: string;
     url: string;
-    keyPrefix: string;
+    apiKeyPrefix: string;
     licenseKey: string;
     licenseKeyUrl: string;
   };
@@ -26,4 +26,5 @@ export type AppConfig = {
     baseUrl: string;
   };
   e2e: boolean;
+  isBillingEnabled: boolean;
 };
