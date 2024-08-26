@@ -8897,17 +8897,19 @@
             ],
             "enum": [
               "BOOKING_CREATED",
+              "BOOKING_PAYMENT_INITIATED",
+              "BOOKING_PAID",
               "BOOKING_RESCHEDULED",
+              "BOOKING_REQUESTED",
               "BOOKING_CANCELLED",
+              "BOOKING_REJECTED",
+              "BOOKING_NO_SHOW_UPDATED",
               "FORM_SUBMITTED",
               "MEETING_ENDED",
-              "RECORDING_READY",
-              "BOOKING_PAID",
-              "BOOKING_REQUESTED",
-              "BOOKING_REJECTED",
-              "BOOKING_PAYMENT_INITIATED",
               "MEETING_STARTED",
-              "INSTANT_MEETING"
+              "RECORDING_READY",
+              "INSTANT_MEETING",
+              "RECORDING_TRANSCRIPTION_GENERATED"
             ]
           },
           "active": {
@@ -9007,17 +9009,19 @@
             ],
             "enum": [
               "BOOKING_CREATED",
+              "BOOKING_PAYMENT_INITIATED",
+              "BOOKING_PAID",
               "BOOKING_RESCHEDULED",
+              "BOOKING_REQUESTED",
               "BOOKING_CANCELLED",
+              "BOOKING_REJECTED",
+              "BOOKING_NO_SHOW_UPDATED",
               "FORM_SUBMITTED",
               "MEETING_ENDED",
-              "RECORDING_READY",
-              "BOOKING_PAID",
-              "BOOKING_REQUESTED",
-              "BOOKING_REJECTED",
-              "BOOKING_PAYMENT_INITIATED",
               "MEETING_STARTED",
-              "INSTANT_MEETING"
+              "RECORDING_READY",
+              "INSTANT_MEETING",
+              "RECORDING_TRANSCRIPTION_GENERATED"
             ]
           },
           "active": {
