@@ -269,6 +269,7 @@ model User {
   organization               Team?                        @relation("scope", fields: [organizationId], references: [id])
   platformOAuthClients       PlatformOAuthClient[]        @relation("PlatformOAuthClientToUser")
   eventTypes                 EventType[]                  @relation("user_eventtype")
+  smsLockReviewedByAdmin     Boolean                      @default(false)
 
   @@unique([email, username])
   @@unique([username, organizationId])
@@ -299,54 +300,55 @@ model Profile {
 }
 
 model Team {
-  id                    Int                     @id @default(autoincrement())
+  id                     Int                     @id @default(autoincrement())
   /// @zod.min(1)
-  name                  String
+  name                   String
   /// @zod.min(1)
-  slug                  String?
-  bio                   String?
-  hideBranding          Boolean                 @default(false)
-  createdAt             DateTime                @default(now())
+  slug                   String?
+  bio                    String?
+  hideBranding           Boolean                 @default(false)
+  createdAt              DateTime                @default(now())
   /// @zod.custom(imports.teamMetadataSchema)
-  metadata              Json?
-  hideBookATeamMember   Boolean                 @default(false)
-  brandColor            String?
-  darkBrandColor        String?
-  theme                 String?
-  appLogo               String?
-  appIconLogo           String?
-  parentId              Int?
-  timeFormat            Int?
-  timeZone              String                  @default("Europe/London")
-  weekStart             String                  @default("Sunday")
-  isPrivate             Boolean                 @default(false)
-  logoUrl               String?
-  calVideoLogo          String?
-  pendingPayment        Boolean                 @default(false)
-  isOrganization        Boolean                 @default(false)
-  bannerUrl             String?
-  isPlatform            Boolean                 @default(false)
-  smsLockState          SMSLockState            @default(UNLOCKED)
-  accessCodes           AccessCode[]
-  apiKeys               ApiKey[]
-  routingForms          App_RoutingForms_Form[]
-  credentials           Credential[]
-  dsyncTeamGroupMapping DSyncTeamGroupMapping[]
-  eventTypes            EventType[]
-  instantMeetingTokens  InstantMeetingToken[]
-  members               Membership[]
-  organizationSettings  OrganizationSettings?
-  platformBilling       PlatformBilling?
-  platformOAuthClient   PlatformOAuthClient[]
-  orgProfiles           Profile[]
-  parent                Team?                   @relation("organization", fields: [parentId], references: [id], onDelete: Cascade)
-  children              Team[]                  @relation("organization")
-  inviteTokens          VerificationToken[]
-  verifiedEmails        VerifiedEmail[]
-  verifiedNumbers       VerifiedNumber[]
-  webhooks              Webhook[]
-  workflows             Workflow[]
-  orgUsers              User[]                  @relation("scope")
+  metadata               Json?
+  hideBookATeamMember    Boolean                 @default(false)
+  brandColor             String?
+  darkBrandColor         String?
+  theme                  String?
+  appLogo                String?
+  appIconLogo            String?
+  parentId               Int?
+  timeFormat             Int?
+  timeZone               String                  @default("Europe/London")
+  weekStart              String                  @default("Sunday")
+  isPrivate              Boolean                 @default(false)
+  logoUrl                String?
+  calVideoLogo           String?
+  pendingPayment         Boolean                 @default(false)
+  isOrganization         Boolean                 @default(false)
+  bannerUrl              String?
+  isPlatform             Boolean                 @default(false)
+  smsLockState           SMSLockState            @default(UNLOCKED)
+  accessCodes            AccessCode[]
+  apiKeys                ApiKey[]
+  routingForms           App_RoutingForms_Form[]
+  credentials            Credential[]
+  dsyncTeamGroupMapping  DSyncTeamGroupMapping[]
+  eventTypes             EventType[]
+  instantMeetingTokens   InstantMeetingToken[]
+  members                Membership[]
+  organizationSettings   OrganizationSettings?
+  platformBilling        PlatformBilling?
+  platformOAuthClient    PlatformOAuthClient[]
+  orgProfiles            Profile[]
+  parent                 Team?                   @relation("organization", fields: [parentId], references: [id], onDelete: Cascade)
+  children               Team[]                  @relation("organization")
+  inviteTokens           VerificationToken[]
+  verifiedEmails         VerifiedEmail[]
+  verifiedNumbers        VerifiedNumber[]
+  webhooks               Webhook[]
+  workflows              Workflow[]
+  orgUsers               User[]                  @relation("scope")
+  smsLockReviewedByAdmin Boolean                 @default(false)
 
   @@unique([slug, parentId])
   @@index([parentId])
