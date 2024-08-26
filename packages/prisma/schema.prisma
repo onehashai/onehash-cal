@@ -1170,6 +1170,12 @@ model OAuthClient {
   accessCodes  AccessCode[]
 }
 
+model KeycloakSessionInfo {
+  id           Int    @id @default(autoincrement())
+  browserToken String @unique
+  metadata     Json?
+}
+
 model AccessCode {
   id        Int           @id @default(autoincrement())
   code      String
