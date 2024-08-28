@@ -46,9 +46,9 @@ export const EventTypeUpdateInput = _EventTypeModel
       .array(
         z.object({
           userId: z.number(),
-          profileId: z.number().or(z.null()).optional(),
+          profileId: z.number().nullable().optional(), // Note: .nullable() after .number()
           isFixed: z.boolean().optional(),
-          priority: z.number().optional().nullable(),
+          priority: z.number().optional().nullable(), // Note: .nullable() after .number()
         })
       )
       .optional(),
