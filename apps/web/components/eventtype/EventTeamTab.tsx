@@ -1,3 +1,4 @@
+import { useSession } from "next-auth/react";
 import { Trans } from "next-i18next";
 import Link from "next/link";
 import type { EventTypeSetupProps, Host } from "pages/event-types/[type]";
@@ -12,6 +13,7 @@ import AddMembersWithSwitch, {
 import AssignAllTeamMembers from "@calcom/features/eventtypes/components/AssignAllTeamMembers";
 import ChildrenEventTypeSelect from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
 import type { FormValues, TeamMember } from "@calcom/features/eventtypes/lib/types";
+import { OrgBrandingProvider } from "@calcom/features/oe/organizations/context/provider";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { SchedulingType } from "@calcom/prisma/enums";
 import { Label, Select, SettingsToggle } from "@calcom/ui";
@@ -50,26 +52,38 @@ const ChildrenEventTypesList = ({
   options?: Options<ReturnType<typeof mapMemberToChildrenOption>>;
 } & Omit<Partial<ComponentProps<typeof ChildrenEventTypeSelect>>, "onChange" | "value">) => {
   const { t } = useLocale();
+  function useOrgBrandingValues() {
+    const session = useSession();
+    return session?.data?.user.org;
+  }
+
+  function OrgBrandProvider({ children }: { children: React.ReactNode }) {
+    const orgBrand = useOrgBrandingValues();
+    return <OrgBrandingProvider value={{ orgBrand }}>{children}</OrgBrandingProvider>;
+  }
+
   return (
     <div className="flex flex-col space-y-5">
       <div>
         <Label>{t("assign_to")}</Label>
-        <ChildrenEventTypeSelect
-          aria-label="assignment-dropdown"
-          data-testid="assignment-dropdown"
-          onChange={(options) => {
-            onChange &&
-              onChange(
-                options.map((option) => ({
-                  ...option,
-                }))
-              );
-          }}
-          value={value}
-          options={options.filter((opt) => !value.find((val) => val.owner.id.toString() === opt.value))}
-          controlShouldRenderValue={false}
-          {...rest}
-        />
+        <OrgBrandProvider>
+          <ChildrenEventTypeSelect
+            aria-label="assignment-dropdown"
+            data-testid="assignment-dropdown"
+            onChange={(options) => {
+              onChange &&
+                onChange(
+                  options.map((option) => ({
+                    ...option,
+                  }))
+                );
+            }}
+            value={value}
+            options={options.filter((opt) => !value.find((val) => val.owner.id.toString() === opt.value))}
+            controlShouldRenderValue={false}
+            {...rest}
+          />
+        </OrgBrandProvider>
       </div>
     </div>
   );

@@ -401,6 +401,7 @@ const EventTypePage = (props: EventTypeSetupProps) => {
   const permalink = `${WEBSITE_URL}/${team ? `team/${team.slug}` : eventType.users[0].username}/${
     eventType.slug
   }`;
+
   const tabMap = {
     setup: (
       <EventSetupTab
