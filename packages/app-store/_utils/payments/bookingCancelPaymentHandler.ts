@@ -1,6 +1,7 @@
 import type { Payment } from "@prisma/client";
 
 import appStore from "@calcom/app-store";
+import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
 import type { IAbstractPaymentService, PaymentApp } from "@calcom/types/PaymentService";
@@ -14,6 +15,8 @@ export interface BookingCancelPaymentHandlerInput {
     teamId: number;
   } | null;
 }
+
+const log = logger.getSubLogger({ prefix: ["bookingCancelPaymentHandler"] });
 
 const bookingCancelPaymentHandler = async (booking: BookingCancelPaymentHandlerInput) => {
   if (booking.payment.length === 0) {
@@ -65,6 +68,7 @@ const bookingCancelPaymentHandler = async (booking: BookingCancelPaymentHandlerI
 
     if (!paymentAppCredential) {
       console.warn(`Payment app credentials not found for appId ${payment.appId}`);
+      log.warn(`Payment app credentials not found for appId ${payment.appId}`);
       continue;
     }
 
@@ -73,6 +77,7 @@ const bookingCancelPaymentHandler = async (booking: BookingCancelPaymentHandlerI
     const paymentApp = (await appStore[paymentAppDirName]?.()) as PaymentApp | undefined;
     if (!paymentApp?.lib?.PaymentService) {
       console.warn(`Payment App service of type ${paymentApp} is not implemented`);
+      log.warn(`Payment App service of type ${paymentApp} is not implemented`);
       continue;
     }
 
@@ -86,16 +91,20 @@ const bookingCancelPaymentHandler = async (booking: BookingCancelPaymentHandlerI
         const paymentData = await paymentInstance.refund(payment.id);
         if (!paymentData.refunded) {
           console.error(`Payment ${payment.id} could not be refunded`);
+          log.error(`Payment ${payment.id} could not be refunded`);
         }
       } else {
         // Delete unsuccessful payments
         const paymentDeleted = await paymentInstance.deletePayment(payment.id);
         if (!paymentDeleted) {
           console.error(`Payment ${payment.id} could not be deleted`);
+          log.error(`Payment ${payment.id} could not be deleted`);
         }
       }
     } catch (error) {
       console.error(`Error processing payment ${payment.id}:`, error);
+      log.error(`Error processing payment ${payment.id}:`, error);
+      throw error;
     }
   }
 };
