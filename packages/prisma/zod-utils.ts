@@ -321,6 +321,7 @@ export const schemaBookingCancelParams = z.object({
   cancellationReason: z.string().optional(),
   seatReferenceUid: z.string().optional(),
   cancelledBy: z.string().email({ message: "Invalid email" }).optional(),
+  autorefund: z.boolean(),
 });
 
 export const vitalSettingsUpdateSchema = z.object({
