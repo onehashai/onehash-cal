@@ -5,7 +5,7 @@ import { getOrgUsernameFromEmail } from "@calcom/features/auth/signup/utils/getO
 import { checkPremiumUsername } from "@calcom/features/ee/common/lib/checkPremiumUsername";
 import { isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
 import { getFeatureFlag } from "@calcom/features/flags/server/utils";
-import { IS_SELF_HOSTED, WEBAPP_URL } from "@calcom/lib/constants";
+import { IS_SELF_HOSTED, SIGNUP_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import slugify from "@calcom/lib/slugify";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
@@ -24,7 +24,7 @@ const querySchema = z.object({
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   //redirect to sso login page as of now
-  ctx.res.writeHead(302, { Location: "/auth/login" });
+  ctx.res.writeHead(302, { Location: SIGNUP_URL });
   ctx.res.end();
   return { props: {} };
 

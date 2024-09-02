@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import nookies from "nookies";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN } from "@calcom/lib/constants";
+import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN, SIGNUP_URL } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 
 function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
@@ -16,10 +16,7 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
     handleGettingStarted();
   };
   const handleGettingStarted = () => {
-    window.open(
-      "https://sso.onehash.ai/realms/OneHash/protocol/openid-connect/registrations?client_id=onehash-cal&scope=openid%20email%20profile&response_type=code&redirect_uri=https%3A%2F%2Fapp.cal.id%2Fapi%2Fauth%2Fcallback%2Fkeycloak",
-      "_blank"
-    );
+    window.open(SIGNUP_URL, "_blank");
   };
 
   const handleGoToApp = () => {

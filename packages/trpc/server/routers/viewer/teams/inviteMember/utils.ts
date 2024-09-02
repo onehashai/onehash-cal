@@ -3,13 +3,7 @@ import type { TFunction } from "next-i18next";
 
 import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";
 import { sendTeamInviteEmail } from "@calcom/emails";
-import {
-  ENABLE_PROFILE_SWITCHER,
-  KEYCLOAK_CALLBACK_URI,
-  KEYCLOAK_CLIENT_ID,
-  SSO_BASE_URL,
-  WEBAPP_URL,
-} from "@calcom/lib/constants";
+import { ENABLE_PROFILE_SWITCHER, SIGNUP_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import { createAProfileForAnExistingUser } from "@calcom/lib/createAProfileForAnExistingUser";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -446,25 +440,13 @@ export async function sendSignupToOrganizationEmail({
       },
     },
   });
-  let joinLink = `${WEBAPP_URL}/signup?token=${token}&callbackUrl=/getting-started`;
-  if (KEYCLOAK_CALLBACK_URI && KEYCLOAK_CLIENT_ID && SSO_BASE_URL) {
-    const sso_query_params = new URLSearchParams({
-      client_id: KEYCLOAK_CLIENT_ID,
-      redirect_uri: KEYCLOAK_CALLBACK_URI,
-      response_type: "code",
-      scope: "openid",
-    }).toString();
-
-    // Token only exists if user is CAL user but hasn't completed onboarding.
-    joinLink = `${SSO_BASE_URL}?${sso_query_params}`;
-  }
 
   await sendTeamInviteEmail({
     language: translation,
     from: inviterName || `${team.name}'s admin`,
     to: usernameOrEmail,
     teamName: team.name,
-    joinLink: joinLink,
+    joinLink: SIGNUP_URL,
     isCalcomMember: false,
     isOrg: isOrg,
     parentTeamName: team?.parent?.name,
