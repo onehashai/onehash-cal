@@ -5,6 +5,10 @@
 * Add css variables here as well for light mode in addition to tailwind.config to avoid FOUC
 */
 :root {
+
+  /* home page */
+  --primary-color: #007EE5;
+  --hover-primary-color: #3b82f6;
   /* background */
 
   --cal-bg-emphasis: hsla(220,13%,91%,1);
