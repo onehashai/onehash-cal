@@ -3,6 +3,7 @@ import nookies from "nookies";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN } from "@calcom/lib/constants";
+import prisma from "@calcom/prisma";
 
 import { ssrInit } from "@server/lib/ssr";
 
@@ -13,7 +14,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
   const useSecureCookies = WEBAPP_URL?.startsWith("https://");
 
-  if (session?.keycloak_token) {
+  const keycloak_token = nookies.get(context).keycloak_token;
+
+  if (!keycloak_token && session?.keycloak_token) {
     nookies.set(context, "keycloak_token", session.keycloak_token, {
       domain: keycloak_cookie_domain,
       sameSite: useSecureCookies ? "none" : "lax",
@@ -23,13 +26,22 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     });
   }
 
-  if (!session) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/auth/login",
+  if (session) {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: session.user.id,
       },
-    };
+      select: {
+        completedOnboarding: true,
+      },
+    });
+    if (!user) {
+      throw new Error("User from session not found");
+    }
+
+    if (!user.completedOnboarding) {
+      return { redirect: { permanent: true, destination: "/getting-started" } };
+    }
   }
 
   return { props: { trpcState: ssr.dehydrate() } };
