@@ -18,10 +18,8 @@ import { appKeysSchema as zohoKeysSchema } from "../zod";
 
 const log = logger.getSubLogger({ prefix: [`[[zohocalendar/api/callback]`] });
 
-const OAUTH_BASE_URL = "https://accounts.zoho.com/oauth/v2";
-
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
-  const { code } = req.query;
+  const { code, "accounts-server": accountsServer } = req.query;
   const state = decodeOAuthState(req);
 
   if (code && typeof code !== "string") {
@@ -32,6 +30,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   if (!req.session?.user?.id) {
     return res.status(401).json({ message: "You must be logged in to do this" });
   }
+
+  const hostname = new URL(accountsServer as string).hostname;
+  const parts = hostname.split(".");
+  const domain = parts.slice(-2).join(".");
 
   const appKeys = await getAppKeysFromSlug(config.slug);
   const { client_id, client_secret } = zohoKeysSchema.parse(appKeys);
@@ -45,8 +47,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   };
 
   const query = stringify(params);
+  const url = `https://accounts.${domain}/oauth/v2/token`;
 
-  const response = await fetch(`${OAUTH_BASE_URL}/token?${query}`, {
+  const response = await fetch(`${url}?${query}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json; charset=utf-8",
@@ -54,6 +57,8 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   });
 
   const responseBody = await response.json();
+
+  console.log(`responseBody ${responseBody}`);
 
   if (!response.ok || responseBody.error) {
     log.error("get access_token failed", responseBody);
@@ -64,9 +69,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     access_token: responseBody.access_token,
     refresh_token: responseBody.refresh_token,
     expires_in: Math.round(+new Date() / 1000 + responseBody.expires_in),
+    domain,
   };
 
-  const calendarResponse = await fetch("https://calendar.zoho.com/api/v1/calendars", {
+  const calendarResponse = await fetch(`https://calendar.${domain}/api/v1/calendars`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${key.access_token}`,
@@ -74,6 +80,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     },
   });
   const data = await calendarResponse.json();
+  console.log("calendarResponse", data);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const primaryCalendar = data.calendars.find((calendar: any) => calendar.isdefault);
