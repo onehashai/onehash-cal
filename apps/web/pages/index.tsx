@@ -1,9 +1,10 @@
 import type { GetServerSidePropsContext } from "next";
 import Head from "next/head";
 import { useRouter } from "next/navigation";
+import nookies from "nookies";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { SIGNUP_URL } from "@calcom/lib/constants";
+import { KEYCLOAK_COOKIE_DOMAIN, SIGNUP_URL, WEBAPP_URL } from "@calcom/lib/constants";
 
 function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter();
@@ -302,6 +303,18 @@ const InfoCard = ({
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { req, res } = context;
   const session = await getServerSession({ req, res });
+  const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
+  const useSecureCookies = WEBAPP_URL?.startsWith("https://");
+
+  if (session?.keycloak_token) {
+    nookies.set(context, "keycloak_token", session.keycloak_token, {
+      domain: keycloak_cookie_domain,
+      sameSite: useSecureCookies ? "none" : "lax",
+      path: "/",
+      secure: useSecureCookies,
+      httpOnly: true,
+    });
+  }
 
   return {
     props: {
