@@ -1,4 +1,5 @@
 import { get } from "@vercel/edge-config";
+import { getToken } from "next-auth/jwt";
 import { collectEvents } from "next-collect/server";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
@@ -19,26 +20,38 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
   }
 };
 
+const globalRoutes = ["/", "/auth/login"];
+
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;
   const requestHeaders = new Headers(req.headers);
 
   requestHeaders.set("x-url", req.url);
   requestHeaders.set("Access-Control-Allow-Origin", "*");
+  const session = await getToken({
+    req: req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
   if (!url.pathname.startsWith("/api")) {
-    //
-    // NOTE: When tRPC hits an error a 500 is returned, when this is received
-    //       by the application the user is automatically redirected to /auth/login.
-    //
-    //     - For this reason our matchers are sufficient for an app-wide maintenance page.
-    //
-    // Check whether the maintenance page should be shown
-    const isInMaintenanceMode = await safeGet<boolean>("isInMaintenanceMode");
-    // If is in maintenance mode, point the url pathname to the maintenance page
-    if (isInMaintenanceMode) {
-      req.nextUrl.pathname = `/maintenance`;
-      return NextResponse.rewrite(req.nextUrl);
+    if (!globalRoutes.includes(url.pathname)) {
+      if (!session) {
+        const absoluteURL = new URL("/", req.nextUrl.origin);
+        return NextResponse.redirect(absoluteURL.toString());
+      }
+
+      // NOTE: When tRPC hits an error a 500 is returned, when this is received
+      //       by the application the user is automatically redirected to /auth/login.
+      //
+      //     - For this reason our matchers are sufficient for an app-wide maintenance page.
+      //
+      // Check whether the maintenance page should be shown
+      const isInMaintenanceMode = await safeGet<boolean>("isInMaintenanceMode");
+      // If is in maintenance mode, point the url pathname to the maintenance page
+      if (isInMaintenanceMode) {
+        req.nextUrl.pathname = `/maintenance`;
+        return NextResponse.rewrite(req.nextUrl);
+      }
     }
   }
 
