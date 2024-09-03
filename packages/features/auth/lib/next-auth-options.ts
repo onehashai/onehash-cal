@@ -966,9 +966,7 @@ export const AUTH_OPTIONS: AuthOptions = {
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
-      if (url === `${baseUrl}/auth/login`) {
-        return `${baseUrl}/event-types`;
-      }
+      if (url.includes("auth/login")) return `${baseUrl}/event-types`;
       // Allows callback URLs on the same domain
       else if (new URL(url).hostname === new URL(WEBAPP_URL).hostname) return url;
       return baseUrl;
