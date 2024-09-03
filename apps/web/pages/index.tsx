@@ -318,9 +318,11 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     });
   }
 
-  // if (!session?.user?.id) {
-  //   return { redirect: { permanent: false, destination: "/auth/login" } };
-  // }
+  //TODO:remove this after oauth is fixed
+
+  if (!session?.user?.id) {
+    return { redirect: { permanent: false, destination: "/auth/login" } };
+  }
 
   if (session) {
     //to prevent the user from visiting the /event-types page if they have not completed the onboarding process
@@ -340,6 +342,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       return { redirect: { permanent: true, destination: "/getting-started" } };
     }
   }
+
+  //TODO:remove this after oauth is fixed
+  return { redirect: { permanent: false, destination: "/event-types" } };
+
   return {
     props: {
       isLoggedIn: !!session,
