@@ -28,30 +28,29 @@ const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
 
   requestHeaders.set("x-url", req.url);
   requestHeaders.set("Access-Control-Allow-Origin", "*");
-  const session = await getToken({
-    req: req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
 
   if (!url.pathname.startsWith("/api")) {
-    if (!globalRoutes.includes(url.pathname)) {
+    if (!globalRoutes.includes(url.pathname) && !url.pathname.includes("embed")) {
+      const session = await getToken({
+        req: req,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
       if (!session) {
         const absoluteURL = new URL("/", req.nextUrl.origin);
         return NextResponse.redirect(absoluteURL.toString());
       }
-
-      // NOTE: When tRPC hits an error a 500 is returned, when this is received
-      //       by the application the user is automatically redirected to /auth/login.
-      //
-      //     - For this reason our matchers are sufficient for an app-wide maintenance page.
-      //
-      // Check whether the maintenance page should be shown
-      const isInMaintenanceMode = await safeGet<boolean>("isInMaintenanceMode");
-      // If is in maintenance mode, point the url pathname to the maintenance page
-      if (isInMaintenanceMode) {
-        req.nextUrl.pathname = `/maintenance`;
-        return NextResponse.rewrite(req.nextUrl);
-      }
+    }
+    // NOTE: When tRPC hits an error a 500 is returned, when this is received
+    //       by the application the user is automatically redirected to /auth/login.
+    //
+    //     - For this reason our matchers are sufficient for an app-wide maintenance page.
+    //
+    // Check whether the maintenance page should be shown
+    const isInMaintenanceMode = await safeGet<boolean>("isInMaintenanceMode");
+    // If is in maintenance mode, point the url pathname to the maintenance page
+    if (isInMaintenanceMode) {
+      req.nextUrl.pathname = `/maintenance`;
+      return NextResponse.rewrite(req.nextUrl);
     }
   }
 
