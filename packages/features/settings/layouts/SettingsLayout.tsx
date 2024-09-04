@@ -213,8 +213,8 @@ const useTabs = () => {
 
 const BackButtonInSidebar = ({ name }: { name: string }) => {
   return (
-    <Link
-      href="/"
+    <div
+      onClick={() => window.history.back()}
       className="hover:bg-subtle todesktop:mt-10 [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-emphasis group my-6 flex h-6 max-h-6 w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium leading-4"
       data-testid={`vertical-tab-${name}`}>
       <Icon
@@ -224,7 +224,7 @@ const BackButtonInSidebar = ({ name }: { name: string }) => {
       <Skeleton title={name} as="p" className="min-h-4 max-w-36 truncate" loadingClassName="ms-3">
         {name}
       </Skeleton>
-    </Link>
+    </div>
   );
 };
 
