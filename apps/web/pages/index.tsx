@@ -4,8 +4,7 @@ import { useRouter } from "next/navigation";
 import nookies from "nookies";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN, SIGNUP_URL } from "@calcom/lib/constants";
-import prisma from "@calcom/prisma";
+import { KEYCLOAK_COOKIE_DOMAIN, SIGNUP_URL, WEBAPP_URL } from "@calcom/lib/constants";
 
 function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter();
@@ -304,7 +303,6 @@ const InfoCard = ({
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { req, res } = context;
   const session = await getServerSession({ req, res });
-
   const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
   const useSecureCookies = WEBAPP_URL?.startsWith("https://");
 
@@ -317,34 +315,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       httpOnly: true,
     });
   }
-
-  //TODO:remove this after oauth is fixed
-
-  if (!session?.user?.id) {
-    return { redirect: { permanent: false, destination: "/auth/login" } };
-  }
-
-  if (session) {
-    //to prevent the user from visiting the /event-types page if they have not completed the onboarding process
-    const user = await prisma.user.findUnique({
-      where: {
-        id: session.user.id,
-      },
-      select: {
-        completedOnboarding: true,
-      },
-    });
-    if (!user) {
-      throw new Error("User from session not found");
-    }
-
-    if (!user.completedOnboarding) {
-      return { redirect: { permanent: true, destination: "/getting-started" } };
-    }
-  }
-
-  //TODO:remove this after oauth is fixed
-  return { redirect: { permanent: false, destination: "/event-types" } };
 
   return {
     props: {
