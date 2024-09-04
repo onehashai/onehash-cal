@@ -12,11 +12,7 @@ const PoweredByCal = ({ logoOnly }: { logoOnly?: boolean }) => {
     <div className={` text-center text-xs sm:text-right${isEmbed ? " max-w-3xl" : ""}`}>
       <Link href={POWERED_BY_URL} target="_blank" className="text-subtle">
         {!logoOnly && <>{t("powered_by")} </>}
-        <img
-          className="relative -mt-px inline h-[10px] w-auto dark:invert"
-          src="/cal-logo-word.svg"
-          alt="Cal Logo"
-        />
+        <img className="relative -mt-px inline h-[10px] w-auto " src="/cal-logo-word.svg" alt="Cal Logo" />
       </Link>
     </div>
   );
