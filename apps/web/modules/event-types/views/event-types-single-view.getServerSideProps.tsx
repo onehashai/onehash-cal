@@ -17,8 +17,10 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   const session = await getServerSession({ req, res });
 
   const typeParam = parseInt(asStringOrThrow(query.type));
-  const ssr = await ssrInit(context);
-
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
   if (Number.isNaN(typeParam)) {
     const notFound = {
       notFound: true,

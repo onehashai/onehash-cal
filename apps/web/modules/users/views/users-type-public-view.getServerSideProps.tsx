@@ -94,7 +94,10 @@ async function getDynamicGroupPageProps(context: GetServerSidePropsContext) {
   const { rescheduleUid, bookingUid } = context.query;
 
   const { ssrInit } = await import("@server/lib/ssr");
-  const ssr = await ssrInit(context);
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
   const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(context.req, context.params?.orgSlug);
   const org = isValidOrgDomain ? currentOrgDomain : null;
   if (!org) {
@@ -195,7 +198,10 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
   }
 
   const { ssrInit } = await import("@server/lib/ssr");
-  const ssr = await ssrInit(context);
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
   const [user] = await UserRepository.findUsersByUsername({
     usernameList: [username],
     orgSlug: isValidOrgDomain ? currentOrgDomain : null,

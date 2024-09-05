@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { GroupBase, Props, SingleValue } from "react-select";
 import { components } from "react-select";
 
@@ -52,10 +53,12 @@ export default function LocationSelect(props: Props<LocationOption, false, Group
       formatOptionLabel={(e) => (
         <div className="flex items-center gap-3">
           {e.icon && (
-            <img
+            <Image
               src={e.icon}
               alt="app-icon"
-              className={classNames(e.icon.includes("-dark") && "dark:invert", "h-5 w-5")}
+              className={classNames(e.icon.includes("-dark") && "dark:invert")}
+              width={20}
+              height={20}
             />
           )}
           <span>{e.label}</span>

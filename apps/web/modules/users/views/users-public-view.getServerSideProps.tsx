@@ -72,7 +72,10 @@ export type UserPageProps = {
 } & EmbedProps;
 
 export const getServerSideProps: GetServerSideProps<UserPageProps> = async (context) => {
-  const ssr = await ssrInit(context);
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
   const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(context.req, context.params?.orgSlug);
 
   const usernameList = getUsernameList(context.query.user as string);

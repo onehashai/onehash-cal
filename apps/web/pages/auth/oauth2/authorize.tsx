@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -92,7 +93,13 @@ export default function Authorize() {
           <div className="relative -ml-6 h-24 w-24">
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="bg-default flex h-[70px] w-[70px] items-center  justify-center rounded-full">
-                <img src="/cal-com-icon.svg" alt="Logo" className="h-16 w-16 rounded-full" />
+                <Image
+                  src="/cal-com-icon.svg"
+                  alt="Logo"
+                  className="rounded-full"
+                  width={64} // Set width in pixels (16 * 4 = 64px for h-16 and w-16)
+                  height={64} // Set height in pixels (16 * 4 = 64px for h-16 and w-16)
+                />{" "}
               </div>
             </div>
           </div>

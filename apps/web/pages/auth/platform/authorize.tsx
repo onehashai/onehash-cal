@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { APP_NAME } from "@calcom/lib/constants";
@@ -84,7 +85,7 @@ export default function Authorize() {
           <div className="relative -ml-6 h-24 w-24">
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="flex h-[70px] w-[70px] items-center justify-center  rounded-full bg-white">
-                <img src="/cal-com-icon.svg" alt="Logo" className="h-16 w-16 rounded-full" />
+                <Image src="/cal-com-icon.svg" alt="Logo" className="rounded-full" width={64} height={64} />{" "}
               </div>
             </div>
           </div>

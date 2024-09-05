@@ -5,10 +5,12 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 
-import { ssrInit } from "@server/lib/ssr";
-
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
-  const ssr = await ssrInit(context);
+  const { ssrInit } = await import("@server/lib/ssr");
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
   const session = await getServerSession({ req: context.req, res: context.res });
 
   const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";

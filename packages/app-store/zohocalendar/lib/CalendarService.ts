@@ -20,7 +20,6 @@ import type { ZohoAuthCredentials, FreeBusy, ZohoCalendarListResp } from "../typ
 const zohoKeysSchema = z.object({
   client_id: z.string(),
   client_secret: z.string(),
-  domain: z.string(),
 });
 
 export default class ZohoCalendarService implements Calendar {
@@ -42,7 +41,7 @@ export default class ZohoCalendarService implements Calendar {
     const refreshAccessToken = async () => {
       try {
         const appKeys = await getAppKeysFromSlug("zohocalendar");
-        const { client_id, client_secret, domain } = zohoKeysSchema.parse(appKeys);
+        const { client_id, client_secret } = zohoKeysSchema.parse(appKeys);
 
         const params = {
           client_id,
@@ -53,7 +52,7 @@ export default class ZohoCalendarService implements Calendar {
 
         const query = stringify(params);
 
-        const res = await fetch(`https://accounts.${domain}/oauth/v2/token?${query}`, {
+        const res = await fetch(`https://accounts.zoho.in/oauth/v2/token?${query}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json; charset=utf-8",
@@ -66,7 +65,6 @@ export default class ZohoCalendarService implements Calendar {
           access_token: token.access_token,
           refresh_token: zohoCredentials.refresh_token,
           expires_in: Math.round(+new Date() / 1000 + token.expires_in),
-          domain,
         };
         await prisma.credential.update({
           where: { id: credential.id },
@@ -90,7 +88,7 @@ export default class ZohoCalendarService implements Calendar {
   private fetcher = async (endpoint: string, init?: RequestInit | undefined) => {
     const credentials = await this.auth.getToken();
 
-    return fetch(`https://calendar.${credentials.domain}/api/v1${endpoint}`, {
+    return fetch(`https://calendar.zoho.in/api/v1${endpoint}`, {
       method: "GET",
       ...init,
       headers: {
@@ -104,7 +102,7 @@ export default class ZohoCalendarService implements Calendar {
   private getUserInfo = async () => {
     const credentials = await this.auth.getToken();
 
-    const response = await fetch(`https://accounts.${credentials.domain}/oauth/user/info`, {
+    const response = await fetch(`https://accounts.zoho.in/oauth/user/info`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${credentials.access_token}`,
