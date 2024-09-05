@@ -15,7 +15,7 @@ export default function Logo({
   className?: string;
   src?: string;
 }) {
-  const imageSize = small ? { width: "auto", height: 64 } : { width: "auto", height: 20 };
+  const imageSize = small ? { width: 64, height: 64 } : { width: 20, height: 20 };
 
   return (
     <h3 className={classNames("logo", inline && "inline", className)}>
