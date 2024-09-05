@@ -15,6 +15,15 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   const { req, res, query } = context;
 
   const session = await getServerSession({ req, res });
+  if (!session?.user?.id) {
+    const redirect = {
+      redirect: {
+        permanent: false,
+        destination: "/auth/login",
+      },
+    } as const;
+    return redirect;
+  }
 
   const typeParam = parseInt(asStringOrThrow(query.type));
   const ssr = await ssrInit(context, {
@@ -29,15 +38,6 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return notFound;
   }
 
-  if (!session?.user?.id) {
-    const redirect = {
-      redirect: {
-        permanent: false,
-        destination: "/auth/login",
-      },
-    } as const;
-    return redirect;
-  }
   const getEventTypeById = async (eventTypeId: number) => {
     await ssr.viewer.eventTypes.get.prefetch({ id: eventTypeId });
     try {

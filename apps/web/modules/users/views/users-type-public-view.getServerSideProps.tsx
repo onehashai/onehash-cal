@@ -89,7 +89,6 @@ async function processSeatedEvent({
 }
 
 async function getDynamicGroupPageProps(context: GetServerSidePropsContext) {
-  const session = await getServerSession(context);
   const { user: usernames, type: slug } = paramsSchema.parse(context.params);
   const { rescheduleUid, bookingUid } = context.query;
 
@@ -163,6 +162,7 @@ async function getDynamicGroupPageProps(context: GetServerSidePropsContext) {
   };
 
   if (rescheduleUid) {
+    const session = await getServerSession(context);
     const processRescheduleResult = await processReschedule({ props, rescheduleUid, session });
     if (processRescheduleResult) {
       return processRescheduleResult;
@@ -177,7 +177,6 @@ async function getDynamicGroupPageProps(context: GetServerSidePropsContext) {
 }
 
 async function getUserPageProps(context: GetServerSidePropsContext) {
-  const session = await getServerSession(context);
   const { user: usernames, type: slug } = paramsSchema.parse(context.params);
   const username = usernames[0];
   const { rescheduleUid, bookingUid } = context.query;
@@ -248,6 +247,7 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
   };
 
   if (rescheduleUid) {
+    const session = await getServerSession(context);
     const processRescheduleResult = await processReschedule({ props, rescheduleUid, session });
     if (processRescheduleResult) {
       return processRescheduleResult;

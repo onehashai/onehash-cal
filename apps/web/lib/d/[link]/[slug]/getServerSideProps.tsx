@@ -17,7 +17,6 @@ import type { EmbedProps } from "@lib/withEmbedSsr";
 export type PageProps = inferSSRProps<typeof getServerSideProps> & EmbedProps;
 
 async function getUserPageProps(context: GetServerSidePropsContext) {
-  const session = await getServerSession(context);
   const { link, slug } = paramsSchema.parse(context.params);
   const { rescheduleUid, duration: queryDuration } = context.query;
   const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(context.req);
@@ -100,6 +99,7 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
 
   let booking: GetBookingType | null = null;
   if (rescheduleUid) {
+    const session = await getServerSession(context);
     booking = await getBookingForReschedule(`${rescheduleUid}`, session?.user?.id);
   }
 
