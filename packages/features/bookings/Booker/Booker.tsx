@@ -412,7 +412,6 @@ const BookerComponent = ({
               )}
               ref={timeslotsRef}
               {...fadeInLeft}>
-              tet
               <AvailableTimeSlots
                 customClassNames={customClassNames?.availableTimeSlotsCustomClassNames}
                 extraDays={extraDays}

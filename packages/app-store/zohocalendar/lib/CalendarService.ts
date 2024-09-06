@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import dayjs from "@calcom/dayjs";
 import { getLocation, getRichDescription } from "@calcom/lib/CalEventParser";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import type {
@@ -48,6 +49,7 @@ export default class ZohoCalendarService implements Calendar {
           grant_type: "refresh_token",
           client_secret,
           refresh_token: zohoCredentials.refresh_token,
+          redirect_uri: `${WEBAPP_URL}/api/integrations/zohocalendar/callback`,
         };
 
         const query = stringify(params);
