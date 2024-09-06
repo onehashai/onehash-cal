@@ -4181,8 +4181,8 @@ __metadata:
     "@types/stripe": ^8.0.417
     "@types/turndown": ^5.0.1
     "@types/uuid": 8.3.1
-    "@unkey/ratelimit": ^0.1.1
-    "@upstash/redis": ^1.21.0
+    "@upstash/ratelimit": 0.4.3
+    "@upstash/redis": 1.21.0
     "@vercel/edge-config": ^0.1.1
     "@vercel/edge-functions-ui": ^0.2.1
     "@vercel/og": ^0.5.0
@@ -15452,50 +15452,39 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@unkey/api@npm:^0.20.7":
-  version: 0.20.7
-  resolution: "@unkey/api@npm:0.20.7"
+"@upstash/core-analytics@npm:^0.0.6":
+  version: 0.0.6
+  resolution: "@upstash/core-analytics@npm:0.0.6"
   dependencies:
-    "@unkey/rbac": ^0.1.13
-  checksum: 6d43515f46f96ae8a9ad06d53b8c242aa20419427974cf85a167d78d73de339645daeebe428247cdc0a944f22fe13ee11ea9c646420516f148e9f19c8d494e4a
+    "@upstash/redis": ^1.19.3
+  checksum: 4d952984b1a7dd6c9b7d2ed6e597b6d64909ab3ed822088a0e014f6598f0c8cf25ac39ec6b72481c67ba9ea27afce1596c18ecb6e5f5f0837811cc600660f137
   languageName: node
   linkType: hard
 
-"@unkey/error@npm:^0.0.2":
-  version: 0.0.2
-  resolution: "@unkey/error@npm:0.0.2"
+"@upstash/ratelimit@npm:0.4.3":
+  version: 0.4.3
+  resolution: "@upstash/ratelimit@npm:0.4.3"
   dependencies:
-    zod: ^3.23.5
-    zod-error: ^1.5.0
-  checksum: 453344216d25e6db91982428d699f4d682581fb7d31aa0280327a410dd03d0b81e4f6f72f78b404a48659bb4f23dbab537e547e2a30c0a3c876b0ba0dba59f3e
+    "@upstash/core-analytics": ^0.0.6
+  checksum: d75c154abad949d90a82a62109e8c8511660fce22564e5de42b806a695f7a41526de91604df561b104b44edf4896fb4cb589d795781a427f31c8943b78c20b61
   languageName: node
   linkType: hard
 
-"@unkey/ratelimit@npm:^0.1.1":
-  version: 0.1.12
-  resolution: "@unkey/ratelimit@npm:0.1.12"
+"@upstash/redis@npm:1.21.0":
+  version: 1.21.0
+  resolution: "@upstash/redis@npm:1.21.0"
   dependencies:
-    "@unkey/api": ^0.20.7
-  checksum: 2862fc5904269606d51f561145d1e5453743c870eddab23c88702668f1609f09933cf83dab353a88594d174d63c9c3814f2ab4facb93fc687c04d13bc60029a5
+    isomorphic-fetch: ^3.0.0
+  checksum: ba2ba971c1f6d0297afddf73aba0817a39fcf8d71e51131030a24541e4564138a11bae50b78da7dd0eca5a11baa1322888688cb206f078603ea3a8d0a639a30e
   languageName: node
   linkType: hard
 
-"@unkey/rbac@npm:^0.1.13":
-  version: 0.1.13
-  resolution: "@unkey/rbac@npm:0.1.13"
-  dependencies:
-    "@unkey/error": ^0.0.2
-    zod: ^3.23.5
-  checksum: 439897ee16838320a3de63a947bc109a0e3641047cdfd82e5bf4261807336ab147f359e27b439209ad8c25900dab05038c2fb9e4201548731cbc3a3fc7c22cba
-  languageName: node
-  linkType: hard
-
-"@upstash/redis@npm:^1.21.0":
-  version: 1.31.3
-  resolution: "@upstash/redis@npm:1.31.3"
+"@upstash/redis@npm:^1.19.3":
+  version: 1.34.0
+  resolution: "@upstash/redis@npm:1.34.0"
   dependencies:
     crypto-js: ^4.2.0
-  checksum: 110117dd3864f19fa695709f48833113b30e8aa95390e4ef7a11fdc96f3bc9ef6b6792ac69474f0cb5200187f29a7711591ad51ba3067f77d52842244c396798
+  checksum: 127e55e23ce65f72ad74d62cd73a716e3beb4b09ffc3806049d53c2884a2b4d649a00f6e3fd3f6a093fb8e6508d33924b68647cc3739a187adc39d8fb87877bc
   languageName: node
   linkType: hard
 
@@ -25939,6 +25928,16 @@ __metadata:
   version: 3.0.1
   resolution: "isobject@npm:3.0.1"
   checksum: db85c4c970ce30693676487cca0e61da2ca34e8d4967c2e1309143ff910c207133a969f9e4ddb2dc6aba670aabce4e0e307146c310350b298e74a31f7d464703
+  languageName: node
+  linkType: hard
+
+"isomorphic-fetch@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "isomorphic-fetch@npm:3.0.0"
+  dependencies:
+    node-fetch: ^2.6.1
+    whatwg-fetch: ^3.4.1
+  checksum: e5ab79a56ce5af6ddd21265f59312ad9a4bc5a72cebc98b54797b42cb30441d5c5f8d17c5cd84a99e18101c8af6f90c081ecb8d12fd79e332be1778d58486d75
   languageName: node
   linkType: hard
 
@@ -40941,15 +40940,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod-error@npm:^1.5.0":
-  version: 1.5.0
-  resolution: "zod-error@npm:1.5.0"
-  dependencies:
-    zod: ^3.20.2
-  checksum: 1ee6f642f3dcabc2a9610d67f1986f94c338bcf38d152e788dafc4703e488fc7624c189c5948649beb566e2d37444cea064afea662924ac2e8504920e7863ded
-  languageName: node
-  linkType: hard
-
 "zod-prisma@npm:^0.5.4":
   version: 0.5.4
   resolution: "zod-prisma@npm:0.5.4"
@@ -40979,7 +40969,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.20.2, zod@npm:^3.22.2, zod@npm:^3.22.3, zod@npm:^3.22.4, zod@npm:^3.23.5":
+"zod@npm:^3.22.2, zod@npm:^3.22.3, zod@npm:^3.22.4":
   version: 3.23.8
   resolution: "zod@npm:3.23.8"
   checksum: 15949ff82118f59c893dacd9d3c766d02b6fa2e71cf474d5aa888570c469dbf5446ac5ad562bb035bf7ac9650da94f290655c194f4a6de3e766f43febd432c5c

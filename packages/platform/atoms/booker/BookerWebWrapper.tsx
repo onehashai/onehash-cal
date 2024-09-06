@@ -118,17 +118,32 @@ export const BookerWebWrapper = (props: BookerWebWrapperAtomProps) => {
    * Prioritize dateSchedule load
    * Component will render but use data already fetched from here, and no duplicate requests will be made
    * */
-  const schedule = useScheduleForEvent({
-    prefetchNextMonth,
-    username: props.username,
-    monthCount,
-    dayCount,
-    eventSlug: props.eventSlug,
-    month: props.month,
-    duration: props.duration,
-    selectedDate,
-    bookerEmail: bookerForm.formEmail,
-  });
+
+  const hookParams = useMemo(
+    () => ({
+      prefetchNextMonth,
+      username: props.username,
+      monthCount,
+      dayCount,
+      eventSlug: props.eventSlug,
+      month: props.month,
+      duration: props.duration,
+      selectedDate,
+    }),
+    [
+      prefetchNextMonth,
+      props.username,
+      monthCount,
+      dayCount,
+      props.eventSlug,
+      props.month,
+      props.duration,
+      selectedDate,
+    ]
+  );
+
+  // Call the hook with the computed values
+  const schedule = useScheduleForEvent(hookParams);
   const bookings = useBookings({
     event,
     hashedLink: props.hashedLink,
