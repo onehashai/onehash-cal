@@ -91,7 +91,7 @@ export async function ssrInit(
   }
 
   if (options?.prefetchUserSchedule) {
-    await ssr.viewer.public.slots.prefetch();
+    // await ssr.viewer.public.slots.prefetch();
   }
 
   return ssr;
