@@ -90,9 +90,9 @@ export async function ssrInit(
     ]);
   }
 
-  if (options?.prefetchUserSchedule) {
-    // await ssr.viewer.public.slots.prefetch();
-  }
+  // if (options?.prefetchUserSchedule) {
+  //   await ssr.viewer.public.slots.prefetch();
+  // }
 
   return ssr;
 }
