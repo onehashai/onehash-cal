@@ -208,6 +208,16 @@ const nextConfig = {
     // },
   },
   images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
+    ],
     // unoptimized: true,
   },
   webpack: (config, { webpack, buildId, isServer }) => {

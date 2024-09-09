@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import TeamInviteFromOrg from "@calcom/features/oe/organizations/components/OrgTeamInvite";
+import OrgTeamInvite from "@calcom/features/oe/organizations/components/OrgTeamInvite";
 import { classNames } from "@calcom/lib";
 import { IS_TEAM_BILLING_ENABLED, MAX_NB_INVITES } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -333,7 +333,7 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
                 }}
                 render={({ field: { onChange, value } }) => (
                   <>
-                    <TeamInviteFromOrg
+                    <OrgTeamInvite
                       selectedEmails={value}
                       handleOnChecked={(userEmail) => {
                         // If 'value' is not an array, create a new array with 'userEmail' to allow future updates to the array.

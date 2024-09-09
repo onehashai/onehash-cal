@@ -1,6 +1,6 @@
 "use client";
 
-import { AddNewTeamsForm } from "@calcom/features/oe/organizations/components";
+import { OrgTeamsCreationForm } from "@calcom/features/oe/organizations/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta, WizardLayout } from "@calcom/ui";
 import { WizardLayoutAppDir } from "@calcom/ui";
@@ -14,7 +14,7 @@ const AddNewTeamsPage = () => {
   return (
     <>
       <Meta title={t("create_your_teams")} description={t("create_your_teams_description")} />
-      <AddNewTeamsForm />
+      <OrgTeamsCreationForm />
     </>
   );
 };

@@ -47,7 +47,7 @@ const ImportData = () => {
     onSuccess: async (_data, _context) => {
       const redirectUrl = localStorage.getItem("onBoardingRedirect");
       localStorage.removeItem("onBoardingRedirect");
-      redirectUrl ? router.push(redirectUrl) : router.push("/");
+      redirectUrl ? router.push(redirectUrl) : router.push("/event-types");
     },
     onError: () => {
       showToast(t("problem_saving_user_profile"), "error");

@@ -1,6 +1,6 @@
 "use client";
 
-import { AboutOrganizationForm } from "@calcom/features/oe/organizations/components";
+import { OrgAboutForm } from "@calcom/features/oe/organizations/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta, WizardLayout, WizardLayoutAppDir } from "@calcom/ui";
 
@@ -13,7 +13,7 @@ const AboutOrganizationPage = () => {
   return (
     <>
       <Meta title={t("about_your_organization")} description={t("about_your_organization_description")} />
-      <AboutOrganizationForm />
+      <OrgAboutForm />
     </>
   );
 };
