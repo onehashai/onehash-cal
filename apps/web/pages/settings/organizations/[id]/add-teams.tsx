@@ -21,7 +21,7 @@ const AddNewTeamsPage = () => {
 
 AddNewTeamsPage.getLayout = (page: React.ReactElement) => {
   return (
-    <WizardLayout currentStep={5} maxSteps={5}>
+    <WizardLayout currentStep={4} maxSteps={4}>
       {page}
     </WizardLayout>
   );
@@ -31,7 +31,7 @@ AddNewTeamsPage.PageWrapper = PageWrapper;
 
 export const WrapperAddNewTeamsPage = (page: React.ReactElement) => {
   return (
-    <WizardLayoutAppDir currentStep={5} maxSteps={5}>
+    <WizardLayoutAppDir currentStep={4} maxSteps={4}>
       {page}
     </WizardLayoutAppDir>
   );

@@ -33,8 +33,8 @@ OnboardTeamMembersPage.getLayout = (page: React.ReactElement) => {
 
   return (
     <WizardLayout
-      currentStep={4}
-      maxSteps={5}
+      currentStep={3}
+      maxSteps={4}
       isOptionalCallback={() => {
         router.push(`/settings/organizations/${query.get("id")}/add-teams`);
       }}>
@@ -49,8 +49,8 @@ export const buildWrappedOnboardTeamMembersPage = (
 ) => {
   return (
     <WizardLayoutAppDir
-      currentStep={4}
-      maxSteps={5}
+      currentStep={3}
+      maxSteps={4}
       isOptionalCallback={() => {
         redirect(`/settings/organizations/${id}/add-teams`);
       }}>

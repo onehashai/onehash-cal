@@ -20,7 +20,7 @@ const CreateNewOrganizationPage = ({ querySlug }: inferSSRProps<typeof getServer
 };
 const LayoutWrapper = (page: React.ReactElement) => {
   return (
-    <WizardLayout currentStep={1} maxSteps={5}>
+    <WizardLayout currentStep={1} maxSteps={4}>
       {page}
     </WizardLayout>
   );
@@ -28,7 +28,7 @@ const LayoutWrapper = (page: React.ReactElement) => {
 
 export const LayoutWrapperAppDir = (page: React.ReactElement) => {
   return (
-    <WizardLayoutAppDir currentStep={1} maxSteps={5}>
+    <WizardLayoutAppDir currentStep={1} maxSteps={4}>
       {page}
     </WizardLayoutAppDir>
   );

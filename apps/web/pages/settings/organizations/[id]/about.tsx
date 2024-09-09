@@ -19,7 +19,7 @@ const AboutOrganizationPage = () => {
 };
 export const LayoutWrapper = (page: React.ReactElement) => {
   return (
-    <WizardLayout currentStep={3} maxSteps={5}>
+    <WizardLayout currentStep={2} maxSteps={4}>
       {page}
     </WizardLayout>
   );
@@ -27,7 +27,7 @@ export const LayoutWrapper = (page: React.ReactElement) => {
 
 export const WrappedAboutOrganizationPage = (page: React.ReactElement) => {
   return (
-    <WizardLayoutAppDir currentStep={3} maxSteps={5}>
+    <WizardLayoutAppDir currentStep={2} maxSteps={4}>
       {page}
     </WizardLayoutAppDir>
   );
