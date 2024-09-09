@@ -748,18 +748,16 @@ export async function getAvailableSlots({ input, ctx }: GetScheduleOptions): Pro
   const availableDates = Object.keys(slotsMappedToDate);
   const allDatesWithBookabilityStatus = getAllDatesWithBookabilityStatus(availableDates);
   loggerWithEventDetails.debug(safeStringify({ availableDates }));
+  const utcOffset = input.timeZone ? getUTCOffsetByTimezone(input.timeZone) ?? 0 : 0;
 
-  const eventUtcOffset = getUTCOffsetByTimezone(eventTimeZone) ?? 0;
-  const bookerUtcOffset = input.timeZone ? getUTCOffsetByTimezone(input.timeZone) ?? 0 : 0;
   const periodLimits = calculatePeriodLimits({
     periodType: eventType.periodType,
     periodDays: eventType.periodDays,
     periodCountCalendarDays: eventType.periodCountCalendarDays,
     periodStartDate: eventType.periodStartDate,
     periodEndDate: eventType.periodEndDate,
-    allDatesWithBookabilityStatusInBookerTz: allDatesWithBookabilityStatus,
-    eventUtcOffset,
-    bookerUtcOffset,
+    allDatesWithBookabilityStatus,
+    utcOffset,
   });
   let foundAFutureLimitViolation = false;
   const withinBoundsSlotsMappedToDate = Object.entries(slotsMappedToDate).reduce(
