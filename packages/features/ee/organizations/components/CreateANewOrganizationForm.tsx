@@ -1,7 +1,7 @@
 import type { SessionContextValue } from "next-auth/react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
@@ -26,9 +26,15 @@ function extractDomainFromEmail(email: string) {
 
 export const CreateANewOrganizationForm = () => {
   const session = useSession();
-  if (!session.data) {
-    return null;
-  }
+  useEffect(() => {
+    if (!session.data) {
+      return null;
+    }
+    if (session.data.user.role !== UserPermissionRole.ADMIN) {
+      router.replace("/settings/my-account/profile");
+    }
+  }, [session]);
+
   return <CreateANewOrganizationFormChild session={session} />;
 };
 

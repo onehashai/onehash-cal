@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { IframeHTMLAttributes } from "react";
 import React, { useEffect, useState } from "react";
@@ -142,11 +143,13 @@ export const AppPage = ({
                   <iframe allowFullScreen {...descriptionItem.iframe} />
                 </div>
               ) : (
-                <img
+                <Image
                   key={descriptionItem}
                   src={descriptionItem}
                   alt={`Screenshot of app ${name}`}
-                  className="mr-4 h-auto max-h-80 max-w-[90%] snap-center rounded-md object-contain last:mb-0 md:max-h-min lg:mb-4 lg:mr-0  lg:max-w-full"
+                  className="mr-4 h-auto max-h-80 max-w-[90%] snap-center rounded-md object-contain last:mb-0 md:max-h-min lg:mb-4 lg:mr-0 lg:max-w-full"
+                  width={800} // Example width, adjust according to your design or aspect ratio
+                  height={600} // Example height, adjust according to your design or aspect ratio
                 />
               )
             )
@@ -163,10 +166,12 @@ export const AppPage = ({
         <div className="mb-8 flex pt-4">
           <header>
             <div className="mb-4 flex items-center">
-              <img
+              <Image
                 className={classNames(logo.includes("-dark") && "dark:invert", "h-16 min-h-16 w-16 min-w-16")}
                 src={logo}
                 alt={name}
+                width={64}
+                height={64}
               />
               <h1 className="font-cal text-emphasis ml-4 text-3xl">{name}</h1>
             </div>

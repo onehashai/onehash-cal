@@ -15,18 +15,6 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   const { req, res, query } = context;
 
   const session = await getServerSession({ req, res });
-
-  const typeParam = parseInt(asStringOrThrow(query.type));
-  const ssr = await ssrInit(context);
-
-  if (Number.isNaN(typeParam)) {
-    const notFound = {
-      notFound: true,
-    } as const;
-
-    return notFound;
-  }
-
   if (!session?.user?.id) {
     const redirect = {
       redirect: {
@@ -36,6 +24,20 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     } as const;
     return redirect;
   }
+
+  const typeParam = parseInt(asStringOrThrow(query.type));
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
+  if (Number.isNaN(typeParam)) {
+    const notFound = {
+      notFound: true,
+    } as const;
+
+    return notFound;
+  }
+
   const getEventTypeById = async (eventTypeId: number) => {
     await ssr.viewer.eventTypes.get.prefetch({ id: eventTypeId });
     try {

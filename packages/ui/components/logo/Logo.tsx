@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import classNames from "@calcom/lib/classNames";
 
 export default function Logo({
@@ -13,17 +15,23 @@ export default function Logo({
   className?: string;
   src?: string;
 }) {
+  const imageSize = small ? { width: 64, height: 64 } : { width: 20, height: 20 };
+
   return (
     <h3 className={classNames("logo", inline && "inline", className)}>
       <strong>
         {icon ? (
-          <img className="mx-auto w-9 dark:invert" alt="Cal" title="Cal" src={`${src}?type=icon`} />
+          <div className="mx-auto dark:invert">
+            <Image alt="Cal" title="Cal" src={`${src}?type=icon`} width={36} height={36} />
+          </div>
         ) : (
-          <img
-            className={classNames(small ? "h-16 w-auto" : "h-5 w-auto", "dark:invert")}
+          <Image
+            className={classNames("dark:invert")}
             alt="Cal"
             title="Cal"
             src={src}
+            width={imageSize.width}
+            height={imageSize.height}
           />
         )}
       </strong>

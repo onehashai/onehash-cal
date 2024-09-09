@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { classNames } from "@calcom/lib";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
@@ -43,11 +45,12 @@ function OrganizationIndicator({
   const indicatorSize = size && indicatorBySize[size];
   return (
     <div className={classNames("absolute bottom-0 right-0 z-10", indicatorSize)}>
-      <img
+      <Image
         data-testid="organization-logo"
         src={getPlaceholderAvatar(organization.logoUrl, organization.slug)}
         alt={user.username || ""}
         className="flex h-full items-center justify-center rounded-full"
+        layout="fill" // You can adjust the layout prop based on your needs
       />
     </div>
   );

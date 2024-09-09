@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -87,10 +88,12 @@ export default function AppListCard(props: AppListCardProps) {
     <div className={classNames(highlight && "dark:bg-muted bg-yellow-100", className)}>
       <div className="flex items-center gap-x-3 px-4 py-4 sm:px-6">
         {logo ? (
-          <img
+          <Image
             className={classNames(logo.includes("-dark") && "dark:invert", "h-10 w-10")}
             src={logo}
             alt={`${title} logo`}
+            height={40}
+            width={40}
           />
         ) : null}
         <div className="flex grow flex-col gap-y-1 truncate">

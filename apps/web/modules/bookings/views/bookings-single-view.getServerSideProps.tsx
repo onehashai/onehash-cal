@@ -43,7 +43,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     "@lib/booking"
   );
 
-  const ssr = await ssrInit(context);
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
   const session = await getServerSession(context);
   let tz: string | null = null;
   let userTimeFormat: number | null = null;

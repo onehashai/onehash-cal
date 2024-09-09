@@ -9,8 +9,7 @@ import { Button, showToast, TextArea } from "@calcom/ui";
 import { Icon } from "@calcom/ui";
 
 import { useFreshChat } from "../lib/freshchat/FreshChatProvider";
-import { isFreshChatEnabled } from "../lib/freshchat/FreshChatScript";
-import { isInterComEnabled, useIntercom } from "../lib/intercom/useIntercom";
+import { useIntercom } from "../lib/intercom/useIntercom";
 import ContactMenuItem from "./ContactMenuItem";
 
 interface HelpMenuItemProps {
@@ -58,8 +57,8 @@ export default function HelpMenuItem({ onHelpItemSelect }: HelpMenuItemProps) {
       <div className="w-full py-5">
         <p className="text-subtle mb-1 px-5">{t("resources").toUpperCase()}</p>
         <a
-          onClick={() => onHelpItemSelect()}
-          href="https://cal.com/docs/"
+          onClick={onHelpItemSelect}
+          href="https://chat.onehash.ai/hc/onehash-help-center/en/categories/onehash-cal"
           target="_blank"
           className="hover:bg-subtle hover:text-emphasis text-default flex w-full px-5 py-2 pr-4 text-sm font-medium"
           rel="noreferrer">
@@ -192,7 +191,7 @@ export default function HelpMenuItem({ onHelpItemSelect }: HelpMenuItemProps) {
           </div>
         )}
       </div>
-      {/* visible on desktop */}
+      {/* visible on desktop
       <div className="text-subtle bg-muted hidden w-full flex-col p-5 md:block">
         <p className="">{showIntercom ? t("no_support_needed") : t("specific_issue")}</p>
         <button
@@ -231,7 +230,7 @@ export default function HelpMenuItem({ onHelpItemSelect }: HelpMenuItemProps) {
         </a>
         .
       </div>
-      {/* visible on mobile */}
+      {/* visible on mobile }
       <div className="text-subtle bg-muted w-full p-5 md:hidden">
         <p className="">{t("specific_issue")}</p>
         <button
@@ -260,7 +259,8 @@ export default function HelpMenuItem({ onHelpItemSelect }: HelpMenuItemProps) {
           {t("browse_our_docs")}
         </a>
         .
-      </div>
+      </div> 
+      */}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import type { DailyCall } from "@daily-co/daily-js";
 import DailyIframe from "@daily-co/daily-js";
 import { DailyProvider } from "@daily-co/daily-react";
 import Head from "next/head";
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 
 import dayjs from "@calcom/dayjs";
@@ -93,24 +94,30 @@ export default function JoinCall(props: PageProps) {
         </div>
         <div style={{ zIndex: 2, position: "relative" }}>
           {booking?.user?.organization?.calVideoLogo ? (
-            <img
+            <Image
               className="fixed z-10 hidden aspect-square h-16 min-h-16 w-16 min-w-16 rounded-full sm:inline-block"
               src={booking.user.organization.calVideoLogo}
               alt="My Org Logo"
               style={{
+                position: "fixed",
                 top: 32,
                 left: 32,
               }}
+              width={64}
+              height={64}
             />
           ) : (
-            <img
+            <Image
               className="fixed z-10 hidden h-5 sm:inline-block"
               src={`${WEBSITE_URL}/cal-logo-word-dark.svg`}
               alt="Logo"
               style={{
                 top: 47,
                 left: 20,
+                position: "fixed",
               }}
+              width={20}
+              height={20}
             />
           )}
         </div>

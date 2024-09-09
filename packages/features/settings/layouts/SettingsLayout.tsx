@@ -94,19 +94,19 @@ const tabs: VerticalTabItemProps[] = [
         name: "appearance",
         href: "/settings/organizations/appearance",
       },
-      {
-        name: "billing",
-        href: "/settings/organizations/billing",
-      },
+      // {
+      //   name: "billing",
+      //   href: "/settings/organizations/billing",
+      // },
       { name: "OAuth Clients", href: "/settings/organizations/platform/oauth-clients" },
-      {
-        name: "SSO",
-        href: "/settings/organizations/sso",
-      },
-      {
-        name: "directory_sync",
-        href: "/settings/organizations/dsync",
-      },
+      // {
+      //   name: "SSO",
+      //   href: "/settings/organizations/sso",
+      // },
+      // {
+      //   name: "directory_sync",
+      //   href: "/settings/organizations/dsync",
+      // },
       // {
       //   name: "admin_api",
       //   // TODO:UPDATE LINK REFERENCE

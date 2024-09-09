@@ -1,6 +1,6 @@
 "use client";
 
-import { AddNewTeamsForm } from "@calcom/features/oe/organizations/components";
+import { OrgTeamsCreationForm } from "@calcom/features/oe/organizations/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta, WizardLayout } from "@calcom/ui";
 import { WizardLayoutAppDir } from "@calcom/ui";
@@ -14,14 +14,14 @@ const AddNewTeamsPage = () => {
   return (
     <>
       <Meta title={t("create_your_teams")} description={t("create_your_teams_description")} />
-      <AddNewTeamsForm />
+      <OrgTeamsCreationForm />
     </>
   );
 };
 
 AddNewTeamsPage.getLayout = (page: React.ReactElement) => {
   return (
-    <WizardLayout currentStep={5} maxSteps={5}>
+    <WizardLayout currentStep={4} maxSteps={4}>
       {page}
     </WizardLayout>
   );
@@ -31,7 +31,7 @@ AddNewTeamsPage.PageWrapper = PageWrapper;
 
 export const WrapperAddNewTeamsPage = (page: React.ReactElement) => {
   return (
-    <WizardLayoutAppDir currentStep={5} maxSteps={5}>
+    <WizardLayoutAppDir currentStep={4} maxSteps={4}>
       {page}
     </WizardLayoutAppDir>
   );

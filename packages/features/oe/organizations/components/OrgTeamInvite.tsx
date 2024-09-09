@@ -5,7 +5,7 @@ import classNames from "@calcom/lib/classNames";
 import type { RouterOutputs } from "@calcom/trpc";
 import { Avatar, TextField } from "@calcom/ui";
 
-type TeamInviteFromOrgProps = PropsWithChildren<{
+type OrgTeamInviteProps = PropsWithChildren<{
   selectedEmails?: string | string[];
   handleOnChecked: (usersEmail: string) => void;
   orgMembers?: RouterOutputs["viewer"]["organizations"]["getMembers"];
@@ -13,11 +13,7 @@ type TeamInviteFromOrgProps = PropsWithChildren<{
 
 const keysToCheck = ["name", "email", "username"] as const; // array of keys to check
 
-export default function TeamInviteFromOrg({
-  handleOnChecked,
-  selectedEmails,
-  orgMembers,
-}: TeamInviteFromOrgProps) {
+export default function OrgTeamInvite({ handleOnChecked, selectedEmails, orgMembers }: OrgTeamInviteProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const filteredMembers = orgMembers?.filter((member) => {
     if (!searchQuery) {

@@ -19,11 +19,21 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   };
 
   const handleGoToApp = () => {
-    router.push("/event-types");
+    if (process.env.NODE_ENV === "production") {
+      const url = new URL(window.location.href);
+      const hostnameParts = url.hostname.split(".");
+      if (hostnameParts[0] !== "app") {
+        hostnameParts.unshift("app");
+        url.hostname = hostnameParts.join(".");
+      }
+      url.pathname = "/event-types";
+      window.location.href = url.href;
+    } else {
+      window.location.href = `${window.location.href}event-types`;
+    }
   };
-
   const handleScheduleDemo = () => {
-    window.open("https://cal.id/manas/demo", "_blank");
+    window.open("https://app.cal.id/manas/demo", "_blank");
   };
 
   const handleExploreIntegration = () => {
@@ -85,6 +95,8 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <>
       <Head>
+        <title>Your Ultimate Free Calendly Pro Alternative</title>
+        <meta name="description" content="Learn more about us and what we do." />
         <link
           href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Protest+Guerrilla&display=swap"
           rel="stylesheet"
@@ -149,12 +161,12 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
               <div className="flex flex-col items-center justify-between md:flex-row">
                 <div className="flex flex-col gap-6 md:w-1/3 md:gap-10">
                   <h1 className="text-primary-color mt-8 text-4xl font-semibold lg:text-6xl">
-                    Scheduling infrastructure for everyone.
+                    Your Ultimate Free Calendly Pro Alternative
                   </h1>
 
                   <p>
-                    Meet OneHash Cal, the even-juggling scheduler for everyone. Focus on meeting, not making
-                    meetings free for individuals
+                    Experience All the Calendly Pro Features, Sleek URL, Unlimited Events, Workflows with Zero
+                    Subscription Cost
                   </p>
                 </div>
 

@@ -25,12 +25,14 @@
       "schedule": "0 0 * * *"
     }
   ],
+  "regions": ["sfo1"],
+
   "functions": {
     "pages/api/trpc/public/[trpc].ts": {
-      "memory": 768
+      "memory": 1769
     },
     "pages/api/trpc/slots/[trpc].ts": {
-      "memory": 768
+      "memory": 1769
     },
     "pages/api/inngest.ts": {
       "maxDuration": 300

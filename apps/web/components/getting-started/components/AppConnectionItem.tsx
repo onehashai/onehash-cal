@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { InstallAppButtonWithoutPlanCheck } from "@calcom/app-store/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { App } from "@calcom/types/App";
@@ -17,8 +19,7 @@ const AppConnectionItem = (props: IAppConnectionItem) => {
   return (
     <div className="flex flex-row items-center justify-between p-5">
       <div className="flex items-center space-x-3">
-        <img src={logo} alt={title} className="h-8 w-8" />
-        <p className="text-sm font-bold">{title}</p>
+        <Image src={logo} alt={title} width={32} height={32} /> <p className="text-sm font-bold">{title}</p>
       </div>
       <InstallAppButtonWithoutPlanCheck
         type={type}

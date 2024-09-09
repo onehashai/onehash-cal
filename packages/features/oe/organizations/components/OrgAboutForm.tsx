@@ -13,7 +13,7 @@ const querySchema = z.object({
   id: z.string(),
 });
 
-export const AboutOrganizationForm = () => {
+export const OrgAboutForm = () => {
   const { t } = useLocale();
   const router = useRouter();
   const routerQuery = useRouterQuery();
@@ -21,7 +21,7 @@ export const AboutOrganizationForm = () => {
   const [serverErrorMessage, setServerErrorMessage] = useState<string | null>(null);
   const [image, setImage] = useState("");
 
-  const aboutOrganizationFormMethods = useForm<{
+  const OrgAboutFormMethods = useForm<{
     logo: string;
     bio: string;
   }>();
@@ -40,7 +40,7 @@ export const AboutOrganizationForm = () => {
   return (
     <>
       <Form
-        form={aboutOrganizationFormMethods}
+        form={OrgAboutFormMethods}
         className="space-y-5"
         handleSubmit={(v) => {
           if (!updateOrganizationMutation.isPending) {
@@ -56,7 +56,7 @@ export const AboutOrganizationForm = () => {
 
         <div>
           <Controller
-            control={aboutOrganizationFormMethods.control}
+            control={OrgAboutFormMethods.control}
             name="logo"
             render={() => (
               <>
@@ -76,7 +76,7 @@ export const AboutOrganizationForm = () => {
                       buttonMsg={t("upload")}
                       handleAvatarChange={(newAvatar: string) => {
                         setImage(newAvatar);
-                        aboutOrganizationFormMethods.setValue("logo", newAvatar);
+                        OrgAboutFormMethods.setValue("logo", newAvatar);
                       }}
                       imageSrc={image}
                     />
@@ -89,7 +89,7 @@ export const AboutOrganizationForm = () => {
 
         <div>
           <Controller
-            control={aboutOrganizationFormMethods.control}
+            control={OrgAboutFormMethods.control}
             name="bio"
             render={({ field: { value } }) => (
               <>
@@ -97,7 +97,7 @@ export const AboutOrganizationForm = () => {
                   name="about"
                   defaultValue={value}
                   onChange={(e) => {
-                    aboutOrganizationFormMethods.setValue("bio", e?.target.value);
+                    OrgAboutFormMethods.setValue("bio", e?.target.value);
                   }}
                 />
                 <p className="text-subtle text-sm">{t("organization_about_description")}</p>
@@ -108,9 +108,7 @@ export const AboutOrganizationForm = () => {
 
         <div className="flex">
           <Button
-            disabled={
-              aboutOrganizationFormMethods.formState.isSubmitting || updateOrganizationMutation.isPending
-            }
+            disabled={OrgAboutFormMethods.formState.isSubmitting || updateOrganizationMutation.isPending}
             color="primary"
             EndIcon="arrow-right"
             type="submit"
