@@ -57,7 +57,7 @@ const routerSlice = router({
 
 export async function ssrInit(
   context: GetServerSidePropsContext,
-  options?: { noI18nPreload: boolean; noQueryPrefetch: boolean }
+  options?: { noI18nPreload: boolean; noQueryPrefetch: boolean; prefetchUserSchedule?: boolean }
 ) {
   const ctx = await createContext(context);
   const locale = await getLocale(context.req);
@@ -88,6 +88,10 @@ export async function ssrInit(
       ssr.viewer.public.session.prefetch(),
       ssr.viewer.me.prefetch(),
     ]);
+  }
+
+  if (options?.prefetchUserSchedule) {
+    await ssr.viewer.public.slots.prefetch();
   }
 
   return ssr;

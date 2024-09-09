@@ -68,9 +68,9 @@ const CreateANewOrganizationFormChild = ({
       if (isAdmin && data.userId !== session.data?.user.id) {
         // Impersonate the user chosen as the organization owner(if the admin user isn't the owner himself), so that admin can now configure the organisation on his behalf.
         // He won't need to have access to the org directly in this way.
-        signIn("impersonation-auth", {
+        await signIn("impersonation-auth", {
           username: data.email,
-          callbackUrl: `/settings/organizations/${data.organizationId}/about`,
+          callbackUrl: `/event-types`,
         });
       }
       router.push(`/settings/organizations/${data.organizationId}/about`);

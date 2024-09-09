@@ -96,6 +96,7 @@ async function getDynamicGroupPageProps(context: GetServerSidePropsContext) {
   const ssr = await ssrInit(context, {
     noI18nPreload: false,
     noQueryPrefetch: true,
+    prefetchUserSchedule: true,
   });
   const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(context.req, context.params?.orgSlug);
   const org = isValidOrgDomain ? currentOrgDomain : null;
