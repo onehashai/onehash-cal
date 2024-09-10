@@ -1,7 +1,7 @@
 import { CalendlyOAuthProvider } from "@onehash/calendly";
 import classNames from "classnames";
 import { useRouter } from "next/navigation";
-import OauthPopup from "react-oauth-popup";
+import { useState } from "react";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
@@ -10,6 +10,60 @@ import { Icon, List, showToast } from "@calcom/ui";
 import { Button } from "@calcom/ui";
 
 import useCalendlyImport from "@lib/hooks/useCalendlyImport";
+
+const CalendlyOAuthPopUp = ({
+  oauthUrl,
+  onCodeReceived,
+}: {
+  oauthUrl: string;
+  onCodeReceived: (code: string) => void;
+}) => {
+  const [popup, setPopup] = useState<Window | null>(null);
+  const { t } = useLocale();
+
+  const openPopup = () => {
+    const width = 600;
+    const height = 400;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+
+    const popupWindow = window.open(
+      oauthUrl,
+      "OAuth Popup",
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
+    );
+
+    setPopup(popupWindow);
+
+    const checkPopup = () => {
+      if (!popupWindow || popupWindow.closed) return;
+
+      try {
+        if (popupWindow.location.href.includes("code=")) {
+          const urlParams = new URLSearchParams(popupWindow.location.search);
+          const code = urlParams.get("code");
+
+          if (code) {
+            onCodeReceived(code);
+            popupWindow.close();
+          }
+        }
+      } catch (e) {
+        // Handle cross-origin issues or other errors
+      }
+
+      setTimeout(checkPopup, 500);
+    };
+
+    checkPopup();
+  };
+
+  return (
+    <Button onClick={openPopup} color="secondary" StartIcon="plus">
+      {t("import")}
+    </Button>
+  );
+};
 
 const ImportData = () => {
   const [user] = trpc.viewer.me.useSuspenseQuery();
@@ -39,8 +93,7 @@ const ImportData = () => {
     redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
     oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
   });
-  const onCode = (code: string, _params: URLSearchParams) => retrieveUserCalendlyAccessToken(code);
-  const onClose = () => console.log("closed!");
+  const onCode = (code: string) => retrieveUserCalendlyAccessToken(code);
   const telemetry = useTelemetry();
 
   const mutation = trpc.viewer.updateProfile.useMutation({
@@ -70,21 +123,10 @@ const ImportData = () => {
         {user && (
           <div className=" flex w-full items-center justify-between rounded border border-gray-300 px-4 py-2">
             <p>Import from Calendly</p>
-            <OauthPopup
-              url={calendlyOAuthProvider.getAuthorizationUrl()}
-              onCode={onCode}
-              onClose={onClose}
-              height={400}
-              width={600}
-              title="">
-              <Button
-                color="secondary"
-                className=" flex flex-row justify-center"
-                loading={importing}
-                StartIcon="plus">
-                {t("import")}
-              </Button>
-            </OauthPopup>
+            <CalendlyOAuthPopUp
+              oauthUrl={calendlyOAuthProvider.getAuthorizationUrl()}
+              onCodeReceived={onCode}
+            />
           </div>
         )}
       </List>

@@ -4242,7 +4242,6 @@ __metadata:
     react-intl: ^5.25.1
     react-live-chat-loader: ^2.8.1
     react-multi-email: ^0.5.3
-    react-oauth-popup: ^1.0.5
     react-phone-input-2: ^2.15.1
     react-phone-number-input: ^3.2.7
     react-query: ^3.39.3
@@ -34162,16 +34161,6 @@ __metadata:
     react: ^16.3.2
     react-dom: ^16.3.2
   checksum: d115e76c0ee3b26792a82cd9c4b5b3c6f90f15b1e5ca6f617e7985d324bb5e6b61c09588d9b2156701555c3917cf262523ce1607c2ea26fd95ed15a8d52b5ec7
-  languageName: node
-  linkType: hard
-
-"react-oauth-popup@npm:^1.0.5":
-  version: 1.0.5
-  resolution: "react-oauth-popup@npm:1.0.5"
-  peerDependencies:
-    react: ">16"
-    react-dom: ">16"
-  checksum: 930940b61cc21f00fbba2ae13317b12ed23157767eac4b6bc2748faa0426e9fe9f11c4bde911ce206801544975d429f1f963748b5b588e3857cb19273dab9b3b
   languageName: node
   linkType: hard
 

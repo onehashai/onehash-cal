@@ -1,7 +1,6 @@
 import { CalendlyOAuthProvider } from "@onehash/calendly";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import OauthPopup from "react-oauth-popup";
 
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -36,27 +35,6 @@ const ImportFromCalendlyButton = ({
   );
 };
 
-//Component responsible for authorizing Calendly on first time import
-const AuthorizeCalendlyButton = ({
-  authorizationUrl,
-  onCode,
-  onClose,
-}: {
-  authorizationUrl: string;
-  onCode: (code: string, params: URLSearchParams) => void;
-  onClose: () => void;
-}) => {
-  const { t } = useLocale();
-
-  return (
-    <OauthPopup url={authorizationUrl} onCode={onCode} onClose={onClose} height={400} width={600} title="">
-      <Button color="secondary" StartIcon="plus">
-        {t("import")}
-      </Button>
-    </OauthPopup>
-  );
-};
-
 //Main view for Calendly import
 const ImportLayout = () => {
   const [userId, setUserId] = useState<number>();
@@ -72,6 +50,59 @@ const ImportLayout = () => {
   return <> {userId ? <CalendlyImportComponent userId={userId} /> : <></>}</>;
 };
 
+const CalendlyOAuthPopUp = ({
+  oauthUrl,
+  onCodeReceived,
+}: {
+  oauthUrl: string;
+  onCodeReceived: (code: string) => void;
+}) => {
+  const [popup, setPopup] = useState<Window | null>(null);
+  const { t } = useLocale();
+
+  const openPopup = () => {
+    const width = 600;
+    const height = 400;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+
+    const popupWindow = window.open(
+      oauthUrl,
+      "OAuth Popup",
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
+    );
+
+    setPopup(popupWindow);
+
+    const checkPopup = () => {
+      if (!popupWindow || popupWindow.closed) return;
+
+      try {
+        if (popupWindow.location.href.includes("code=")) {
+          const urlParams = new URLSearchParams(popupWindow.location.search);
+          const code = urlParams.get("code");
+
+          if (code) {
+            onCodeReceived(code);
+            popupWindow.close();
+          }
+        }
+      } catch (e) {
+        // Handle cross-origin issues or other errors
+      }
+
+      setTimeout(checkPopup, 500);
+    };
+
+    checkPopup();
+  };
+
+  return (
+    <Button onClick={openPopup} color="secondary" StartIcon="plus">
+      {t("import")}
+    </Button>
+  );
+};
 const CalendlyImportComponent = ({ userId }: { userId: number }) => {
   const { importFromCalendly, importing } = useCalendlyImport(userId);
   const [loading, setLoading] = useState<boolean>(true);
@@ -137,8 +168,7 @@ const CalendlyImportComponent = ({ userId }: { userId: number }) => {
   };
 
   //handles the authorization code returned from Calendly
-  const onCode = (code: string, _params: URLSearchParams) => retrieveUserCalendlyAccessToken(code);
-  const onClose = () => console.log("closed!");
+  const onCode = (code: string) => retrieveUserCalendlyAccessToken(code);
   const calendlyOAuthProvider = new CalendlyOAuthProvider({
     clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
     redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
@@ -163,10 +193,9 @@ const CalendlyImportComponent = ({ userId }: { userId: number }) => {
               isAuthorized ? (
                 <ImportFromCalendlyButton importFromCalendly={importFromCalendly} importing={importing} />
               ) : (
-                <AuthorizeCalendlyButton
-                  onClose={onClose}
-                  onCode={onCode}
-                  authorizationUrl={calendlyOAuthProvider.getAuthorizationUrl()}
+                <CalendlyOAuthPopUp
+                  oauthUrl={calendlyOAuthProvider.getAuthorizationUrl()}
+                  onCodeReceived={onCode}
                 />
               )
             }
