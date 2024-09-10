@@ -156,8 +156,7 @@ export const BOOKER_NUMBER_OF_DAYS_TO_LOAD = parseInt(
 export const SSO_BASE_URL = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/auth`;
 export const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID;
 export const KEYCLOAK_CALLBACK_URI = process.env.KEYCLOAK_CALLBACK_URI;
-export const SIGNUP_URL =
-  "https://sso.onehash.ai/realms/OneHash/protocol/openid-connect/registrations?client_id=onehash-cal&scope=openid%20email%20profile&response_type=code&redirect_uri=https%3A%2F%2Fapp.cal.id%2Fapi%2Fauth%2Fcallback%2Fkeycloak";
+export const SIGNUP_URL = process.env.SIGNUP_URL;
 
 export const ONEHASH_CHAT_URL = process.env.NEXT_PUBLIC_ONEHASH_CHAT_URL;
 export const ONEHASH_CRM_URL = process.env.NEXT_PUBLIC_ONEHASH_CRM_URL;
@@ -190,3 +189,4 @@ export const RAZORPAY_REDIRECT_URL = `${WEBAPP_URL}/apps/razorpay/callback`;
 export const RAZORPAY_UPI_ENABLED = process.env.RAZORPAY_UPI_ENABLED === "true";
 
 // export const RAZORPAY_REDIRECT_URL = `https://66f2-103-171-99-41.ngrok-free.app/apps/installation/accounts`;
+export const INNGEST_ID = process.env.INNGEST_ID ?? "onehash-cal";

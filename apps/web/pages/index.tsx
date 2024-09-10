@@ -22,16 +22,20 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
     if (process.env.NODE_ENV === "production") {
       const url = new URL(window.location.href);
       const hostnameParts = url.hostname.split(".");
-      if (hostnameParts[0] !== "app") {
+
+      if (hostnameParts.length === 2) {
         hostnameParts.unshift("app");
         url.hostname = hostnameParts.join(".");
       }
+
       url.pathname = "/event-types";
       window.location.href = url.href;
     } else {
+      // In development or non-production environment
       window.location.href = `${window.location.href}event-types`;
     }
   };
+
   const handleScheduleDemo = () => {
     window.open("https://app.cal.id/manas/demo", "_blank");
   };

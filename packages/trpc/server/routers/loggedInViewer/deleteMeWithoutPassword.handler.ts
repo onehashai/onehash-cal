@@ -32,6 +32,10 @@ export const deleteMeWithoutPasswordHandler = async ({ ctx }: DeleteMeWithoutPas
   // Remove me from Stripe
   await deleteStripeCustomer(user).catch(console.warn);
 
+  await prisma.integrationAccounts.deleteMany({
+    where: { userId: ctx.user.id },
+  });
+
   // Remove my account
   const deletedUser = await prisma.user.delete({
     where: {
