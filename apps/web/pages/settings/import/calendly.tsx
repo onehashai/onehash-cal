@@ -1,9 +1,14 @@
 import { CalendlyOAuthProvider } from "@onehash/calendly";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import type { GetServerSidePropsContext } from "next/types";
 import { useEffect, useState } from "react";
 
+import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import prisma from "@calcom/prisma";
+import { IntegrationProvider } from "@calcom/prisma/client";
 import { Button, Meta, SkeletonContainer } from "@calcom/ui";
 
 import useCalendlyImport from "@lib/hooks/useCalendlyImport";
@@ -36,7 +41,7 @@ const ImportFromCalendlyButton = ({
 };
 
 //Main view for Calendly import
-const ImportLayout = () => {
+const ImportLayout = ({ code }: { code?: string }) => {
   const [userId, setUserId] = useState<number>();
 
   const session = useSession();
@@ -47,72 +52,20 @@ const ImportLayout = () => {
     session.data.user.id && setUserId(session.data.user.id);
   }, [session]);
 
-  return <> {userId ? <CalendlyImportComponent userId={userId} /> : <></>}</>;
+  return <> {userId ? <CalendlyImportComponent userId={userId} code={code} /> : <></>}</>;
 };
 
-const CalendlyOAuthPopUp = ({
-  oauthUrl,
-  onCodeReceived,
-}: {
-  oauthUrl: string;
-  onCodeReceived: (code: string) => void;
-}) => {
-  const [popup, setPopup] = useState<Window | null>(null);
-  const { t } = useLocale();
-
-  const openPopup = () => {
-    const width = 600;
-    const height = 400;
-    const left = (window.innerWidth - width) / 2;
-    const top = (window.innerHeight - height) / 2;
-
-    const popupWindow = window.open(
-      oauthUrl,
-      "OAuth Popup",
-      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
-    );
-
-    setPopup(popupWindow);
-
-    const checkPopup = () => {
-      if (!popupWindow || popupWindow.closed) return;
-
-      try {
-        if (popupWindow.location.href.includes("code=")) {
-          const urlParams = new URLSearchParams(popupWindow.location.search);
-          const code = urlParams.get("code");
-
-          if (code) {
-            onCodeReceived(code);
-            popupWindow.close();
-          }
-        }
-      } catch (e) {
-        // Handle cross-origin issues or other errors
-      }
-
-      setTimeout(checkPopup, 500);
-    };
-
-    checkPopup();
-  };
-
-  return (
-    <Button onClick={openPopup} color="secondary" StartIcon="plus">
-      {t("import")}
-    </Button>
-  );
-};
-const CalendlyImportComponent = ({ userId }: { userId: number }) => {
+const CalendlyImportComponent = ({ userId, code }: { userId: number; code?: string }) => {
   const { importFromCalendly, importing } = useCalendlyImport(userId);
   const [loading, setLoading] = useState<boolean>(true);
-  const [didAuthorize, setDidAuthorize] = useState<boolean>(false);
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const { t } = useLocale();
 
+  const router = useRouter();
   useEffect(() => {
-    checkIfAuthorized(userId);
-  }, [userId]);
+    if (code) importFromCalendly().then(() => router.replace("/event-types"));
+    else checkIfAuthorized(userId);
+  }, [userId, code]);
   /**
    * Checks if the user has already authorized Calendly and sets the state accordingly
    * @param userId The user id of the current user
@@ -140,46 +93,14 @@ const CalendlyImportComponent = ({ userId }: { userId: number }) => {
     }
   };
 
-  /**
-   * Retrieves and stores the user's access token and refresh token from Calendly
-   * @param code  Authorization Code is a temporary code that the client exchanges for an access token.
-   */
-  const retrieveUserCalendlyAccessToken = (code: string) => {
-    fetch("/api/import/calendly/auth", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        code,
-        userId,
-      }),
-    }).then(
-      (res) => {
-        if (res.ok) {
-          setIsAuthorized(true);
-          setDidAuthorize(true);
-        }
-      },
-      (err) => {
-        console.error("Error retrieving tokens", err);
-      }
-    );
+  const handleOnClickImport = () => {
+    const calendlyOAuthProvider = new CalendlyOAuthProvider({
+      clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
+      redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
+      oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
+    });
+    window.location.href = calendlyOAuthProvider.getAuthorizationUrl();
   };
-
-  //handles the authorization code returned from Calendly
-  const onCode = (code: string) => retrieveUserCalendlyAccessToken(code);
-  const calendlyOAuthProvider = new CalendlyOAuthProvider({
-    clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-    redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
-    oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
-  });
-  useEffect(() => {
-    if (didAuthorize) {
-      importFromCalendly();
-    }
-  }, [didAuthorize]);
-
   return (
     <>
       {loading ? (
@@ -193,10 +114,9 @@ const CalendlyImportComponent = ({ userId }: { userId: number }) => {
               isAuthorized ? (
                 <ImportFromCalendlyButton importFromCalendly={importFromCalendly} importing={importing} />
               ) : (
-                <CalendlyOAuthPopUp
-                  oauthUrl={calendlyOAuthProvider.getAuthorizationUrl()}
-                  onCodeReceived={onCode}
-                />
+                <Button onClick={handleOnClickImport} color="secondary" StartIcon="plus">
+                  {t("import")}
+                </Button>
               )
             }
             borderInShellHeader={true}
@@ -211,3 +131,102 @@ ImportLayout.getLayout = getLayout;
 ImportLayout.PageWrapper = PageWrapper;
 
 export default ImportLayout;
+
+// pages/index.js
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const { code } = context.query;
+
+  if (code && typeof code === "string") {
+    const session = await getServerSession(context);
+    const user = session?.user;
+    if (!user) return null;
+
+    const authenticated = await handleOAuthRedirect({
+      code,
+      userId: user.id,
+    });
+    if (!authenticated) return { notFound: true } as const;
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { completedOnboarding: true },
+    });
+    // Return the data as props
+    return {
+      props: {
+        code,
+      },
+    };
+  } else
+    return {
+      props: {},
+    };
+}
+
+async function handleOAuthRedirect({ code, userId }: { code: string; userId: number }) {
+  try {
+    const calendlyOAuthProvider = new CalendlyOAuthProvider({
+      clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
+      clientSecret: process.env.CALENDLY_CLIENT_SECRET ?? "",
+      redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
+      oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
+    });
+    const { access_token, refresh_token, token_type, expires_in, created_at, owner } =
+      await calendlyOAuthProvider.getAccessToken(code);
+    // check if integration account for the user exists
+    const integrationAccount = await prisma.integrationAccounts.findFirst({
+      where: {
+        userId: userId,
+        provider: IntegrationProvider.CALENDLY,
+      },
+    });
+    //if already exists update the token configs
+    if (integrationAccount) {
+      await prisma.integrationAccounts.update({
+        where: {
+          userId_provider: {
+            userId: userId,
+            provider: IntegrationProvider.CALENDLY,
+          },
+        },
+        data: {
+          accessToken: access_token,
+          refreshToken: refresh_token,
+          tokenType: token_type,
+          expiresIn: expires_in,
+          createdAt: created_at,
+          ownerUniqIdentifier: owner,
+        },
+      });
+    } else {
+      //else adding new integration account and linking to user
+      await prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          integrationAccounts: {
+            create: {
+              accessToken: access_token,
+              refreshToken: refresh_token,
+              tokenType: token_type,
+              expiresIn: expires_in,
+              createdAt: created_at,
+              provider: IntegrationProvider.CALENDLY,
+              ownerUniqIdentifier: owner, // calendly user's unique identifier to access his resources
+            },
+          },
+        },
+      });
+      console.log("Creating new integration account and linking to user");
+    }
+    // res.setHeader("Set-Cookie", [
+    //   `calendlyAccessToken=${access_token}; HttpOnly; Path=/; Max-Age=${expires_in}; SameSite=Lax`,
+    //   `calendlyRefreshToken=${refresh_token}; HttpOnly; Path=/; Max-Age=${expires_in}; SameSite=Lax`,
+    // ]);
+    return true;
+  } catch (error) {
+    console.error("Internal Server Error:", String(error));
+    return false;
+  }
+}

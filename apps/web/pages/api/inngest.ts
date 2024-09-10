@@ -2,7 +2,9 @@ import { handleCalendlyImportEvent } from "@pages/api/import/calendly";
 import { Inngest } from "inngest";
 import { serve } from "inngest/next";
 
-export const inngestClient = new Inngest({ id: "onehash-cal" });
+import { INNGEST_ID } from "@calcom/lib/constants";
+
+export const inngestClient = new Inngest({ id: INNGEST_ID });
 
 const handleCalendlyImportFn = inngestClient.createFunction(
   { id: "import-from-calendly", retries: 2 },
