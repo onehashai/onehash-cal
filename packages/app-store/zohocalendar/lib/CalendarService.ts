@@ -54,7 +54,8 @@ export default class ZohoCalendarService implements Calendar {
 
         const query = stringify(params);
 
-        const res = await fetch(`https://accounts.${zohoCredentials.domain}/oauth/v2/token?${query}`, {
+        const domain = zohoCredentials.domain ?? "zoho.in";
+        const res = await fetch(`https://accounts.${domain}/oauth/v2/token?${query}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json; charset=utf-8",
@@ -67,7 +68,7 @@ export default class ZohoCalendarService implements Calendar {
           access_token: token.access_token,
           refresh_token: zohoCredentials.refresh_token,
           expires_in: Math.round(+new Date() / 1000 + token.expires_in),
-          domain: zohoCredentials.domain,
+          domain: domain,
         };
         await prisma.credential.update({
           where: { id: credential.id },
@@ -90,8 +91,9 @@ export default class ZohoCalendarService implements Calendar {
 
   private fetcher = async (endpoint: string, init?: RequestInit | undefined) => {
     const credentials = await this.auth.getToken();
+    const domain = credentials.domain ?? "zoho.in";
 
-    return fetch(`https://calendar.${credentials.domain}/api/v1${endpoint}`, {
+    return fetch(`https://calendar.${domain}/api/v1${endpoint}`, {
       method: "GET",
       ...init,
       headers: {
@@ -104,8 +106,9 @@ export default class ZohoCalendarService implements Calendar {
 
   private getUserInfo = async () => {
     const credentials = await this.auth.getToken();
+    const domain = credentials.domain ?? "zoho.in";
 
-    const response = await fetch(`https://accounts.${credentials.domain}/oauth/user/info`, {
+    const response = await fetch(`https://accounts.${domain}/oauth/user/info`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${credentials.access_token}`,
