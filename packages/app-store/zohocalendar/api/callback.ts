@@ -32,9 +32,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(401).json({ message: "You must be logged in to do this" });
   }
 
-  // const hostname = new URL(accountsServer as string).hostname;
-  // const parts = hostname.split(".");
-  // const domain = parts.slice(-2).join(".");
+  const hostname = new URL(accountsServer as string).hostname;
+  const parts = hostname.split(".");
+  const domain = parts.slice(-2).join(".");
 
   const appKeys = await getAppKeysFromSlug(config.slug);
   const { client_id, client_secret } = zohoKeysSchema.parse(appKeys);
@@ -48,7 +48,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   };
 
   const query = stringify(params);
-  const url = `https://accounts.zoho.in/oauth/v2/token`;
+  const url = `https://accounts.${domain}/oauth/v2/token`;
 
   const response = await fetch(`${url}?${query}`, {
     method: "POST",
@@ -70,9 +70,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     access_token: responseBody.access_token,
     refresh_token: responseBody.refresh_token,
     expires_in: Math.round(+new Date() / 1000 + responseBody.expires_in),
+    domain,
   };
 
-  const calendarResponse = await fetch(`https://calendar.zoho.in/api/v1/calendars`, {
+  const calendarResponse = await fetch(`https://calendar.${domain}/api/v1/calendars`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${key.access_token}`,

@@ -323,6 +323,7 @@ model User {
   AccessToken                AccessToken[]
   RefreshToken               RefreshToken[]
   PlatformAuthorizationToken PlatformAuthorizationToken[]
+  integrationAccounts        IntegrationAccounts[]
   profiles                   Profile[]
   movedToProfileId           Int?
   movedToProfile             Profile?                     @relation("moved_to_profile", fields: [movedToProfileId], references: [id], onDelete: SetNull)
@@ -796,6 +797,43 @@ model HashedLink {
   link        String    @unique()
   eventType   EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   eventTypeId Int       @unique
+}
+
+model IntegrationAccounts {
+  // id           Int                 @id @default(autoincrement())
+  tokenType              String?
+  expiresIn              Int?
+  createdAt              Int?
+  refreshToken           String
+  accessToken            String
+  scope                  String?
+  ownerUniqIdentifier    String?
+  provider               IntegrationProvider
+  user                   User                    @relation(fields: [userId], references: [id])
+  userId                 Int
+  integrationUserProfile IntegrationUserProfile?
+
+  @@id([userId, provider])
+  //a user can only have one integration account per provider
+  @@unique([userId, provider])
+}
+
+enum IntegrationProvider {
+  CALENDLY
+}
+
+model IntegrationUserProfile {
+  scheduling_url              String?
+  avatar_url                  String?
+  created_at                  DateTime?
+  updated_at                  DateTime?
+  current_organization        String?
+  integrationAccount          IntegrationAccounts @relation(fields: [integrationAccountsUserId, integrationAccountsProvider], references: [userId, provider])
+  integrationAccountsUserId   Int
+  integrationAccountsProvider IntegrationProvider
+
+  @@id([integrationAccountsUserId, integrationAccountsProvider])
+  @@unique([integrationAccountsUserId, integrationAccountsProvider])
 }
 
 model Account {
