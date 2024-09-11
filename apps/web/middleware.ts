@@ -20,7 +20,7 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
   }
 };
 
-const globalRoutes = ["/", "/auth/login"];
+const globalRoutes = ["/", "/login", "/embed", "/video"];
 
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;
@@ -30,7 +30,7 @@ const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   requestHeaders.set("Access-Control-Allow-Origin", "*");
 
   if (!url.pathname.startsWith("/api")) {
-    if (!globalRoutes.includes(url.pathname) && !url.pathname.includes("embed")) {
+    if (!globalRoutes.some((route) => url.pathname.includes(route))) {
       const session = await getToken({
         req: req,
         secret: process.env.NEXTAUTH_SECRET,
