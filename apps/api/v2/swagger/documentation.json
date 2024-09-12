@@ -1,6 +1,27 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/health": {
+      "get": {
+        "operationId": "AppController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Health - development only"
+        ]
+      }
+    },
     "/v2/oauth-clients/{clientId}/users": {
       "get": {
         "operationId": "OAuthClientUsersController_getManagedUsers",
@@ -37,7 +58,7 @@
           }
         },
         "tags": [
-          "Managed users"
+          "OAuth Managed users"
         ]
       },
       "post": {
@@ -75,7 +96,7 @@
           }
         },
         "tags": [
-          "Managed users"
+          "OAuth Managed users"
         ]
       }
     },
@@ -113,7 +134,7 @@
           }
         },
         "tags": [
-          "Managed users"
+          "OAuth Managed users"
         ]
       },
       "patch": {
@@ -159,7 +180,7 @@
           }
         },
         "tags": [
-          "Managed users"
+          "OAuth Managed users"
         ]
       },
       "delete": {
@@ -195,7 +216,7 @@
           }
         },
         "tags": [
-          "Managed users"
+          "OAuth Managed users"
         ]
       }
     },
@@ -233,13 +254,351 @@
           }
         },
         "tags": [
-          "Managed users"
+          "OAuth Managed users"
+        ]
+      }
+    },
+    "/v2/oauth-clients": {
+      "post": {
+        "operationId": "OAuthClientsController_createOAuthClient",
+        "summary": "",
+        "description": "⚠️ First, this endpoint requires `Cookie: next-auth.session-token=eyJhbGciOiJ` header. Log into Cal web app using owner of organization that was created after visiting `/settings/organizations/new`, refresh swagger docs, and the cookie will be added to requests automatically to pass the NextAuthGuard.\nSecond, make sure that the logged in user has organizationId set to pass the OrganizationRolesGuard guard.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOAuthClientInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Create an OAuth client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOAuthClientResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OAuth - development only"
+        ]
+      },
+      "get": {
+        "operationId": "OAuthClientsController_getOAuthClients",
+        "summary": "",
+        "description": "⚠️ First, this endpoint requires `Cookie: next-auth.session-token=eyJhbGciOiJ` header. Log into Cal web app using owner of organization that was created after visiting `/settings/organizations/new`, refresh swagger docs, and the cookie will be added to requests automatically to pass the NextAuthGuard.\nSecond, make sure that the logged in user has organizationId set to pass the OrganizationRolesGuard guard.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOAuthClientsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OAuth - development only"
+        ]
+      }
+    },
+    "/v2/oauth-clients/{clientId}": {
+      "get": {
+        "operationId": "OAuthClientsController_getOAuthClientById",
+        "summary": "",
+        "description": "⚠️ First, this endpoint requires `Cookie: next-auth.session-token=eyJhbGciOiJ` header. Log into Cal web app using owner of organization that was created after visiting `/settings/organizations/new`, refresh swagger docs, and the cookie will be added to requests automatically to pass the NextAuthGuard.\nSecond, make sure that the logged in user has organizationId set to pass the OrganizationRolesGuard guard.",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOAuthClientResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OAuth - development only"
+        ]
+      },
+      "patch": {
+        "operationId": "OAuthClientsController_updateOAuthClient",
+        "summary": "",
+        "description": "⚠️ First, this endpoint requires `Cookie: next-auth.session-token=eyJhbGciOiJ` header. Log into Cal web app using owner of organization that was created after visiting `/settings/organizations/new`, refresh swagger docs, and the cookie will be added to requests automatically to pass the NextAuthGuard.\nSecond, make sure that the logged in user has organizationId set to pass the OrganizationRolesGuard guard.",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOAuthClientInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOAuthClientResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OAuth - development only"
+        ]
+      },
+      "delete": {
+        "operationId": "OAuthClientsController_deleteOAuthClient",
+        "summary": "",
+        "description": "⚠️ First, this endpoint requires `Cookie: next-auth.session-token=eyJhbGciOiJ` header. Log into Cal web app using owner of organization that was created after visiting `/settings/organizations/new`, refresh swagger docs, and the cookie will be added to requests automatically to pass the NextAuthGuard.\nSecond, make sure that the logged in user has organizationId set to pass the OrganizationRolesGuard guard.",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOAuthClientResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OAuth - development only"
+        ]
+      }
+    },
+    "/v2/oauth-clients/{clientId}/managed-users": {
+      "get": {
+        "operationId": "OAuthClientsController_getOAuthClientManagedUsersById",
+        "summary": "",
+        "description": "⚠️ First, this endpoint requires `Cookie: next-auth.session-token=eyJhbGciOiJ` header. Log into Cal web app using owner of organization that was created after visiting `/settings/organizations/new`, refresh swagger docs, and the cookie will be added to requests automatically to pass the NextAuthGuard.\nSecond, make sure that the logged in user has organizationId set to pass the OrganizationRolesGuard guard.",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "The number of items to return",
+            "example": 10,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetManagedUsersOutput"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OAuth - development only"
+        ]
+      }
+    },
+    "/v2/oauth/{clientId}/authorize": {
+      "post": {
+        "operationId": "OAuthFlowController_authorize",
+        "summary": "Authorize an OAuth client",
+        "description": "Redirects the user to the specified 'redirect_uri' with an authorization code in query parameter if the client is authorized successfully. The code is then exchanged for access and refresh tokens via the `/exchange` endpoint.",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthAuthorizeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The user is redirected to the 'redirect_uri' with an authorization code in query parameter e.g. `redirectUri?code=secretcode.`"
+          },
+          "400": {
+            "description": "Bad request if the OAuth client is not found, if the redirect URI is invalid, or if the user has already authorized the client."
+          }
+        },
+        "tags": [
+          "OAuth - development only"
+        ]
+      }
+    },
+    "/v2/oauth/{clientId}/exchange": {
+      "post": {
+        "operationId": "OAuthFlowController_exchange",
+        "summary": "Exchange authorization code for access tokens",
+        "description": "Exchanges the authorization code received from the `/authorize` endpoint for access and refresh tokens. The authorization code should be provided in the 'Authorization' header prefixed with 'Bearer '.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeAuthorizationCodeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully exchanged authorization code for access and refresh tokens.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeysResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request if the authorization code is missing, invalid, or if the client ID and secret do not match."
+          }
+        },
+        "tags": [
+          "OAuth - development only"
+        ]
+      }
+    },
+    "/v2/oauth/{clientId}/refresh": {
+      "post": {
+        "operationId": "OAuthFlowController_refreshAccessToken",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-cal-secret-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeysResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OAuth - development only"
         ]
       }
     },
     "/v2/event-types": {
       "post": {
         "operationId": "EventTypesController_2024_04_15_createEventType",
+        "summary": "Create an event-type",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -269,6 +628,7 @@
       },
       "get": {
         "operationId": "EventTypesController_2024_04_15_getEventTypes",
+        "summary": "Get all event-types for current user",
         "parameters": [],
         "responses": {
           "200": {
@@ -290,6 +650,7 @@
     "/v2/event-types/{eventTypeId}": {
       "get": {
         "operationId": "EventTypesController_2024_04_15_getEventType",
+        "summary": "Get event-type details for current user",
         "parameters": [
           {
             "name": "eventTypeId",
@@ -318,6 +679,7 @@
       },
       "patch": {
         "operationId": "EventTypesController_2024_04_15_updateEventType",
+        "summary": "Edit event-type details",
         "parameters": [
           {
             "name": "eventTypeId",
@@ -356,6 +718,7 @@
       },
       "delete": {
         "operationId": "EventTypesController_2024_04_15_deleteEventType",
+        "summary": "Delete a given event-type",
         "parameters": [
           {
             "name": "eventTypeId",
@@ -386,6 +749,7 @@
     "/v2/selected-calendars": {
       "post": {
         "operationId": "SelectedCalendarsController_addSelectedCalendar",
+        "summary": "Enable selected calendar",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -415,6 +779,7 @@
       },
       "delete": {
         "operationId": "SelectedCalendarsController_removeSelectedCalendar",
+        "summary": "Disable selected calendar",
         "parameters": [
           {
             "name": "integration",
@@ -461,6 +826,7 @@
     "/v2/event-types/{username}/{eventSlug}/public": {
       "get": {
         "operationId": "EventTypesController_2024_04_15_getPublicEventType",
+        "summary": "Get public event-type details for a user",
         "parameters": [
           {
             "name": "username",
@@ -516,6 +882,7 @@
     "/v2/event-types/{username}/public": {
       "get": {
         "operationId": "EventTypesController_2024_04_15_getPublicEventTypes",
+        "summary": "Get all public event-types for a user",
         "parameters": [
           {
             "name": "username",
@@ -1893,6 +2260,7 @@
     "/v2/schedules": {
       "post": {
         "operationId": "SchedulesController_2024_04_15_createSchedule",
+        "summary": "Create user availability schedule",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1922,6 +2290,7 @@
       },
       "get": {
         "operationId": "SchedulesController_2024_04_15_getSchedules",
+        "summary": "Get availability schedule",
         "parameters": [],
         "responses": {
           "200": {
@@ -1943,6 +2312,7 @@
     "/v2/schedules/default": {
       "get": {
         "operationId": "SchedulesController_2024_04_15_getDefaultSchedule",
+        "summary": "Get default availability schedule",
         "parameters": [],
         "responses": {
           "200": {
@@ -1964,6 +2334,7 @@
     "/v2/schedules/{scheduleId}": {
       "get": {
         "operationId": "SchedulesController_2024_04_15_getSchedule",
+        "summary": "Get availability schedule by ID",
         "parameters": [
           {
             "name": "scheduleId",
@@ -1992,6 +2363,7 @@
       },
       "patch": {
         "operationId": "SchedulesController_2024_04_15_updateSchedule",
+        "summary": "Edit availability schedule by ID",
         "parameters": [
           {
             "name": "scheduleId",
@@ -2020,6 +2392,7 @@
       },
       "delete": {
         "operationId": "SchedulesController_2024_04_15_deleteSchedule",
+        "summary": "Delete availability schedule by ID",
         "parameters": [
           {
             "name": "scheduleId",
@@ -2050,6 +2423,7 @@
     "/v2/gcal/oauth/auth-url": {
       "get": {
         "operationId": "GcalController_redirect",
+        "summary": "Get Google Calendar Oauth Url",
         "parameters": [
           {
             "name": "Authorization",
@@ -2080,6 +2454,7 @@
     "/v2/gcal/oauth/save": {
       "get": {
         "operationId": "GcalController_save",
+        "summary": "Redirect URI for GCal OAuth",
         "parameters": [
           {
             "name": "state",
@@ -2118,6 +2493,7 @@
     "/v2/gcal/check": {
       "get": {
         "operationId": "GcalController_check",
+        "summary": "Check if  Google Calendar is configured",
         "parameters": [],
         "responses": {
           "200": {
@@ -2162,7 +2538,7 @@
           }
         },
         "tags": [
-          "Cal provider"
+          "OAuth Cal provider"
         ]
       }
     },
@@ -2192,13 +2568,14 @@
           }
         },
         "tags": [
-          "Cal provider"
+          "OAuth Cal provider"
         ]
       }
     },
     "/v2/me": {
       "get": {
         "operationId": "MeController_getMe",
+        "summary": "Get current user profile details",
         "parameters": [],
         "responses": {
           "200": {
@@ -2218,6 +2595,7 @@
       },
       "patch": {
         "operationId": "MeController_updateMe",
+        "summary": "Update current user profile details",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2249,7 +2627,51 @@
     "/v2/calendars/busy-times": {
       "get": {
         "operationId": "CalendarsController_getBusyTimes",
-        "parameters": [],
+        "summary": "Retrieve busy times from the user's calendar",
+        "parameters": [
+          {
+            "name": "loggedInUsersTz",
+            "required": true,
+            "in": "query",
+            "description": "The time zone of the logged-in user",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "The start date in YYYY-MM-DD format",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "The end date in YYYY-MM-DD format",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "calendarsToLoad",
+            "required": true,
+            "in": "query",
+            "description": "Array of calendar objects to load",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "a"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2270,6 +2692,7 @@
     "/v2/calendars": {
       "get": {
         "operationId": "CalendarsController_getCalendars",
+        "summary": "Get connected calendars",
         "parameters": [],
         "responses": {
           "200": {
@@ -2291,6 +2714,7 @@
     "/v2/calendars/{calendar}/connect": {
       "get": {
         "operationId": "CalendarsController_redirect",
+        "summary": "Get google/outlook calendar provider oauth url",
         "parameters": [
           {
             "name": "Authorization",
@@ -2329,6 +2753,7 @@
     "/v2/calendars/{calendar}/save": {
       "get": {
         "operationId": "CalendarsController_save",
+        "summary": "Authorize and connect google/outlook calendar using oauth authorization code",
         "parameters": [
           {
             "name": "state",
@@ -2368,6 +2793,7 @@
     "/v2/calendars/{calendar}/credentials": {
       "post": {
         "operationId": "CalendarsController_syncCredentials",
+        "summary": "Authorize and connect apple calendar using basic credentials",
         "parameters": [
           {
             "name": "calendar",
@@ -2391,6 +2817,7 @@
     "/v2/calendars/{calendar}/check": {
       "get": {
         "operationId": "CalendarsController_check",
+        "summary": "Check if calendar is enabled",
         "parameters": [
           {
             "name": "calendar",
@@ -2421,6 +2848,7 @@
     "/v2/calendars/{calendar}/disconnect": {
       "post": {
         "operationId": "CalendarsController_deleteCalendarCredentials",
+        "summary": "Disconnect calendar from account",
         "parameters": [
           {
             "name": "calendar",
@@ -2461,6 +2889,7 @@
     "/v2/bookings": {
       "get": {
         "operationId": "BookingsController_getBookings",
+        "summary": "Get user bookings",
         "parameters": [
           {
             "name": "cursor",
@@ -2512,6 +2941,7 @@
       },
       "post": {
         "operationId": "BookingsController_createBooking",
+        "summary": "Book an event",
         "parameters": [
           {
             "name": "x-cal-client-id",
@@ -2552,6 +2982,7 @@
     "/v2/bookings/{bookingUid}": {
       "get": {
         "operationId": "BookingsController_getBooking",
+        "summary": "Get booking details by UID",
         "parameters": [
           {
             "name": "bookingUid",
@@ -2582,6 +3013,7 @@
     "/v2/bookings/{bookingUid}/reschedule": {
       "get": {
         "operationId": "BookingsController_getBookingForReschedule",
+        "summary": "Get booking details by UID to reschedule",
         "parameters": [
           {
             "name": "bookingUid",
@@ -2612,6 +3044,7 @@
     "/v2/bookings/{bookingId}/cancel": {
       "post": {
         "operationId": "BookingsController_cancelBooking",
+        "summary": "Cancel an event booking",
         "parameters": [
           {
             "name": "bookingId",
@@ -2660,6 +3093,7 @@
     "/v2/bookings/{bookingUid}/mark-no-show": {
       "post": {
         "operationId": "BookingsController_markNoShow",
+        "summary": "Mark host/attendee as no-show",
         "parameters": [
           {
             "name": "bookingUid",
@@ -2700,6 +3134,7 @@
     "/v2/bookings/recurring": {
       "post": {
         "operationId": "BookingsController_createRecurringBooking",
+        "summary": "Book a recurring event",
         "parameters": [
           {
             "name": "x-cal-client-id",
@@ -2712,12 +3147,13 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "Create Recurring Booking Input",
           "content": {
             "application/json": {
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/CreateRecurringBookingInput"
                 }
               }
             }
@@ -2743,6 +3179,7 @@
     "/v2/bookings/instant": {
       "post": {
         "operationId": "BookingsController_createInstantBooking",
+        "summary": "Create an instant booking",
         "parameters": [
           {
             "name": "x-cal-client-id",
@@ -2783,6 +3220,7 @@
     "/v2/slots/reserve": {
       "post": {
         "operationId": "SlotsController_reserveSlot",
+        "summary": "Reserve slots for the given time range",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2814,7 +3252,18 @@
     "/v2/slots/selected-slot": {
       "delete": {
         "operationId": "SlotsController_deleteSelectedSlot",
-        "parameters": [],
+        "summary": "Unreserve served slots",
+        "parameters": [
+          {
+            "name": "uid",
+            "required": true,
+            "in": "query",
+            "description": "UID of the reserved slot",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2835,7 +3284,35 @@
     "/v2/slots/available": {
       "get": {
         "operationId": "SlotsController_getAvailableSlots",
-        "parameters": [],
+        "summary": "Get available slots for an event-type",
+        "parameters": [
+          {
+            "name": "startTime",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endTime",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventTypeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2856,6 +3333,7 @@
     "/v2/timezones": {
       "get": {
         "operationId": "TimezonesController_getTimeZones",
+        "summary": "Get Global Timezone list",
         "parameters": [],
         "responses": {
           "200": {
@@ -3440,6 +3918,7 @@
     "/v2/destination-calendars": {
       "put": {
         "operationId": "DestinationCalendarsController_updateDestinationCalendars",
+        "summary": "Select a third party destination calendar where events will be created",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -3464,8 +3943,7 @@
           }
         },
         "tags": [
-          "Destination-Calendars",
-          "Select a third party destination calendar where events will be created"
+          "Destination-Calendars"
         ]
       }
     }
@@ -3879,6 +4357,214 @@
         "required": [
           "status",
           "data"
+        ]
+      },
+      "CreateOAuthClientInput": {
+        "type": "object",
+        "properties": {}
+      },
+      "DataDto": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "example": "clsx38nbl0001vkhlwin9fmt0"
+          },
+          "clientSecret": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoib2F1dGgtY2xpZW50Iiwi"
+          }
+        },
+        "required": [
+          "clientId",
+          "clientSecret"
+        ]
+      },
+      "CreateOAuthClientResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "error"
+            ],
+            "example": "success"
+          },
+          "data": {
+            "example": {
+              "clientId": "clsx38nbl0001vkhlwin9fmt0",
+              "clientSecret": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoib2F1dGgtY2xpZW50Iiwi"
+            },
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DataDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "data"
+        ]
+      },
+      "PlatformOAuthClientDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "clsx38nbl0001vkhlwin9fmt0"
+          },
+          "name": {
+            "type": "string",
+            "example": "MyClient"
+          },
+          "secret": {
+            "type": "string",
+            "example": "secretValue"
+          },
+          "permissions": {
+            "type": "number",
+            "example": 3
+          },
+          "logo": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/logo.png"
+          },
+          "redirectUris": {
+            "example": [
+              "https://example.com/callback"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "organizationId": {
+            "type": "number",
+            "example": 1
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-03-23T08:33:21.851Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "secret",
+          "permissions",
+          "redirectUris",
+          "organizationId",
+          "createdAt"
+        ]
+      },
+      "GetOAuthClientsResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success",
+            "enum": [
+              "success",
+              "error"
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformOAuthClientDto"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "data"
+        ]
+      },
+      "GetOAuthClientResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success",
+            "enum": [
+              "success",
+              "error"
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/PlatformOAuthClientDto"
+          }
+        },
+        "required": [
+          "status",
+          "data"
+        ]
+      },
+      "UpdateOAuthClientInput": {
+        "type": "object",
+        "properties": {
+          "logo": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "redirectUris": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bookingRedirectUri": {
+            "type": "string"
+          },
+          "bookingCancelRedirectUri": {
+            "type": "string"
+          },
+          "bookingRescheduleRedirectUri": {
+            "type": "string"
+          },
+          "areEmailsEnabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OAuthAuthorizeInput": {
+        "type": "object",
+        "properties": {
+          "redirectUri": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "redirectUri"
+        ]
+      },
+      "ExchangeAuthorizationCodeInput": {
+        "type": "object",
+        "properties": {
+          "clientSecret": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "clientSecret"
+        ]
+      },
+      "RefreshTokenInput": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
         ]
       },
       "CreateEventTypeInput_2024_06_14": {
@@ -8303,6 +8989,96 @@
         "required": [
           "status",
           "data"
+        ]
+      },
+      "CreateRecurringBookingInput": {
+        "type": "object",
+        "properties": {
+          "end": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "eventTypeId": {
+            "type": "number"
+          },
+          "eventTypeSlug": {
+            "type": "string"
+          },
+          "rescheduleUid": {
+            "type": "string"
+          },
+          "recurringEventId": {
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "user": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "language": {
+            "type": "string"
+          },
+          "bookingUid": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "hasHashedBookingLink": {
+            "type": "boolean"
+          },
+          "hashedLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "seatReferenceUid": {
+            "type": "string"
+          },
+          "responses": {
+            "$ref": "#/components/schemas/Response"
+          },
+          "orgSlug": {
+            "type": "string"
+          },
+          "locationUrl": {
+            "type": "string"
+          },
+          "noEmail": {
+            "type": "boolean"
+          },
+          "recurringCount": {
+            "type": "number"
+          },
+          "appsStatus": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "allRecurringDates": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "currentRecurringIndex": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "start",
+          "eventTypeId",
+          "timeZone",
+          "language",
+          "metadata",
+          "hashedLink",
+          "responses"
         ]
       },
       "ReserveSlotInput": {

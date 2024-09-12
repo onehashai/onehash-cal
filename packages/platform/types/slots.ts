@@ -1,17 +1,31 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsArray, IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class GetAvailableSlotsInput {
   @IsDateString()
+  @ApiProperty({
+    type: "string",
+    format: "date-time",
+    required: true,
+  })
   startTime!: string;
 
   @IsDateString()
+  @ApiProperty({
+    type: "string",
+    format: "date-time",
+    required: true,
+  })
   endTime!: string;
 
   @Transform(({ value }: { value: string }) => value && parseInt(value))
   @IsNumber()
-  @IsOptional()
-  eventTypeId?: number;
+  @ApiProperty({
+    type: "string",
+    required: true,
+  })
+  eventTypeId!: number;
 
   @IsString()
   @IsOptional()
@@ -19,6 +33,7 @@ export class GetAvailableSlotsInput {
 
   @IsArray()
   @IsString({ each: true })
+  @IsOptional()
   usernameList?: string[];
 
   @IsBoolean()

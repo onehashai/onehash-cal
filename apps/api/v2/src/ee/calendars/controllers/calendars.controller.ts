@@ -31,20 +31,13 @@ import {
   Post,
   Body,
 } from "@nestjs/common";
-import { ApiTags as DocsTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags as DocsTags } from "@nestjs/swagger";
 import { User } from "@prisma/client";
 import { plainToClass } from "class-transformer";
 import { Request } from "express";
 import { z } from "zod";
 
-import { APPS_READ } from "@calcom/platform-constants";
-import {
-  SUCCESS_STATUS,
-  CALENDARS,
-  GOOGLE_CALENDAR,
-  OFFICE_365_CALENDAR,
-  APPLE_CALENDAR,
-} from "@calcom/platform-constants";
+import { SUCCESS_STATUS, CALENDARS, APPS_READ, CalendarType } from "@calcom/platform-constants";
 import { ApiResponse, CalendarBusyTimesInput } from "@calcom/platform-types";
 
 @Controller({
@@ -63,6 +56,7 @@ export class CalendarsController {
 
   @UseGuards(ApiAuthGuard)
   @Get("/busy-times")
+  @ApiOperation({ summary: "Retrieve busy times from the user's calendar" })
   async getBusyTimes(
     @Query() queryParams: CalendarBusyTimesInput,
     @GetUser() user: UserWithProfile
@@ -91,6 +85,7 @@ export class CalendarsController {
 
   @Get("/")
   @UseGuards(ApiAuthGuard)
+  @ApiOperation({ summary: "Get connected calendars" })
   async getCalendars(@GetUser("id") userId: number): Promise<ConnectedCalendarsOutput> {
     const calendars = await this.calendarsService.getCalendars(userId);
 
@@ -103,16 +98,17 @@ export class CalendarsController {
   @UseGuards(ApiAuthGuard)
   @Get("/:calendar/connect")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Get google/outlook calendar provider oauth url" })
   async redirect(
     @Req() req: Request,
     @Headers("Authorization") authorization: string,
-    @Param("calendar") calendar: string,
+    @Param("calendar") calendar: CalendarType,
     @Query("redir") redir?: string | null
   ): Promise<ApiResponse<{ authUrl: string }>> {
     switch (calendar) {
-      case OFFICE_365_CALENDAR:
+      case CalendarType.Office365:
         return await this.outlookService.connect(authorization, req, redir ?? "");
-      case GOOGLE_CALENDAR:
+      case CalendarType.Google:
         return await this.googleCalendarService.connect(authorization, req, redir ?? "");
       default:
         throw new BadRequestException(
@@ -125,10 +121,11 @@ export class CalendarsController {
   @Get("/:calendar/save")
   @HttpCode(HttpStatus.OK)
   @Redirect(undefined, 301)
+  @ApiOperation({ summary: "Authorize and connect google/outlook calendar using oauth authorization code" })
   async save(
     @Query("state") state: string,
     @Query("code") code: string,
-    @Param("calendar") calendar: string
+    @Param("calendar") calendar: CalendarType
   ): Promise<{ url: string }> {
     // state params contains our user access token
     const stateParams = new URLSearchParams(state);
@@ -140,9 +137,9 @@ export class CalendarsController {
         redir: stateParams.get("redir"),
       });
     switch (calendar) {
-      case OFFICE_365_CALENDAR:
+      case CalendarType.Office365:
         return await this.outlookService.save(code, accessToken, origin, redir ?? "");
-      case GOOGLE_CALENDAR:
+      case CalendarType.Google:
         return await this.googleCalendarService.save(code, accessToken, origin, redir ?? "");
       default:
         throw new BadRequestException(
@@ -154,15 +151,16 @@ export class CalendarsController {
 
   @UseGuards(ApiAuthGuard)
   @Post("/:calendar/credentials")
+  @ApiOperation({ summary: "Authorize and connect apple calendar using basic credentials" })
   async syncCredentials(
     @GetUser() user: User,
-    @Param("calendar") calendar: string,
+    @Param("calendar") calendar: CalendarType,
     @Body() body: { username: string; password: string }
   ): Promise<{ status: string }> {
     const { username, password } = body;
 
     switch (calendar) {
-      case APPLE_CALENDAR:
+      case CalendarType.Apple:
         return await this.appleCalendarService.save(user.id, user.email, username, password);
       default:
         throw new BadRequestException(
@@ -176,13 +174,17 @@ export class CalendarsController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ApiAuthGuard, PermissionsGuard)
   @Permissions([APPS_READ])
-  async check(@GetUser("id") userId: number, @Param("calendar") calendar: string): Promise<ApiResponse> {
+  @ApiOperation({ summary: "Check if calendar is enabled" })
+  async check(
+    @GetUser("id") userId: number,
+    @Param("calendar") calendar: CalendarType
+  ): Promise<ApiResponse> {
     switch (calendar) {
-      case OFFICE_365_CALENDAR:
+      case CalendarType.Office365:
         return await this.outlookService.check(userId);
-      case GOOGLE_CALENDAR:
+      case CalendarType.Google:
         return await this.googleCalendarService.check(userId);
-      case APPLE_CALENDAR:
+      case CalendarType.Apple:
         return await this.appleCalendarService.check(userId);
       default:
         throw new BadRequestException(
@@ -195,8 +197,9 @@ export class CalendarsController {
   @UseGuards(ApiAuthGuard)
   @Post("/:calendar/disconnect")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Disconnect calendar from account" })
   async deleteCalendarCredentials(
-    @Param("calendar") calendar: string,
+    @Param("calendar") calendar: CalendarType,
     @Body() body: DeleteCalendarCredentialsInputBodyDto,
     @GetUser() user: UserWithProfile
   ): Promise<DeletedCalendarCredentialsOutputResponseDto> {

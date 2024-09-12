@@ -14,3 +14,9 @@ export const APPS_TYPE_ID_MAPPING = {
   [OFFICE_365_CALENDAR_TYPE]: OFFICE_365_CALENDAR_ID,
   [APPLE_CALENDAR_TYPE]: APPLE_CALENDAR_ID,
 } as const;
+
+export enum CalendarType {
+  Office365 = "office365",
+  Google = "google",
+  Apple = "apple",
+}

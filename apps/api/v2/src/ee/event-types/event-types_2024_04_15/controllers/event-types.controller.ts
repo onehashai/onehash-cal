@@ -36,7 +36,7 @@ import {
   InternalServerErrorException,
   ParseIntPipe,
 } from "@nestjs/common";
-import { ApiTags as DocsTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags as DocsTags } from "@nestjs/swagger";
 
 import { EVENT_TYPE_READ, EVENT_TYPE_WRITE, SUCCESS_STATUS } from "@calcom/platform-constants";
 import { getPublicEvent, getEventTypesByViewer } from "@calcom/platform-libraries-0.0.2";
@@ -57,6 +57,7 @@ export class EventTypesController_2024_04_15 {
   @Post("/")
   @Permissions([EVENT_TYPE_WRITE])
   @UseGuards(ApiAuthGuard)
+  @ApiOperation({ summary: "Create an event-type" })
   async createEventType(
     @Body() body: CreateEventTypeInput_2024_04_15,
     @GetUser() user: UserWithProfile
@@ -72,6 +73,7 @@ export class EventTypesController_2024_04_15 {
   @Get("/:eventTypeId")
   @Permissions([EVENT_TYPE_READ])
   @UseGuards(ApiAuthGuard)
+  @ApiOperation({ summary: "Get event-type details for current user" })
   async getEventType(
     @Param("eventTypeId", ParseIntPipe) eventTypeId: number,
     @GetUser() user: UserWithProfile
@@ -91,6 +93,7 @@ export class EventTypesController_2024_04_15 {
   @Get("/")
   @Permissions([EVENT_TYPE_READ])
   @UseGuards(ApiAuthGuard)
+  @ApiOperation({ summary: "Get all event-types for current user" })
   async getEventTypes(@GetUser() user: UserWithProfile): Promise<GetEventTypesOutput> {
     const eventTypes = await getEventTypesByViewer({
       id: user.id,
@@ -106,6 +109,7 @@ export class EventTypesController_2024_04_15 {
   }
 
   @Get("/:username/:eventSlug/public")
+  @ApiOperation({ summary: "Get public event-type details for a user" })
   async getPublicEventType(
     @Param("username") username: string,
     @Param("eventSlug") eventSlug: string,
@@ -135,6 +139,7 @@ export class EventTypesController_2024_04_15 {
   }
 
   @Get("/:username/public")
+  @ApiOperation({ summary: "Get all public event-types for a user" })
   async getPublicEventTypes(@Param("username") username: string): Promise<GetEventTypesPublicOutput> {
     const eventTypes = await this.eventTypesService.getEventTypesPublicByUsername(username);
 
@@ -148,6 +153,7 @@ export class EventTypesController_2024_04_15 {
   @Permissions([EVENT_TYPE_WRITE])
   @UseGuards(ApiAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Edit event-type details" })
   async updateEventType(
     @Param() params: EventTypeIdParams_2024_04_15,
     @Param("eventTypeId", ParseIntPipe) eventTypeId: number,
@@ -165,6 +171,7 @@ export class EventTypesController_2024_04_15 {
   @Delete("/:eventTypeId")
   @Permissions([EVENT_TYPE_WRITE])
   @UseGuards(ApiAuthGuard)
+  @ApiOperation({ summary: "Delete a given event-type" })
   async deleteEventType(
     @Param() params: EventTypeIdParams_2024_04_15,
     @Param("eventTypeId", ParseIntPipe) eventTypeId: number,

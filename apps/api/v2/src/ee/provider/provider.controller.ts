@@ -24,7 +24,7 @@ import { SUCCESS_STATUS } from "@calcom/platform-constants";
   path: "/v2/provider",
   version: API_VERSIONS_VALUES,
 })
-@DocsTags("Cal provider")
+@DocsTags("OAuth Cal provider")
 export class CalProviderController {
   constructor(private readonly oauthClientRepository: OAuthClientRepository) {}
 

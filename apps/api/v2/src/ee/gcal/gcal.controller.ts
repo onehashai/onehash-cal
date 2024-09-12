@@ -26,7 +26,7 @@ import {
   Headers,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ApiTags as DocsTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags as DocsTags } from "@nestjs/swagger";
 import { Prisma } from "@prisma/client";
 import { Request } from "express";
 import { google } from "googleapis";
@@ -62,6 +62,7 @@ export class GcalController {
   @Get("/oauth/auth-url")
   @HttpCode(HttpStatus.OK)
   @UseGuards(ApiAuthGuard)
+  @ApiOperation({ summary: "Get Google Calendar Oauth Url" })
   async redirect(
     @Headers("Authorization") authorization: string,
     @Req() req: Request
@@ -81,6 +82,7 @@ export class GcalController {
   @Get("/oauth/save")
   @Redirect(undefined, 301)
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Redirect URI for GCal OAuth" })
   async save(@Query("state") state: string, @Query("code") code: string): Promise<GcalSaveRedirectOutput> {
     const url = new URL(this.config.get("api.url") + "/calendars/google/save");
     url.searchParams.append("code", code);
@@ -92,6 +94,7 @@ export class GcalController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ApiAuthGuard, PermissionsGuard)
   @Permissions([APPS_READ])
+  @ApiOperation({ summary: "Check if  Google Calendar is configured" })
   async check(@GetUser("id") userId: number): Promise<GcalCheckOutput> {
     const gcalCredentials = await this.credentialRepository.getByTypeAndUserId("google_calendar", userId);
 

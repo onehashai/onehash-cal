@@ -1,7 +1,7 @@
 import { API_VERSIONS_VALUES } from "@/lib/api-versions";
 import { SlotsService } from "@/modules/slots/services/slots.service";
 import { Query, Body, Controller, Get, Delete, Post, Req, Res } from "@nestjs/common";
-import { ApiTags as DocsTags } from "@nestjs/swagger";
+import { ApiBody, ApiOperation, ApiQuery, ApiTags as DocsTags } from "@nestjs/swagger";
 import { Response as ExpressResponse, Request as ExpressRequest } from "express";
 
 import { SUCCESS_STATUS } from "@calcom/platform-constants";
@@ -19,6 +19,8 @@ export class SlotsController {
   constructor(private readonly slotsService: SlotsService) {}
 
   @Post("/reserve")
+  @ApiBody({ type: ReserveSlotInput })
+  @ApiOperation({ summary: "Reserve slots for the given time range" })
   async reserveSlot(
     @Body() body: ReserveSlotInput,
     @Res({ passthrough: true }) res: ExpressResponse,
@@ -34,6 +36,13 @@ export class SlotsController {
   }
 
   @Delete("/selected-slot")
+  @ApiQuery({
+    name: "uid",
+    description: "UID of the reserved slot",
+    required: true,
+    type: String,
+  })
+  @ApiOperation({ summary: "Unreserve served slots" })
   async deleteSelectedSlot(
     @Query() params: RemoveSelectedSlotInput,
     @Req() req: ExpressRequest
@@ -48,6 +57,7 @@ export class SlotsController {
   }
 
   @Get("/available")
+  @ApiOperation({ summary: "Get available slots for an event-type" })
   async getAvailableSlots(
     @Query() query: GetAvailableSlotsInput,
     @Req() req: ExpressRequest

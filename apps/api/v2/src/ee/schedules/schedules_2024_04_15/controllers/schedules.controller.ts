@@ -23,7 +23,7 @@ import {
   Patch,
   UseGuards,
 } from "@nestjs/common";
-import { ApiResponse, ApiTags as DocsTags } from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags as DocsTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 
 import { SCHEDULE_READ, SCHEDULE_WRITE, SUCCESS_STATUS } from "@calcom/platform-constants";
@@ -42,6 +42,7 @@ export class SchedulesController_2024_04_15 {
 
   @Post("/")
   @Permissions([SCHEDULE_WRITE])
+  @ApiOperation({ summary: "Create user availability schedule" })
   async createSchedule(
     @GetUser() user: UserWithProfile,
     @Body() bodySchedule: CreateScheduleInput_2024_04_15
@@ -62,6 +63,7 @@ export class SchedulesController_2024_04_15 {
     description: "Returns the default schedule",
     type: GetDefaultScheduleOutput_2024_04_15,
   })
+  @ApiOperation({ summary: "Get default availability schedule" })
   async getDefaultSchedule(
     @GetUser() user: UserWithProfile
   ): Promise<GetDefaultScheduleOutput_2024_04_15 | null> {
@@ -79,6 +81,7 @@ export class SchedulesController_2024_04_15 {
   @Get("/:scheduleId")
   @Permissions([SCHEDULE_READ])
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // allow 10 requests per minute (for :scheduleId)
+  @ApiOperation({ summary: "Get availability schedule by ID" })
   async getSchedule(
     @GetUser() user: UserWithProfile,
     @Param("scheduleId") scheduleId: number
@@ -94,6 +97,7 @@ export class SchedulesController_2024_04_15 {
 
   @Get("/")
   @Permissions([SCHEDULE_READ])
+  @ApiOperation({ summary: "Get availability schedule" })
   async getSchedules(@GetUser() user: UserWithProfile): Promise<GetSchedulesOutput_2024_04_15> {
     const schedules = await this.schedulesService.getUserSchedules(user.id);
     const schedulesFormatted = await this.schedulesService.formatSchedulesForAtom(user, schedules);
@@ -107,6 +111,7 @@ export class SchedulesController_2024_04_15 {
   // note(Lauris): currently this endpoint is atoms only
   @Patch("/:scheduleId")
   @Permissions([SCHEDULE_WRITE])
+  @ApiOperation({ summary: "Edit availability schedule by ID" })
   async updateSchedule(
     @GetUser() user: UserWithProfile,
     @Body() bodySchedule: UpdateScheduleInput_2024_04_15,
@@ -127,6 +132,7 @@ export class SchedulesController_2024_04_15 {
   @Delete("/:scheduleId")
   @HttpCode(HttpStatus.OK)
   @Permissions([SCHEDULE_WRITE])
+  @ApiOperation({ summary: "Delete availability schedule by ID" })
   async deleteSchedule(
     @GetUser("id") userId: number,
     @Param("scheduleId") scheduleId: number

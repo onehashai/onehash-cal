@@ -28,7 +28,7 @@ import {
   NotFoundException,
   UseGuards,
 } from "@nestjs/common";
-import { ApiQuery, ApiTags as DocsTags } from "@nestjs/swagger";
+import { ApiBody, ApiOperation, ApiQuery, ApiTags as DocsTags } from "@nestjs/swagger";
 import { User } from "@prisma/client";
 import { Request } from "express";
 import { NextApiRequest } from "next/types";
@@ -95,6 +95,7 @@ export class BookingsController {
   @ApiQuery({ name: "filters[status]", enum: Status, required: true })
   @ApiQuery({ name: "limit", type: "number", required: false })
   @ApiQuery({ name: "cursor", type: "number", required: false })
+  @ApiOperation({ summary: "Get user bookings" })
   async getBookings(
     @GetUser() user: User,
     @Query() queryParams: GetBookingsInput
@@ -118,6 +119,7 @@ export class BookingsController {
   }
 
   @Get("/:bookingUid")
+  @ApiOperation({ summary: "Get booking details by UID" })
   async getBooking(@Param("bookingUid") bookingUid: string): Promise<GetBookingOutput> {
     const { bookingInfo } = await getBookingInfo(bookingUid);
 
@@ -132,6 +134,7 @@ export class BookingsController {
   }
 
   @Get("/:bookingUid/reschedule")
+  @ApiOperation({ summary: "Get booking details by UID to reschedule" })
   async getBookingForReschedule(@Param("bookingUid") bookingUid: string): Promise<ApiResponse<unknown>> {
     const booking = await getBookingForReschedule(bookingUid);
 
@@ -146,6 +149,7 @@ export class BookingsController {
   }
 
   @Post("/")
+  @ApiOperation({ summary: "Book an event" })
   async createBooking(
     @Req() req: BookingRequest,
     @Body() body: CreateBookingInput,
@@ -176,6 +180,7 @@ export class BookingsController {
   }
 
   @Post("/:bookingId/cancel")
+  @ApiOperation({ summary: "Cancel an event booking" })
   async cancelBooking(
     @Req() req: BookingRequest,
     @Param("bookingId") bookingId: string,
@@ -210,6 +215,7 @@ export class BookingsController {
   @Post("/:bookingUid/mark-no-show")
   @Permissions([BOOKING_WRITE])
   @UseGuards(ApiAuthGuard)
+  @ApiOperation({ summary: "Mark host/attendee as no-show" })
   async markNoShow(
     @GetUser("id") userId: number,
     @Body() body: MarkNoShowInput,
@@ -231,6 +237,11 @@ export class BookingsController {
   }
 
   @Post("/recurring")
+  @ApiOperation({ summary: "Book a recurring event" })
+  @ApiBody({
+    description: "Create Recurring Booking Input",
+    type: [CreateRecurringBookingInput],
+  })
   async createRecurringBooking(
     @Req() req: BookingRequest,
     @Body() _: CreateRecurringBookingInput[],
@@ -262,6 +273,7 @@ export class BookingsController {
   }
 
   @Post("/instant")
+  @ApiOperation({ summary: "Create an instant booking" })
   async createInstantBooking(
     @Req() req: BookingRequest,
     @Body() _: CreateBookingInput,

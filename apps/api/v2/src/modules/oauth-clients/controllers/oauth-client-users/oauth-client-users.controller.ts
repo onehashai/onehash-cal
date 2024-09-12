@@ -39,7 +39,7 @@ import { Pagination } from "@calcom/platform-types";
   version: API_VERSIONS_VALUES,
 })
 @UseGuards(ApiAuthGuard, OAuthClientGuard)
-@DocsTags("Managed users")
+@DocsTags("OAuth Managed users")
 export class OAuthClientUsersController {
   private readonly logger = new Logger("UserController");
 
