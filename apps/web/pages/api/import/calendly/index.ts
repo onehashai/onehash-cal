@@ -15,6 +15,8 @@ import short from "short-uuid";
 import { MeetLocationType } from "@calcom/app-store/locations";
 import dayjs from "@calcom/dayjs";
 import { sendImportDataEmail } from "@calcom/emails";
+import { sendCampaigningEmail } from "@calcom/emails/email-manager";
+import type { CalendlyCampaignEmailProps } from "@calcom/emails/src/templates/CalendlyCampaignEmail";
 import type { ImportDataEmailProps } from "@calcom/emails/src/templates/ImportDataEmail";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { handleConfirmation } from "@calcom/features/bookings/lib/handleConfirmation";
@@ -762,6 +764,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
             name: true,
             email: true,
             locale: true,
+            username: true,
           },
         },
       },
@@ -789,6 +792,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
           id: userIntID,
           name: userCalendlyIntegrationProvider.user.name,
           email: userCalendlyIntegrationProvider.user.email,
+          slug: userCalendlyIntegrationProvider.user.username,
         },
       },
     });
@@ -813,6 +817,7 @@ export const handleCalendlyImportEvent = async (
     id: number;
     name: string;
     email: string;
+    slug: string;
   },
   step: ReturnType<typeof createStepTools>
 ) => {
@@ -858,6 +863,20 @@ export const handleCalendlyImportEvent = async (
       };
       await sendImportDataEmail(data);
     });
+    //send campaign emails to Calendly user scheduled events bookers
+    await sendCampaigningEmails(
+      {
+        fullName: user.name,
+        slug: user.slug,
+        emails: (userScheduledEvents as CalendlyScheduledEvent[]).reduce((acc, event) => {
+          if (event.event_guests) {
+            acc.push(...event.event_guests.map((guest) => guest.email));
+          }
+          return acc;
+        }, [] as string[]),
+      },
+      step
+    );
   } catch (e) {
     console.error("Error importing Calendly data:", e);
     await step.run("Notify user", async () => {
@@ -872,4 +891,44 @@ export const handleCalendlyImportEvent = async (
       await sendImportDataEmail(data);
     });
   }
+};
+
+const sendCampaigningEmails = async (
+  { fullName, slug, emails }: { fullName: string; slug: string; emails: string[] },
+  step: ReturnType<typeof createStepTools>
+) => {
+  const name = fullName.includes("@") ? fullName.split("@")[0] : fullName;
+  for (let i = 0; i < emails.length; i += 10) {
+    const batch = emails.slice(i, i + 10);
+    await step.run(`Email Campaigning Batch ${i + 1}`, async () => {
+      await Promise.all(
+        batch.map((batchEmail) =>
+          sendBatchEmail({
+            fullName: name,
+            slug,
+            email: batchEmail,
+          })
+        )
+      );
+    });
+  }
+};
+
+const sendBatchEmail = async ({
+  fullName,
+  slug,
+  email,
+}: {
+  fullName: string;
+  slug: string;
+  email: string;
+}) => {
+  const data: CalendlyCampaignEmailProps = {
+    receiverEmail: email,
+    user: {
+      fullName,
+      slug,
+    },
+  };
+  await sendCampaigningEmail(data);
 };

@@ -9,6 +9,7 @@ import { IS_DEV } from "@calcom/lib/constants";
 import { formatCalEvent } from "@calcom/lib/formatCalendarEvent";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
+import type { CalendlyCampaignEmailProps } from "./src/templates/CalendlyCampaignEmail";
 import type { ImportDataEmailProps } from "./src/templates/ImportDataEmail";
 import type { MonthlyDigestEmailData } from "./src/templates/MonthlyDigestEmail";
 import type { OrganizationAdminNoSlotsEmailInput } from "./src/templates/OrganizationAdminNoSlots";
@@ -33,6 +34,7 @@ import AttendeeWasRequestedToRescheduleEmail from "./templates/attendee-was-requ
 import BookingRedirectEmailNotification from "./templates/booking-redirect-notification";
 import type { IBookingRedirect } from "./templates/booking-redirect-notification";
 import BrokenIntegrationEmail from "./templates/broken-integration-email";
+import CalendlyCampaignEmail from "./templates/calendly-campaign-email";
 import type { ChangeOfEmailVerifyLink } from "./templates/change-account-email-verify";
 import ChangeOfEmailVerifyEmail from "./templates/change-account-email-verify";
 import DisabledAppEmail from "./templates/disabled-app-email";
@@ -525,4 +527,8 @@ export const sendWelcomeUserEmail = async (userDetails: WelcomeEmailProps) => {
 
 export const sendImportDataEmail = async (importData: ImportDataEmailProps) => {
   await sendEmail(() => new ImportDataEmail(importData));
+};
+
+export const sendCampaigningEmail = async (campaigningEmailData: CalendlyCampaignEmailProps) => {
+  await sendEmail(() => new CalendlyCampaignEmail(campaigningEmailData));
 };

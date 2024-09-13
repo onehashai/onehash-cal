@@ -38,3 +38,4 @@ export { ImportDataEmail } from "./ImportDataEmail";
 export { VerifyEmailChangeEmail } from "./VerifyEmailChangeEmail";
 export { OrganizationCreationEmail } from "./OrganizationCreationEmail";
 export { OrganizationAdminNoSlotsEmail } from "./OrganizationAdminNoSlots";
+export { CalendlyCampaignEmail } from "./CalendlyCampaignEmail";
