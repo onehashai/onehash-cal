@@ -2,7 +2,9 @@ import type { Prisma } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import getAppKeysFromSlug from "@calcom/app-store/_utils/getAppKeysFromSlug";
-import { DailyLocationType } from "@calcom/app-store/locations";
+// CHANGE:JITSI
+// import { DailyLocationType } from "@calcom/app-store/locations";
+import { JitsiLocationType } from "@calcom/app-store/locations";
 import getApps from "@calcom/app-store/utils";
 import { getUsersCredentials } from "@calcom/lib/server/getUsersCredentials";
 import { EventTypeRepository } from "@calcom/lib/server/repository/eventType";
@@ -121,18 +123,29 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
 
 async function getDefaultLocations(user: User): Promise<EventTypeLocation[]> {
   const defaultConferencingData = userMetadataSchema.parse(user.metadata)?.defaultConferencingApp;
-  const appKeys = await getAppKeysFromSlug("daily-video");
 
-  if (typeof appKeys.api_key === "string") {
-    return [{ type: DailyLocationType }];
+  // CHANGE:JITSI
+
+  // const appKeys = await getAppKeysFromSlug("daily-video");
+
+  // if (typeof appKeys.api_key === "string") {
+  //   return [{ type: DailyLocationType }];
+  // }
+
+  const appKeys = await getAppKeysFromSlug("jitsi");
+
+  if (typeof appKeys.jitsiHost === "string") {
+    return [{ type: JitsiLocationType }];
   }
 
-  if (defaultConferencingData && defaultConferencingData.appSlug !== "daily-video") {
+  if (defaultConferencingData && defaultConferencingData.appSlug !== "jitsi") {
     const credentials = await getUsersCredentials(user);
     const foundApp = getApps(credentials, true).filter(
       (app) => app.slug === defaultConferencingData.appSlug
     )[0]; // There is only one possible install here so index [0] is the one we are looking for ;
-    const locationType = foundApp?.locationOption?.value ?? DailyLocationType; // Default to Daily if no location type is found
+    //CHANGE:JITSI
+    // const locationType = foundApp?.locationOption?.value ?? DailyLocationType; // Default to Daily if no location type is found
+    const locationType = foundApp?.locationOption?.value ?? JitsiLocationType;
     return [{ type: locationType, link: defaultConferencingData.appLink }];
   }
 

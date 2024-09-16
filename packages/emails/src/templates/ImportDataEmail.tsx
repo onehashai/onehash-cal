@@ -35,7 +35,7 @@ export const ImportDataEmail = (
             {" "}
             <>There was an issue while importing your data from {props.provider}</>
           </p>
-          <CallToAction label="Try again" href={WEBAPP_URL} />
+          <CallToAction label="Try again" href={`${WEBAPP_URL}/settings/import/calendly`} />
         </>
       )}
 

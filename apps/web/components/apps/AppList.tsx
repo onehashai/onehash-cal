@@ -62,9 +62,14 @@ export const AppList = ({ data, handleDisconnect, variant, listClassName }: AppL
     };
   }) => {
     const appSlug = item?.slug;
+    //CHANGE:JITSI
+    if (appSlug === "daily-video") return null;
+
     const appIsDefault =
       appSlug === defaultConferencingApp?.appSlug ||
-      (appSlug === "daily-video" && !defaultConferencingApp?.appSlug);
+      //CHANGE:JITSI
+      // appSlug === "daily-video"
+      (appSlug === "jitsi" && !defaultConferencingApp?.appSlug);
     return (
       <AppListCard
         key={item.name}

@@ -343,9 +343,13 @@ export const createdEventSchema = z
     iCalUID: z.string().optional(),
   })
   .passthrough();
-
+//CHANGE:JITSI
+// const schemaDefaultConferencingApp = z.object({
+//   appSlug: z.string().default("daily-video").optional(),
+//   appLink: z.string().optional(),
+// });
 const schemaDefaultConferencingApp = z.object({
-  appSlug: z.string().default("daily-video").optional(),
+  appSlug: z.string().default("jitsi").optional(),
   appLink: z.string().optional(),
 });
 

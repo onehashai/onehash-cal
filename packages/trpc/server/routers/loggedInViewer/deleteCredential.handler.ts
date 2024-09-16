@@ -2,7 +2,9 @@ import z from "zod";
 
 import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
 import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
-import { DailyLocationType } from "@calcom/core/location";
+import { JitsiLocationType } from "@calcom/app-store/locations";
+//CHANGE:JITSI
+// import { DailyLocationType } from "@calcom/core/location";
 import { sendCancelledEmails } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { deleteWebhookScheduledTriggers } from "@calcom/features/webhooks/lib/scheduleTrigger";
@@ -109,13 +111,20 @@ export const deleteCredentialHandler = async ({ ctx, input }: DeleteCredentialOp
       // To avoid type errors, need to stringify and parse JSON to use array methods
       const locations = locationsSchema.parse(eventType.locations);
 
-      const doesDailyVideoAlreadyExists = locations.some((location) =>
-        location.type.includes(DailyLocationType)
+      //CHANGE:JITSI
+      // const doesDailyVideoAlreadyExists = locations.some((location) =>
+      //   location.type.includes(DailyLocationType)
+      // );
+      //CHANGE:JITSI
+      const doesJitsiVideoAlreadyExists = locations.some((location) =>
+        location.type.includes(JitsiLocationType)
       );
 
       const updatedLocations: TlocationsSchema = locations.reduce((acc: TlocationsSchema, location) => {
         if (location.type.includes(integrationQuery)) {
-          if (!doesDailyVideoAlreadyExists) acc.push({ type: DailyLocationType });
+          //CHANGE:JITSI
+          if (!doesJitsiVideoAlreadyExists) acc.push({ type: JitsiLocationType });
+          // if (!doesDailyVideoAlreadyExists) acc.push({ type: DailyLocationType });
         } else {
           acc.push(location);
         }

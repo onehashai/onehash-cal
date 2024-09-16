@@ -156,7 +156,7 @@ export const BOOKER_NUMBER_OF_DAYS_TO_LOAD = parseInt(
 export const SSO_BASE_URL = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/auth`;
 export const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID;
 export const KEYCLOAK_CALLBACK_URI = process.env.KEYCLOAK_CALLBACK_URI;
-export const SIGNUP_URL = process.env.SIGNUP_URL;
+export const SIGNUP_URL = process.env.NEXT_PUBLIC_SIGNUP_URL;
 
 export const ONEHASH_CHAT_URL = process.env.NEXT_PUBLIC_ONEHASH_CHAT_URL;
 export const ONEHASH_CRM_URL = process.env.NEXT_PUBLIC_ONEHASH_CRM_URL;

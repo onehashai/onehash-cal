@@ -1175,6 +1175,7 @@ export const enum BookingLocations {
   CalVideo = "integrations:daily",
   ZoomVideo = "integrations:zoom",
   GoogleMeet = "integrations:google:meet",
+  Jitsi = "integrations:jitsi",
 }
 
 /**

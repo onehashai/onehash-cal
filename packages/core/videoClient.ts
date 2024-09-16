@@ -2,7 +2,10 @@ import short from "short-uuid";
 import { v5 as uuidv5 } from "uuid";
 
 import appStore from "@calcom/app-store";
+//CHANGE:JITSI
 import { getDailyAppKeys } from "@calcom/app-store/dailyvideo/lib/getDailyAppKeys";
+import { getJitsiAppKeys } from "@calcom/app-store/jitsivideo/lib/getJitsiAppKeys";
+import { JitsiLocationType } from "@calcom/app-store/locations";
 import { sendBrokenIntegrationEmail } from "@calcom/emails";
 import { getUid } from "@calcom/lib/CalEventParser";
 import logger from "@calcom/lib/logger";
@@ -115,10 +118,16 @@ const createMeeting = async (credential: CredentialPayload, calEvent: CalendarEv
       safeStringify({ calEvent: getPiiFreeCalendarEvent(calEvent) })
     );
 
-    // Default to calVideo
-    const defaultMeeting = await createMeetingWithCalVideo(calEvent);
+    //CHANGE:JITSI
+    // // Default to calVideo
+    // const defaultMeeting = await createMeetingWithCalVideo(calEvent);
+    // if (defaultMeeting) {
+    //   calEvent.location = "integrations:dailyvideo";
+    // }
+    // Default to jitsiVideo
+    const defaultMeeting = await createMeetingWithJitsiVideo(calEvent);
     if (defaultMeeting) {
-      calEvent.location = "integrations:dailyvideo";
+      calEvent.location = JitsiLocationType;
     }
 
     returnObject = { ...returnObject, createdEvent: defaultMeeting };
@@ -185,29 +194,52 @@ const deleteMeeting = async (credential: CredentialPayload | null, uid: string):
   return Promise.resolve({});
 };
 
+//CHANGE:JITSI
+// // @TODO: This is a temporary solution to create a meeting with cal.com video as fallback url
+// const createMeetingWithCalVideo = async (calEvent: CalendarEvent) => {
+//   let dailyAppKeys: Awaited<ReturnType<typeof getDailyAppKeys>>;
+//   try {
+//     dailyAppKeys = await getDailyAppKeys();
+//   } catch (e) {
+//     return;
+//   }
+//   const [videoAdapter] = await getVideoAdapters([
+//     {
+//       id: 0,
+//       appId: "daily-video",
+//       type: "daily_video",
+//       userId: null,
+//       user: { email: "" },
+//       teamId: null,
+//       key: dailyAppKeys,
+//       invalid: false,
+//     },
+//   ]);
+//   return videoAdapter?.createMeeting(calEvent);
+// };
+
 // @TODO: This is a temporary solution to create a meeting with cal.com video as fallback url
-const createMeetingWithCalVideo = async (calEvent: CalendarEvent) => {
-  let dailyAppKeys: Awaited<ReturnType<typeof getDailyAppKeys>>;
+const createMeetingWithJitsiVideo = async (calEvent: CalendarEvent) => {
+  let jitsiAppKeys: Awaited<ReturnType<typeof getJitsiAppKeys>>;
   try {
-    dailyAppKeys = await getDailyAppKeys();
+    jitsiAppKeys = await getJitsiAppKeys();
   } catch (e) {
     return;
   }
   const [videoAdapter] = await getVideoAdapters([
     {
       id: 0,
-      appId: "daily-video",
-      type: "daily_video",
+      appId: "jitsi",
+      type: "jitsi_video",
       userId: null,
       user: { email: "" },
       teamId: null,
-      key: dailyAppKeys,
+      key: jitsiAppKeys,
       invalid: false,
     },
   ]);
   return videoAdapter?.createMeeting(calEvent);
 };
-
 export const createInstantMeetingWithCalVideo = async (endTime: string) => {
   let dailyAppKeys: Awaited<ReturnType<typeof getDailyAppKeys>>;
   try {

@@ -14,7 +14,7 @@ export const metadata = {
   url: "https://jitsi.org/",
   slug: "jitsi",
   title: "Jitsi Meet",
-  isGlobal: false,
+  isGlobal: true,
   email: "support@onehash.ai",
   appData: {
     location: {
