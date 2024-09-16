@@ -10,10 +10,6 @@ export async function deleteUser(user: Pick<User, "id" | "email" | "metadata">) 
   // Remove my account
   // TODO: Move this to Repository pattern.
 
-  await prisma.integrationAccounts.deleteMany({
-    where: { userId: user.id },
-  });
-
   const deletedUser = await prisma.user.delete({
     where: {
       id: user.id,

@@ -800,7 +800,7 @@ model HashedLink {
 }
 
 model IntegrationAccounts {
-  // id           Int                 @id @default(autoincrement())
+  id                     Int                     @id @default(autoincrement())
   tokenType              String?
   expiresIn              Int?
   createdAt              Int?
@@ -809,11 +809,10 @@ model IntegrationAccounts {
   scope                  String?
   ownerUniqIdentifier    String?
   provider               IntegrationProvider
-  user                   User                    @relation(fields: [userId], references: [id])
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId                 Int
   integrationUserProfile IntegrationUserProfile?
 
-  @@id([userId, provider])
   //a user can only have one integration account per provider
   @@unique([userId, provider])
 }
@@ -823,16 +822,16 @@ enum IntegrationProvider {
 }
 
 model IntegrationUserProfile {
+  id                          Int                 @id @default(autoincrement())
   scheduling_url              String?
   avatar_url                  String?
   created_at                  DateTime?
   updated_at                  DateTime?
   current_organization        String?
-  integrationAccount          IntegrationAccounts @relation(fields: [integrationAccountsUserId, integrationAccountsProvider], references: [userId, provider])
+  integrationAccount          IntegrationAccounts @relation(fields: [integrationAccountsUserId, integrationAccountsProvider], references: [userId, provider], onDelete: Cascade)
   integrationAccountsUserId   Int
   integrationAccountsProvider IntegrationProvider
 
-  @@id([integrationAccountsUserId, integrationAccountsProvider])
   @@unique([integrationAccountsUserId, integrationAccountsProvider])
 }
 
