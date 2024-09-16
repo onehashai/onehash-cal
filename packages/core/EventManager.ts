@@ -6,8 +6,14 @@ import type { z } from "zod";
 
 import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
 import { FAKE_DAILY_CREDENTIAL } from "@calcom/app-store/dailyvideo/lib/VideoApiAdapter";
-import { appKeysSchema as calVideoKeysSchema } from "@calcom/app-store/dailyvideo/zod";
-import { getEventLocationTypeFromApp, MeetLocationType } from "@calcom/app-store/locations";
+//CHANGE:JITSI
+// import { appKeysSchema as calVideoKeysSchema } from "@calcom/app-store/dailyvideo/zod";
+import { appKeysSchema as JitsiVideoKeysSchema } from "@calcom/app-store/jitsivideo/zod";
+import {
+  getEventLocationTypeFromApp,
+  JitsiLocationType,
+  MeetLocationType,
+} from "@calcom/app-store/locations";
 import getApps from "@calcom/app-store/utils";
 import { getUid } from "@calcom/lib/CalEventParser";
 import logger from "@calcom/lib/logger";
@@ -125,12 +131,31 @@ export default class EventManager {
   public async create(event: CalendarEvent): Promise<CreateUpdateResult> {
     const evt = processLocation(event);
 
-    // Fallback to cal video if no location is set
+    // // Fallback to cal video if no location is set
+    // if (!evt.location) {
+    //   // See if cal video is enabled & has keys
+    //   const calVideo = await prisma.app.findFirst({
+    //     where: {
+    //       slug: "daily-video",
+    //     },
+    //     select: {
+    //       keys: true,
+    //       enabled: true,
+    //     },
+    //   });
+
+    //   const calVideoKeys = calVideoKeysSchema.safeParse(calVideo?.keys);
+
+    //   if (calVideo?.enabled && calVideoKeys.success) evt["location"] = "integrations:daily";
+    // }
+
+    //CHANGE:JITSI
+    // Fallback to jitsi if no location is set
     if (!evt.location) {
-      // See if cal video is enabled & has keys
-      const calVideo = await prisma.app.findFirst({
+      // See if jitsi video is enabled & has keys
+      const jitsiVideo = await prisma.app.findFirst({
         where: {
-          slug: "daily-video",
+          slug: "jitsi",
         },
         select: {
           keys: true,
@@ -138,18 +163,28 @@ export default class EventManager {
         },
       });
 
-      const calVideoKeys = calVideoKeysSchema.safeParse(calVideo?.keys);
+      const jitsiVideoKeys = JitsiVideoKeysSchema.safeParse(jitsiVideo?.keys);
 
-      if (calVideo?.enabled && calVideoKeys.success) evt["location"] = "integrations:daily";
+      if (jitsiVideo?.enabled && jitsiVideoKeys.success) evt["location"] = JitsiLocationType;
     }
 
-    // Fallback to Cal Video if Google Meet is selected w/o a Google Cal
+    //CHANGE:JITSI
+    // // Fallback to Cal Video if Google Meet is selected w/o a Google Cal
+    // // @NOTE: destinationCalendar it's an array now so as a fallback we will only check the first one
+    // const [mainHostDestinationCalendar] =
+    //   (evt.destinationCalendar as [undefined | NonNullable<typeof evt.destinationCalendar>[number]]) ?? [];
+    // if (evt.location === MeetLocationType && mainHostDestinationCalendar?.integration !== "google_calendar") {
+    //   log.warn("Falling back to Cal Video integration as Google Calendar not installed");
+    //   evt["location"] = "integrations:daily";
+    // }
+
+    // Fallback to Jitsi Video if Google Meet is selected w/o a Google Cal
     // @NOTE: destinationCalendar it's an array now so as a fallback we will only check the first one
     const [mainHostDestinationCalendar] =
       (evt.destinationCalendar as [undefined | NonNullable<typeof evt.destinationCalendar>[number]]) ?? [];
     if (evt.location === MeetLocationType && mainHostDestinationCalendar?.integration !== "google_calendar") {
-      log.warn("Falling back to Cal Video integration as Google Calendar not installed");
-      evt["location"] = "integrations:daily";
+      log.warn("Falling back to Jitsi Video integration as Google Calendar not installed");
+      evt["location"] = JitsiLocationType;
     }
     const isDedicated = evt.location ? isDedicatedIntegration(evt.location) : null;
 

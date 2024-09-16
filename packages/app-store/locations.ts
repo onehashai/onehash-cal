@@ -51,6 +51,8 @@ export type EventLocationType = DefaultEventLocationType | EventLocationTypeFrom
 
 export const DailyLocationType = "integrations:daily";
 
+export const JitsiLocationType = "integrations:jitsi";
+
 export const MeetLocationType = "integrations:google:meet";
 
 /**
@@ -365,7 +367,7 @@ export const getLocationValueForDB = (
   });
 
   if (bookingLocation.trim().length === 0) {
-    bookingLocation = DailyLocationType;
+    bookingLocation = JitsiLocationType;
   }
 
   return { bookingLocation, conferenceCredentialId };

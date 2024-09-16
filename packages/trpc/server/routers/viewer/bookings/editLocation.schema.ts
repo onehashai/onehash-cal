@@ -1,11 +1,19 @@
 import { z } from "zod";
 
-import { DailyLocationType } from "@calcom/app-store/locations";
+//CHANGE:JITSI
+// import { DailyLocationType } from "@calcom/app-store/locations";
+import { JitsiLocationType } from "@calcom/app-store/locations";
 
 import { commonBookingSchema } from "./types";
 
+//CHANGE:JITSI
+// export const ZEditLocationInputSchema = commonBookingSchema.extend({
+//   newLocation: z.string().transform((val) => val || DailyLocationType),
+//   details: z.object({ credentialId: z.number().optional() }).optional(),
+// });
+
 export const ZEditLocationInputSchema = commonBookingSchema.extend({
-  newLocation: z.string().transform((val) => val || DailyLocationType),
+  newLocation: z.string().transform((val) => val || JitsiLocationType),
   details: z.object({ credentialId: z.number().optional() }).optional(),
 });
 

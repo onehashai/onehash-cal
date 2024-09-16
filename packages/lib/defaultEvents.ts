@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 
-import { DailyLocationType } from "@calcom/app-store/locations";
+import { JitsiLocationType } from "@calcom/app-store/locations";
 import slugify from "@calcom/lib/slugify";
 import { PeriodType, SchedulingType } from "@calcom/prisma/enums";
 import type { userSelect } from "@calcom/prisma/selects";
@@ -65,7 +65,7 @@ const commons = {
   periodDays: null,
   slotInterval: null,
   offsetStart: 0,
-  locations: [{ type: DailyLocationType }],
+  locations: [{ type: JitsiLocationType }],
   customInputs,
   disableGuests: true,
   minimumBookingNotice: 120,

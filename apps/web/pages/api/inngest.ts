@@ -7,7 +7,7 @@ import { INNGEST_ID } from "@calcom/lib/constants";
 export const inngestClient = new Inngest({ id: INNGEST_ID });
 
 const handleCalendlyImportFn = inngestClient.createFunction(
-  { id: "import-from-calendly", retries: 2 },
+  { id: "import-from-calendly", retries: 4 },
   { event: "import-from-calendly" },
   async ({ event, step }) => {
     await handleCalendlyImportEvent(event.data.userCalendlyIntegrationProvider, event.data.user, step);
