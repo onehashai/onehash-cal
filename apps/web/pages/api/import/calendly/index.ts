@@ -8,11 +8,11 @@ import type {
 } from "@onehash/calendly";
 import { CalendlyAPIService, CalendlyOAuthProvider } from "@onehash/calendly";
 import { inngestClient } from "@pages/api/inngest";
+import { RetryAfterError } from "inngest";
 import type { createStepTools } from "inngest/components/InngestStepTools";
 import type { NextApiRequest, NextApiResponse } from "next";
 import short from "short-uuid";
 
-import { MeetLocationType } from "@calcom/app-store/locations";
 import dayjs from "@calcom/dayjs";
 import { sendImportDataEmail } from "@calcom/emails";
 import { sendCampaigningEmail } from "@calcom/emails/email-manager";
@@ -47,6 +47,7 @@ type CombinedAvailabilityRules = {
   wdays?: number[];
   date?: Date;
 };
+const waitTime = 65000; //1min 5 seconds
 
 //Maps the weekday to its corresponding number
 const wdayMapping: { [key: string]: number } = {
@@ -141,21 +142,84 @@ const refreshTokenIfExpired = async (
 //Fetches user data from Calendly including event types, availability schedules and scheduled events
 const fetchCalendlyData = async (
   ownerUniqIdentifier: string,
-  cAService: CalendlyAPIService
-): Promise<(CalendlyEventType[] | CalendlyUserAvailabilitySchedules[] | CalendlyScheduledEvent[])[]> => {
-  const promises = [];
+  cAService: CalendlyAPIService,
+  step: ReturnType<typeof createStepTools>
+): Promise<{
+  userScheduledEvents: CalendlyScheduledEvent[];
+  userAvailabilitySchedules: CalendlyUserAvailabilitySchedules[];
+  userEventTypes: CalendlyEventType[];
+}> => {
+  try {
+    //TODO:as we are only getting past events as of now
 
-  promises.push(cAService.getUserAvailabilitySchedules(ownerUniqIdentifier));
-  promises.push(cAService.getUserEventTypes(ownerUniqIdentifier));
-  promises.push(
-    cAService.getUserScheduledEvents({
-      userUri: ownerUniqIdentifier,
-      // minStartTime: new Date().toISOString(),
-      // status: "active",
-    })
-  );
+    // Define the array of promises
+    // const promises = [
+    //   cAService.getUserAvailabilitySchedules(ownerUniqIdentifier),
+    //   cAService.getUserEventTypes(ownerUniqIdentifier),
+    //   cAService.getUserScheduledEvents({
+    //     userUri: ownerUniqIdentifier,
+    //     maxStartTime: sixHoursBefore,
+    //     // minStartTime: new Date().toISOString(),
+    //     // status: "active",
+    //   }),
+    // ];
 
-  return await Promise.all(promises);
+    const userAvailabilitySchedules = await step.run(
+      "Fetch Availability Schedules from Calendly",
+      async () => {
+        try {
+          return await cAService.getUserAvailabilitySchedules(ownerUniqIdentifier);
+        } catch (e) {
+          throw new RetryAfterError(
+            `RetryError - userAvailabilitySchedules: ${e instanceof Error ? e.message : e}`,
+            waitTime
+          );
+        }
+      }
+    );
+
+    const userEventTypes = await step.run("Fetch Event Types from Calendly", async () => {
+      try {
+        return await cAService.getUserEventTypes(ownerUniqIdentifier);
+      } catch (e) {
+        throw new RetryAfterError(
+          `RetryError - userEventTypes: ${e instanceof Error ? e.message : e}`,
+          waitTime
+        );
+      }
+    });
+
+    const userScheduledEvents = await step.run("Fetch Scheduled Events from Calendly", async () => {
+      try {
+        const sixHoursBefore = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
+        return await cAService.getUserScheduledEvents({
+          userUri: ownerUniqIdentifier,
+          maxStartTime: sixHoursBefore.replace(/(\.\d{3})Z$/, "$1000Z"),
+          // minStartTime: new Date().toISOString(),
+          // status: "active",
+        });
+      } catch (e) {
+        throw new RetryAfterError(
+          `RetryError - userScheduledEvents: ${e instanceof Error ? e.message : e}`,
+          waitTime
+        );
+      }
+    });
+
+    // // Wait for all promises to complete
+    // const results = await Promise.all(promises);
+
+    // Return the results if successful
+    return {
+      userScheduledEvents,
+      userAvailabilitySchedules,
+      userEventTypes,
+    };
+  } catch (error) {
+    console.error("Error - fetchCalendlyData:", error instanceof Error ? error.message : String(error));
+    throw new Error(`Error - fetchCalendlyData: ${error instanceof Error ? error.message : error}`);
+  }
 };
 
 //Combines rules returned by Calendly ,based on the interval and type
@@ -180,16 +244,12 @@ const combinedRules = (rules: CalendlyUserAvailabilityRules[]): CombinedAvailabi
         combinedIntervals[key].wdays?.push(wdayMapping[rule.wday]);
       }
     } else if (rule.type === "date" && rule.date) {
-      if (!combinedIntervals[key]) {
-        combinedIntervals[key] = {
-          type: "date",
-          interval: {
-            from: ruleWInterval.from,
-            to: ruleWInterval.to,
-          },
-          date: new Date(rule.date),
-        };
-      }
+      //for dates each date should have a separate object no matter if the interval is same, so we form the key using the date and interval
+      combinedIntervals[`${rule.date}-${key}`] = {
+        type: "date",
+        interval: ruleWInterval,
+        date: new Date(rule.date),
+      };
     }
   });
   return Object.values(combinedIntervals);
@@ -207,31 +267,37 @@ const getEventScheduler = async (
 ): Promise<CalendlyScheduledEventWithScheduler[]> => {
   const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = [];
 
-  const waitTime = 60000;
-
+  const currentTime = new Date();
   for (const userScheduledEvent of userScheduledEvents) {
     const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
-    let invitees;
-    try {
-      invitees = await step.run("Get booking invitees", async () => {
+    const invitees = await step.run("Get booking invitees", async () => {
+      try {
         return await getUserScheduledEventInvitees(uuid);
-      });
-    } catch (e) {
-      await step.sleep("wait to avoid api call limit exceed", waitTime);
-      invitees = await step.run("Get booking invitees", async () => {
-        return await getUserScheduledEventInvitees(uuid);
-      });
-      // TODO: check if the error is 429
-      // // if (e instanceof StepError && (e.cause as any)?.response?.status === 429) {
-      // //   await step.sleep("wait to avoid api call limit exceed", waitTime);
-      // //   invitees = await step.run("Get booking invitees", async () => {
-      // //     return await getUserScheduledEventInvitees(uuid);
-      // //   });
-      // // } else throw new NonRetriableError("Failed to get booking invitees", { cause: e });
-    }
+      } catch (e) {
+        throw new RetryAfterError(
+          `RetryError - getEventScheduler: ${e instanceof Error ? e.message : e}`,
+          waitTime
+        );
+      }
+    });
+
+    //TODO:I think we do not need to run the step again as inngest will handle the retry itself
+    // invitees = await step.run("Get booking invitees", async () => {
+    //   return await getUserScheduledEventInvitees(uuid);
+    // });
+    // TODO: check if the error is 429
+    // if (e instanceof StepError && (e.cause as any)?.response?.status === 429) {
+    //   throw new RetryAfterError("Wait before retry to avoid api call limit exceed", waitTime);
+
+    //   // await step.sleep("wait to avoid api call limit exceed", waitTime);
+    //   // invitees = await step.run("Get booking invitees", async () => {
+    //   //   return await getUserScheduledEventInvitees(uuid);
+    //   // });
+    // } else throw new NonRetriableError("Failed to get booking invitees", { cause: e });
 
     const scheduled_by = invitees[0] || null;
-
+    // const isPastBooking =
+    //   userScheduledEvent.status === "active" && new Date(userScheduledEvent.end_time) < currentTime;
     if (scheduled_by?.payment === undefined || scheduled_by?.payment === null) {
       userScheduledEventsWithScheduler.push({
         ...userScheduledEvent,
@@ -271,34 +337,44 @@ const mergeEventTypeAndScheduledEvent = async (
   scheduledEventList: CalendlyScheduledEventWithScheduler[],
   userIntID: number
 ): Promise<EventTypeWithScheduledEvent[]> => {
-  const scheduledEventsMap: Record<string, CalendlyScheduledEventWithScheduler[]> = {};
+  try {
+    const scheduledEventsMap: Record<string, CalendlyScheduledEventWithScheduler[]> = {};
 
-  const overlappingEvent = await Promise.all(
-    scheduledEventList.map((scheduledEvent) => doesBookingOverlap(scheduledEvent, userIntID))
-  );
+    const overlappingEvent = await Promise.all(
+      scheduledEventList.map((scheduledEvent) => doesBookingOverlap(scheduledEvent, userIntID))
+    );
 
-  scheduledEventList.map((scheduledEvent, index) => {
-    const eventTypeURI = scheduledEvent.event_type;
+    scheduledEventList.map((scheduledEvent, index) => {
+      const eventTypeURI = scheduledEvent.event_type;
 
-    if (!scheduledEventsMap[eventTypeURI]) {
-      scheduledEventsMap[eventTypeURI] = [];
-    }
+      if (!scheduledEventsMap[eventTypeURI]) {
+        scheduledEventsMap[eventTypeURI] = [];
+      }
 
-    const isOverlapping = overlappingEvent[index];
-    if (!isOverlapping) {
-      scheduledEventsMap[eventTypeURI].push(scheduledEvent);
-    }
-  });
+      const isOverlapping = !!overlappingEvent[index];
+      if (!isOverlapping) {
+        scheduledEventsMap[eventTypeURI].push(scheduledEvent);
+      }
+    });
 
-  return eventTypeList.map((eventType) => ({
-    event_type: eventType,
-    scheduled_events: scheduledEventsMap[eventType.uri] || [],
-  }));
+    return eventTypeList.map((eventType) => ({
+      event_type: eventType,
+      scheduled_events: scheduledEventsMap[eventType.uri] || [],
+    }));
+  } catch (error) {
+    console.error(
+      "Error - mergeEventTypeAndScheduledEvent :",
+      error instanceof Error ? error.message : String(error)
+    );
+    throw new Error(
+      `Error - mergeEventTypeAndScheduledEvent : ${error instanceof Error ? error.message : error}`
+    );
+  }
 };
 
 //Checks if the booking overlaps with the existing bookings
-const doesBookingOverlap = async (userScheduledEvent: CalendlyScheduledEvent, userIntID: number) => {
-  return await prisma.booking.findFirst({
+const doesBookingOverlap = (userScheduledEvent: CalendlyScheduledEvent, userIntID: number) => {
+  return prisma.booking.findFirst({
     where: {
       AND: [
         {
@@ -332,8 +408,8 @@ const doesBookingOverlap = async (userScheduledEvent: CalendlyScheduledEvent, us
   });
 };
 
-//Returns the datetime object from the time and timezone
-const getDatetimeObjectFromTime = (time: string) => {
+//Returns the datetime ISO string from the time
+const getDateTimeISOString = (time: string) => {
   const [hours, minutes] = time.split(":").map(Number); // Convert to numbers
 
   // Get the current date in UTC
@@ -386,62 +462,106 @@ const importUserAvailability = async (
   userAvailabilitySchedules: CalendlyUserAvailabilitySchedules[],
   userIntID: number
 ) => {
-  const userAvailabilityTimesToBeInserted: Prisma.ScheduleCreateInput[] = (
-    userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[]
-  ).map((availabilitySchedule) => {
-    const d: Prisma.ScheduleCreateInput = {
-      user: { connect: { id: userIntID } },
-      name: availabilitySchedule.name ?? "N/A",
-      timeZone: availabilitySchedule.timezone,
-      availability: {
-        create: combinedRules(availabilitySchedule.rules).map((rule) => {
-          return {
-            startTime: getDatetimeObjectFromTime(rule.interval.from),
-            endTime: getDatetimeObjectFromTime(rule.interval.to),
-            days: rule.type === "wday" ? rule.wdays : undefined,
-            date: rule.type === "date" ? rule.date : undefined,
-            userId: userIntID,
-          };
-        }),
-      },
-    };
+  try {
+    // Map the userAvailabilitySchedules to Prisma input format
+    const parsedUserAvailabilitySchedules: Prisma.ScheduleCreateInput[] = (
+      userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[]
+    ).map((availabilitySchedule) => {
+      const d: Prisma.ScheduleCreateInput = {
+        user: { connect: { id: userIntID } },
+        name: availabilitySchedule.name ?? "N/A",
+        timeZone: availabilitySchedule.timezone,
+        availability: {
+          create: combinedRules(availabilitySchedule.rules).map((rule) => {
+            return {
+              startTime: getDateTimeISOString(rule.interval.from),
+              endTime: getDateTimeISOString(rule.interval.to),
+              days: rule.wdays,
+              date: rule.date,
+              userId: userIntID,
+            };
+          }),
+        },
+      };
 
-    return d;
-  });
+      return d;
+    });
 
-  const filteredAvailabilityTimes = await getUniqueAvailabilityTimes(
-    userIntID,
-    userAvailabilityTimesToBeInserted
-  );
+    // Retrieve  availability schedules to be inserted in DB
+    const newAvailabilitySchedules = await getNewAvailabilitySchedules(
+      userIntID,
+      parsedUserAvailabilitySchedules
+    );
 
-  await Promise.all(
-    filteredAvailabilityTimes.map((availabilityTime) =>
-      prisma.schedule.create({
-        data: availabilityTime,
-      })
-    )
-  );
+    // Create schedules in the database
+    return await Promise.all(
+      newAvailabilitySchedules.map((scheduleInput) =>
+        prisma.schedule.create({
+          data: scheduleInput,
+        })
+      )
+    );
+  } catch (error) {
+    console.error("Error - importUserAvailability:", error instanceof Error ? error.message : String(error));
+    throw new Error(`Error - importUserAvailability: ${error instanceof Error ? error.message : error}`);
+  }
 };
 
-const handleBookingLocation = (location: CalendlyScheduledEventLocation) => {
+const handleBookingLocation = (
+  location: CalendlyScheduledEventLocation
+): {
+  location: string;
+  videoCallUrl?: string;
+} => {
   switch (location.type) {
     case "physical":
-      return `In Person Meeting\nAt ${location.location}`;
+      return {
+        location: `In Person Meeting\nAt ${location.location}`,
+      };
+
     case "outbound_call":
-      return `Phone Call\nGuest's contact number ${location.location}`;
+      return {
+        location: `Phone Call\nGuest's contact number ${location.location}`,
+      };
     case "inbound_call":
-      return `Phone Call\nHost's contact number ${location.location}`;
+      return {
+        location: `Phone Call\nHost's contact number ${location.location}`,
+      };
     case "custom":
     case "ask_invitee":
-      return String(location.location);
+      return {
+        location: String(location.location),
+      };
     case "google_conference":
+      return {
+        location: "integrations:google:meet",
+        videoCallUrl: location.join_url,
+      };
     case "zoom":
-    case "gotomeeting":
+      return {
+        location: "integrations:zoom",
+        videoCallUrl: location.join_url,
+      };
+
     case "microsoft_teams_conference":
+      return {
+        location: "integrations:office365_video",
+        videoCallUrl: location.join_url,
+      };
     case "webex_conference":
-      return MeetLocationType;
+      return {
+        location: "integrations:webex_video",
+        videoCallUrl: location.join_url,
+      };
+    // case "gotomeeting":
+    //   return {
+    //     location: "integrations:google:meet",
+    //     videoCallUrl: location.join_url,
+    //   };
     default: //location type not specified
-      return undefined;
+      return {
+        location: "",
+      };
   }
 };
 
@@ -476,6 +596,8 @@ const mapEventTypeAndBookingsToInputSchema = (
     let scheduled_events_input: Prisma.BookingCreateInput[] = [];
     if (scheduled_events.length > 0) {
       scheduled_events_input = scheduled_events.map((scheduledEvent) => {
+        const loc = handleBookingLocation(scheduledEvent.location);
+        const metadata = { isImported: "yes" };
         return {
           uid: short.uuid(),
           user: { connect: { id: userIntID } },
@@ -493,13 +615,17 @@ const mapEventTypeAndBookingsToInputSchema = (
             },
           },
           customInputs: {},
-          location: handleBookingLocation(scheduledEvent.location),
+          location: loc.location,
           createdAt: new Date(scheduledEvent.created_at),
           updatedAt: new Date(scheduledEvent.updated_at),
           status: scheduledEvent.status === "canceled" ? BookingStatus.CANCELLED : BookingStatus.ACCEPTED,
           ...(scheduledEvent.status === "canceled" && {
             cancellationReason: scheduledEvent.cancellation?.reason,
           }),
+          metadata: {
+            ...metadata,
+            ...(loc.videoCallUrl && { videoCallUrl: loc.videoCallUrl }),
+          },
         };
       });
     }
@@ -518,68 +644,113 @@ const insertEventTypeAndBookingsToDB = async (
   }[],
   userIntID: number
 ) => {
-  const eventTypesAndBookingsInsertionPromises = eventTypesAndBookingsToBeInserted.map(
-    async (eventTypeAndBooking) => {
-      const { event_type_input, scheduled_events_input } = eventTypeAndBooking;
+  try {
+    // Create an array of promises for each event type and bookings
+    const eventTypesAndBookingsInsertionPromises = [];
+    for (const eventTypeAndBooking of eventTypesAndBookingsToBeInserted) {
+      eventTypesAndBookingsInsertionPromises.push(
+        (async () => {
+          const { event_type_input, scheduled_events_input } = eventTypeAndBooking;
 
-      // Perform the eventType upsert
-      return prisma.eventType
-        .upsert({
-          create: event_type_input,
-          update: {},
-          where: {
-            userId_slug: {
-              userId: userIntID,
-              slug: event_type_input.slug,
-            },
-          },
-        })
-        .then(async (upsertedEventType) => {
-          const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
-            return prisma.booking.create({
-              data: {
-                ...scheduledEvent,
-                eventType: { connect: { id: upsertedEventType.id } },
+          try {
+            // Perform the eventType upsert
+            const upsertedEventType = await prisma.eventType.upsert({
+              create: event_type_input,
+              update: {},
+              where: {
+                userId_slug: {
+                  userId: userIntID,
+                  slug: event_type_input.slug,
+                },
               },
             });
-          });
 
-          const createdBookings = await Promise.all(bookingPromises);
-          return { upsertedEventType, createdBookings };
-        });
+            // Create bookings only after the upsert is complete
+            const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
+              return prisma.booking.create({
+                data: {
+                  ...scheduledEvent,
+                  eventType: { connect: { id: upsertedEventType.id } },
+                },
+                //TODO:was needed for future bookings but currently we have removed importing future bookings
+                // include: {
+                //   eventType: {
+                //     select: {
+                //       slug: true,
+                //       bookingFields: true,
+                //       requiresConfirmation: true,
+                //       id: true,
+                //     },
+                //   },
+                //   attendees: {
+                //     select: {
+                //       locale: true,
+                //       name: true,
+                //       email: true,
+                //       timeZone: true,
+                //     },
+                //   },
+                //   destinationCalendar: true,
+                // },
+              });
+            });
+
+            // Wait for all booking creations to complete
+            const createdBookings = await Promise.all(bookingPromises);
+            return { upsertedEventType, createdBookings };
+          } catch (innerError) {
+            console.error("Error inserting/updating event type or bookings:", innerError);
+            throw innerError; // Rethrow the error to be caught by the outer catch block
+          }
+        })()
+      );
     }
-  );
 
-  const eventTypesAndBookingsInsertedResults = await Promise.all(eventTypesAndBookingsInsertionPromises);
-  return eventTypesAndBookingsInsertedResults;
+    // Wait for all event type and booking insertion promises to complete
+    const eventTypesAndBookingsInsertedResults = await Promise.all(eventTypesAndBookingsInsertionPromises);
+    return eventTypesAndBookingsInsertedResults;
+  } catch (error) {
+    console.error(
+      "Error - insertEventTypeAndBookingsToDB :",
+      error instanceof Error ? error.message : String(error)
+    );
+    throw new Error(
+      `Error - insertEventTypeAndBookingsToDB : ${error instanceof Error ? error.message : error}`
+    );
+  }
 };
 
-//Returns the unique availability times not present in db
-const getUniqueAvailabilityTimes = async (
+//Returns the availability schedules to be inserted (not currently existing in DB)
+const getNewAvailabilitySchedules = async (
   userIntID: number,
-  userAvailabilityTimesToBeInserted: Prisma.ScheduleCreateInput[]
+  availabilitySchedules: Prisma.ScheduleCreateInput[]
 ): Promise<Prisma.ScheduleCreateInput[]> => {
-  const existingSchedules = await prisma.schedule.findMany({
-    where: {
-      user: { id: userIntID },
-      name: { in: userAvailabilityTimesToBeInserted.map((availabilityTime) => availabilityTime.name) },
-    },
-    select: {
-      name: true,
-      userId: true,
-    },
-  });
+  try {
+    const existingSchedules = await prisma.schedule.findMany({
+      where: {
+        user: { id: userIntID },
+        name: { in: availabilitySchedules.map((schedule) => schedule.name) },
+      },
+      select: {
+        name: true,
+        userId: true,
+      },
+    });
 
-  const existingSchedulesSet = new Set(
-    existingSchedules.map((existing) => `${existing.name}-${existing.userId}`)
-  );
-  const filteredAvailabilityTimes = userAvailabilityTimesToBeInserted.filter(
-    (availabilityTime) => !existingSchedulesSet.has(`${availabilityTime.name}-${userIntID}`)
-  );
-  return filteredAvailabilityTimes;
+    const existingSchedulesSet = new Set(
+      existingSchedules.map((existing) => `${existing.name}-${existing.userId}`)
+    );
+    const newAvailabilitySchedules = availabilitySchedules.filter(
+      (schedule) => !existingSchedulesSet.has(`${schedule.name}-${userIntID}`)
+    );
+    return newAvailabilitySchedules;
+  } catch (error) {
+    //throw error to parent function
+    throw error;
+  }
 };
 
-//Imports the event types and its corresponding bookings from Calendly
+//Imports the event types and its corresponding bookings in DB
 const importEventTypesAndBookings = async (
   userIntID: number,
   cAService: CalendlyAPIService,
@@ -608,10 +779,7 @@ const importEventTypesAndBookings = async (
     );
 
     // event types with bookings to be inserted
-    const eventTypesAndBookingsToBeInserted: {
-      event_type_input: Prisma.EventTypeCreateInput;
-      scheduled_events_input: Prisma.BookingCreateInput[];
-    }[] = mapEventTypeAndBookingsToInputSchema(mergedList, userIntID);
+    const eventTypesAndBookingsToBeInserted = mapEventTypeAndBookingsToInputSchema(mergedList, userIntID);
 
     //inserting event type and bookings to db via prisma
     const eventTypesAndBookingsInsertedResults = await step.run(
@@ -619,131 +787,160 @@ const importEventTypesAndBookings = async (
       async () => await insertEventTypeAndBookingsToDB(eventTypesAndBookingsToBeInserted, userIntID)
     );
 
-    // Extract booking IDs from each transaction result
-    const currentTime = new Date();
+    //TODO:we will not import future bookings as of now
+    // // Extract booking IDs from each transaction result
+    // const currentTime = new Date();
+    // const allCreatedBookings = eventTypesAndBookingsInsertedResults
+    //   .flatMap((result) => result.createdBookings)
+    //   .reduce((acc: any[], booking) => {
+    //     if (booking.status === BookingStatus.ACCEPTED && new Date(booking.startTime) > currentTime) {
+    //       acc.push(booking);
+    //     }
+    //     return acc;
+    //   }, []);
 
-    const bookingIds = eventTypesAndBookingsInsertedResults
-      .flatMap((result) => result.createdBookings)
-      .reduce((acc: number[], booking) => {
-        if (booking.status === BookingStatus.ACCEPTED && new Date(booking.startTime) > currentTime) {
-          acc.push(booking.id);
-        }
-        return acc;
-      }, []);
+    // // const bookingIds = eventTypesAndBookingsInsertedResults
+    // //   .flatMap((result) => result.createdBookings)
+    // //   .reduce((acc: number[], booking) => {
+    // // if (booking.status === BookingStatus.ACCEPTED && new Date(booking.startTime) > currentTime) {
+    // //   acc.push(booking.id);
+    // // }
+    // //     return acc;
+    // //   }, []);
 
-    await step.run(
-      "Confirm bookings",
-      async () => await confirmUpcomingImportedBookings(bookingIds, userIntID)
-    );
+    // await step.run(
+    //   "Confirm bookings",
+    //   async () => await confirmUpcomingImportedBookings(allCreatedBookings, userIntID)
+    // );
   } catch (error) {
-    console.error("Error importing Calendly data:", error);
-    throw error;
+    console.error(
+      "Error - importEventTypesAndBookings :",
+      error instanceof Error ? error.message : String(error)
+    );
+    throw new Error(
+      `Error - importEventTypesAndBookings : ${error instanceof Error ? error.message : error}`
+    );
   }
 };
 
-async function confirmUpcomingImportedBookings(bookingIds: number[], userIntID: number) {
-  // Fetching created bookings with desired fields using the extracted IDs
-  const createdBookings = await prisma.booking.findMany({
-    where: {
-      id: {
-        in: bookingIds,
-      },
-    },
-    include: {
-      eventType: true,
-      attendees: true,
-      destinationCalendar: true,
-    },
-  });
+async function confirmUpcomingImportedBookings(createdBookings: any[], userIntID: number) {
+  try {
+    // Fetching created bookings with desired fields using the extracted IDs
+    // const createdBookings = await prisma.booking.findMany({
+    //   where: {
+    //     id: {
+    //       in: bookingIds,
+    //     },
+    //   },
+    //   include: {
+    //     eventType: true,
+    //     attendees: true,
+    //     destinationCalendar: true,
+    //   },
+    // });
 
-  //handle booking confirmation
-  const handleBookingsConfirmation = async () => {
-    const user = await prisma.user.findFirst({
-      where: {
-        id: userIntID,
-      },
-      include: {
-        destinationCalendar: true,
-      },
-    });
-    if (!user) throw new Error("Event organizer not found");
-    // Fetch user credentials and translation
-    const [credentials, tOrganizer] = await Promise.all([
-      getUsersCredentials(user),
-      getTranslation(user.locale ?? "en", "common"),
-    ]);
-    const userWithCredentials = { ...user, credentials };
+    //handle booking confirmation
+    const handleBookingsConfirmation = async () => {
+      try {
+        const user = await prisma.user.findFirst({
+          where: {
+            id: userIntID,
+          },
+          include: {
+            destinationCalendar: true,
+          },
+        });
+        if (!user) throw new Error("Event organizer not found");
+        // Fetch user credentials and translation
+        const [credentials, tOrganizer] = await Promise.all([
+          getUsersCredentials(user),
+          getTranslation(user.locale ?? "en", "common"),
+        ]);
+        const userWithCredentials = { ...user, credentials };
 
-    const bookingConfirmationPromises = createdBookings.map(async (booking) => {
-      // Retrieving translations for attendees' locales
-      const translations = new Map();
-      const attendeesListPromises = booking.attendees.map(async (attendee) => {
-        const locale = attendee.locale ?? "en";
-        let translate = translations.get(locale);
-        if (!translate) {
-          translate = await getTranslation(locale, "common");
-          translations.set(locale, translate);
-        }
-        return {
-          name: attendee.name,
-          email: attendee.email,
-          timeZone: attendee.timeZone,
-          language: { translate, locale },
-        };
-      });
-      const attendeesList = await Promise.all(attendeesListPromises);
+        const bookingConfirmationPromises = createdBookings.map(async (booking) => {
+          // Retrieving translations for attendees' locales
+          const translations = new Map();
+          const attendeesListPromises = booking.attendees.map(async (attendee: any) => {
+            const locale = attendee.locale ?? "en";
+            let translate = translations.get(locale);
+            if (!translate) {
+              translate = await getTranslation(locale, "common");
+              translations.set(locale, translate);
+            }
+            return {
+              name: attendee.name,
+              email: attendee.email,
+              timeZone: attendee.timeZone,
+              language: { translate, locale },
+            };
+          });
+          const attendeesList = await Promise.all(attendeesListPromises);
 
-      // Construct calendar event
-      const evt: CalendarEvent = {
-        type: booking?.eventType?.slug as string,
-        title: booking.title,
-        description: booking.description,
-        ...getCalEventResponses({
-          bookingFields: booking.eventType?.bookingFields ?? null,
-          booking,
-        }),
-        customInputs: isPrismaObjOrUndefined(booking.customInputs),
-        startTime: booking.startTime.toISOString(),
-        endTime: booking.endTime.toISOString(),
-        organizer: {
-          email: user.email,
-          name: user.name || "Unnamed",
-          username: user.username || undefined,
-          timeZone: user.timeZone,
-          timeFormat: getTimeFormatStringFromUserTimeFormat(user.timeFormat),
-          language: { translate: tOrganizer, locale: user.locale ?? "en" },
-        },
-        location: booking.location,
-        attendees: attendeesList,
-        uid: booking.uid,
-        destinationCalendar: booking?.destinationCalendar
-          ? [booking.destinationCalendar]
-          : user.destinationCalendar
-          ? [user.destinationCalendar]
-          : [],
-        requiresConfirmation: booking?.eventType?.requiresConfirmation ?? false,
-        eventTypeId: booking.eventType?.id,
-      };
+          // Construct calendar event
+          const evt: CalendarEvent = {
+            type: booking?.eventType?.slug as string,
+            title: booking.title,
+            description: booking.description,
+            ...getCalEventResponses({
+              bookingFields: booking.eventType?.bookingFields ?? null,
+              booking,
+            }),
+            customInputs: isPrismaObjOrUndefined(booking.customInputs),
+            startTime: booking.startTime.toISOString(),
+            endTime: booking.endTime.toISOString(),
+            organizer: {
+              email: user.email,
+              name: user.name || "Unnamed",
+              username: user.username || undefined,
+              timeZone: user.timeZone,
+              timeFormat: getTimeFormatStringFromUserTimeFormat(user.timeFormat),
+              language: { translate: tOrganizer, locale: user.locale ?? "en" },
+            },
+            location: booking.location,
+            attendees: attendeesList,
+            uid: booking.uid,
+            destinationCalendar: booking?.destinationCalendar
+              ? [booking.destinationCalendar]
+              : user.destinationCalendar
+              ? [user.destinationCalendar]
+              : [],
+            requiresConfirmation: booking?.eventType?.requiresConfirmation ?? false,
+            eventTypeId: booking.eventType?.id,
+          };
 
-      // Handle confirmation for the booking
-      return handleConfirmation({
-        user: userWithCredentials,
-        evt: evt,
-        prisma: prisma,
-        bookingId: booking.id,
-        booking: {
-          eventType: booking.eventType,
-          smsReminderNumber: booking.smsReminderNumber,
-          eventTypeId: booking.eventType?.id ?? null,
-          userId: userIntID,
-        },
-      });
-    });
-    // Processing each booking concurrently
-    await Promise.all(bookingConfirmationPromises);
-  };
+          // Handle confirmation for the booking
+          return handleConfirmation({
+            user: userWithCredentials,
+            evt: evt,
+            prisma: prisma,
+            bookingId: booking.id,
+            booking: {
+              eventType: booking.eventType,
+              smsReminderNumber: booking.smsReminderNumber,
+              eventTypeId: booking.eventType?.id ?? null,
+              userId: userIntID,
+            },
+          });
+        });
+        // Processing each booking concurrently
+        await Promise.all(bookingConfirmationPromises);
+      } catch (innerError) {
+        console.error("Error handling bookings confirmation:", innerError);
+        throw innerError; // Rethrow the error to be caught by the outer catch block
+      }
+    };
 
-  await handleBookingsConfirmation();
+    await handleBookingsConfirmation();
+  } catch (error) {
+    console.error(
+      "Error - confirmUpcomingImportedBookings:",
+      error instanceof Error ? error.message : String(error)
+    );
+    throw new Error(
+      `Error - confirmUpcomingImportedBookings: ${error instanceof Error ? error.message : error}`
+    );
+  }
 }
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   const { userId } = req.query as { userId: string };
@@ -830,28 +1027,38 @@ export const handleCalendlyImportEvent = async (
       oauthUrl: NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
     });
 
-    const [userAvailabilitySchedules, userEventTypes, userScheduledEvents] = await step.run(
-      "Fetch Data from Calendly",
-      async () => await fetchCalendlyData(userCalendlyIntegrationProvider.ownerUniqIdentifier, cAService)
+    //0. Getting user data from calendly
+    const { userAvailabilitySchedules, userEventTypes, userScheduledEvents } = await fetchCalendlyData(
+      userCalendlyIntegrationProvider.ownerUniqIdentifier,
+      cAService,
+      step
     );
-    await Promise.all([
-      step.run(
-        "Import user availability schedules",
-        async () =>
-          await importUserAvailability(
-            userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[],
-            user.id
-          )
-      ),
-      importEventTypesAndBookings(
-        user.id,
-        cAService,
-        userScheduledEvents as CalendlyScheduledEvent[],
-        userEventTypes as CalendlyEventType[],
-        step
-      ),
-    ]);
+    // const { userAvailabilitySchedules, userEventTypes, userScheduledEvents } = await step.run(
+    //   "Fetch Data from Calendly",
+    //   async () =>
+    // );
 
+    //run sequentially to ensure proper import of entire dataset
+    //1.First importing the user availability schedules
+    await step.run(
+      "Import user availability schedules",
+      async () =>
+        await importUserAvailability(
+          userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[],
+          user.id
+        )
+    );
+
+    //2. Then importing the user event types and bookings
+    await importEventTypesAndBookings(
+      user.id,
+      cAService,
+      userScheduledEvents as CalendlyScheduledEvent[],
+      userEventTypes as CalendlyEventType[],
+      step
+    );
+
+    //3. Notifying the user about the import status
     await step.run("Notify user", async () => {
       const data: ImportDataEmailProps = {
         status: true,
@@ -863,7 +1070,8 @@ export const handleCalendlyImportEvent = async (
       };
       await sendImportDataEmail(data);
     });
-    //send campaign emails to Calendly user scheduled events bookers
+
+    //4. Sending campaign emails to Calendly user scheduled events bookers
     await sendCampaigningEmails(
       {
         fullName: user.name,
