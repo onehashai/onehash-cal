@@ -1125,14 +1125,14 @@ export const handleCalendlyImportEvent = async (
         {
           fullName: user.name,
           slug: user.slug,
-          emails: importedData.reduce<string[]>((emails, event) => {
-            event.createdBookings.forEach((booking) => {
-              booking.attendees.forEach((attendee) => {
-                emails.push(attendee.email);
+          emails: Array.from(
+            importedData.reduce<Set<string>>((emailsSet, event) => {
+              event.createdBookings.forEach((booking) => {
+                booking.attendees.forEach((attendee) => emailsSet.add(attendee.email));
               });
-            });
-            return emails;
-          }, []),
+              return emailsSet;
+            }, new Set())
+          ),
         },
         step
       );
@@ -1172,15 +1172,22 @@ const sendCampaigningEmails = async (
   for (let i = 0; i < emails.length; i += 10) {
     const batch = emails.slice(i, i + 10);
     await step.run(`Email Campaigning Batch ${i + 1}`, async () => {
-      await Promise.all(
-        batch.map((batchEmail) =>
-          sendBatchEmail({
-            fullName: name,
-            slug,
-            email: batchEmail,
-          })
-        )
-      );
+      try {
+        await Promise.all(
+          batch.map((batchEmail) =>
+            sendBatchEmail({
+              fullName: name,
+              slug,
+              email: batchEmail,
+            })
+          )
+        );
+        return { status: "success" };
+      } catch (error) {
+        throw new NonRetriableError(
+          `Error - Email Campaigning Batch ${i + 1}: ${error instanceof Error ? error.message : error}`
+        );
+      }
     });
   }
 };
@@ -1194,12 +1201,16 @@ const sendBatchEmail = async ({
   slug: string;
   email: string;
 }) => {
-  const data: CalendlyCampaignEmailProps = {
-    receiverEmail: email,
-    user: {
-      fullName,
-      slug,
-    },
-  };
-  await sendCampaigningEmail(data);
+  try {
+    const data: CalendlyCampaignEmailProps = {
+      receiverEmail: email,
+      user: {
+        fullName,
+        slug,
+      },
+    };
+    await sendCampaigningEmail(data);
+  } catch (error) {
+    throw error;
+  }
 };

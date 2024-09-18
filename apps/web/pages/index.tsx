@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import nookies from "nookies";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { KEYCLOAK_COOKIE_DOMAIN, SIGNUP_URL, WEBAPP_URL } from "@calcom/lib/constants";
+import { DEMO_URL, KEYCLOAK_COOKIE_DOMAIN, SIGNUP_URL, WEBAPP_URL } from "@calcom/lib/constants";
 
 function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter();
@@ -37,7 +37,7 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   };
 
   const handleScheduleDemo = () => {
-    window.open("https://app.cal.id/manas/demo", "_blank");
+    window.open(DEMO_URL, "_blank");
   };
 
   const handleExploreIntegration = () => {

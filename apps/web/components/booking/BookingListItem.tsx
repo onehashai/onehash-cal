@@ -78,6 +78,8 @@ function BookingListItem(booking: BookingItemProps) {
   const bookerUrl = useBookerUrl();
   const { userId, userTimeZone, userTimeFormat, userEmail } = booking.loggedInUser;
 
+  const isOrganizer = booking.user.id === userId;
+
   const {
     t,
     i18n: { language },
@@ -478,6 +480,7 @@ function BookingListItem(booking: BookingItemProps) {
       <tr
         data-testid="booking-item"
         onClick={() => {
+          if (!isOrganizer) return;
           setExpanded(!expanded);
         }}
         className="hover:bg-muted group flex cursor-pointer flex-col sm:flex-row">
@@ -695,14 +698,20 @@ function BookingListItem(booking: BookingItemProps) {
               <TableActions actions={chargeCardActions} />
             </div>
           )}
-          <div className="text-md flex pl-3 ">
-            <p className="mt-px">{t("details")}</p>
-            <Icon
-              name="chevron-right"
-              strokeWidth="2"
-              className={classNames(" ", expanded ? "rotate-90 transform" : "rotate-0 transform")}
-            />
-          </div>
+          {isOrganizer ? (
+            <div className="text-md flex pl-3 ">
+              <p className="mt-px">{t("details")}</p>
+              <Icon
+                name="chevron-right"
+                strokeWidth="2"
+                className={classNames(" ", expanded ? "rotate-90 transform" : "rotate-0 transform")}
+              />
+            </div>
+          ) : (
+            <div className="text-md flex pl-3 ">
+              <p className="mt-px">{t("attendee")}</p>
+            </div>
+          )}
         </td>
       </tr>
       {expanded && (
@@ -842,7 +851,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("mark_no_show")}
                 </Button>
               )}
-              {isBookingInPast && (
+              {isBookingInPast && booking.eventType && (
                 <Button
                   className="flex w-full justify-center"
                   color="secondary"

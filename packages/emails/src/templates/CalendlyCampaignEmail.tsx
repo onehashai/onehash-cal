@@ -1,4 +1,4 @@
-import { SIGNUP_URL, SUPPORT_MAIL_ADDRESS } from "@calcom/lib/constants";
+import { DEMO_URL, SIGNUP_URL, SUPPORT_MAIL_ADDRESS } from "@calcom/lib/constants";
 
 import { BaseEmailHtml, CallToAction } from "../components";
 
@@ -14,7 +14,7 @@ export const CalendlyCampaignEmail = (
   props: CalendlyCampaignEmailProps & Partial<React.ComponentProps<typeof BaseEmailHtml>>
 ) => {
   return (
-    <BaseEmailHtml subject="Welcome to Our Platform">
+    <BaseEmailHtml subject="">
       <p style={{ fontWeight: 400, lineHeight: "24px", margin: "0 0 20px" }}>
         Drumroll, please! 🥁 I just made the leap from Calendly to CAL ID, and it’s a total game-changer.
       </p>
@@ -46,13 +46,17 @@ export const CalendlyCampaignEmail = (
       <div style={{ lineHeight: "6px" }}>
         <p style={{ fontWeight: 400, lineHeight: "24px" }}>
           <>
-            If you have any questions,or need demo feel free to{" "}
+            If you have any questions, or need{" "}
+            <a href={DEMO_URL} style={{ color: "#3E3E3E", textDecoration: "underline" }}>
+              demo
+            </a>
+            , feel free to{" "}
             <a
               href={`mailto:${SUPPORT_MAIL_ADDRESS}`}
               style={{ color: "#3E3E3E" }}
               target="_blank"
               rel="noreferrer">
-              contact our support team
+              contact OneHash&apos;s support team
             </a>
             , <br />
             Happy Scheduling 📆.
