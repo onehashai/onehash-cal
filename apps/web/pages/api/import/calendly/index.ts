@@ -22,7 +22,7 @@ import type { ImportDataEmailProps } from "@calcom/emails/src/templates/ImportDa
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { handleConfirmation } from "@calcom/features/bookings/lib/handleConfirmation";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
-import { CALCOM_ENV } from "@calcom/lib/constants";
+import { INNGEST_ID } from "@calcom/lib/constants";
 import { defaultHandler, defaultResponder, getTranslation } from "@calcom/lib/server";
 import { getUsersCredentials } from "@calcom/lib/server/getUsersCredentials";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
@@ -1007,8 +1007,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       return res.status(400).json({ message: "Missing User Unique Identifier" });
     }
 
+    const key = INNGEST_ID === "onehash-cal" ? "prod" : "stag";
+
     await inngestClient.send({
-      name: `import-from-calendly-${CALCOM_ENV}`,
+      name: `import-from-calendly-${key}`,
       data: {
         userCalendlyIntegrationProvider: {
           accessToken: userCalendlyIntegrationProvider.accessToken,
