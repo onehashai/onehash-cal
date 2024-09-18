@@ -119,7 +119,9 @@ function BookingListItem(booking: BookingItemProps) {
   const paymentAppData = getPaymentAppData(booking.eventType);
 
   const location = booking.location as ReturnType<typeof getEventLocationValue>;
-  const locationVideoCallUrl = bookingMetadataSchema.parse(booking?.metadata || {})?.videoCallUrl;
+  const parsedMetadata = bookingMetadataSchema.parse(booking?.metadata || {});
+
+  const { videoCallUrl: locationVideoCallUrl, meetingNote, isImported } = parsedMetadata || {};
 
   const locationToDisplay = getSuccessPageLocationMessage(
     locationVideoCallUrl ? locationVideoCallUrl : location,
@@ -322,7 +324,6 @@ function BookingListItem(booking: BookingItemProps) {
   const showPendingPayment = paymentAppData.enabled && booking.payment.length && !booking.paid;
   const [expanded, setExpanded] = useState(false);
 
-  const meetingNote: string | undefined = bookingMetadataSchema.parse(booking?.metadata || {})?.meetingNote;
   const attendeePhoneNo = booking.responses?.phone as string | undefined;
   const [notes, setNotes] = useState<string>(meetingNote || "");
 
@@ -340,6 +341,7 @@ function BookingListItem(booking: BookingItemProps) {
   };
 
   const [reinviteeAttendeeLink, setReinviteeAttendeeLink] = useState<string>("");
+
   useEffect(() => {
     const createReinviteeAttendeeLink = () => {
       const ownerSlug = booking.eventType.team ? booking.eventType.team.slug : booking.user?.username;
@@ -832,7 +834,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("whatsapp_chat")}
                 </Button>
               )}
-              {isBookingInPast && (
+              {isBookingInPast && !(isImported === "yes") && (
                 <Button
                   className="flex w-full justify-center "
                   color="secondary"

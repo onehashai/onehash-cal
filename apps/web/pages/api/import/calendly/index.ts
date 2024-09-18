@@ -8,8 +8,9 @@ import type {
 } from "@onehash/calendly";
 import { CalendlyAPIService, CalendlyOAuthProvider } from "@onehash/calendly";
 import { inngestClient } from "@pages/api/inngest";
-import { RetryAfterError } from "inngest";
+import { NonRetriableError, RetryAfterError } from "inngest";
 import type { createStepTools } from "inngest/components/InngestStepTools";
+import type { Logger } from "inngest/middleware/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
 import short from "short-uuid";
 
@@ -143,15 +144,14 @@ const refreshTokenIfExpired = async (
 const fetchCalendlyData = async (
   ownerUniqIdentifier: string,
   cAService: CalendlyAPIService,
-  step: ReturnType<typeof createStepTools>
+  step: ReturnType<typeof createStepTools>,
+  logger: Logger
 ): Promise<{
   userScheduledEvents: CalendlyScheduledEvent[];
   userAvailabilitySchedules: CalendlyUserAvailabilitySchedules[];
   userEventTypes: CalendlyEventType[];
 }> => {
   try {
-    //TODO:as we are only getting past events as of now
-
     // Define the array of promises
     // const promises = [
     //   cAService.getUserAvailabilitySchedules(ownerUniqIdentifier),
@@ -168,8 +168,11 @@ const fetchCalendlyData = async (
       "Fetch Availability Schedules from Calendly",
       async () => {
         try {
-          return await cAService.getUserAvailabilitySchedules(ownerUniqIdentifier);
+          const userAvailabilitySchedules = await cAService.getUserAvailabilitySchedules(ownerUniqIdentifier);
+          logger.info("Fetched availability schedules");
+          return userAvailabilitySchedules;
         } catch (e) {
+          logger.error(`Error - userAvailabilitySchedules: ${e instanceof Error ? e.message : e}`);
           throw new RetryAfterError(
             `RetryError - userAvailabilitySchedules: ${e instanceof Error ? e.message : e}`,
             waitTime
@@ -180,8 +183,11 @@ const fetchCalendlyData = async (
 
     const userEventTypes = await step.run("Fetch Event Types from Calendly", async () => {
       try {
-        return await cAService.getUserEventTypes(ownerUniqIdentifier);
+        const userEventTypes = await cAService.getUserEventTypes(ownerUniqIdentifier);
+        logger.info("Fetched event types");
+        return userEventTypes;
       } catch (e) {
+        logger.error(`Error - userEventTypes: ${e instanceof Error ? e.message : e}`);
         throw new RetryAfterError(
           `RetryError - userEventTypes: ${e instanceof Error ? e.message : e}`,
           waitTime
@@ -193,13 +199,16 @@ const fetchCalendlyData = async (
       try {
         const sixHoursBefore = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
 
-        return await cAService.getUserScheduledEvents({
+        const userScheduledEvents = await cAService.getUserScheduledEvents({
           userUri: ownerUniqIdentifier,
           maxStartTime: sixHoursBefore.replace(/(\.\d{3})Z$/, "$1000Z"),
           // minStartTime: new Date().toISOString(),
           // status: "active",
         });
+        logger.info("Fetch Scheduled Events from Calendly");
+        return userScheduledEvents;
       } catch (e) {
+        logger.error(`Error - userScheduledEvents: ${e instanceof Error ? e.message : e}`);
         throw new RetryAfterError(
           `RetryError - userScheduledEvents: ${e instanceof Error ? e.message : e}`,
           waitTime
@@ -503,7 +512,7 @@ const importUserAvailability = async (
     );
   } catch (error) {
     console.error("Error - importUserAvailability:", error instanceof Error ? error.message : String(error));
-    throw new Error(`Error - importUserAvailability: ${error instanceof Error ? error.message : error}`);
+    throw error;
   }
 };
 
@@ -756,10 +765,14 @@ const importEventTypesAndBookings = async (
   cAService: CalendlyAPIService,
   userScheduledEvents: CalendlyScheduledEvent[],
   userEventTypes: CalendlyEventType[],
-  step: ReturnType<typeof createStepTools>
+  step: ReturnType<typeof createStepTools>,
+  logger: Logger
 ) => {
   try {
-    if (userEventTypes.length === 0) return;
+    if (userEventTypes.length === 0) {
+      logger.warn("importEventTypesAndBookings:No user events-types");
+      return;
+    }
 
     const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = await getEventScheduler(
       userScheduledEvents,
@@ -768,24 +781,44 @@ const importEventTypesAndBookings = async (
     );
 
     //mapping the scheduled events to its corresponding event type
-    const mergedList = await step.run(
-      "Map bookings to its event type",
-      async () =>
-        await mergeEventTypeAndScheduledEvent(
+    const mergedList = await step.run("Map bookings to its event type", async () => {
+      try {
+        const _mergedList = await mergeEventTypeAndScheduledEvent(
           userEventTypes as CalendlyEventType[],
           userScheduledEventsWithScheduler as CalendlyScheduledEventWithScheduler[],
           userIntID
-        )
-    );
+        );
+        logger.info("mergeEventTypeAndScheduledEvent:Successfully merged ");
+        return _mergedList;
+      } catch (error) {
+        throw new NonRetriableError(
+          `Error - mergeEventTypeAndScheduledEvent: ${error instanceof Error ? error.message : error}`
+        );
+      }
+    });
 
     // event types with bookings to be inserted
     const eventTypesAndBookingsToBeInserted = mapEventTypeAndBookingsToInputSchema(mergedList, userIntID);
+    logger.info("mapEventTypeAndBookingsToInputSchema: Successfully mapped ");
 
     //inserting event type and bookings to db via prisma
     const eventTypesAndBookingsInsertedResults = await step.run(
       "Insert event type and bookings to DB",
-      async () => await insertEventTypeAndBookingsToDB(eventTypesAndBookingsToBeInserted, userIntID)
+      async () => {
+        try {
+          const data = await insertEventTypeAndBookingsToDB(eventTypesAndBookingsToBeInserted, userIntID);
+          logger.info("insertEventTypeAndBookingsToDB: Successfully inserted ");
+          return data;
+        } catch (error) {
+          throw new NonRetriableError(
+            `Error - insertEventTypeAndBookingsToDB: ${error instanceof Error ? error.message : error}`
+          );
+        }
+      }
     );
+    return {
+      status: !!eventTypesAndBookingsInsertedResults,
+    };
 
     //TODO:we will not import future bookings as of now
     // // Extract booking IDs from each transaction result
@@ -1016,7 +1049,8 @@ export const handleCalendlyImportEvent = async (
     email: string;
     slug: string;
   },
-  step: ReturnType<typeof createStepTools>
+  step: ReturnType<typeof createStepTools>,
+  logger: Logger
 ) => {
   try {
     const cAService = new CalendlyAPIService({
@@ -1031,7 +1065,8 @@ export const handleCalendlyImportEvent = async (
     const { userAvailabilitySchedules, userEventTypes, userScheduledEvents } = await fetchCalendlyData(
       userCalendlyIntegrationProvider.ownerUniqIdentifier,
       cAService,
-      step
+      step,
+      logger
     );
     // const { userAvailabilitySchedules, userEventTypes, userScheduledEvents } = await step.run(
     //   "Fetch Data from Calendly",
@@ -1040,35 +1075,49 @@ export const handleCalendlyImportEvent = async (
 
     //run sequentially to ensure proper import of entire dataset
     //1.First importing the user availability schedules
-    await step.run(
-      "Import user availability schedules",
-      async () =>
+    await step.run("Import user availability schedules", async () => {
+      try {
         await importUserAvailability(
           userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[],
           user.id
-        )
-    );
+        );
+        logger.info("User availability schedules imported successfully");
+      } catch (error) {
+        throw new NonRetriableError(
+          `Error - importUserAvailability: ${error instanceof Error ? error.message : error}`
+        );
+      }
+    });
 
     //2. Then importing the user event types and bookings
-    await importEventTypesAndBookings(
+    const imported = await importEventTypesAndBookings(
       user.id,
       cAService,
       userScheduledEvents as CalendlyScheduledEvent[],
       userEventTypes as CalendlyEventType[],
-      step
+      step,
+      logger
     );
 
     //3. Notifying the user about the import status
     await step.run("Notify user", async () => {
-      const data: ImportDataEmailProps = {
-        status: true,
-        provider: "Calendly",
-        user: {
-          email: user.email,
-          name: user.name,
-        },
-      };
-      await sendImportDataEmail(data);
+      try {
+        const status = !!imported?.status;
+        const data: ImportDataEmailProps = {
+          status,
+          provider: "Calendly",
+          user: {
+            email: user.email,
+            name: user.name,
+          },
+        };
+        await sendImportDataEmail(data);
+        logger.info(`User notified with ${status ? "success" : "failure"} import status`);
+      } catch (error) {
+        throw new NonRetriableError(
+          `Error - Notify User : ${error instanceof Error ? error.message : error}`
+        );
+      }
     });
 
     //4. Sending campaign emails to Calendly user scheduled events bookers
@@ -1085,19 +1134,31 @@ export const handleCalendlyImportEvent = async (
       },
       step
     );
-  } catch (e) {
-    console.error("Error importing Calendly data:", e);
-    await step.run("Notify user", async () => {
-      const data: ImportDataEmailProps = {
-        status: false,
-        provider: "Calendly",
-        user: {
-          email: user.email,
-          name: user.name,
-        },
-      };
-      await sendImportDataEmail(data);
-    });
+
+    logger.info("Calendly import completed");
+  } catch (error) {
+    throw new NonRetriableError(
+      `Error - Calendly Import - Failed Status: ${error instanceof Error ? error.message : error}`
+    );
+    // console.error("Error importing Calendly data:", e);
+    // await step.run("Notify user", async () => {
+    //   try {
+    //     const data: ImportDataEmailProps = {
+    //       status: false,
+    //       provider: "Calendly",
+    //       user: {
+    //         email: user.email,
+    //         name: user.name,
+    //       },
+    //     };
+    //     await sendImportDataEmail(data);
+    //     logger.info("User notified with failure import status");
+    //   } catch (error) {
+    //     throw new NonRetriableError(
+    //       `Error - Notify User - Failed Status: ${error instanceof Error ? error.message : error}`
+    //     );
+    //   }
+    // });
   }
 };
 
