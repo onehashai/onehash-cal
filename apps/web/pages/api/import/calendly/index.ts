@@ -375,9 +375,7 @@ const mergeEventTypeAndScheduledEvent = async (
       "Error - mergeEventTypeAndScheduledEvent :",
       error instanceof Error ? error.message : String(error)
     );
-    throw new Error(
-      `Error - mergeEventTypeAndScheduledEvent : ${error instanceof Error ? error.message : error}`
-    );
+    throw error;
   }
 };
 
@@ -682,25 +680,25 @@ const insertEventTypeAndBookingsToDB = async (
                   eventType: { connect: { id: upsertedEventType.id } },
                 },
                 //TODO:was needed for future bookings but currently we have removed importing future bookings
-                // include: {
-                //   eventType: {
-                //     select: {
-                //       slug: true,
-                //       bookingFields: true,
-                //       requiresConfirmation: true,
-                //       id: true,
-                //     },
-                //   },
-                //   attendees: {
-                //     select: {
-                //       locale: true,
-                //       name: true,
-                //       email: true,
-                //       timeZone: true,
-                //     },
-                //   },
-                //   destinationCalendar: true,
-                // },
+                include: {
+                  // eventType: {
+                  //   select: {
+                  //     slug: true,
+                  //     bookingFields: true,
+                  //     requiresConfirmation: true,
+                  //     id: true,
+                  //   },
+                  // },
+                  attendees: {
+                    select: {
+                      locale: true,
+                      name: true,
+                      email: true,
+                      timeZone: true,
+                    },
+                  },
+                  // destinationCalendar: true,
+                },
               });
             });
 
@@ -816,9 +814,7 @@ const importEventTypesAndBookings = async (
         }
       }
     );
-    return {
-      status: !!eventTypesAndBookingsInsertedResults,
-    };
+    return eventTypesAndBookingsInsertedResults;
 
     //TODO:we will not import future bookings as of now
     // // Extract booking IDs from each transaction result
@@ -1090,7 +1086,7 @@ export const handleCalendlyImportEvent = async (
     });
 
     //2. Then importing the user event types and bookings
-    const imported = await importEventTypesAndBookings(
+    const importedData = await importEventTypesAndBookings(
       user.id,
       cAService,
       userScheduledEvents as CalendlyScheduledEvent[],
@@ -1102,7 +1098,7 @@ export const handleCalendlyImportEvent = async (
     //3. Notifying the user about the import status
     await step.run("Notify user", async () => {
       try {
-        const status = !!imported?.status;
+        const status = !!importedData;
         const data: ImportDataEmailProps = {
           status,
           provider: "Calendly",
@@ -1121,19 +1117,22 @@ export const handleCalendlyImportEvent = async (
     });
 
     //4. Sending campaign emails to Calendly user scheduled events bookers
-    await sendCampaigningEmails(
-      {
-        fullName: user.name,
-        slug: user.slug,
-        emails: (userScheduledEvents as CalendlyScheduledEvent[]).reduce((acc, event) => {
-          if (event.event_guests) {
-            acc.push(...event.event_guests.map((guest) => guest.email));
-          }
-          return acc;
-        }, [] as string[]),
-      },
-      step
-    );
+    if (importedData)
+      await sendCampaigningEmails(
+        {
+          fullName: user.name,
+          slug: user.slug,
+          emails: importedData.reduce<string[]>((emails, event) => {
+            event.createdBookings.forEach((booking) => {
+              booking.attendees.forEach((attendee) => {
+                emails.push(attendee.email);
+              });
+            });
+            return emails;
+          }, []),
+        },
+        step
+      );
 
     logger.info("Calendly import completed");
   } catch (error) {

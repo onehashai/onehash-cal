@@ -16,8 +16,7 @@ export const CalendlyCampaignEmail = (
   return (
     <BaseEmailHtml subject="Welcome to Our Platform">
       <p style={{ fontWeight: 400, lineHeight: "24px", margin: "0 0 20px" }}>
-        Drumroll, please! 🥁 {props.user.fullName} just made the leap from Calendly to OneHash Cal, and it’s a
-        total game-changer.
+        Drumroll, please! 🥁 I just made the leap from Calendly to CAL ID, and it’s a total game-changer.
       </p>
       <p style={{ fontWeight: 400, lineHeight: "24px", margin: "0 0 20px" }}>
         Here’s why you need to jump on board:
