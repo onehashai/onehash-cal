@@ -22,6 +22,7 @@ import type { ImportDataEmailProps } from "@calcom/emails/src/templates/ImportDa
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { handleConfirmation } from "@calcom/features/bookings/lib/handleConfirmation";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
+import { CALCOM_ENV } from "@calcom/lib/constants";
 import { defaultHandler, defaultResponder, getTranslation } from "@calcom/lib/server";
 import { getUsersCredentials } from "@calcom/lib/server/getUsersCredentials";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
@@ -1007,7 +1008,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     await inngestClient.send({
-      name: "import-from-calendly",
+      name: `import-from-calendly-${CALCOM_ENV}`,
       data: {
         userCalendlyIntegrationProvider: {
           accessToken: userCalendlyIntegrationProvider.accessToken,
