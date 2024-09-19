@@ -190,3 +190,5 @@ export const RAZORPAY_UPI_ENABLED = process.env.RAZORPAY_UPI_ENABLED === "true";
 
 // export const RAZORPAY_REDIRECT_URL = `https://66f2-103-171-99-41.ngrok-free.app/apps/installation/accounts`;
 export const INNGEST_ID = process.env.INNGEST_ID ?? "onehash-cal";
+
+export const DEMO_URL = "https://app.cal.id/manas/demo";

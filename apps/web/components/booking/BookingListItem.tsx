@@ -78,6 +78,8 @@ function BookingListItem(booking: BookingItemProps) {
   const bookerUrl = useBookerUrl();
   const { userId, userTimeZone, userTimeFormat, userEmail } = booking.loggedInUser;
 
+  const isOrganizer = booking.user.id === userId;
+
   const {
     t,
     i18n: { language },
@@ -119,7 +121,9 @@ function BookingListItem(booking: BookingItemProps) {
   const paymentAppData = getPaymentAppData(booking.eventType);
 
   const location = booking.location as ReturnType<typeof getEventLocationValue>;
-  const locationVideoCallUrl = bookingMetadataSchema.parse(booking?.metadata || {})?.videoCallUrl;
+  const parsedMetadata = bookingMetadataSchema.parse(booking?.metadata || {});
+
+  const { videoCallUrl: locationVideoCallUrl, meetingNote, isImported } = parsedMetadata || {};
 
   const locationToDisplay = getSuccessPageLocationMessage(
     locationVideoCallUrl ? locationVideoCallUrl : location,
@@ -322,7 +326,6 @@ function BookingListItem(booking: BookingItemProps) {
   const showPendingPayment = paymentAppData.enabled && booking.payment.length && !booking.paid;
   const [expanded, setExpanded] = useState(false);
 
-  const meetingNote: string | undefined = bookingMetadataSchema.parse(booking?.metadata || {})?.meetingNote;
   const attendeePhoneNo = booking.responses?.phone as string | undefined;
   const [notes, setNotes] = useState<string>(meetingNote || "");
 
@@ -340,6 +343,7 @@ function BookingListItem(booking: BookingItemProps) {
   };
 
   const [reinviteeAttendeeLink, setReinviteeAttendeeLink] = useState<string>("");
+
   useEffect(() => {
     const createReinviteeAttendeeLink = () => {
       const ownerSlug = booking.eventType.team ? booking.eventType.team.slug : booking.user?.username;
@@ -476,6 +480,7 @@ function BookingListItem(booking: BookingItemProps) {
       <tr
         data-testid="booking-item"
         onClick={() => {
+          if (!isOrganizer) return;
           setExpanded(!expanded);
         }}
         className="hover:bg-muted group flex cursor-pointer flex-col sm:flex-row">
@@ -693,14 +698,20 @@ function BookingListItem(booking: BookingItemProps) {
               <TableActions actions={chargeCardActions} />
             </div>
           )}
-          <div className="text-md flex pl-3 ">
-            <p className="mt-px">{t("details")}</p>
-            <Icon
-              name="chevron-right"
-              strokeWidth="2"
-              className={classNames(" ", expanded ? "rotate-90 transform" : "rotate-0 transform")}
-            />
-          </div>
+          {isOrganizer ? (
+            <div className="text-md flex pl-3 ">
+              <p className="mt-px">{t("details")}</p>
+              <Icon
+                name="chevron-right"
+                strokeWidth="2"
+                className={classNames(" ", expanded ? "rotate-90 transform" : "rotate-0 transform")}
+              />
+            </div>
+          ) : (
+            <div className="text-md flex pl-3 ">
+              <p className="mt-px">{t("attendee")}</p>
+            </div>
+          )}
         </td>
       </tr>
       {expanded && (
@@ -832,7 +843,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("whatsapp_chat")}
                 </Button>
               )}
-              {isBookingInPast && (
+              {isBookingInPast && !(isImported === "yes") && (
                 <Button
                   className="flex w-full justify-center "
                   color="secondary"
@@ -840,7 +851,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("mark_no_show")}
                 </Button>
               )}
-              {isBookingInPast && (
+              {isBookingInPast && booking.eventType && (
                 <Button
                   className="flex w-full justify-center"
                   color="secondary"

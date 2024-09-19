@@ -65,46 +65,54 @@ export default class CalendlyAPIService {
    * @throws {Error} If there is an error fetching the access token or if the response is not successful.
    */
   getUserInfo = async (): Promise<UserSuccessResponse | UserErrorResponse> => {
-    const res = await this.request.get("/users/me", this.requestConfiguration());
-    if (!this._isRequestResponseOk(res)) {
-      const errorData: UserErrorResponse = res.data;
-      console.error("Error fetching user info:", errorData.title, errorData.message);
+    try {
+      const res = await this.request.get("/users/me", this.requestConfiguration());
+      if (!this._isRequestResponseOk(res)) {
+        const errorData: UserErrorResponse = res.data;
+        console.error("Error fetching user info:", errorData.title, errorData.message);
+      }
+      const data: UserSuccessResponse = res.data;
+      return data;
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
     }
-    const data: UserSuccessResponse = res.data;
-    return data;
   };
 
   getUserEventTypes = async (userUri: string, active = true): Promise<CalendlyEventType[]> => {
-    let queryParams = `user=${userUri}`;
-    if (active) queryParams += `&active=${active}`;
-    const url = `/event_types?${queryParams}`;
-    const res = await this.request.get(url, this.requestConfiguration());
-    if (this._isRequestResponseOk(res)) {
-      const data = res.data as CalendlyEventTypeSuccessResponse;
-      let allEventTypes: CalendlyEventType[] = [...data.collection];
-      let next_page = data.pagination.next_page;
-      while (next_page) {
-        try {
+    const handleError = (res: AxiosResponse<any, any>, context: string) => {
+      const data = res.data as CalendlyEventTypeErrorResponse;
+      console.error(`${context}: ${data.message}`);
+      throw new Error(`${context}: ${data.message}`);
+    };
+
+    try {
+      let queryParams = `user=${userUri}`;
+      if (active) queryParams += `&active=${active}`;
+      const url = `/event_types?${queryParams}`;
+      const res = await this.request.get(url, this.requestConfiguration());
+      if (this._isRequestResponseOk(res)) {
+        const data = res.data as CalendlyEventTypeSuccessResponse;
+        let allEventTypes: CalendlyEventType[] = [...data.collection];
+        let next_page = data.pagination.next_page;
+        while (next_page) {
           const res = await this.request.get(next_page, this.requestConfiguration());
           if (!this._isRequestResponseOk(res)) {
-            const data = res.data as CalendlyEventTypeErrorResponse;
-            console.error("Error fetching user event types:", data.message);
-            break;
+            handleError(res, "Error fetching user event types:");
           }
           const newData = res.data as CalendlyEventTypeSuccessResponse;
           allEventTypes = [...allEventTypes, ...newData.collection];
           next_page = newData.pagination.next_page;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-          console.error("Error fetching data:", error.message);
-          break;
         }
+        return allEventTypes;
+      } else {
+        handleError(res, "Error fetching user event types:");
       }
-      return allEventTypes;
-    } else {
-      const data = res.data as CalendlyEventTypeErrorResponse;
-      console.error("Error fetching user event types:", data.message);
-      return [];
+    } catch (e) {
+      e instanceof Error
+        ? console.error("Internal server error:", e.message)
+        : console.error("Internal server error:", String(e));
+      throw e;
     }
   };
 
@@ -129,51 +137,58 @@ export default class CalendlyAPIService {
     maxStartTime?: string;
     minStartTime?: string;
   }): Promise<CalendlyScheduledEvent[]> => {
-    let queryParams = [`user=${userUri}`, `count=${count || 10}`, `sort=start_time:asc`].join("&");
+    const handleError = (res: AxiosResponse<any, any>, context: string) => {
+      const data = res.data as CalendlyScheduledEventErrorResponse;
+      console.error(`${context}: ${data.message}`);
+      throw new Error(`${context}: ${data.message}`);
+    };
 
-    if (pageToken) queryParams += `&page_token=${pageToken}`;
-    if (status) queryParams += `&status=${status}`;
-    if (maxStartTime) queryParams += `&max_start_time=${maxStartTime}`;
-    if (minStartTime) queryParams += `&min_start_time=${minStartTime}`;
+    try {
+      let queryParams = [`user=${userUri}`, `count=${count || 10}`, `sort=start_time:asc`].join("&");
 
-    const url = `/scheduled_events?${queryParams}`;
-    const res = await this.request.get(url, this.requestConfiguration());
+      if (pageToken) queryParams += `&page_token=${pageToken}`;
+      if (status) queryParams += `&status=${status}`;
+      if (maxStartTime) queryParams += `&max_start_time=${maxStartTime}`;
+      if (minStartTime) queryParams += `&min_start_time=${minStartTime}`;
 
-    if (this._isRequestResponseOk(res)) {
-      const data = res.data as CalendlyScheduledEventSuccessResponse;
-      let allScheduledEvents: CalendlyScheduledEvent[] = [...data.collection];
-      let next_page: string | null = data?.pagination?.next_page ?? null;
+      const url = `/scheduled_events?${queryParams}`;
+      const res = await this.request.get(url, this.requestConfiguration());
 
-      while (next_page) {
-        try {
+      if (this._isRequestResponseOk(res)) {
+        const data = res.data as CalendlyScheduledEventSuccessResponse;
+        let allScheduledEvents: CalendlyScheduledEvent[] = [...data.collection];
+        let next_page: string | null = data?.pagination?.next_page ?? null;
+
+        while (next_page) {
           const res = await this.request.get(next_page, this.requestConfiguration());
           if (!this._isRequestResponseOk(res)) {
-            const errorData = res.data as CalendlyScheduledEventErrorResponse;
-            console.error("Error fetching user event types:", errorData.message);
-            break;
+            handleError(res, "Error fetching scheduled events:");
           }
 
           const newData = res.data as CalendlyScheduledEventSuccessResponse;
           allScheduledEvents = [...allScheduledEvents, ...newData.collection];
           next_page = newData.pagination.next_page;
-        } catch (error: any) {
-          console.error("Error fetching data:", error.message);
-          break;
         }
-      }
 
-      return allScheduledEvents;
-    } else {
-      const data = res.data as CalendlyEventTypeErrorResponse;
-      console.error("Error fetching user event types:", data.message);
-      return [];
+        return allScheduledEvents;
+      } else {
+        handleError(res, "Error fetching scheduled events:");
+      }
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
     }
   };
 
   getUserScheduledEvent = async (uuid: string) => {
-    const { data } = await this.request.get(`/scheduled_events/${uuid}`, this.requestConfiguration());
+    try {
+      const { data } = await this.request.get(`/scheduled_events/${uuid}`, this.requestConfiguration());
 
-    return data;
+      return data;
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   };
 
   getUserScheduledEventInvitees = async (
@@ -181,62 +196,75 @@ export default class CalendlyAPIService {
     count = 20,
     pageToken?: string
   ): Promise<CalendlyScheduledEventInvitee[]> => {
-    let queryParams = [`count=${count}`].join("&");
+    const handleError = (res: AxiosResponse<any, any>, context: string) => {
+      const data = res.data as CalendlyScheduledEventInviteeErrorResponse;
+      console.error(`${context}: ${data.message}`);
+      throw new Error(`${context}: ${data.message}`);
+    };
 
-    if (pageToken) queryParams += `&page_token=${pageToken}`;
+    try {
+      let queryParams = [`count=${count}`].join("&");
+      if (pageToken) queryParams += `&page_token=${pageToken}`;
 
-    const url = `/scheduled_events/${uuid}/invitees?${queryParams}`;
-    const res = await this.request.get(url, this.requestConfiguration());
-    if (this._isRequestResponseOk(res)) {
-      const data = res.data as CalendlyScheduledEventInviteeSuccessResponse;
-      let allScheduledEventInvitees: CalendlyScheduledEventInvitee[] = [...data.collection];
-      let next_page = data?.pagination?.next_page;
-      while (next_page) {
-        try {
+      const url = `/scheduled_events/${uuid}/invitees?${queryParams}`;
+      const res = await this.request.get(url, this.requestConfiguration());
+
+      if (this._isRequestResponseOk(res)) {
+        const data = res.data as CalendlyScheduledEventInviteeSuccessResponse;
+        let allScheduledEventInvitees: CalendlyScheduledEventInvitee[] = [...data.collection];
+        let next_page = data?.pagination?.next_page;
+
+        while (next_page) {
           const res = await this.request.get(next_page, this.requestConfiguration());
           if (!this._isRequestResponseOk(res)) {
-            const data = res.data as CalendlyScheduledEventInviteeErrorResponse;
-            console.error("Error fetching user event types:", data.message);
-            break;
+            handleError(res, "Error fetching scheduled event invitees:");
           }
-          const newData = res.data as CalendlyScheduledEventInviteeSuccessResponse;
 
+          const newData = res.data as CalendlyScheduledEventInviteeSuccessResponse;
           allScheduledEventInvitees = [...allScheduledEventInvitees, ...newData.collection];
           next_page = newData.pagination.next_page;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-          console.error("Error fetching data:", error.message);
-          break;
         }
+
+        return allScheduledEventInvitees;
+      } else {
+        handleError(res, "Error fetching scheduled event invitees:");
       }
-      return allScheduledEventInvitees;
-    } else {
-      const data = res.data as CalendlyScheduledEventInviteeErrorResponse;
-      console.error("Error fetching user event types:", data.message);
-      return [];
+    } catch (error: unknown) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
     }
   };
 
   getUserEventTypeAvailTimes = async (eventUri: string, startTime: string, endTime: string) => {
-    const queryParams = [`start_time=${startTime}`, `end_time=${endTime}`, `event_type=${eventUri}`].join(
-      "&"
-    );
+    try {
+      const queryParams = [`start_time=${startTime}`, `end_time=${endTime}`, `event_type=${eventUri}`].join(
+        "&"
+      );
 
-    const url = `/event_type_available_times?${queryParams}`;
+      const url = `/event_type_available_times?${queryParams}`;
 
-    const { data } = await this.request.get(url, this.requestConfiguration());
+      const { data } = await this.request.get(url, this.requestConfiguration());
 
-    return data;
+      return data;
+    } catch (error: unknown) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   };
 
   getUserBusyTimes = async (userUri: string, startTime: string, endTime: string) => {
-    const queryParams = [`user=${userUri}`, `start_time=${startTime}`, `end_time=${endTime}`].join("&");
+    try {
+      const queryParams = [`user=${userUri}`, `start_time=${startTime}`, `end_time=${endTime}`].join("&");
 
-    const url = `/user_busy_times?${queryParams}`;
+      const url = `/user_busy_times?${queryParams}`;
 
-    const { data } = await this.request.get(url, this.requestConfiguration());
+      const { data } = await this.request.get(url, this.requestConfiguration());
 
-    return data;
+      return data;
+    } catch (error: unknown) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   };
 
   getUserAvailabilitySchedules = async (userUri: string): Promise<CalendlyUserAvailabilitySchedules[]> => {
@@ -250,53 +278,71 @@ export default class CalendlyAPIService {
       }
       const data = res.data as CalendlyUserAvailabilitySchedulesSuccessResponse;
       return data.collection;
-    } catch (e) {
-      e instanceof Error
-        ? console.error("Internal server error:", e.message)
-        : console.error("Internal server error:", String(e));
-      throw e;
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
     }
   };
 
   getUser = async (userUri: string) => {
-    const url = `/users/${userUri}`;
+    try {
+      const url = `/users/${userUri}`;
 
-    const res = await this.request.get(url, this.requestConfiguration());
-    if (this._isRequestResponseOk(res)) {
-      const data = res.data as UserSuccessResponse;
-      return data;
-    } else {
-      const data = res.data as UserErrorResponse;
-      console.error("Error fetching user info:", data.message);
+      const res = await this.request.get(url, this.requestConfiguration());
+      if (this._isRequestResponseOk(res)) {
+        const data = res.data as UserSuccessResponse;
+        return data;
+      } else {
+        const data = res.data as UserErrorResponse;
+        console.error("Error fetching user info:", data.message);
+      }
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
     }
   };
 
   markAsNoShow = async (uri: string) => {
-    const { data } = await this.request.post(
-      "/invitee_no_shows",
-      {
-        invitee: uri,
-      },
-      this.requestConfiguration()
-    );
+    try {
+      const { data } = await this.request.post(
+        "/invitee_no_shows",
+        {
+          invitee: uri,
+        },
+        this.requestConfiguration()
+      );
 
-    return data;
+      return data;
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   };
 
   undoNoShow = async (inviteeUuid: string) => {
-    await this.request.delete(`/invitee_no_shows/${inviteeUuid}`, this.requestConfiguration());
+    try {
+      await this.request.delete(`/invitee_no_shows/${inviteeUuid}`, this.requestConfiguration());
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   };
 
   cancelEvent = async (uuid: string, reason: string) => {
-    const { data } = await this.request.post(
-      `/scheduled_events/${uuid}/cancellation`,
-      {
-        reason: reason,
-      },
-      this.requestConfiguration()
-    );
+    try {
+      const { data } = await this.request.post(
+        `/scheduled_events/${uuid}/cancellation`,
+        {
+          reason: reason,
+        },
+        this.requestConfiguration()
+      );
 
-    return data;
+      return data;
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   };
 
   requestNewAccessToken = () => {

@@ -6,11 +6,18 @@ import { INNGEST_ID } from "@calcom/lib/constants";
 
 export const inngestClient = new Inngest({ id: INNGEST_ID });
 
+const key = INNGEST_ID === "onehash-cal" ? "prod" : "stag";
+
 const handleCalendlyImportFn = inngestClient.createFunction(
-  { id: "import-from-calendly", retries: 4 },
-  { event: "import-from-calendly" },
-  async ({ event, step }) => {
-    await handleCalendlyImportEvent(event.data.userCalendlyIntegrationProvider, event.data.user, step);
+  { id: `import-from-calendly-${key}`, retries: 2 },
+  { event: `import-from-calendly-${key}` },
+  async ({ event, step, logger }) => {
+    await handleCalendlyImportEvent(
+      event.data.userCalendlyIntegrationProvider,
+      event.data.user,
+      step,
+      logger
+    );
     return { message: `Import completed for userID :${event.data.user.id}` };
   }
 );
