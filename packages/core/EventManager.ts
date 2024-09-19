@@ -178,14 +178,27 @@ export default class EventManager {
     //   evt["location"] = "integrations:daily";
     // }
 
-    // Fallback to Jitsi Video if Google Meet is selected w/o a Google Cal
+    //Fallback:We are using google meet public url to create an open google meet room as of now,
     // @NOTE: destinationCalendar it's an array now so as a fallback we will only check the first one
     const [mainHostDestinationCalendar] =
       (evt.destinationCalendar as [undefined | NonNullable<typeof evt.destinationCalendar>[number]]) ?? [];
     if (evt.location === MeetLocationType && mainHostDestinationCalendar?.integration !== "google_calendar") {
-      log.warn("Falling back to Jitsi Video integration as Google Calendar not installed");
-      evt["location"] = JitsiLocationType;
+      log.warn("Falling back to using google meet public url  Google Calendar not installed");
+      //TODO:We are using google meet public url to create an open google meet room as of now,
+
+      const meetSlug = `${evt.title
+        .replace(/[^\w\s]|_/g, "")
+        .replace(/\s+/g, "-")
+        .substring(0, 10)}-${evt.uid}`;
+      evt.videoCallData = {
+        type: "google_video",
+        id: evt.uid,
+        password: "",
+        url: `https://g.co/meet/${meetSlug}`,
+      };
+      // evt["location"] = JitsiLocationType;
     }
+
     const isDedicated = evt.location ? isDedicatedIntegration(evt.location) : null;
 
     const results: Array<EventResult<Exclude<Event, AdditionalInformation>>> = [];
