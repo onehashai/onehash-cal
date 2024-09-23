@@ -15,14 +15,16 @@ import {
 import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { EventTypeDescriptionLazy as EventTypeDescription } from "@calcom/features/eventtypes/components";
 import EmptyPage from "@calcom/features/eventtypes/components/EmptyPage";
+import { SIGNUP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import useTheme from "@calcom/lib/hooks/useTheme";
-import { HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
+import { Button, HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
 
+import type { UserNotFoundProps, UserFoundProps } from "./users-public-view.getServerSideProps";
 import { type getServerSideProps } from "./users-public-view.getServerSideProps";
 
-export function UserPage(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
+function UserFound(props: UserFoundProps) {
   const { users, profile, eventTypes, markdownStrippedBio, entity } = props;
   const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
@@ -166,6 +168,61 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
         <Toaster position="bottom-right" />
       </div>
     </>
+  );
+}
+
+function UserNotFound(props: UserNotFoundProps) {
+  const { slug } = props;
+  const { t } = useLocale();
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+
+  return (
+    <>
+      <HeadSeo
+        origin={getOrgFullOrigin(null)}
+        title={"Oops no one's here"}
+        description="Register and claim this Cal ID username before it’s gone!"
+        nextSeoProps={{
+          noindex: true,
+          nofollow: true,
+        }}
+      />
+      <div className="flex min-h-screen flex-col items-center justify-center px-10 md:p-0">
+        <div className="bg-default w-full max-w-xl rounded-lg p-10 text-center shadow-lg">
+          <div className="flex flex-col items-center">
+            <h2 className="mt-4 text-3xl font-semibold text-gray-800">No man’s land - Conquer it today!</h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Claim username <span className="font-semibold">{`'${slug}'`}</span> on{" "}
+              <span className="font-semibold">Cal ID</span> now before someone else does! 🗓️🔥
+            </p>
+          </div>
+
+          <div className="mt-6">
+            <Button color="primary" href={SIGNUP_URL} target="_blank">
+              {t("register_now")}
+            </Button>
+          </div>
+
+          <div className="mt-6 text-base text-gray-500">
+            Or Lost your way? &nbsp;
+            <Link href="/auth/login" className="text-blue-600 hover:underline">
+              Log in to your personal space
+            </Link>
+          </div>
+        </div>
+        <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+          <PoweredBy logoOnly />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function UserPage(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  return props.userFound ? (
+    <UserFound {...props.userFound} />
+  ) : (
+    <UserNotFound slug={props.userNotFound.slug || "User"} />
   );
 }
 

@@ -23,7 +23,7 @@ import type { EmbedProps } from "@lib/withEmbedSsr";
 import { ssrInit } from "@server/lib/ssr";
 
 const log = logger.getSubLogger({ prefix: ["[[pages/[user]]]"] });
-export type UserPageProps = {
+export type UserFoundProps = {
   trpcState: DehydratedState;
   profile: {
     name: string;
@@ -71,6 +71,20 @@ export type UserPageProps = {
   >)[];
 } & EmbedProps;
 
+export type UserNotFoundProps = {
+  slug: string;
+};
+
+export type UserPageProps =
+  | {
+      userFound: UserFoundProps;
+      userNotFound?: never;
+    }
+  | {
+      userNotFound: UserNotFoundProps;
+      userFound?: never;
+    };
+
 export const getServerSideProps: GetServerSideProps<UserPageProps> = async (context) => {
   const ssr = await ssrInit(context, {
     noI18nPreload: false,
@@ -102,6 +116,15 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
     usernameList,
     orgSlug: isValidOrgDomain ? currentOrgDomain : null,
   });
+  if (usersInOrgContext.length === 0 && !isOrgContext) {
+    return {
+      props: {
+        userNotFound: {
+          slug: context.query.user as string,
+        },
+      },
+    };
+  }
 
   const isDynamicGroup = usersInOrgContext.length > 1;
   log.debug(safeStringify({ usersInOrgContext, isValidOrgDomain, currentOrgDomain, isDynamicGroup }));
@@ -176,27 +199,29 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
 
   return {
     props: {
-      users: usersInOrgContext.map((user) => ({
-        name: user.name,
-        username: user.username,
-        bio: user.bio,
-        avatarUrl: user.avatarUrl,
-        verified: user.verified,
-        profile: user.profile,
-      })),
-      entity: {
-        ...(org?.logoUrl ? { logoUrl: org?.logoUrl } : {}),
-        considerUnpublished: !isARedirectFromNonOrgLink && org?.slug === null,
-        orgSlug: currentOrgDomain,
-        name: org?.name ?? null,
+      userFound: {
+        users: usersInOrgContext.map((user) => ({
+          name: user.name,
+          username: user.username,
+          bio: user.bio,
+          avatarUrl: user.avatarUrl,
+          verified: user.verified,
+          profile: user.profile,
+        })),
+        entity: {
+          ...(org?.logoUrl ? { logoUrl: org?.logoUrl } : {}),
+          considerUnpublished: !isARedirectFromNonOrgLink && org?.slug === null,
+          orgSlug: currentOrgDomain,
+          name: org?.name ?? null,
+        },
+        eventTypes,
+        safeBio,
+        profile,
+        // Dynamic group has no theme preference right now. It uses system theme.
+        themeBasis: user.username,
+        trpcState: ssr.dehydrate(),
+        markdownStrippedBio,
       },
-      eventTypes,
-      safeBio,
-      profile,
-      // Dynamic group has no theme preference right now. It uses system theme.
-      themeBasis: user.username,
-      trpcState: ssr.dehydrate(),
-      markdownStrippedBio,
     },
   };
 };
