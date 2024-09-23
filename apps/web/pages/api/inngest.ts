@@ -8,6 +8,14 @@ export const inngestClient = new Inngest({ id: INNGEST_ID });
 
 const key = INNGEST_ID === "onehash-cal" ? "prod" : "stag";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "4mb",
+    },
+  },
+};
+
 const handleCalendlyImportFn = inngestClient.createFunction(
   { id: `import-from-calendly-${key}`, retries: 2 },
   { event: `import-from-calendly-${key}` },

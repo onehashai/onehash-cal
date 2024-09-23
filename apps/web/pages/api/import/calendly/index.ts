@@ -8,7 +8,7 @@ import type {
 } from "@onehash/calendly";
 import { CalendlyAPIService, CalendlyOAuthProvider } from "@onehash/calendly";
 import { inngestClient } from "@pages/api/inngest";
-import { NonRetriableError, RetryAfterError } from "inngest";
+import { NonRetriableError } from "inngest";
 import type { createStepTools } from "inngest/components/InngestStepTools";
 import type { Logger } from "inngest/middleware/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -165,57 +165,77 @@ const fetchCalendlyData = async (
     //   }),
     // ];
 
-    const userAvailabilitySchedules = await step.run(
-      "Fetch Availability Schedules from Calendly",
-      async () => {
-        try {
-          const userAvailabilitySchedules = await cAService.getUserAvailabilitySchedules(ownerUniqIdentifier);
-          logger.info("Fetched availability schedules");
-          return userAvailabilitySchedules;
-        } catch (e) {
-          logger.error(`Error - userAvailabilitySchedules: ${e instanceof Error ? e.message : e}`);
-          throw new RetryAfterError(
-            `RetryError - userAvailabilitySchedules: ${e instanceof Error ? e.message : e}`,
-            waitTime
-          );
-        }
-      }
-    );
+    const userAvailabilitySchedules = await cAService.getUserAvailabilitySchedules({
+      userUri: ownerUniqIdentifier,
+      step,
+    });
+    // const userAvailabilitySchedules = await step.run(
+    //   "Fetch Availability Schedules from Calendly",
+    //   async () => {
+    //     try {
+    //       const userAvailabilitySchedules = await cAService.getUserAvailabilitySchedules(ownerUniqIdentifier);
+    //       logger.info("Fetched availability schedules");
+    //       return userAvailabilitySchedules;
+    //     } catch (e) {
+    //       logger.error(`Error - userAvailabilitySchedules: ${e instanceof Error ? e.message : e}`);
+    //       throw new RetryAfterError(
+    //         `RetryError - userAvailabilitySchedules: ${e instanceof Error ? e.message : e}`,
+    //         waitTime
+    //       );
+    //     }
+    //   }
+    // );
 
-    const userEventTypes = await step.run("Fetch Event Types from Calendly", async () => {
-      try {
-        const userEventTypes = await cAService.getUserEventTypes(ownerUniqIdentifier);
-        logger.info("Fetched event types");
-        return userEventTypes;
-      } catch (e) {
-        logger.error(`Error - userEventTypes: ${e instanceof Error ? e.message : e}`);
-        throw new RetryAfterError(
-          `RetryError - userEventTypes: ${e instanceof Error ? e.message : e}`,
-          waitTime
-        );
-      }
+    // const userEventTypes = await step.run("Fetch Event Types from Calendly", async () => {
+    //   try {
+    //     const userEventTypes = await cAService.getUserEventTypes(ownerUniqIdentifier);
+    //     logger.info("Fetched event types");
+    //     return userEventTypes;
+    //   } catch (e) {
+    //     logger.error(`Error - userEventTypes: ${e instanceof Error ? e.message : e}`);
+    //     throw new RetryAfterError(
+    //       `RetryError - userEventTypes: ${e instanceof Error ? e.message : e}`,
+    //       waitTime
+    //     );
+    //   }
+    // });
+
+    const userEventTypes = await cAService.getUserEventTypes({
+      userUri: ownerUniqIdentifier,
+      active: true,
+      step,
     });
 
-    const userScheduledEvents = await step.run("Fetch Scheduled Events from Calendly", async () => {
-      try {
-        const sixHoursBefore = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+    const sixHoursBefore = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
 
-        const userScheduledEvents = await cAService.getUserScheduledEvents({
-          userUri: ownerUniqIdentifier,
-          maxStartTime: sixHoursBefore.replace(/(\.\d{3})Z$/, "$1000Z"),
-          // minStartTime: new Date().toISOString(),
-          // status: "active",
-        });
-        logger.info("Fetch Scheduled Events from Calendly");
-        return userScheduledEvents;
-      } catch (e) {
-        logger.error(`Error - userScheduledEvents: ${e instanceof Error ? e.message : e}`);
-        throw new RetryAfterError(
-          `RetryError - userScheduledEvents: ${e instanceof Error ? e.message : e}`,
-          waitTime
-        );
-      }
+    const userScheduledEvents = await cAService.getUserScheduledEvents({
+      userUri: ownerUniqIdentifier,
+      maxStartTime: sixHoursBefore.replace(/(\.\d{3})Z$/, "$1000Z"),
+      step,
+      // minStartTime: new Date().toISOString(),
+      // status: "active",
     });
+
+    // await step.run("Fetch Scheduled Events from Calendly", async () => {
+    //   try {
+    //     const sixHoursBefore = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
+    //     const userScheduledEvents = await cAService.getUserScheduledEvents({
+    //       userUri: ownerUniqIdentifier,
+    //       maxStartTime: sixHoursBefore.replace(/(\.\d{3})Z$/, "$1000Z"),
+    //       // minStartTime: new Date().toISOString(),
+    //       // status: "active",
+    //     });
+    //     logger.info("Fetch Scheduled Events from Calendly");
+    //     return userScheduledEvents;
+    //   } catch (e) {
+    //     logger.error(`Error - userScheduledEvents: ${e instanceof Error ? e.message : e}`);
+    //     throw new RetryAfterError(
+    //       `RetryError - userScheduledEvents: ${e instanceof Error ? e.message : e}`,
+    //       waitTime
+    //     );
+    //   }
+    // });
 
     // // Wait for all promises to complete
     // const results = await Promise.all(promises);
@@ -268,28 +288,33 @@ const combinedRules = (rules: CalendlyUserAvailabilityRules[]): CombinedAvailabi
 //Maps the scheduled events with its corresponding scheduler
 const getEventScheduler = async (
   userScheduledEvents: CalendlyScheduledEvent[],
-  getUserScheduledEventInvitees: (
-    uuid: string,
-    count?: number,
-    pageToken?: string | undefined
-  ) => Promise<CalendlyScheduledEventInvitee[]>,
+  getUserScheduledEventInvitees: ({
+    uuid,
+    step,
+  }: {
+    uuid: string;
+    step: ReturnType<typeof createStepTools>;
+  }) => Promise<CalendlyScheduledEventInvitee[]>,
   step: ReturnType<typeof createStepTools>
 ): Promise<CalendlyScheduledEventWithScheduler[]> => {
   const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = [];
 
-  const currentTime = new Date();
   for (const userScheduledEvent of userScheduledEvents) {
     const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
-    const invitees = await step.run("Get booking invitees", async () => {
-      try {
-        return await getUserScheduledEventInvitees(uuid);
-      } catch (e) {
-        throw new RetryAfterError(
-          `RetryError - getEventScheduler: ${e instanceof Error ? e.message : e}`,
-          waitTime
-        );
-      }
+    const invitees = await getUserScheduledEventInvitees({
+      uuid,
+      step,
     });
+    // const invitees = await step.run("Get booking invitees", async () => {
+    //   try {
+    //     return await getUserScheduledEventInvitees(uuid);
+    //   } catch (e) {
+    //     throw new RetryAfterError(
+    //       `RetryError - getEventScheduler: ${e instanceof Error ? e.message : e}`,
+    //       waitTime
+    //     );
+    //   }
+    // });
 
     //TODO:I think we do not need to run the step again as inngest will handle the retry itself
     // invitees = await step.run("Get booking invitees", async () => {
@@ -1076,7 +1101,7 @@ export const handleCalendlyImportEvent = async (
     //1.First importing the user availability schedules
     await step.run("Import user availability schedules", async () => {
       try {
-        await importUserAvailability(
+        return await importUserAvailability(
           userAvailabilitySchedules as CalendlyUserAvailabilitySchedules[],
           user.id
         );

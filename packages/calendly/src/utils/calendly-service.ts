@@ -1,22 +1,30 @@
 import type { AxiosInstance, AxiosResponse } from "axios";
 import axios from "axios";
+import { NonRetriableError, RetryAfterError } from "inngest";
+import type { createStepTools } from "inngest/components/InngestStepTools";
 
 import type {
   UserSuccessResponse,
   UserErrorResponse,
   CalendlyEventType,
-  CalendlyEventTypeErrorResponse,
   CalendlyEventTypeSuccessResponse,
   CalendlyScheduledEvent,
   CalendlyScheduledEventSuccessResponse,
-  CalendlyScheduledEventErrorResponse,
   CalendlyScheduledEventInvitee,
   CalendlyScheduledEventInviteeSuccessResponse,
-  CalendlyScheduledEventInviteeErrorResponse,
-  CalendlyUserAvailabilitySchedulesErrorResponse,
   CalendlyUserAvailabilitySchedulesSuccessResponse,
   CalendlyUserAvailabilitySchedules,
 } from "../types";
+
+const waitTime = 65000; //1min 5 seconds
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "4mb",
+    },
+  },
+};
 
 export default class CalendlyAPIService {
   private apiConfig: {
@@ -79,35 +87,61 @@ export default class CalendlyAPIService {
     }
   };
 
-  getUserEventTypes = async (userUri: string, active = true): Promise<CalendlyEventType[]> => {
-    const handleError = (res: AxiosResponse<any, any>, context: string) => {
-      const data = res.data as CalendlyEventTypeErrorResponse;
-      console.error(`${context}: ${data.message}`);
-      throw new Error(`${context}: ${data.message}`);
-    };
-
+  getUserEventTypes = async ({
+    userUri,
+    active,
+    step,
+  }: {
+    userUri: string;
+    active: boolean;
+    step: ReturnType<typeof createStepTools>;
+  }): Promise<CalendlyEventType[]> => {
     try {
-      let queryParams = `user=${userUri}`;
-      if (active) queryParams += `&active=${active}`;
+      const queryParams = `user=${userUri}`;
+      // if (active) queryParams += `&active=${active}`;
       const url = `/event_types?${queryParams}`;
-      const res = await this.request.get(url, this.requestConfiguration());
-      if (this._isRequestResponseOk(res)) {
-        const data = res.data as CalendlyEventTypeSuccessResponse;
-        let allEventTypes: CalendlyEventType[] = [...data.collection];
-        let next_page = data.pagination.next_page;
-        while (next_page) {
-          const res = await this.request.get(next_page, this.requestConfiguration());
-          if (!this._isRequestResponseOk(res)) {
-            handleError(res, "Error fetching user event types:");
+      let page = 1;
+      const res = await step.run(`Fetch Event Types from Calendly Page ${page}`, async () => {
+        try {
+          return (await this.request.get(url, this.requestConfiguration())).data;
+        } catch (e) {
+          if (e.response.status === 429) {
+            throw new RetryAfterError(
+              `RetryError - getUserEventTypes: ${e instanceof Error ? e.message : e}`,
+              waitTime
+            );
           }
-          const newData = res.data as CalendlyEventTypeSuccessResponse;
-          allEventTypes = [...allEventTypes, ...newData.collection];
-          next_page = newData.pagination.next_page;
+          throw new NonRetriableError(
+            `NonRetriableError - getUserEventTypes: ${e instanceof Error ? e.message : e}`
+          );
         }
-        return allEventTypes;
-      } else {
-        handleError(res, "Error fetching user event types:");
+      });
+
+      const data = res as CalendlyEventTypeSuccessResponse;
+      let allEventTypes: CalendlyEventType[] = [...data.collection];
+      let next_page = data.pagination.next_page;
+      while (next_page) {
+        page++;
+        const res = await step.run(`Fetch Event Types from Calendly Page ${page}`, async () => {
+          try {
+            return (await this.request.get(next_page, this.requestConfiguration())).data;
+          } catch (e) {
+            if (e.response.status === 429) {
+              throw new RetryAfterError(
+                `RetryError - getUserEventTypes: ${e instanceof Error ? e.message : e}`,
+                waitTime
+              );
+            }
+            throw new NonRetriableError(
+              `NonRetriableError - getUserEventTypes: ${e instanceof Error ? e.message : e}`
+            );
+          }
+        });
+        const newData = res as CalendlyEventTypeSuccessResponse;
+        allEventTypes = [...allEventTypes, ...newData.collection];
+        next_page = newData.pagination.next_page;
       }
+      return allEventTypes;
     } catch (e) {
       e instanceof Error
         ? console.error("Internal server error:", e.message)
@@ -129,6 +163,7 @@ export default class CalendlyAPIService {
     status,
     maxStartTime,
     minStartTime,
+    step,
   }: {
     userUri: string;
     count?: number;
@@ -136,44 +171,61 @@ export default class CalendlyAPIService {
     status?: string;
     maxStartTime?: string;
     minStartTime?: string;
+    step: ReturnType<typeof createStepTools>;
   }): Promise<CalendlyScheduledEvent[]> => {
-    const handleError = (res: AxiosResponse<any, any>, context: string) => {
-      const data = res.data as CalendlyScheduledEventErrorResponse;
-      console.error(`${context}: ${data.message}`);
-      throw new Error(`${context}: ${data.message}`);
-    };
-
     try {
-      let queryParams = [`user=${userUri}`, `count=${count || 10}`, `sort=start_time:asc`].join("&");
-
+      let queryParams = [`user=${userUri}`, `count=${count || 99}`, `sort=start_time:asc`].join("&");
+      let page = 1;
       if (pageToken) queryParams += `&page_token=${pageToken}`;
       if (status) queryParams += `&status=${status}`;
       if (maxStartTime) queryParams += `&max_start_time=${maxStartTime}`;
       if (minStartTime) queryParams += `&min_start_time=${minStartTime}`;
 
       const url = `/scheduled_events?${queryParams}`;
-      const res = await this.request.get(url, this.requestConfiguration());
-
-      if (this._isRequestResponseOk(res)) {
-        const data = res.data as CalendlyScheduledEventSuccessResponse;
-        let allScheduledEvents: CalendlyScheduledEvent[] = [...data.collection];
-        let next_page: string | null = data?.pagination?.next_page ?? null;
-
-        while (next_page) {
-          const res = await this.request.get(next_page, this.requestConfiguration());
-          if (!this._isRequestResponseOk(res)) {
-            handleError(res, "Error fetching scheduled events:");
+      const res = await step.run(`Fetch Bookings from Calendly Page ${page}`, async () => {
+        try {
+          return (await this.request.get(url, this.requestConfiguration())).data;
+        } catch (e) {
+          if (e.response.status === 429) {
+            throw new RetryAfterError(
+              `RetryError - getUserScheduledEvents: ${e instanceof Error ? e.message : e}`,
+              waitTime
+            );
           }
-
-          const newData = res.data as CalendlyScheduledEventSuccessResponse;
-          allScheduledEvents = [...allScheduledEvents, ...newData.collection];
-          next_page = newData.pagination.next_page;
+          throw new NonRetriableError(
+            `NonRetriableError - getUserScheduledEvents: ${e instanceof Error ? e.message : e}`
+          );
         }
+      });
 
-        return allScheduledEvents;
-      } else {
-        handleError(res, "Error fetching scheduled events:");
+      const data = res as CalendlyScheduledEventSuccessResponse;
+      let allScheduledEvents: CalendlyScheduledEvent[] = [...data.collection];
+      let next_page: string | null = data?.pagination?.next_page ?? null;
+
+      while (next_page) {
+        page++;
+        const res = await step.run(`Fetch Bookings from Calendly Page ${page}`, async () => {
+          try {
+            return (await this.request.get(next_page, this.requestConfiguration())).data;
+          } catch (e) {
+            if (e.response.status === 429) {
+              throw new RetryAfterError(
+                `RetryError - getUserScheduledEvents: ${e instanceof Error ? e.message : e}`,
+                waitTime
+              );
+            }
+            throw new NonRetriableError(
+              `NonRetriableError - getUserEventTypes: ${e instanceof Error ? e.message : e}`
+            );
+          }
+        });
+
+        const newData = res as CalendlyScheduledEventSuccessResponse;
+        allScheduledEvents = [...allScheduledEvents, ...newData.collection];
+        next_page = newData.pagination.next_page;
       }
+
+      return allScheduledEvents;
     } catch (error) {
       console.error("Internal server error:", error instanceof Error ? error.message : String(error));
       throw error;
@@ -191,44 +243,67 @@ export default class CalendlyAPIService {
     }
   };
 
-  getUserScheduledEventInvitees = async (
-    uuid: string,
-    count = 20,
-    pageToken?: string
-  ): Promise<CalendlyScheduledEventInvitee[]> => {
-    const handleError = (res: AxiosResponse<any, any>, context: string) => {
-      const data = res.data as CalendlyScheduledEventInviteeErrorResponse;
-      console.error(`${context}: ${data.message}`);
-      throw new Error(`${context}: ${data.message}`);
-    };
-
+  getUserScheduledEventInvitees = async ({
+    uuid,
+    step,
+  }: {
+    uuid: string;
+    step: ReturnType<typeof createStepTools>;
+  }): Promise<CalendlyScheduledEventInvitee[]> => {
     try {
-      let queryParams = [`count=${count}`].join("&");
-      if (pageToken) queryParams += `&page_token=${pageToken}`;
+      const count = 99;
+      const queryParams = [`count=${count}`].join("&");
+      // if (pageToken) queryParams += `&page_token=${pageToken}`;
 
       const url = `/scheduled_events/${uuid}/invitees?${queryParams}`;
-      const res = await this.request.get(url, this.requestConfiguration());
-
-      if (this._isRequestResponseOk(res)) {
-        const data = res.data as CalendlyScheduledEventInviteeSuccessResponse;
-        let allScheduledEventInvitees: CalendlyScheduledEventInvitee[] = [...data.collection];
-        let next_page = data?.pagination?.next_page;
-
-        while (next_page) {
-          const res = await this.request.get(next_page, this.requestConfiguration());
-          if (!this._isRequestResponseOk(res)) {
-            handleError(res, "Error fetching scheduled event invitees:");
+      let page = 1;
+      const res = await step.run(`Fetch booking - ${uuid} invitees page - ${page}`, async () => {
+        try {
+          return (await this.request.get(url, this.requestConfiguration())).data;
+        } catch (e) {
+          if (e.response.status === 429) {
+            throw new RetryAfterError(
+              `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
+              waitTime
+            );
           }
-
-          const newData = res.data as CalendlyScheduledEventInviteeSuccessResponse;
-          allScheduledEventInvitees = [...allScheduledEventInvitees, ...newData.collection];
-          next_page = newData.pagination.next_page;
+          throw new NonRetriableError(
+            `NonRetriableError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`
+          );
         }
+      });
 
-        return allScheduledEventInvitees;
-      } else {
-        handleError(res, "Error fetching scheduled event invitees:");
+      // const res = await this.request.get(url, this.requestConfiguration());
+
+      const data = res as CalendlyScheduledEventInviteeSuccessResponse;
+      let allScheduledEventInvitees: CalendlyScheduledEventInvitee[] = [...data.collection];
+      let next_page = data?.pagination?.next_page;
+
+      while (next_page) {
+        page++;
+        const res = await step.run(`Fetch booking - ${uuid} invitees page - ${page}`, async () => {
+          try {
+            return (await this.request.get(next_page, this.requestConfiguration())).data;
+          } catch (e) {
+            if (e.response.status === 429) {
+              throw new RetryAfterError(
+                `RetryError - getUserEventTypes: ${e instanceof Error ? e.message : e}`,
+                waitTime
+              );
+            }
+            throw new NonRetriableError(
+              `NonRetriableError - getUserEventTypes: ${e instanceof Error ? e.message : e}`
+            );
+          }
+        });
+        // const res = await this.request.get(next_page, this.requestConfiguration());
+
+        const newData = res as CalendlyScheduledEventInviteeSuccessResponse;
+        allScheduledEventInvitees = [...allScheduledEventInvitees, ...newData.collection];
+        next_page = newData.pagination.next_page;
       }
+
+      return allScheduledEventInvitees;
     } catch (error: unknown) {
       console.error("Internal server error:", error instanceof Error ? error.message : String(error));
       throw error;
@@ -267,16 +342,31 @@ export default class CalendlyAPIService {
     }
   };
 
-  getUserAvailabilitySchedules = async (userUri: string): Promise<CalendlyUserAvailabilitySchedules[]> => {
+  getUserAvailabilitySchedules = async ({
+    userUri,
+    step,
+  }: {
+    userUri: string;
+    step: ReturnType<typeof createStepTools>;
+  }): Promise<CalendlyUserAvailabilitySchedules[]> => {
     try {
       const url = `/user_availability_schedules?user=${userUri}`;
-      const res = await this.request.get(url, this.requestConfiguration());
-      if (!this._isRequestResponseOk(res)) {
-        const data = res.data as CalendlyUserAvailabilitySchedulesErrorResponse;
-        console.error("Error fetching user availability schedules:", data.message);
-        throw new Error(data.message);
-      }
-      const data = res.data as CalendlyUserAvailabilitySchedulesSuccessResponse;
+      const res = await step.run(`Fetch Availability Schedules from Calendly `, async () => {
+        try {
+          return (await this.request.get(url, this.requestConfiguration())).data;
+        } catch (e) {
+          if (e.response.status === 429) {
+            throw new RetryAfterError(
+              `RetryError - getUserAvailabilitySchedules: ${e instanceof Error ? e.message : e}`,
+              waitTime
+            );
+          }
+          throw new NonRetriableError(
+            `NonRetriableError - getUserAvailabilitySchedules: ${e instanceof Error ? e.message : e}`
+          );
+        }
+      });
+      const data = res as CalendlyUserAvailabilitySchedulesSuccessResponse;
       return data.collection;
     } catch (error) {
       console.error("Internal server error:", error instanceof Error ? error.message : String(error));
