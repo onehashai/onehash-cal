@@ -3,6 +3,9 @@ import axios from "axios";
 import { NonRetriableError, RetryAfterError } from "inngest";
 import type { createStepTools } from "inngest/components/InngestStepTools";
 
+import prisma from "@calcom/prisma";
+import { IntegrationProvider } from "@calcom/prisma/enums";
+
 import type {
   UserSuccessResponse,
   UserErrorResponse,
@@ -18,14 +21,6 @@ import type {
 
 const waitTime = 65000; //1min 5 seconds
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "4mb",
-    },
-  },
-};
-
 export default class CalendlyAPIService {
   private apiConfig: {
     accessToken: string;
@@ -33,6 +28,9 @@ export default class CalendlyAPIService {
     clientSecret: string;
     clientID: string;
     oauthUrl: string;
+    userId: number;
+    createdAt: number;
+    expiresIn: number;
   };
   private request: AxiosInstance;
 
@@ -42,9 +40,12 @@ export default class CalendlyAPIService {
     clientSecret: string;
     clientID: string;
     oauthUrl: string;
+    userId: number;
+    createdAt: number;
+    expiresIn: number;
   }) {
-    const { accessToken, refreshToken, clientSecret, clientID, oauthUrl } = apiConfig;
-    if (!accessToken || !refreshToken || !clientSecret || !clientID || !oauthUrl)
+    const { accessToken, refreshToken, clientSecret, clientID, oauthUrl, userId } = apiConfig;
+    if (!accessToken || !refreshToken || !clientSecret || !clientID || !oauthUrl || !userId)
       throw new Error("Missing Calendly API configuration");
     this.apiConfig = {
       accessToken,
@@ -52,19 +53,57 @@ export default class CalendlyAPIService {
       clientSecret,
       clientID,
       oauthUrl,
+      userId,
+      createdAt: apiConfig.createdAt,
+      expiresIn: apiConfig.expiresIn,
     };
     this.request = axios.create({
       baseURL: "https://api.calendly.com",
     });
   }
 
-  requestConfiguration() {
-    const { accessToken } = this.apiConfig;
+  async requestConfiguration() {
+    const { accessToken, createdAt, expiresIn } = this.apiConfig;
+    const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
+    if (isTokenExpired) {
+      const apiConfig = await this.refreshAccessToken();
+      return {
+        headers: {
+          Authorization: `Bearer ${apiConfig.accessToken}`,
+        },
+      };
+    }
     return {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
     };
+  }
+
+  private async refreshAccessToken() {
+    const res = await this.requestNewAccessToken();
+    const data = res.data;
+
+    const updatedDoc = await prisma.integrationAccounts.update({
+      where: {
+        userId_provider: {
+          userId: this.apiConfig.userId,
+          provider: IntegrationProvider.CALENDLY,
+        },
+      },
+      data: {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: data.expires_in,
+        createdAt: data.created_at,
+      },
+    });
+
+    this.apiConfig.accessToken = updatedDoc.accessToken;
+    this.apiConfig.refreshToken = updatedDoc.refreshToken;
+    this.apiConfig.createdAt = updatedDoc.createdAt;
+    this.apiConfig.expiresIn = updatedDoc.expiresIn;
+    return this.apiConfig;
   }
 
   /**
@@ -74,7 +113,7 @@ export default class CalendlyAPIService {
    */
   getUserInfo = async (): Promise<UserSuccessResponse | UserErrorResponse> => {
     try {
-      const res = await this.request.get("/users/me", this.requestConfiguration());
+      const res = await this.request.get("/users/me", await this.requestConfiguration());
       if (!this._isRequestResponseOk(res)) {
         const errorData: UserErrorResponse = res.data;
         console.error("Error fetching user info:", errorData.title, errorData.message);
@@ -103,7 +142,7 @@ export default class CalendlyAPIService {
       let page = 1;
       const res = await step.run(`Fetch Event Types from Calendly Page ${page}`, async () => {
         try {
-          return (await this.request.get(url, this.requestConfiguration())).data;
+          return (await this.request.get(url, await this.requestConfiguration())).data;
         } catch (e) {
           if (e.response.status === 429) {
             throw new RetryAfterError(
@@ -124,7 +163,7 @@ export default class CalendlyAPIService {
         page++;
         const res = await step.run(`Fetch Event Types from Calendly Page ${page}`, async () => {
           try {
-            return (await this.request.get(next_page, this.requestConfiguration())).data;
+            return (await this.request.get(next_page, await this.requestConfiguration())).data;
           } catch (e) {
             if (e.response.status === 429) {
               throw new RetryAfterError(
@@ -151,7 +190,7 @@ export default class CalendlyAPIService {
   };
 
   getUserEventType = async (uuid: string) => {
-    const { data } = await this.request.get(`/event_types/${uuid}`, this.requestConfiguration());
+    const { data } = await this.request.get(`/event_types/${uuid}`, await this.requestConfiguration());
 
     return data;
   };
@@ -184,7 +223,7 @@ export default class CalendlyAPIService {
       const url = `/scheduled_events?${queryParams}`;
       const res = await step.run(`Fetch Bookings from Calendly Page ${page}`, async () => {
         try {
-          return (await this.request.get(url, this.requestConfiguration())).data;
+          return (await this.request.get(url, await this.requestConfiguration())).data;
         } catch (e) {
           if (e.response.status === 429) {
             throw new RetryAfterError(
@@ -192,6 +231,11 @@ export default class CalendlyAPIService {
               waitTime
             );
           }
+          //  else if (e.response.status === 401) {
+          //   //refresh access token
+          //   await this.refreshAccessToken(); //updates the tokens in `await this.requestConfiguration()`.
+          //   throw new Error(`Token expired ,so retrying with fresh token`);
+          // }
           throw new NonRetriableError(
             `NonRetriableError - getUserScheduledEvents: ${e instanceof Error ? e.message : e}`
           );
@@ -206,7 +250,7 @@ export default class CalendlyAPIService {
         page++;
         const res = await step.run(`Fetch Bookings from Calendly Page ${page}`, async () => {
           try {
-            return (await this.request.get(next_page, this.requestConfiguration())).data;
+            return (await this.request.get(next_page, await this.requestConfiguration())).data;
           } catch (e) {
             if (e.response.status === 429) {
               throw new RetryAfterError(
@@ -234,7 +278,7 @@ export default class CalendlyAPIService {
 
   getUserScheduledEvent = async (uuid: string) => {
     try {
-      const { data } = await this.request.get(`/scheduled_events/${uuid}`, this.requestConfiguration());
+      const { data } = await this.request.get(`/scheduled_events/${uuid}`, await this.requestConfiguration());
 
       return data;
     } catch (error) {
@@ -259,7 +303,7 @@ export default class CalendlyAPIService {
       let page = 1;
       const res = await step.run(`Fetch booking - ${uuid} invitees page - ${page}`, async () => {
         try {
-          return (await this.request.get(url, this.requestConfiguration())).data;
+          return (await this.request.get(url, await this.requestConfiguration())).data;
         } catch (e) {
           if (e.response.status === 429) {
             throw new RetryAfterError(
@@ -273,7 +317,7 @@ export default class CalendlyAPIService {
         }
       });
 
-      // const res = await this.request.get(url, this.requestConfiguration());
+      // const res = await this.request.get(url, await this.requestConfiguration());
 
       const data = res as CalendlyScheduledEventInviteeSuccessResponse;
       let allScheduledEventInvitees: CalendlyScheduledEventInvitee[] = [...data.collection];
@@ -283,7 +327,7 @@ export default class CalendlyAPIService {
         page++;
         const res = await step.run(`Fetch booking - ${uuid} invitees page - ${page}`, async () => {
           try {
-            return (await this.request.get(next_page, this.requestConfiguration())).data;
+            return (await this.request.get(next_page, await this.requestConfiguration())).data;
           } catch (e) {
             if (e.response.status === 429) {
               throw new RetryAfterError(
@@ -296,7 +340,7 @@ export default class CalendlyAPIService {
             );
           }
         });
-        // const res = await this.request.get(next_page, this.requestConfiguration());
+        // const res = await this.request.get(next_page, await this.requestConfiguration());
 
         const newData = res as CalendlyScheduledEventInviteeSuccessResponse;
         allScheduledEventInvitees = [...allScheduledEventInvitees, ...newData.collection];
@@ -318,7 +362,7 @@ export default class CalendlyAPIService {
 
       const url = `/event_type_available_times?${queryParams}`;
 
-      const { data } = await this.request.get(url, this.requestConfiguration());
+      const { data } = await this.request.get(url, await this.requestConfiguration());
 
       return data;
     } catch (error: unknown) {
@@ -333,7 +377,7 @@ export default class CalendlyAPIService {
 
       const url = `/user_busy_times?${queryParams}`;
 
-      const { data } = await this.request.get(url, this.requestConfiguration());
+      const { data } = await this.request.get(url, await this.requestConfiguration());
 
       return data;
     } catch (error: unknown) {
@@ -353,7 +397,7 @@ export default class CalendlyAPIService {
       const url = `/user_availability_schedules?user=${userUri}`;
       const res = await step.run(`Fetch Availability Schedules from Calendly `, async () => {
         try {
-          return (await this.request.get(url, this.requestConfiguration())).data;
+          return (await this.request.get(url, await this.requestConfiguration())).data;
         } catch (e) {
           if (e.response.status === 429) {
             throw new RetryAfterError(
@@ -378,7 +422,7 @@ export default class CalendlyAPIService {
     try {
       const url = `/users/${userUri}`;
 
-      const res = await this.request.get(url, this.requestConfiguration());
+      const res = await this.request.get(url, await this.requestConfiguration());
       if (this._isRequestResponseOk(res)) {
         const data = res.data as UserSuccessResponse;
         return data;
@@ -399,7 +443,7 @@ export default class CalendlyAPIService {
         {
           invitee: uri,
         },
-        this.requestConfiguration()
+        await this.requestConfiguration()
       );
 
       return data;
@@ -411,7 +455,7 @@ export default class CalendlyAPIService {
 
   undoNoShow = async (inviteeUuid: string) => {
     try {
-      await this.request.delete(`/invitee_no_shows/${inviteeUuid}`, this.requestConfiguration());
+      await this.request.delete(`/invitee_no_shows/${inviteeUuid}`, await this.requestConfiguration());
     } catch (error) {
       console.error("Internal server error:", error instanceof Error ? error.message : String(error));
       throw error;
@@ -425,7 +469,7 @@ export default class CalendlyAPIService {
         {
           reason: reason,
         },
-        this.requestConfiguration()
+        await this.requestConfiguration()
       );
 
       return data;

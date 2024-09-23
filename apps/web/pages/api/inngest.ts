@@ -10,8 +10,9 @@ const key = INNGEST_ID === "onehash-cal" ? "prod" : "stag";
 
 export const config = {
   api: {
+    responseLimit: false,
     bodyParser: {
-      sizeLimit: "4mb",
+      sizeLimit: "8mb",
     },
   },
 };
