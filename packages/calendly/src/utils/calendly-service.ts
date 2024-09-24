@@ -66,6 +66,7 @@ export default class CalendlyAPIService {
     const { accessToken, createdAt, expiresIn } = this.apiConfig;
     const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
     if (isTokenExpired) {
+
       const freshAccessToken = await this.refreshAccessToken();
       return {
         headers: {
@@ -295,6 +296,7 @@ export default class CalendlyAPIService {
             const response = await this.request.get(url, await this.requestConfiguration());
             return response.data;
           } catch (e) {
+            if(e.response){
             if (e.response.status === 429 || e.response.status === 520) {
               throw new RetryAfterError(
                 `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
@@ -306,7 +308,7 @@ export default class CalendlyAPIService {
                 `RetryError - getUserScheduledEventInvitees: Status 400- URL (${url})`,
                 waitTime
               );
-            }
+            }}
             throw new NonRetriableError(
               `NonRetriableError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`
             );
@@ -454,9 +456,6 @@ export default class CalendlyAPIService {
     try {
       const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
 
-      if (!clientSecret) {
-        throw new Error("Client Secret is required to request new access token");
-      }
       const url = `${oauthUrl}/token`;
       const postData = {
         client_id: clientID,
@@ -474,7 +473,7 @@ export default class CalendlyAPIService {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(`Error refreshing access token: ${errorData.message}`);
+        throw new Error(`Bhai dikkat line 475 mai hai ,Error refreshing access token: ${errorData.error_description}`);
       }
       const data = await res.json();
       return data;
