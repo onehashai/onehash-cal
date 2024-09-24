@@ -472,6 +472,10 @@ export default class CalendlyAPIService {
         body: new URLSearchParams(postData),
       });
 
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`Error refreshing access token: ${errorData.message}`);
+      }
       const data = await res.json();
       return data;
     } catch (e) {

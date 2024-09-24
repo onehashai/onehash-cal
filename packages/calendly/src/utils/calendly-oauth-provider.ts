@@ -135,6 +135,11 @@ export default class CalendlyOAuthProvider {
         body: new URLSearchParams(postData),
       });
 
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`Error refreshing access token: ${errorData.message}`);
+      }
+
       const data: AccessTokenSuccessResponse = await res.json();
       return data;
     } catch (e) {
