@@ -100,10 +100,17 @@ export default class CalendlyAPIService {
       },
     });
 
+
+    const accessToken= this.apiConfig.accessToken;
+    const refreshToken=this.apiConfig.refreshToken;
+    const createdAt=this.apiConfig.createdAt;
+
+    const expiresIn= this.apiConfig.expiresIn;
     this.apiConfig.accessToken = updatedDoc.accessToken;
     this.apiConfig.refreshToken = updatedDoc.refreshToken;
     this.apiConfig.createdAt = updatedDoc.createdAt;
     this.apiConfig.expiresIn = updatedDoc.expiresIn;
+    throw new Error(`Line110 accessToken-${accessToken===this.apiConfig.accessToken}--refreshToken-${refreshToken===this.apiConfig.refreshToken}--createdAt-${createdAt===this.apiConfig.createdAt}`)
     return updatedDoc.accessToken;
   }
 
