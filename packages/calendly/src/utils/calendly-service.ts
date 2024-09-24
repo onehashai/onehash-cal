@@ -65,7 +65,10 @@ export default class CalendlyAPIService {
   async requestConfiguration() {
     const { accessToken, createdAt, expiresIn } = this.apiConfig;
     const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
-    if (isTokenExpired) {
+    if (isTokenExpired || true) {
+      const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
+
+      throw new Error(`oauthUrl-${oauthUrl}--clientID-${clientID}--clientSecret-${clientSecret}--refreshToken-${refreshToken}`)
 
       const freshAccessToken = await this.refreshAccessToken();
       return {
