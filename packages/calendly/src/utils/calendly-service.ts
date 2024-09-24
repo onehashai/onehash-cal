@@ -65,10 +65,8 @@ export default class CalendlyAPIService {
   async requestConfiguration() {
     const { accessToken, createdAt, expiresIn } = this.apiConfig;
     const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
-    if (isTokenExpired || true) {
-      const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
+    if (isTokenExpired ||true) {
 
-      throw new Error(`oauthUrl-${oauthUrl}--clientID-${clientID}--clientSecret-${clientSecret}--refreshToken-${refreshToken}`)
 
       const freshAccessToken = await this.refreshAccessToken();
       return {
@@ -461,8 +459,8 @@ export default class CalendlyAPIService {
 
       const url = `${oauthUrl}/token`;
       const postData = {
-        client_id: clientID,
-        client_secret: clientSecret,
+        client_id: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
+        client_secret: process.env.CALENDLY_CLIENT_SECRET ?? "",
         grant_type: "refresh_token",
         refresh_token: refreshToken,
       };
