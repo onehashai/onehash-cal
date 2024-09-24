@@ -121,7 +121,7 @@ export default class CalendlyAPIService {
       try {
         return (await this.request.get(url, await this.requestConfiguration())).data;
       } catch (e) {
-        if (e.response && (e.response.status === 429 || e.response.status === 520 || || e.response.status === 400)) {
+        if (e.response && (e.response.status === 429 || e.response.status === 520 || e.response.status === 400)) {
           throw new RetryAfterError(
             `RetryError - ${fnName}: ${e instanceof Error ? e.message : e}`,
             waitTime
