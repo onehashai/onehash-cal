@@ -118,7 +118,7 @@ export default class CalendlyOAuthProvider {
     try {
       const { oauthUrl, clientId, clientSecret } = this.oauthConfig;
       if (!clientSecret) {
-        throw new Error("Client Secret is required to introspect token");
+        throw new Error("Client Secret is required to request new access token");
       }
       const url = `${oauthUrl}/token`;
       const postData = {

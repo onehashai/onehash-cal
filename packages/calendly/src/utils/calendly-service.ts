@@ -81,8 +81,7 @@ export default class CalendlyAPIService {
   }
 
   private async refreshAccessToken() {
-    const res = await this.requestNewAccessToken();
-    const data = res.data;
+    const data = await this.requestNewAccessToken();
 
     const updatedDoc = await prisma.integrationAccounts.update({
       where: {
@@ -121,7 +120,7 @@ export default class CalendlyAPIService {
       try {
         return (await this.request.get(url, await this.requestConfiguration())).data;
       } catch (e) {
-        if (e.response && (e.response.status === 429 || e.response.status === 520 || e.response.status === 400)) {
+        if (e.response && (e.response.status === 429 || e.response.status === 520 )) {
           throw new RetryAfterError(
             `RetryError - ${fnName}: ${e instanceof Error ? e.message : e}`,
             waitTime
@@ -296,9 +295,15 @@ export default class CalendlyAPIService {
             const response = await this.request.get(url, await this.requestConfiguration());
             return response.data;
           } catch (e) {
-            if (e.response.status === 429 || e.response.status === 520|| e.response.status === 400) {
+            if (e.response.status === 429 || e.response.status === 520) {
               throw new RetryAfterError(
                 `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
+                waitTime
+              );
+            }
+            if (e.response.status === 400) {
+              throw new RetryAfterError(
+                `RetryError - getUserScheduledEventInvitees: Status 400- URL (${url})`,
                 waitTime
               );
             }
@@ -445,24 +450,36 @@ export default class CalendlyAPIService {
     }
   };
 
-  requestNewAccessToken = () => {
-    const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
+  requestNewAccessToken = async () => {
+    try {
+      const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
 
-    return axios.post(
-      `${oauthUrl}/token`,
-      {
+      if (!clientSecret) {
+        throw new Error("Client Secret is required to request new access token");
+      }
+      const url = `${oauthUrl}/token`;
+      const postData = {
         client_id: clientID,
         client_secret: clientSecret,
         grant_type: "refresh_token",
         refresh_token: refreshToken,
-      },
-      {
+      };
+      const res = await fetch(url, {
+        method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-      }
-    );
+        body: new URLSearchParams(postData),
+      });
+
+      const data = await res.json();
+      return data;
+    } catch (e) {
+      console.error("Error refreshing access token:", e);
+      throw e;
+    }
   };
+
   _isRequestResponseOk(response: AxiosResponse) {
     return response.status >= 200 && response.status < 300;
   }
