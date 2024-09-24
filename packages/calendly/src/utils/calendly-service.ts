@@ -459,8 +459,8 @@ export default class CalendlyAPIService {
 
       const url = `${oauthUrl}/token`;
       const postData = {
-        client_id: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-        client_secret: process.env.CALENDLY_CLIENT_SECRET ?? "",
+        client_id: clientID,
+        client_secret: clientSecret,
         grant_type: "refresh_token",
         refresh_token: refreshToken,
       };
@@ -474,7 +474,7 @@ export default class CalendlyAPIService {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(`Bhai dikkat line 475 mai hai ,Error refreshing access token: ${errorData.error_description}`);
+        throw new Error(`Line475 oauthUrl-${oauthUrl}--clientID-${clientID}--clientSecret-${clientSecret}--refreshToken-${refreshToken}`)
       }
       const data = await res.json();
       return data;
