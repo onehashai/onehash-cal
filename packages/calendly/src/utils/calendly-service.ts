@@ -65,13 +65,13 @@ export default class CalendlyAPIService {
   async requestConfiguration() {
     const { accessToken, createdAt, expiresIn } = this.apiConfig;
     const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
-    if (isTokenExpired ||true) {
+    if (isTokenExpired || true) {
 
 
-      const freshAccessToken = await this.refreshAccessToken();
+      await this.refreshAccessToken();
       return {
         headers: {
-          Authorization: `Bearer ${freshAccessToken}`,
+          Authorization: `Bearer ${this.apiConfig.accessToken}`,
         },
       };
     }
@@ -85,33 +85,31 @@ export default class CalendlyAPIService {
   private async refreshAccessToken() {
     const data = await this.requestNewAccessToken();
 
-    const updatedDoc = await prisma.integrationAccounts.update({
-      where: {
-        userId_provider: {
-          userId: this.apiConfig.userId,
-          provider: IntegrationProvider.CALENDLY,
-        },
-      },
-      data: {
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token,
-        expiresIn: data.expires_in,
-        createdAt: data.created_at,
-      },
-    });
+    // const updatedDoc = await prisma.integrationAccounts.update({
+    //   where: {
+    //     userId_provider: {
+    //       userId: this.apiConfig.userId,
+    //       provider: IntegrationProvider.CALENDLY,
+    //     },
+    //   },
+    //   data: {
+    //     accessToken: data.access_token,
+    //     refreshToken: data.refresh_token,
+    //     expiresIn: data.expires_in,
+    //     createdAt: data.created_at,
+    //   },
+    // });
 
 
-    const accessToken= this.apiConfig.accessToken;
-    const refreshToken=this.apiConfig.refreshToken;
-    const createdAt=this.apiConfig.createdAt;
 
-    const expiresIn= this.apiConfig.expiresIn;
-    this.apiConfig.accessToken = updatedDoc.accessToken;
-    this.apiConfig.refreshToken = updatedDoc.refreshToken;
-    this.apiConfig.createdAt = updatedDoc.createdAt;
-    this.apiConfig.expiresIn = updatedDoc.expiresIn;
-    throw new Error(`Line110 accessToken-${accessToken===this.apiConfig.accessToken}--refreshToken-${refreshToken===this.apiConfig.refreshToken}--createdAt-${createdAt===this.apiConfig.createdAt}`)
-    return updatedDoc.accessToken;
+    this.apiConfig = {
+      ...this.apiConfig,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      createdAt: data.created_at,
+      expiresIn: data.expires_in
+    }
+
   }
 
   private async fetchDataWithRetry({
@@ -129,7 +127,7 @@ export default class CalendlyAPIService {
       try {
         return (await this.request.get(url, await this.requestConfiguration())).data;
       } catch (e) {
-        if (e.response && (e.response.status === 429 || e.response.status === 520 )) {
+        if (e.response && (e.response.status === 429 || e.response.status === 520)) {
           throw new RetryAfterError(
             `RetryError - ${fnName}: ${e instanceof Error ? e.message : e}`,
             waitTime
@@ -304,19 +302,20 @@ export default class CalendlyAPIService {
             const response = await this.request.get(url, await this.requestConfiguration());
             return response.data;
           } catch (e) {
-            if(e.response){
-            if (e.response.status === 429 || e.response.status === 520) {
-              throw new RetryAfterError(
-                `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
-                waitTime
-              );
+            if (e.response) {
+              if (e.response.status === 429 || e.response.status === 520) {
+                throw new RetryAfterError(
+                  `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
+                  waitTime
+                );
+              }
+              if (e.response.status === 400) {
+                throw new RetryAfterError(
+                  `RetryError - getUserScheduledEventInvitees: Status 400- URL (${url})`,
+                  waitTime
+                );
+              }
             }
-            if (e.response.status === 400) {
-              throw new RetryAfterError(
-                `RetryError - getUserScheduledEventInvitees: Status 400- URL (${url})`,
-                waitTime
-              );
-            }}
             throw new NonRetriableError(
               `NonRetriableError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`
             );
