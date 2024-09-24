@@ -66,10 +66,10 @@ export default class CalendlyAPIService {
     const { accessToken, createdAt, expiresIn } = this.apiConfig;
     const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
     if (isTokenExpired) {
-      const apiConfig = await this.refreshAccessToken();
+      const freshAccessToken = await this.refreshAccessToken();
       return {
         headers: {
-          Authorization: `Bearer ${apiConfig.accessToken}`,
+          Authorization: `Bearer ${freshAccessToken}`,
         },
       };
     }
@@ -103,7 +103,35 @@ export default class CalendlyAPIService {
     this.apiConfig.refreshToken = updatedDoc.refreshToken;
     this.apiConfig.createdAt = updatedDoc.createdAt;
     this.apiConfig.expiresIn = updatedDoc.expiresIn;
-    return this.apiConfig;
+    return updatedDoc.accessToken;
+  }
+
+  private async fetchDataWithRetry({
+    title,
+    url,
+    fnName,
+    step,
+  }: {
+    title: string;
+    url: string;
+    fnName: string;
+    step: ReturnType<typeof createStepTools>;
+  }) {
+    const res = await step.run(title, async () => {
+      try {
+        return (await this.request.get(url, await this.requestConfiguration())).data;
+      } catch (e) {
+        if (e.response && (e.response.status === 429 || e.response.status === 520)) {
+          throw new RetryAfterError(
+            `RetryError - ${fnName}: ${e instanceof Error ? e.message : e}`,
+            waitTime
+          );
+        }
+        throw new NonRetriableError(`NonRetriableError - ${fnName}: ${e instanceof Error ? e.message : e}`);
+      }
+    });
+
+    return res;
   }
 
   /**
@@ -140,20 +168,11 @@ export default class CalendlyAPIService {
       // if (active) queryParams += `&active=${active}`;
       const url = `/event_types?${queryParams}`;
       let page = 1;
-      const res = await step.run(`Fetch Event Types from Calendly Page ${page}`, async () => {
-        try {
-          return (await this.request.get(url, await this.requestConfiguration())).data;
-        } catch (e) {
-          if (e.response.status === 429) {
-            throw new RetryAfterError(
-              `RetryError - getUserEventTypes: ${e instanceof Error ? e.message : e}`,
-              waitTime
-            );
-          }
-          throw new NonRetriableError(
-            `NonRetriableError - getUserEventTypes: ${e instanceof Error ? e.message : e}`
-          );
-        }
+      const res = await this.fetchDataWithRetry({
+        title: `Fetch Event Types from Calendly Page ${page}`,
+        url,
+        fnName: "getUserEventTypes",
+        step,
       });
 
       const data = res as CalendlyEventTypeSuccessResponse;
@@ -161,20 +180,11 @@ export default class CalendlyAPIService {
       let next_page = data.pagination.next_page;
       while (next_page) {
         page++;
-        const res = await step.run(`Fetch Event Types from Calendly Page ${page}`, async () => {
-          try {
-            return (await this.request.get(next_page, await this.requestConfiguration())).data;
-          } catch (e) {
-            if (e.response.status === 429) {
-              throw new RetryAfterError(
-                `RetryError - getUserEventTypes: ${e instanceof Error ? e.message : e}`,
-                waitTime
-              );
-            }
-            throw new NonRetriableError(
-              `NonRetriableError - getUserEventTypes: ${e instanceof Error ? e.message : e}`
-            );
-          }
+        const res = await this.fetchDataWithRetry({
+          title: `Fetch Event Types from Calendly Page ${page}`,
+          url: next_page,
+          fnName: "getUserEventTypes",
+          step,
         });
         const newData = res as CalendlyEventTypeSuccessResponse;
         allEventTypes = [...allEventTypes, ...newData.collection];
@@ -221,25 +231,11 @@ export default class CalendlyAPIService {
       if (minStartTime) queryParams += `&min_start_time=${minStartTime}`;
 
       const url = `/scheduled_events?${queryParams}`;
-      const res = await step.run(`Fetch Bookings from Calendly Page ${page}`, async () => {
-        try {
-          return (await this.request.get(url, await this.requestConfiguration())).data;
-        } catch (e) {
-          if (e.response.status === 429) {
-            throw new RetryAfterError(
-              `RetryError - getUserScheduledEvents: ${e instanceof Error ? e.message : e}`,
-              waitTime
-            );
-          }
-          //  else if (e.response.status === 401) {
-          //   //refresh access token
-          //   await this.refreshAccessToken(); //updates the tokens in `await this.requestConfiguration()`.
-          //   throw new Error(`Token expired ,so retrying with fresh token`);
-          // }
-          throw new NonRetriableError(
-            `NonRetriableError - getUserScheduledEvents: ${e instanceof Error ? e.message : e}`
-          );
-        }
+      const res = await this.fetchDataWithRetry({
+        title: `Fetch Bookings from Calendly Page ${page}`,
+        url,
+        fnName: "getUserScheduledEvents",
+        step,
       });
 
       const data = res as CalendlyScheduledEventSuccessResponse;
@@ -248,20 +244,11 @@ export default class CalendlyAPIService {
 
       while (next_page) {
         page++;
-        const res = await step.run(`Fetch Bookings from Calendly Page ${page}`, async () => {
-          try {
-            return (await this.request.get(next_page, await this.requestConfiguration())).data;
-          } catch (e) {
-            if (e.response.status === 429) {
-              throw new RetryAfterError(
-                `RetryError - getUserScheduledEvents: ${e instanceof Error ? e.message : e}`,
-                waitTime
-              );
-            }
-            throw new NonRetriableError(
-              `NonRetriableError - getUserEventTypes: ${e instanceof Error ? e.message : e}`
-            );
-          }
+        const res = await this.fetchDataWithRetry({
+          title: `Fetch Bookings from Calendly Page ${page}`,
+          url: next_page,
+          fnName: "getUserScheduledEvents",
+          step,
         });
 
         const newData = res as CalendlyScheduledEventSuccessResponse;
@@ -286,72 +273,60 @@ export default class CalendlyAPIService {
       throw error;
     }
   };
-
   getUserScheduledEventInvitees = async ({
-    uuid,
+    uuids,
+    batch,
     step,
   }: {
-    uuid: string;
+    uuids: string[];
+    batch: number;
     step: ReturnType<typeof createStepTools>;
-  }): Promise<CalendlyScheduledEventInvitee[]> => {
-    try {
+  }): Promise<{ uuid: string; invitees: CalendlyScheduledEventInvitee[] }[]> => {
+    const data = await step.run(`Fetch invitees for bookings batch - ${batch}`, async () => {
       const count = 99;
-      const queryParams = [`count=${count}`].join("&");
-      // if (pageToken) queryParams += `&page_token=${pageToken}`;
+      const queryParams = `count=${count}`;
+      const results: { uuid: string; invitees: CalendlyScheduledEventInvitee[] }[] = [];
 
-      const url = `/scheduled_events/${uuid}/invitees?${queryParams}`;
-      let page = 1;
-      const res = await step.run(`Fetch booking - ${uuid} invitees page - ${page}`, async () => {
-        try {
-          return (await this.request.get(url, await this.requestConfiguration())).data;
-        } catch (e) {
-          if (e.response.status === 429) {
-            throw new RetryAfterError(
-              `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
-              waitTime
-            );
-          }
-          throw new NonRetriableError(
-            `NonRetriableError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`
-          );
-        }
-      });
+      for (const uuid of uuids) {
+        let allScheduledEventInvitees: CalendlyScheduledEventInvitee[] = [];
+        // let next_page: string;
 
-      // const res = await this.request.get(url, await this.requestConfiguration());
-
-      const data = res as CalendlyScheduledEventInviteeSuccessResponse;
-      let allScheduledEventInvitees: CalendlyScheduledEventInvitee[] = [...data.collection];
-      let next_page = data?.pagination?.next_page;
-
-      while (next_page) {
-        page++;
-        const res = await step.run(`Fetch booking - ${uuid} invitees page - ${page}`, async () => {
+        const fetchPage = async (url: string) => {
           try {
-            return (await this.request.get(next_page, await this.requestConfiguration())).data;
+            const response = await this.request.get(url, await this.requestConfiguration());
+            return response.data;
           } catch (e) {
-            if (e.response.status === 429) {
+            if (e.response.status === 429 || e.response.status === 520) {
               throw new RetryAfterError(
-                `RetryError - getUserEventTypes: ${e instanceof Error ? e.message : e}`,
+                `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
                 waitTime
               );
             }
             throw new NonRetriableError(
-              `NonRetriableError - getUserEventTypes: ${e instanceof Error ? e.message : e}`
+              `NonRetriableError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`
             );
           }
-        });
-        // const res = await this.request.get(next_page, await this.requestConfiguration());
+        };
 
-        const newData = res as CalendlyScheduledEventInviteeSuccessResponse;
-        allScheduledEventInvitees = [...allScheduledEventInvitees, ...newData.collection];
-        next_page = newData.pagination.next_page;
+        // Fetch the first page
+        const url = `/scheduled_events/${uuid}/invitees?${queryParams}`;
+        const data = (await fetchPage(url)) as CalendlyScheduledEventInviteeSuccessResponse;
+
+        allScheduledEventInvitees = [...data.collection];
+        // next_page = data?.pagination?.next_page;
+
+        // // Handle pagination
+        // while (next_page) {
+        //   const newData = (await fetchPage(next_page)) as CalendlyScheduledEventInviteeSuccessResponse;
+        //   allScheduledEventInvitees = [...allScheduledEventInvitees, ...newData.collection];
+        //   next_page = newData.pagination.next_page;
+        // }
+
+        results.push({ uuid, invitees: allScheduledEventInvitees });
       }
-
-      return allScheduledEventInvitees;
-    } catch (error: unknown) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
+      return results;
+    });
+    return data as { uuid: string; invitees: CalendlyScheduledEventInvitee[] }[];
   };
 
   getUserEventTypeAvailTimes = async (eventUri: string, startTime: string, endTime: string) => {
@@ -395,20 +370,11 @@ export default class CalendlyAPIService {
   }): Promise<CalendlyUserAvailabilitySchedules[]> => {
     try {
       const url = `/user_availability_schedules?user=${userUri}`;
-      const res = await step.run(`Fetch Availability Schedules from Calendly `, async () => {
-        try {
-          return (await this.request.get(url, await this.requestConfiguration())).data;
-        } catch (e) {
-          if (e.response.status === 429) {
-            throw new RetryAfterError(
-              `RetryError - getUserAvailabilitySchedules: ${e instanceof Error ? e.message : e}`,
-              waitTime
-            );
-          }
-          throw new NonRetriableError(
-            `NonRetriableError - getUserAvailabilitySchedules: ${e instanceof Error ? e.message : e}`
-          );
-        }
+      const res = await this.fetchDataWithRetry({
+        title: `Fetch Availability Schedules from Calendly `,
+        url,
+        fnName: "getUserAvailabilitySchedules",
+        step,
       });
       const data = res as CalendlyUserAvailabilitySchedulesSuccessResponse;
       return data.collection;
@@ -482,12 +448,20 @@ export default class CalendlyAPIService {
   requestNewAccessToken = () => {
     const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
 
-    return axios.post(`${oauthUrl}/token`, {
-      client_id: clientID,
-      client_secret: clientSecret,
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    });
+    return axios.post(
+      `${oauthUrl}/token`,
+      {
+        client_id: clientID,
+        client_secret: clientSecret,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      },
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
   };
   _isRequestResponseOk(response: AxiosResponse) {
     return response.status >= 200 && response.status < 300;

@@ -240,7 +240,7 @@ export const Generic = ({ title, description }: GenericImageProps) => (
         <div tw="flex w-[1040px]" style={{ fontFamily: "cal" }}>
           {title}
         </div>
-        <div tw="flex mt-3 w-[1040px] text-sm	" style={{ fontFamily: "inter" }}>
+        <div tw="flex mt-3 w-[1040px] text-2xl" style={{ fontFamily: "inter" }}>
           {description}
         </div>
       </div>
