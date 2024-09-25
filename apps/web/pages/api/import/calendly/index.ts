@@ -12,7 +12,6 @@ import { NonRetriableError } from "inngest";
 import type { createStepTools } from "inngest/components/InngestStepTools";
 import type { Logger } from "inngest/middleware/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
-import short from "short-uuid";
 
 import dayjs from "@calcom/dayjs";
 import { sendImportDataEmail } from "@calcom/emails";
@@ -293,9 +292,9 @@ const mergeEventTypeAndScheduledEvent = async (
   try {
     const scheduledEventsMap: Record<string, CalendlyScheduledEventWithScheduler[]> = {};
 
-    const overlappingEvent = await Promise.all(
-      scheduledEventList.map((scheduledEvent) => doesBookingOverlap(scheduledEvent, userIntID))
-    );
+    // const overlappingEvent = await Promise.all(
+    //   scheduledEventList.map((scheduledEvent) => doesBookingOverlap(scheduledEvent, userIntID))
+    // );
 
     scheduledEventList.map((scheduledEvent, index) => {
       const eventTypeURI = scheduledEvent.event_type;
@@ -304,10 +303,11 @@ const mergeEventTypeAndScheduledEvent = async (
         scheduledEventsMap[eventTypeURI] = [];
       }
 
-      const isOverlapping = !!overlappingEvent[index];
-      if (!isOverlapping) {
-        scheduledEventsMap[eventTypeURI].push(scheduledEvent);
-      }
+      // const isOverlapping = !!overlappingEvent[index];
+      // if (!isOverlapping) {
+      //   scheduledEventsMap[eventTypeURI].push(scheduledEvent);
+      // }
+      scheduledEventsMap[eventTypeURI].push(scheduledEvent);
     });
 
     return eventTypeList.map((eventType) => ({
@@ -566,8 +566,9 @@ const mapEventTypeAndBookingsToInputSchema = (
                 guests: scheduledEvent.event_guests?.map((g) => g.email),
               }
             : {};
+        const uid = scheduledEvent.uri.substring(scheduledEvent.uri.lastIndexOf("/") + 1);
         return {
-          uid: short.uuid(),
+          uid,
           user: { connect: { id: userIntID } },
           title: title,
           responses: responses,
@@ -631,21 +632,14 @@ const insertEventTypeAndBookingsToDB = async (
 
             // Create bookings only after the upsert is complete
             const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
-              return prisma.booking.create({
-                data: {
+              return prisma.booking.upsert({
+                where: { uid: scheduledEvent.uid },
+                update: {},
+                create: {
                   ...scheduledEvent,
                   eventType: { connect: { id: upsertedEventType.id } },
                 },
-                //TODO:was needed for future bookings but currently we have removed importing future bookings
                 include: {
-                  // eventType: {
-                  //   select: {
-                  //     slug: true,
-                  //     bookingFields: true,
-                  //     requiresConfirmation: true,
-                  //     id: true,
-                  //   },
-                  // },
                   attendees: {
                     select: {
                       locale: true,
@@ -654,7 +648,6 @@ const insertEventTypeAndBookingsToDB = async (
                       timeZone: true,
                     },
                   },
-                  // destinationCalendar: true,
                 },
               });
             });
