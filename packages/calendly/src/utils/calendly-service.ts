@@ -110,7 +110,7 @@ export default class CalendlyAPIService {
 
     this.apiConfig = {
       ...this.apiConfig,
-      accessToken: updatedDoc.accessToken,
+      accessToken: data.accessToken,
       refreshToken: data.refresh_token,
       createdAt: data.created_at,
       expiresIn: data.expires_in,
@@ -211,12 +211,6 @@ export default class CalendlyAPIService {
     }
   };
 
-  getUserEventType = async (uuid: string) => {
-    const { data } = await this.request.get(`/event_types/${uuid}`, await this.requestConfiguration());
-
-    return data;
-  };
-
   getUserScheduledEvents = async ({
     userUri,
     count,
@@ -275,16 +269,6 @@ export default class CalendlyAPIService {
     }
   };
 
-  getUserScheduledEvent = async (uuid: string) => {
-    try {
-      const { data } = await this.request.get(`/scheduled_events/${uuid}`, await this.requestConfiguration());
-
-      return data;
-    } catch (error) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
   getUserScheduledEventInvitees = async ({
     uuids,
     batch,
@@ -349,38 +333,6 @@ export default class CalendlyAPIService {
     return data as { uuid: string; invitees: CalendlyScheduledEventInvitee[] }[];
   };
 
-  getUserEventTypeAvailTimes = async (eventUri: string, startTime: string, endTime: string) => {
-    try {
-      const queryParams = [`start_time=${startTime}`, `end_time=${endTime}`, `event_type=${eventUri}`].join(
-        "&"
-      );
-
-      const url = `/event_type_available_times?${queryParams}`;
-
-      const { data } = await this.request.get(url, await this.requestConfiguration());
-
-      return data;
-    } catch (error: unknown) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
-
-  getUserBusyTimes = async (userUri: string, startTime: string, endTime: string) => {
-    try {
-      const queryParams = [`user=${userUri}`, `start_time=${startTime}`, `end_time=${endTime}`].join("&");
-
-      const url = `/user_busy_times?${queryParams}`;
-
-      const { data } = await this.request.get(url, await this.requestConfiguration());
-
-      return data;
-    } catch (error: unknown) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
-
   getUserAvailabilitySchedules = async ({
     userUri,
     step,
@@ -416,49 +368,6 @@ export default class CalendlyAPIService {
         const data = res.data as UserErrorResponse;
         console.error("Error fetching user info:", data.message);
       }
-    } catch (error) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
-
-  markAsNoShow = async (uri: string) => {
-    try {
-      const { data } = await this.request.post(
-        "/invitee_no_shows",
-        {
-          invitee: uri,
-        },
-        await this.requestConfiguration()
-      );
-
-      return data;
-    } catch (error) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
-
-  undoNoShow = async (inviteeUuid: string) => {
-    try {
-      await this.request.delete(`/invitee_no_shows/${inviteeUuid}`, await this.requestConfiguration());
-    } catch (error) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
-
-  cancelEvent = async (uuid: string, reason: string) => {
-    try {
-      const { data } = await this.request.post(
-        `/scheduled_events/${uuid}/cancellation`,
-        {
-          reason: reason,
-        },
-        await this.requestConfiguration()
-      );
-
-      return data;
     } catch (error) {
       console.error("Internal server error:", error instanceof Error ? error.message : String(error));
       throw error;
