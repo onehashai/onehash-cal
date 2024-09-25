@@ -85,28 +85,20 @@ export default class CalendlyAPIService {
   private async refreshAccessToken(refreshToken) {
     const data = await this.requestNewAccessToken(refreshToken);
 
-    // const updatedDoc = await prisma.integrationAccounts.update({
-    //   where: {
-    //     userId_provider: {
-    //       userId: this.apiConfig.userId,
-    //       provider: IntegrationProvider.CALENDLY,
-    //     },
-    //   },
-    //   data: {
-    //     accessToken: data.access_token,
-    //     refreshToken: data.refresh_token,
-    //     expiresIn: data.expires_in,
-    //     createdAt: data.created_at,
-    //   },
-    // });
-
-    this.apiConfig = {
-      ...this.apiConfig,
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-      createdAt: data.created_at,
-      expiresIn: data.expires_in,
-    };
+    const updatedDoc = await prisma.integrationAccounts.update({
+      where: {
+        userId_provider: {
+          userId: this.apiConfig.userId,
+          provider: IntegrationProvider.CALENDLY,
+        },
+      },
+      data: {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: data.expires_in,
+        createdAt: data.created_at,
+      },
+    });
 
     this.apiConfig = {
       ...this.apiConfig,
