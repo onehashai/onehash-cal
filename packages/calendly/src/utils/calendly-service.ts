@@ -63,15 +63,15 @@ export default class CalendlyAPIService {
   }
 
   async requestConfiguration() {
-    const { accessToken, createdAt, expiresIn } = this.apiConfig;
+    // const { accessToken, createdAt, expiresIn } = this.apiConfig;
+    const config = await this.getConfigFromDB();
+    const { accessToken, createdAt, expiresIn } = config;
     const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
-    if (isTokenExpired || true) {
-
-
-      await this.refreshAccessToken();
+    if (isTokenExpired) {
+      const updatedConfig = await this.refreshAccessToken(config.refreshToken);
       return {
         headers: {
-          Authorization: `Bearer ${this.apiConfig.accessToken}`,
+          Authorization: `Bearer ${updatedConfig.accessToken}`,
         },
       };
     }
@@ -82,8 +82,8 @@ export default class CalendlyAPIService {
     };
   }
 
-  private async refreshAccessToken() {
-    const data = await this.requestNewAccessToken();
+  private async refreshAccessToken(refreshToken) {
+    const data = await this.requestNewAccessToken(refreshToken);
 
     // const updatedDoc = await prisma.integrationAccounts.update({
     //   where: {
@@ -100,16 +100,22 @@ export default class CalendlyAPIService {
     //   },
     // });
 
-
-
     this.apiConfig = {
       ...this.apiConfig,
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       createdAt: data.created_at,
-      expiresIn: data.expires_in
-    }
+      expiresIn: data.expires_in,
+    };
 
+    this.apiConfig = {
+      ...this.apiConfig,
+      accessToken: updatedDoc.accessToken,
+      refreshToken: data.refresh_token,
+      createdAt: data.created_at,
+      expiresIn: data.expires_in,
+    };
+    return updatedDoc;
   }
 
   private async fetchDataWithRetry({
@@ -459,9 +465,25 @@ export default class CalendlyAPIService {
     }
   };
 
-  requestNewAccessToken = async () => {
+  getConfigFromDB = async () => {
     try {
-      const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
+      const userConfig = await prisma.integrationAccounts.findFirst({
+        where: {
+          userId: this.apiConfig.userId,
+          provider: IntegrationProvider.CALENDLY,
+        },
+      });
+      return userConfig;
+    } catch (error) {
+      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  };
+
+  requestNewAccessToken = async (refreshToken) => {
+    try {
+      // const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
+      const { oauthUrl, clientID, clientSecret } = this.apiConfig;
 
       const url = `${oauthUrl}/token`;
       const postData = {
@@ -480,7 +502,7 @@ export default class CalendlyAPIService {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(`Line475 oauthUrl-${oauthUrl}--clientID-${clientID}--clientSecret-${clientSecret}--refreshToken-${refreshToken}`)
+        throw new Error(`Failed to refresh token: ${errorData.error_description}`);
       }
       const data = await res.json();
       return data;

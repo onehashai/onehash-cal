@@ -137,7 +137,7 @@ export default class CalendlyOAuthProvider {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(`Error refreshing access token: ${errorData.message}`);
+        throw new Error(`Error refreshing access token: ${errorData.error_description}`);
       }
 
       const data: AccessTokenSuccessResponse = await res.json();
