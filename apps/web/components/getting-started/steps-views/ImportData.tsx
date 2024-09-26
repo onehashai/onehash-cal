@@ -61,7 +61,7 @@ const ImportData = () => {
           </div>
           <div className="mt-3 px-4">
             <CheckboxField
-              defaultChecked={sendCampaignEmails}
+              checked={sendCampaignEmails}
               description={t("notify_past_bookers")}
               onChange={(e) => {
                 handleChangeNotifyUsers(e.target.checked);
