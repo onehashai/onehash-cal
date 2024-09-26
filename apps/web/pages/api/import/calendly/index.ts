@@ -1159,10 +1159,11 @@ const sendCampaigningEmails = async (
   { fullName, slug, emails }: { fullName: string; slug: string; emails: string[] },
   step: ReturnType<typeof createStepTools>
 ) => {
+  const batchSize = 10;
   const name = fullName.includes("@") ? fullName.split("@")[0] : fullName;
-  for (let i = 0; i < emails.length; i += 10) {
-    const batch = emails.slice(i, i + 10);
-    await step.run(`Email Campaigning Batch ${i + 1}`, async () => {
+  for (let i = 0; i < emails.length; i += batchSize) {
+    const batch = emails.slice(i, i + batchSize);
+    await step.run(`Email Campaigning Batch ${i / batchSize + 1}`, async () => {
       try {
         await Promise.all(
           batch.map((batchEmail) =>
