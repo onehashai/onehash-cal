@@ -21,7 +21,7 @@ const useCalendlyImport = (userId: number) => {
       });
 
       if (response.ok) {
-        showToast("Data will import shortly!", "success");
+        showToast("Data will import within 24 hours!", "success");
       } else {
         console.error("Error importing from Calendly");
         showToast("Failed to import data from Calendly", "error");
