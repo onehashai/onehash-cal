@@ -3,7 +3,7 @@ import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { getBookings } from "@calcom/trpc/server/routers/viewer/bookings/get.handler";
 
-type InputByStatus = "upcoming" | "recurring" | "past" | "cancelled" | "unconfirmed" | "all";
+type InputByStatus = "upcoming" | "recurring" | "past" | "cancelled" | "unconfirmed";
 type GetOptions = {
   ctx: {
     user: { id: number; email: string };
@@ -61,56 +61,11 @@ const getAllUserBookings = async ({ ctx, filters, bookingListingByStatus, take, 
       endTime: { gte: new Date() },
       status: { equals: BookingStatus.PENDING },
     },
-    all: {
-      OR: [
-        {
-          endTime: { gte: new Date() },
-          // These changes are needed to not show confirmed recurring events,
-          // as rescheduling or cancel for recurring event bookings should be
-          // handled separately for each occurrence
-          OR: [
-            {
-              recurringEventId: { not: null },
-              status: { equals: BookingStatus.ACCEPTED },
-            },
-            {
-              recurringEventId: { equals: null },
-              status: { notIn: [BookingStatus.CANCELLED, BookingStatus.REJECTED] },
-            },
-          ],
-        },
-        {
-          endTime: { gte: new Date() },
-          AND: [
-            { NOT: { recurringEventId: { equals: null } } },
-            { status: { notIn: [BookingStatus.CANCELLED, BookingStatus.REJECTED] } },
-          ],
-        },
-        {
-          endTime: { lte: new Date() },
-          AND: [
-            { NOT: { status: { equals: BookingStatus.CANCELLED } } },
-            { NOT: { status: { equals: BookingStatus.REJECTED } } },
-          ],
-        },
-        {
-          OR: [
-            { status: { equals: BookingStatus.CANCELLED } },
-            { status: { equals: BookingStatus.REJECTED } },
-          ],
-        },
-        {
-          endTime: { gte: new Date() },
-          status: { equals: BookingStatus.PENDING },
-        },
-      ],
-    },
   };
   const bookingListingOrderby: Record<
     typeof bookingListingByStatus,
     Prisma.BookingOrderByWithAggregationInput
   > = {
-    all: { startTime: "asc" },
     upcoming: { startTime: "asc" },
     recurring: { startTime: "asc" },
     past: { startTime: "desc" },
