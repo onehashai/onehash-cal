@@ -48,6 +48,11 @@ type EventTypeWithScheduledEvent = {
   scheduled_events: CalendlyScheduledEventWithScheduler[];
 };
 
+type EventTypeWithScheduledEventInputSchema = {
+  event_type_input: Prisma.EventTypeCreateInput;
+  scheduled_events_input: Prisma.BookingCreateInput[];
+};
+
 type CombinedAvailabilityRules = {
   type: "wday" | "date";
   interval: {
@@ -284,11 +289,11 @@ const getEventScheduler = async (
 };
 
 //Merges the scheduled events with its corresponding event types while checking for overlapping bookings
-const mergeEventTypeAndScheduledEvent = async (
+const mergeEventTypeAndScheduledEvent = (
   eventTypeList: CalendlyEventType[],
   scheduledEventList: CalendlyScheduledEventWithScheduler[],
   userIntID: number
-): Promise<EventTypeWithScheduledEvent[]> => {
+): EventTypeWithScheduledEvent[] => {
   try {
     const scheduledEventsMap: Record<string, CalendlyScheduledEventWithScheduler[]> = {};
 
@@ -603,68 +608,92 @@ const mapEventTypeAndBookingsToInputSchema = (
 
 //Inserts the event types and its corresponding bookings to db
 const insertEventTypeAndBookingsToDB = async (
-  eventTypesAndBookingsToBeInserted: {
-    event_type_input: Prisma.EventTypeCreateInput;
-    scheduled_events_input: Prisma.BookingCreateInput[];
-  }[],
-  userIntID: number
+  eventTypesAndBookingsToBeInserted: EventTypeWithScheduledEventInputSchema[],
+  userIntID: number,
+  step: ReturnType<typeof createStepTools>
 ) => {
+  const batchSize = 10;
+
+  const processBatch = async (bookings: Prisma.BookingCreateInput[], eventTypeId: number) => {
+    const bookingPromises = bookings.map((scheduledEvent) =>
+      prisma.booking.upsert({
+        where: { uid: scheduledEvent.uid },
+        update: {},
+        create: {
+          ...scheduledEvent,
+          eventType: { connect: { id: eventTypeId } },
+        },
+        include: {
+          attendees: {
+            select: {
+              locale: true,
+              name: true,
+              email: true,
+              timeZone: true,
+            },
+          },
+        },
+      })
+    );
+
+    return await Promise.all(bookingPromises);
+  };
+
   try {
-    // Create an array of promises for each event type and bookings
-    const eventTypesAndBookingsInsertionPromises = [];
+    const eventTypesAndBookingsInsertedResults = [];
+
     for (const eventTypeAndBooking of eventTypesAndBookingsToBeInserted) {
-      eventTypesAndBookingsInsertionPromises.push(
-        (async () => {
-          const { event_type_input, scheduled_events_input } = eventTypeAndBooking;
+      const { event_type_input } = eventTypeAndBooking;
 
-          try {
-            // Perform the eventType upsert
-            const upsertedEventType = await prisma.eventType.upsert({
-              create: event_type_input,
-              update: {},
-              where: {
-                userId_slug: {
-                  userId: userIntID,
-                  slug: event_type_input.slug,
-                },
+      // Upsert event type
+      const eventType = await step.run(`Upserting eventType - ${event_type_input.slug}`, async () => {
+        try {
+          const _eventType = await prisma.eventType.upsert({
+            create: event_type_input,
+            update: {},
+            where: {
+              userId_slug: {
+                userId: userIntID,
+                slug: event_type_input.slug,
               },
-            });
+            },
+          });
+          return _eventType;
+        } catch (error) {
+          throw new NonRetriableError(
+            `Error - Upserting eventType : ${error instanceof Error ? error.message : error}`
+          );
+        }
+      });
 
-            // Create bookings only after the upsert is complete
-            const bookingPromises = scheduled_events_input.map((scheduledEvent) => {
-              return prisma.booking.upsert({
-                where: { uid: scheduledEvent.uid },
-                update: {},
-                create: {
-                  ...scheduledEvent,
-                  eventType: { connect: { id: upsertedEventType.id } },
-                },
-                include: {
-                  attendees: {
-                    select: {
-                      locale: true,
-                      name: true,
-                      email: true,
-                      timeZone: true,
-                    },
-                  },
-                },
-              });
-            });
+      // Create bookings for this event type in batches sequentially
+      const { scheduled_events_input } = eventTypeAndBooking;
+      const createdBookings = [];
 
-            // Wait for all booking creations to complete
-            const createdBookings = await Promise.all(bookingPromises);
-            return { upsertedEventType, createdBookings };
-          } catch (innerError) {
-            console.error("Error inserting/updating event type or bookings:", innerError);
-            throw innerError; // Rethrow the error to be caught by the outer catch block
+      for (let i = 0; i < scheduled_events_input.length; i += batchSize) {
+        const batch = scheduled_events_input.slice(i, i + batchSize);
+        const bookingsInBatch = await step.run(
+          `Upserting bookings batch - ${i / batchSize + 1}`,
+          async () => {
+            try {
+              const _bookingsInBatch = await processBatch(batch, eventType.id);
+              return _bookingsInBatch;
+            } catch (error) {
+              throw new NonRetriableError(
+                `Error - Upserting bookings batch - ${i / batchSize + 1}: ${
+                  error instanceof Error ? error.message : error
+                }`
+              );
+            }
           }
-        })()
-      );
+        );
+
+        createdBookings.push(...bookingsInBatch);
+      }
+
+      eventTypesAndBookingsInsertedResults.push({ upsertedEventType: eventType, createdBookings });
     }
 
-    // Wait for all event type and booking insertion promises to complete
-    const eventTypesAndBookingsInsertedResults = await Promise.all(eventTypesAndBookingsInsertionPromises);
     return eventTypesAndBookingsInsertedResults;
   } catch (error) {
     console.error(
@@ -731,7 +760,7 @@ const importEventTypesAndBookings = async (
     //mapping the scheduled events to its corresponding event type
     const mergedList = await step.run("Map bookings to its event type", async () => {
       try {
-        const _mergedList = await mergeEventTypeAndScheduledEvent(
+        const _mergedList = mergeEventTypeAndScheduledEvent(
           userEventTypes as CalendlyEventType[],
           userScheduledEventsWithScheduler as CalendlyScheduledEventWithScheduler[],
           userIntID
@@ -745,25 +774,30 @@ const importEventTypesAndBookings = async (
       }
     });
 
-    // event types with bookings to be inserted
-    const eventTypesAndBookingsToBeInserted = mapEventTypeAndBookingsToInputSchema(mergedList, userIntID);
-    logger.info("mapEventTypeAndBookingsToInputSchema: Successfully mapped ");
+    //mapping the data to input schema
+    const eventTypesAndBookingsToBeInserted = await step.run("Map data to input schema", async () => {
+      try {
+        // event types with bookings to be inserted
+        const _eventTypesAndBookingsToBeInserted = mapEventTypeAndBookingsToInputSchema(
+          mergedList,
+          userIntID
+        );
+        logger.info("eventTypesAndBookingsToBeInserted: Successfully mapped ");
+        return _eventTypesAndBookingsToBeInserted;
+      } catch (error) {
+        throw new NonRetriableError(
+          `Error - eventTypesAndBookingsToBeInserted: ${error instanceof Error ? error.message : error}`
+        );
+      }
+    });
 
     //inserting event type and bookings to db via prisma
-    const eventTypesAndBookingsInsertedResults = await step.run(
-      "Insert event type and bookings to DB",
-      async () => {
-        try {
-          const data = await insertEventTypeAndBookingsToDB(eventTypesAndBookingsToBeInserted, userIntID);
-          logger.info("insertEventTypeAndBookingsToDB: Successfully inserted ");
-          return data;
-        } catch (error) {
-          throw new NonRetriableError(
-            `Error - insertEventTypeAndBookingsToDB: ${error instanceof Error ? error.message : error}`
-          );
-        }
-      }
+    const eventTypesAndBookingsInsertedResults = await insertEventTypeAndBookingsToDB(
+      eventTypesAndBookingsToBeInserted as EventTypeWithScheduledEventInputSchema[],
+      userIntID,
+      step
     );
+
     return eventTypesAndBookingsInsertedResults;
 
     //TODO:we will not import future bookings as of now
@@ -1079,7 +1113,11 @@ export const handleCalendlyImportEvent = async (
           emails: Array.from(
             importedData.reduce<Set<string>>((emailsSet, event) => {
               event.createdBookings.forEach((booking) => {
-                booking.attendees.forEach((attendee) => emailsSet.add(attendee.email));
+                booking.attendees.forEach((attendee) => {
+                  if (attendee.email !== user.email) {
+                    emailsSet.add(attendee.email);
+                  }
+                });
               });
               return emailsSet;
             }, new Set())
