@@ -9,7 +9,7 @@ import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import prisma from "@calcom/prisma";
 import { IntegrationProvider } from "@calcom/prisma/client";
-import { Button, Meta, SkeletonContainer } from "@calcom/ui";
+import { Button, CheckboxField, Meta, SkeletonContainer } from "@calcom/ui";
 
 import useCalendlyImport from "@lib/hooks/useCalendlyImport";
 
@@ -56,7 +56,8 @@ const ImportLayout = ({ code }: { code?: string }) => {
 };
 
 const CalendlyImportComponent = ({ userId, code }: { userId: number; code?: string }) => {
-  const { importFromCalendly, importing } = useCalendlyImport(userId);
+  const { importFromCalendly, importing, handleChangeNotifyUsers, sendCampaignEmails } =
+    useCalendlyImport(userId);
   const [loading, setLoading] = useState<boolean>(true);
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const { t } = useLocale();
@@ -114,7 +115,10 @@ const CalendlyImportComponent = ({ userId, code }: { userId: number; code?: stri
             description={t("import_data_instructions")}
             CTA={
               isAuthorized ? (
-                <ImportFromCalendlyButton importFromCalendly={importFromCalendly} importing={importing} />
+                <ImportFromCalendlyButton
+                  importFromCalendly={() => importFromCalendly().then(() => router.replace("/event-types"))}
+                  importing={importing}
+                />
               ) : (
                 <Button onClick={handleOnClickImport} color="secondary" StartIcon="plus">
                   {t("import")}
@@ -123,6 +127,15 @@ const CalendlyImportComponent = ({ userId, code }: { userId: number; code?: stri
             }
             borderInShellHeader={true}
           />
+          <div className="mt-3 px-4">
+            <CheckboxField
+              defaultChecked={sendCampaignEmails}
+              description={t("notify_past_bookers")}
+              onChange={(e) => {
+                handleChangeNotifyUsers(e.target.checked);
+              }}
+            />
+          </div>
         </div>
       )}
     </>

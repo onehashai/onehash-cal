@@ -956,7 +956,7 @@ async function confirmUpcomingImportedBookings(createdBookings: any[], userIntID
   }
 }
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
-  const { userId } = req.query as { userId: string };
+  const { userId, sendCampaignEmails } = req.query as { userId: string; sendCampaignEmails: string };
   if (!userId) {
     return res.status(400).json({ message: "Missing User ID" });
   }
@@ -995,6 +995,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     await inngestClient.send({
       name: `import-from-calendly-${key}`,
       data: {
+        sendCampaignEmails: sendCampaignEmails === "true",
         userCalendlyIntegrationProvider: {
           accessToken: userCalendlyIntegrationProvider.accessToken,
           refreshToken: userCalendlyIntegrationProvider.refreshToken,
@@ -1022,6 +1023,7 @@ export default defaultHandler({
 });
 
 export const handleCalendlyImportEvent = async (
+  sendCampaignEmails: boolean,
   userCalendlyIntegrationProvider: {
     refreshToken: string;
     accessToken: string;
@@ -1105,7 +1107,7 @@ export const handleCalendlyImportEvent = async (
     });
 
     //4. Sending campaign emails to Calendly user scheduled events bookers
-    if (importedData)
+    if (importedData && sendCampaignEmails)
       await sendCampaigningEmails(
         {
           fullName: user.name,

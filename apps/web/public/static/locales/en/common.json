@@ -116,6 +116,7 @@
   "payment_error":"Payment error",
   "payment_error_description":"Malfuntioned payment request",
   "attendee":"Attendee",
+  "notify_past_bookers":"Notify past bookers about your migration",
   "select_host_placeholder":"Choose Your Host",
   "identity_provider": "Identity provider",
   "trial_days_left": "You have $t(day, {\"count\": {{days}} }) left on your PRO trial",
