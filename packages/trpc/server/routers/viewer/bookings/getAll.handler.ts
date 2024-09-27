@@ -1,12 +1,11 @@
 import type { PrismaClient } from "@calcom/prisma";
-import type { Prisma } from "@calcom/prisma/client";
+import { Prisma } from "@calcom/prisma/client";
 
-import type { TrpcSessionUser } from "../../../trpc";
 import type { TGetAllInputSchema } from "./getAll.schema";
 
 type GetAllOptions = {
   ctx: {
-    user: NonNullable<TrpcSessionUser>;
+    user: { id: number; email: string };
     prisma: PrismaClient;
   };
   input: TGetAllInputSchema;
@@ -19,21 +18,23 @@ export const getAllHandler = async ({ ctx, input }: GetAllOptions) => {
 
   const bookings = await getAllUserBookings({
     ctx: { user: { id: user.id, email: user.email }, prisma: prisma },
-    filters: input.filters,
+    input: {
+      filters: input.filters,
+    },
   });
 
   return bookings;
 };
 
-const getAllUserBookings = async ({ ctx, filters }: GetAllOptions) => {
+const getAllUserBookings = async ({ ctx, input }: GetAllOptions) => {
   const { prisma, user } = ctx;
 
-  const orderBy = { startTime: "asc" };
+  const orderBy = { startTime: Prisma.SortOrder.asc };
 
   const bookings = await getAllBookings({
     user,
     prisma,
-    filters: filters,
+    filters: input.filters,
     orderBy,
   });
 
@@ -58,7 +59,7 @@ export async function getAllBookings({
   orderBy,
 }: {
   user: { id: number; email: string };
-  filters: TGetInputSchema["filters"];
+  filters: TGetAllInputSchema["filters"];
   prisma: PrismaClient;
   orderBy: Prisma.BookingOrderByWithAggregationInput;
 }) {

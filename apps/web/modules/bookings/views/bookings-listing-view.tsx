@@ -20,7 +20,7 @@ import { BookingStatus } from "@calcom/prisma/client";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import type { HorizontalTabItemProps, VerticalTabItemProps } from "@calcom/ui";
-import { Alert, Button, EmptyScreen, HorizontalTabs } from "@calcom/ui";
+import { Alert, Button, EmptyScreen, HorizontalTabs, showToast } from "@calcom/ui";
 
 import { useInViewObserver } from "@lib/hooks/useInViewObserver";
 import useMeQuery from "@lib/hooks/useMeQuery";
@@ -34,7 +34,7 @@ type BookingListingStatus = z.infer<NonNullable<typeof filterQuerySchema>>["stat
 type BookingOutput = RouterOutputs["viewer"]["bookings"]["get"]["bookings"][0];
 type AllBookingOutput = RouterOutputs["viewer"]["bookings"]["getAll"][0];
 type BookingListingByStatusType = "Unconfirmed" | "Cancelled" | "Recurring" | "Upcoming" | "Past";
-type BookingExportType = BookingOutput & {
+type BookingExportType = AllBookingOutput & {
   type: BookingListingByStatusType;
   startDate: string;
   interval: string;
@@ -236,10 +236,10 @@ export default function Bookings() {
         booking.title,
         booking.description,
         booking.type,
-        booking.eventType.title ?? "",
+        booking.eventType?.title ?? "",
         booking.startDate,
         booking.interval,
-        booking.location === MeetLocationType ? "Google Meet" : booking.location.split("\n").join(" ") ?? "",
+        booking.location === MeetLocationType ? "Google Meet" : booking.location?.split("\n").join(" ") ?? "",
         booking.attendees.map((attendee) => attendee.email).join(";"),
         booking.paid.toString(),
         booking.payment.map((pay) => pay.currency).join(";"),
@@ -339,7 +339,7 @@ export default function Bookings() {
             {query.status === "error" && (
               <Alert severity="error" title={t("something_went_wrong")} message={query.error.message} />
             )}
-            {(query.status === "loading" || query.isPaused) && <SkeletonLoader />}
+            {(query.status === "pending" || query.isPaused) && <SkeletonLoader />}
             {query.status === "success" && !isEmpty && (
               <>
                 {!!bookingsToday.length && status === "upcoming" && (
