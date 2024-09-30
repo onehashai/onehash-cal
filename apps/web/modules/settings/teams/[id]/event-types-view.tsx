@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { TeamEventTypeForm } from "@calcom/features/ee/teams/components/TeamEventTypeForm";
+import { TeamEventTypeForm } from "@calcom/features/oe/teams/components/TeamEventTypeForm";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { WizardLayout } from "@calcom/ui";

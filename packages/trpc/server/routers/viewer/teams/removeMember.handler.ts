@@ -1,5 +1,5 @@
-import { updateQuantitySubscriptionFromStripe } from "@calcom/features/ee/teams/lib/payments";
-import removeMember from "@calcom/features/ee/teams/lib/removeMember";
+import { updateQuantitySubscriptionFromStripe } from "@calcom/features/oe/teams/lib/payments";
+import removeMember from "@calcom/features/oe/teams/lib/removeMember";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";

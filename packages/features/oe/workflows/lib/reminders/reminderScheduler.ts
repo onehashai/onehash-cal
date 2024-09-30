@@ -2,8 +2,8 @@ import {
   isSMSAction,
   isSMSOrWhatsappAction,
   isWhatsappAction,
-} from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
-import type { Workflow, WorkflowStep } from "@calcom/features/ee/workflows/lib/types";
+} from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
+import type { Workflow, WorkflowStep } from "@calcom/features/oe/workflows/lib/types";
 import { checkSMSRateLimit } from "@calcom/lib/checkRateLimitAndThrowError";
 import { SENDER_NAME } from "@calcom/lib/constants";
 import { SchedulingType, WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/enums";

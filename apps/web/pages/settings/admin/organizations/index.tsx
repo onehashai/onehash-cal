@@ -1,5 +1,5 @@
 import NoSSR from "@calcom/core/components/NoSSR";
-import AdminOrgTable from "@calcom/features/ee/organizations/pages/settings/admin/AdminOrgPage";
+import AdminOrgTable from "@calcom/features/oe/organizations/pages/settings/admin/AdminOrgPage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta } from "@calcom/ui";
 

@@ -6,22 +6,22 @@ import {
   getSmsReminderNumberField,
   getSmsReminderNumberSource,
 } from "@calcom/features/bookings/lib/getBookingFields";
-import { isSMSOrWhatsappAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
-import { getAllWorkflows } from "@calcom/features/ee/workflows/lib/getAllWorkflows";
+import { removeBookingField, upsertBookingField } from "@calcom/features/eventtypes/lib/bookingFieldsManager";
+import { isSMSOrWhatsappAction } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
+import { getAllWorkflows } from "@calcom/features/oe/workflows/lib/getAllWorkflows";
 import {
   deleteScheduledEmailReminder,
   scheduleEmailReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
 import {
   deleteScheduledSMSReminder,
   scheduleSMSReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
+} from "@calcom/features/oe/workflows/lib/reminders/smsReminderManager";
 import {
   deleteScheduledWhatsappReminder,
   scheduleWhatsappReminder,
-} from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
-import type { Workflow as WorkflowType } from "@calcom/features/ee/workflows/lib/types";
-import { removeBookingField, upsertBookingField } from "@calcom/features/eventtypes/lib/bookingFieldsManager";
+} from "@calcom/features/oe/workflows/lib/reminders/whatsappReminderManager";
+import type { Workflow as WorkflowType } from "@calcom/features/oe/workflows/lib/types";
 import { SENDER_ID, SENDER_NAME } from "@calcom/lib/constants";
 import getOrgIdFromMemberOrTeamId from "@calcom/lib/getOrgIdFromMemberOrTeamId";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";

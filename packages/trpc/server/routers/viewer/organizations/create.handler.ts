@@ -1,8 +1,8 @@
 import { lookup } from "dns";
 
-import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";
 import { sendAdminOrganizationNotification, sendOrganizationCreationEmail } from "@calcom/emails";
 import { sendEmailVerification } from "@calcom/features/auth/lib/verifyEmail";
+import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { DEFAULT_SCHEDULE, getAvailabilityFromSchedule } from "@calcom/lib/availability";
 import {
   RESERVED_SUBDOMAINS,

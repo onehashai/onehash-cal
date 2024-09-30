@@ -7,8 +7,6 @@ import type { UseFormReturn } from "react-hook-form";
 // eslint-disable-next-line @calcom/eslint/deprecated-imports-next-router
 import { z } from "zod";
 
-import { OrgBrandingProvider } from "@calcom/features/ee/organizations/context/provider";
-import type { Workflow } from "@calcom/features/ee/workflows/lib/types";
 import type { ChildrenEventType } from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
 import type {
   TabMap,
@@ -16,6 +14,8 @@ import type {
   FormValues,
   EventTypeApps,
 } from "@calcom/features/eventtypes/lib/types";
+import { OrgBrandingProvider } from "@calcom/features/oe/organizations/context/provider";
+import type { Workflow } from "@calcom/features/oe/workflows/lib/types";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";
 import type { customInputSchema } from "@calcom/prisma/zod-utils";
 import type { RouterOutputs } from "@calcom/trpc/react";

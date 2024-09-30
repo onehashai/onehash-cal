@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import type { WorkflowType } from "@calcom/ee/workflows/components/WorkflowListPage";
 import { hasFilter } from "@calcom/features/filters/lib/hasFilter";
+import type { WorkflowType } from "@calcom/features/oe/workflows/components/WorkflowListPage";
 import prisma from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/client";
 import { Prisma } from "@calcom/prisma/client";

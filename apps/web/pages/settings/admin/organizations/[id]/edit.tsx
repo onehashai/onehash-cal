@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import NoSSR from "@calcom/core/components/NoSSR";
 import LicenseRequired from "@calcom/ee/common/components/LicenseRequired";
-import OrgForm from "@calcom/features/ee/organizations/pages/settings/admin/AdminOrgEditPage";
+import OrgForm from "@calcom/features/oe/organizations/pages/settings/admin/AdminOrgEditPage";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
 import { trpc } from "@calcom/trpc/react";
 import { Meta } from "@calcom/ui";

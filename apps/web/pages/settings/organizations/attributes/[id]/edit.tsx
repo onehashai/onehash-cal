@@ -2,7 +2,7 @@
 
 import OrgAttributesEditPage, {
   getLayout,
-} from "@calcom/ee/organizations/pages/settings/attributes/attributes-edit-view";
+} from "@calcom/features/oe/organizations/pages/settings/attributes/attributes-edit-view";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta } from "@calcom/ui";
 

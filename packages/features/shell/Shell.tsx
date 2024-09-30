@@ -12,17 +12,17 @@ import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookin
 import ImpersonatingBanner, {
   type ImpersonatingBannerProps,
 } from "@calcom/features/ee/impersonation/components/ImpersonatingBanner";
+import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
+import useIntercom, { isInterComEnabled } from "@calcom/features/ee/support/lib/intercom/useIntercom";
+import { useFlagMap } from "@calcom/features/flags/context/provider";
+import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
 import {
   OrgUpgradeBanner,
   type OrgUpgradeBannerProps,
-} from "@calcom/features/ee/organizations/components/OrgUpgradeBanner";
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
-import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
-import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
-import useIntercom, { isInterComEnabled } from "@calcom/features/ee/support/lib/intercom/useIntercom";
-import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/ee/teams/components";
-import { useFlagMap } from "@calcom/features/flags/context/provider";
-import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
+} from "@calcom/features/oe/organizations/components/OrgUpgradeBanner";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
 import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog";
 import AdminPasswordBanner, {
   type AdminPasswordBannerProps,

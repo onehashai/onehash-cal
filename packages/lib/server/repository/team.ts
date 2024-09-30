@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import type { z } from "zod";
 
-import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";

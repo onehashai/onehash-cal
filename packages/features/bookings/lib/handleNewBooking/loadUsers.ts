@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import type { IncomingMessage } from "http";
 
-import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { UserRepository } from "@calcom/lib/server/repository/user";

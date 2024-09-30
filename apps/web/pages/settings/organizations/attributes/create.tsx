@@ -1,6 +1,6 @@
 import OrgAttributesCreatePage, {
   getLayout,
-} from "@calcom/ee/organizations/pages/settings/attributes/attributes-create-view";
+} from "@calcom/features/oe/organizations/pages/settings/attributes/attributes-create-view";
 import { Meta } from "@calcom/ui";
 
 import PageWrapper from "@components/PageWrapper";

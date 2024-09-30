@@ -1,4 +1,4 @@
-import OrgProfileView from "@calcom/features/ee/organizations/pages/settings/profile";
+import OrgProfileView from "@calcom/features/oe/organizations/pages/settings/profile";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 
 import PageWrapper from "@components/PageWrapper";

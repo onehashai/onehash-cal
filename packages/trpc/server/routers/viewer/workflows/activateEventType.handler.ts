@@ -1,6 +1,6 @@
-import { scheduleEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
-import { scheduleSMSReminder } from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
-import { scheduleWhatsappReminder } from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
+import { scheduleEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
+import { scheduleSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/smsReminderManager";
+import { scheduleWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/whatsappReminderManager";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import { prisma } from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/client";

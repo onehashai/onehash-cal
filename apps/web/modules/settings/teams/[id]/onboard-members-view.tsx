@@ -1,6 +1,6 @@
 "use client";
 
-import AddNewTeamMembers from "@calcom/features/ee/teams/components/AddNewTeamMembers";
+import AddNewTeamMembers from "@calcom/features/oe/teams/components/AddNewTeamMembers";
 import { WizardLayout } from "@calcom/ui";
 
 export const GetLayout = (page: React.ReactElement) => (

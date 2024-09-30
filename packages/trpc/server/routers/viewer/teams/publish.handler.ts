@@ -4,7 +4,7 @@ import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-
 import {
   purchaseTeamOrOrgSubscription,
   updateQuantitySubscriptionFromStripe,
-} from "@calcom/features/ee/teams/lib/payments";
+} from "@calcom/features/oe/teams/lib/payments";
 import { IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { isOrganisationAdmin } from "@calcom/lib/server/queries/organisations";
 import { isTeamAdmin } from "@calcom/lib/server/queries/teams";

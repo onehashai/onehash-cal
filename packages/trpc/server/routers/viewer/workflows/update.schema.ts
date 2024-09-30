@@ -5,7 +5,7 @@ import {
   WORKFLOW_ACTIONS,
   WORKFLOW_TEMPLATES,
   WORKFLOW_TRIGGER_EVENTS,
-} from "@calcom/features/ee/workflows/lib/constants";
+} from "@calcom/features/oe/workflows/lib/constants";
 
 export const ZUpdateInputSchema = z.object({
   id: z.number(),

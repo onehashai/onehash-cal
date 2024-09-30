@@ -4,7 +4,7 @@ import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import type { z } from "zod";
 
-import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { HeadSeo } from "@calcom/ui";

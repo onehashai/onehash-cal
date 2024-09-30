@@ -1,6 +1,6 @@
 "use client";
 
-import PrivacyView from "@calcom/features/ee/organizations/pages/settings/privacy";
+import PrivacyView from "@calcom/features/oe/organizations/pages/settings/privacy";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta } from "@calcom/ui";

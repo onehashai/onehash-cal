@@ -4,10 +4,10 @@ import type { UseFormGetValues, UseFormSetValue, Control, FormState } from "reac
 import type { MultiValue } from "react-select";
 
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import Locations from "@calcom/features/eventtypes/components/Locations";
 import type { EventTypeSetupProps } from "@calcom/features/eventtypes/lib/types";
 import type { FormValues, LocationFormValues } from "@calcom/features/eventtypes/lib/types";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { WEBSITE_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { md } from "@calcom/lib/markdownIt";

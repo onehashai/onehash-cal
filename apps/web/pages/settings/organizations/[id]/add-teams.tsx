@@ -1,4 +1,4 @@
-import { getServerSideProps } from "@calcom/features/ee/organizations/pages/organization";
+import { getServerSideProps } from "@calcom/features/oe/organizations/pages/organization";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta } from "@calcom/ui";
 

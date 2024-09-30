@@ -1,6 +1,6 @@
 "use client";
 
-import { AboutOrganizationForm } from "@calcom/features/ee/organizations/components";
+import { AboutOrganizationForm } from "@calcom/features/oe/organizations/components";
 import { WizardLayout } from "@calcom/ui";
 
 export const LayoutWrapper = (page: React.ReactElement) => {
