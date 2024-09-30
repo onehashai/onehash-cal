@@ -41,7 +41,7 @@ export const config = {
 };
 
 type CalendlyScheduledEventWithScheduler = CalendlyScheduledEvent & {
-  scheduled_by?: CalendlyScheduledEventInvitee;
+  scheduled_by: CalendlyScheduledEventInvitee[];
 };
 
 type EventTypeWithScheduledEvent = {
@@ -231,79 +231,55 @@ const combinedRules = (rules: CalendlyUserAvailabilityRules[]): CombinedAvailabi
 const getEventScheduler = async (
   userScheduledEvents: CalendlyScheduledEvent[],
   getUserScheduledEventInvitees: ({
-    uuid,
+    uuids,
+    batch,
     step,
   }: {
-    uuid: string;
+    uuids: string[];
+    batch: number;
     step: ReturnType<typeof createStepTools>;
-  }) => Promise<CalendlyScheduledEventInvitee[]>,
+  }) => Promise<{ uuid: string; invitees: CalendlyScheduledEventInvitee[] }[]>,
   step: ReturnType<typeof createStepTools>
 ): Promise<CalendlyScheduledEventWithScheduler[]> => {
   const userScheduledEventsWithScheduler: CalendlyScheduledEventWithScheduler[] = [];
+  const batchSize = 9;
 
-  for (const userScheduledEvent of userScheduledEvents) {
-    const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
-    const invitees = await getUserScheduledEventInvitees({
-      uuid,
+  // Extract uuids from userScheduledEvents
+  const uuids = userScheduledEvents.map((event) => event.uri.substring(event.uri.lastIndexOf("/") + 1));
+
+  // Process uuids in batches
+  for (let i = 0; i < uuids.length; i += batchSize) {
+    const batchUuids = uuids.slice(i, i + batchSize);
+
+    // Get invitees for the batch of uuids
+    const inviteesResults = await getUserScheduledEventInvitees({
+      uuids: batchUuids,
+      batch: i / batchSize + 1,
       step,
     });
-    // const invitees = await step.run("Get booking invitees", async () => {
-    //   try {
-    //     return await getUserScheduledEventInvitees(uuid);
-    //   } catch (e) {
-    //     throw new RetryAfterError(
-    //       `RetryError - getEventScheduler: ${e instanceof Error ? e.message : e}`,
-    //       waitTime
-    //     );
-    //   }
-    // });
 
-    //TODO:I think we do not need to run the step again as inngest will handle the retry itself
-    // invitees = await step.run("Get booking invitees", async () => {
-    //   return await getUserScheduledEventInvitees(uuid);
-    // });
-    // TODO: check if the error is 429
-    // if (e instanceof StepError && (e.cause as any)?.response?.status === 429) {
-    //   throw new RetryAfterError("Wait before retry to avoid api call limit exceed", waitTime);
+    // Map inviteesResults to a lookup for easy access
+    const inviteesMap = new Map(inviteesResults.map(({ uuid, invitees }) => [uuid, invitees]));
 
-    //   // await step.sleep("wait to avoid api call limit exceed", waitTime);
-    //   // invitees = await step.run("Get booking invitees", async () => {
-    //   //   return await getUserScheduledEventInvitees(uuid);
-    //   // });
-    // } else throw new NonRetriableError("Failed to get booking invitees", { cause: e });
+    // Merge invitees back into the original events
+    for (const userScheduledEvent of userScheduledEvents.slice(i, i + batchSize)) {
+      const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
+      const invitees = inviteesMap.get(uuid) || [];
+      // const scheduled_by = invitees[0] || null;
 
-    const scheduled_by = invitees[0] || null;
-    // const isPastBooking =
-    //   userScheduledEvent.status === "active" && new Date(userScheduledEvent.end_time) < currentTime;
-    if (scheduled_by?.payment === undefined || scheduled_by?.payment === null) {
       userScheduledEventsWithScheduler.push({
         ...userScheduledEvent,
-        scheduled_by,
+        scheduled_by: invitees,
       });
+
+      // if (scheduled_by?.payment === undefined || scheduled_by?.payment === null) {
+      //   userScheduledEventsWithScheduler.push({
+      //     ...userScheduledEvent,
+      //     scheduled_by: invitees,
+      //   });
+      // }
     }
   }
-
-  // for (const userScheduledEvent of userScheduledEvents) {
-  //   const uuid = userScheduledEvent.uri.substring(userScheduledEvent.uri.lastIndexOf("/") + 1);
-  //   let invitees;
-  //   try {
-  //     invitees = await getUserScheduledEventInvitees(uuid);
-  //   } catch (e: any) {
-  //     if (e.response && e.response.status === 429) {
-  //       await step.sleep("wait to avoid api call limit exceed", waitTime);
-  //       invitees = await getUserScheduledEventInvitees(uuid);
-  //     } else throw new NonRetriableError("Failed to get booking invitees", { cause: e });
-  //   }
-
-  //   const scheduled_by = invitees[0] || null;
-
-  //   if (scheduled_by?.payment === undefined || scheduled_by?.payment === null) {
-  //     userScheduledEventsWithScheduler.push({
-  //       ...userScheduledEvent,
-  //       scheduled_by,
-  //     });
-  //   }
-  // }
 
   return userScheduledEventsWithScheduler;
 };
@@ -410,20 +386,25 @@ const getAttendeesWithTimezone = (
   scheduledEvent: CalendlyScheduledEventWithScheduler
 ): Prisma.AttendeeCreateWithoutBookingSeatInput[] => {
   const attendeeInput: Prisma.AttendeeCreateWithoutBookingSeatInput[] = [];
-  const timezone = scheduledEvent.scheduled_by?.timezone ?? getServerTimezone(); //using the scheduled_by timezone if available else using the server timezone
 
-  const scheduledByAttendee: Prisma.AttendeeCreateWithoutBookingSeatInput = {
-    name: scheduledEvent.scheduled_by?.name ?? "N/A",
-    email: scheduledEvent.scheduled_by?.email ?? "N/A",
-    timeZone: timezone,
-  };
-  attendeeInput.push(scheduledByAttendee);
+  for (const attendee of scheduledEvent.scheduled_by) {
+    const timezone = attendee.timezone ?? getServerTimezone(); //using the scheduled_by timezone if available else using the server timezone
+
+    const scheduledByAttendee: Prisma.AttendeeCreateWithoutBookingSeatInput = {
+      name: attendee.name ?? "N/A",
+      email: attendee.email ?? "N/A",
+      timeZone: timezone,
+    };
+    attendeeInput.push(scheduledByAttendee);
+  }
+
+  const eventGuestTimezone = scheduledEvent.scheduled_by[0].timezone ?? getServerTimezone();
   if (scheduledEvent.event_guests && scheduledEvent.event_guests.length > 0) {
     const eventGuest: Prisma.AttendeeCreateWithoutBookingSeatInput[] = scheduledEvent.event_guests.map(
       (event_guest) => ({
         name: "",
         email: event_guest.email,
-        timeZone: timezone,
+        timeZone: eventGuestTimezone,
       })
     );
     attendeeInput.push(...eventGuest);
@@ -573,15 +554,23 @@ const mapEventTypeAndBookingsToInputSchema = (
       scheduled_events_input = scheduled_events.map((scheduledEvent) => {
         const loc = handleBookingLocation(scheduledEvent.location);
         const metadata = { isImported: "yes" };
+        const title =
+          scheduledEvent.scheduled_by.length === 1
+            ? `${scheduledEvent.name} between ${scheduledEvent.scheduled_by[0]?.name} and ${scheduledEvent.event_memberships[0].user_name}`
+            : `Group ${scheduledEvent.name} `;
+        const responses =
+          scheduledEvent.scheduled_by.length === 1
+            ? {
+                name: scheduledEvent.scheduled_by[0]?.name ?? "N/A",
+                email: scheduledEvent.scheduled_by[0]?.email ?? "N/A",
+                guests: scheduledEvent.event_guests?.map((g) => g.email),
+              }
+            : {};
         return {
           uid: short.uuid(),
           user: { connect: { id: userIntID } },
-          title: `${scheduledEvent.name} between ${scheduledEvent.scheduled_by?.name} and ${scheduledEvent.event_memberships[0].user_name}`,
-          responses: {
-            name: scheduledEvent.scheduled_by?.name ?? "N/A",
-            email: scheduledEvent.scheduled_by?.email ?? "N/A",
-            guests: scheduledEvent.event_guests?.map((g) => g.email),
-          },
+          title: title,
+          responses: responses,
           startTime: new Date(scheduledEvent.start_time),
           endTime: new Date(scheduledEvent.end_time),
           attendees: {

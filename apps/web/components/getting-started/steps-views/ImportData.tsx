@@ -1,4 +1,3 @@
-import { CalendlyOAuthProvider } from "@onehash/calendly";
 import classNames from "classnames";
 import { useRouter } from "next/navigation";
 
@@ -37,12 +36,14 @@ const ImportData = () => {
   };
 
   const handleOnClickImport = () => {
-    const calendlyOAuthProvider = new CalendlyOAuthProvider({
-      clientId: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
-      redirectUri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
-      oauthUrl: process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL ?? "",
-    });
-    window.location.href = calendlyOAuthProvider.getAuthorizationUrl();
+    const queryParams = {
+      client_id: process.env.NEXT_PUBLIC_CALENDLY_CLIENT_ID ?? "",
+      redirect_uri: process.env.NEXT_PUBLIC_CALENDLY_REDIRECT_URI ?? "",
+      response_type: "code",
+    };
+    window.location.href = `${process.env.NEXT_PUBLIC_CALENDLY_OAUTH_URL}/authorize?${new URLSearchParams(
+      queryParams
+    )}`;
   };
 
   return (
