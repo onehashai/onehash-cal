@@ -2,6 +2,7 @@ import dayjs from "@calcom/dayjs";
 import { SENDER_ID } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import type { TimeFormat } from "@calcom/lib/timeFormat";
+import type { PrismaClient } from "@calcom/prisma";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { WorkflowTemplates, WorkflowActions, WorkflowMethods } from "@calcom/prisma/enums";
@@ -9,12 +10,12 @@ import { WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 import type { CalEventResponses, RecurringEvent } from "@calcom/types/Calendar";
 
-import { getSenderId } from "../../alphanumericSenderIdSupport";
-import * as twilio from "../providers/twilioProvider";
-import type { VariablesType } from "../templates/customTemplate";
-import customTemplate from "../templates/customTemplate";
-import smsReminderTemplate from "../templates/smsReminderTemplate";
-import type { ScheduleReminderArgs } from "./emailReminderManager";
+import { getSenderId } from "../alphanumericSenderIdSupport";
+import type { ScheduleReminderArgs } from "./managers/emailReminderManager";
+import * as twilio from "./providers/twilioProvider";
+import type { VariablesType } from "./templates/customTemplate";
+import customTemplate from "./templates/customTemplate";
+import smsReminderTemplate from "./templates/smsReminderTemplate";
 
 export enum timeUnitLowerCase {
   DAY = "day",
@@ -28,12 +29,14 @@ export type AttendeeInBookingInfo = {
   firstName?: string;
   lastName?: string;
   email: string;
+  phoneNumber?: string | null;
   timeZone: string;
   language: { locale: string };
 };
 
 export type BookingInfo = {
   uid?: string | null;
+  bookerUrl?: string;
   attendees: AttendeeInBookingInfo[];
   organizer: {
     language: { locale: string };
@@ -67,6 +70,7 @@ export interface ScheduleTextReminderArgs extends ScheduleReminderArgs {
   userId?: number | null;
   teamId?: number | null;
   isVerificationPending?: boolean;
+  prisma?: PrismaClient;
 }
 
 export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
@@ -85,6 +89,7 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
     isVerificationPending = false,
     seatReferenceUid,
   } = args;
+
   const { startTime, endTime } = evt;
   const uid = evt.uid as string;
   const currentDate = dayjs();
@@ -153,8 +158,8 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
       additionalNotes: evt.additionalNotes,
       responses: evt.responses,
       meetingUrl: bookingMetadataSchema.parse(evt.metadata || {})?.videoCallUrl,
-      cancelLink: `/booking/${evt.uid}?cancel=true`,
-      rescheduleLink: `/${evt.organizer.username}/${evt.eventType.slug}?rescheduleUid=${evt.uid}`,
+      cancelLink: `${evt.bookerUrl}/booking/${evt.uid}?cancel=true`,
+      rescheduleLink: `${evt.bookerUrl}/reschedule/${evt.uid}`,
     };
     const customMessage = customTemplate(smsMessage, variables, locale, evt.organizer.timeFormat);
     smsMessage = customMessage.text;
@@ -183,7 +188,7 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
       triggerEvent === WorkflowTriggerEvents.RESCHEDULE_EVENT
     ) {
       try {
-        await twilio.sendSMS(reminderPhone, smsMessage, senderID);
+        await twilio.sendSMS(reminderPhone, smsMessage, senderID, userId, teamId);
       } catch (error) {
         log.error(`Error sending SMS with error ${error}`);
       }
@@ -202,20 +207,24 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
             reminderPhone,
             smsMessage,
             scheduledDate.toDate(),
-            senderID
+            senderID,
+            userId,
+            teamId
           );
 
-          await prisma.workflowReminder.create({
-            data: {
-              bookingUid: uid,
-              workflowStepId: workflowStepId,
-              method: WorkflowMethods.SMS,
-              scheduledDate: scheduledDate.toDate(),
-              scheduled: true,
-              referenceId: scheduledSMS.sid,
-              seatReferenceId: seatReferenceUid,
-            },
-          });
+          if (scheduledSMS) {
+            await prisma.workflowReminder.create({
+              data: {
+                bookingUid: uid,
+                workflowStepId: workflowStepId,
+                method: WorkflowMethods.SMS,
+                scheduledDate: scheduledDate.toDate(),
+                scheduled: true,
+                referenceId: scheduledSMS.sid,
+                seatReferenceId: seatReferenceUid,
+              },
+            });
+          }
         } catch (error) {
           log.error(`Error scheduling SMS with error ${error}`);
         }

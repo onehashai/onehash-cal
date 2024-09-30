@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Dispatch } from "react";
 import { useMemo, useState } from "react";
-import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { shallow } from "zustand/shallow";

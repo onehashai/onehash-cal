@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { trackFormbricksAction } from "@calcom/lib/formbricks-client";
 import type { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import { showToast } from "@calcom/ui";
@@ -14,6 +15,7 @@ interface Props {
     bio?: string | null;
     hideBranding?: boolean | undefined;
     role: MembershipRole;
+    logoUrl?: string | null;
     accepted: boolean;
   }[];
 }
@@ -36,6 +38,7 @@ export default function TeamInviteList(props: Props) {
       await utils.viewer.teams.list.invalidate();
       await utils.viewer.teams.get.invalidate();
       await utils.viewer.organizations.listMembers.invalidate();
+      trackFormbricksAction("team_disbanded");
     },
     async onError(err) {
       showToast(err.message, "error");

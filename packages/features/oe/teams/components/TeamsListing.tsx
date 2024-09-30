@@ -1,13 +1,13 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { UpgradeTip } from "@calcom/features/tips/UpgradeTip";
 import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { Alert, Button, ButtonGroup, EmptyScreen, Label, showToast, Icon } from "@calcom/ui";
+import { Alert, Button, ButtonGroup, EmptyScreen, Icon, Label, showToast } from "@calcom/ui";
 
+import { UpgradeTip } from "../../../tips";
 import SkeletonLoaderTeamList from "./SkeletonloaderTeamList";
 import TeamList from "./TeamList";
 
@@ -20,9 +20,14 @@ export function TeamsListing() {
 
   const [inviteTokenChecked, setInviteTokenChecked] = useState(false);
 
-  const { data, isPending, error } = trpc.viewer.teams.list.useQuery(undefined, {
-    enabled: inviteTokenChecked,
-  });
+  const { data, isPending, error } = trpc.viewer.teams.list.useQuery(
+    {
+      includeOrgs: true,
+    },
+    {
+      enabled: inviteTokenChecked,
+    }
+  );
 
   const { data: user } = trpc.viewer.me.useQuery();
 
@@ -39,8 +44,19 @@ export function TeamsListing() {
     },
   });
 
-  const teams = useMemo(() => data?.filter((m) => m.accepted) || [], [data]);
-  const invites = useMemo(() => data?.filter((m) => !m.accepted) || [], [data]);
+  const teams = useMemo(() => data?.filter((m) => m.accepted && !m.isOrganization) || [], [data]);
+
+  const teamInvites = useMemo(() => data?.filter((m) => !m.accepted && !m.isOrganization) || [], [data]);
+
+  const organizationInvites = (data?.filter((m) => !m.accepted && m.isOrganization) || []).filter(
+    (orgInvite) => {
+      const isThereASubTeamOfTheOrganizationInInvites = teamInvites.find(
+        (teamInvite) => teamInvite.parentId === orgInvite.id
+      );
+      // Accepting a subteam invite automatically accepts the invite for the parent organization. So, need to show such an organization's invite
+      return !isThereASubTeamOfTheOrganizationInInvites;
+    }
+  );
 
   const isCreateTeamButtonDisabled = !!(user?.organizationId && !user?.organization?.isOrgAdmin);
 
@@ -91,12 +107,20 @@ export function TeamsListing() {
     <>
       {!!error && <Alert severity="error" title={error.message} />}
 
-      {invites.length > 0 && (
+      {organizationInvites.length > 0 && (
         <div className="bg-subtle mb-6 rounded-md p-5">
-          <Label className="text-emphasis pb-2  font-semibold">{t("pending_invites")}</Label>
-          <TeamList teams={invites} pending />
+          <Label className="text-emphasis pb-2  font-semibold">{t("pending_organization_invites")}</Label>
+          <TeamList teams={organizationInvites} pending />
         </div>
       )}
+
+      {teamInvites.length > 0 && (
+        <div className="bg-subtle mb-6 rounded-md p-5">
+          <Label className="text-emphasis pb-2  font-semibold">{t("pending_invites")}</Label>
+          <TeamList teams={teamInvites} pending />
+        </div>
+      )}
+
       <UpgradeTip
         plan="team"
         title={t("calcom_is_better_with_team", { appName: APP_NAME })}
@@ -105,7 +129,7 @@ export function TeamsListing() {
         background="/tips/teams"
         buttons={
           !user?.organizationId || user?.organization.isOrgAdmin ? (
-            <div className="space-y-2 sm:space-x-2 rtl:space-x-reverse">
+            <div className="space-y-2 rtl:space-x-reverse sm:space-x-2">
               <ButtonGroup>
                 <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
                   {t("create_team")}
@@ -135,7 +159,7 @@ export function TeamsListing() {
                   isCreateTeamButtonDisabled ? t("org_admins_can_create_new_teams") : t("create_new_team")
                 }
                 onClick={() => router.push(`${WEBAPP_URL}/settings/teams/new?returnTo=${WEBAPP_URL}/teams`)}>
-                {isCreateTeamButtonDisabled ? t("org_admins_can_create_new_teams") : t("create_new_team")}
+                {t(`create_new_team`)}
               </Button>
             }
           />

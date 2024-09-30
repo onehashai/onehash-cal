@@ -5,7 +5,6 @@ import type { DateArray } from "ics";
 import { RRule } from "rrule";
 import { v4 as uuidv4 } from "uuid";
 
-import { guessEventLocationType } from "@calcom/app-store/locations";
 import dayjs from "@calcom/dayjs";
 import { preprocessNameFieldDataWithVariant } from "@calcom/features/form-builder/utils";
 import logger from "@calcom/lib/logger";
@@ -19,13 +18,13 @@ import {
 } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 
-import { cancelScheduledEmail, getBatchId, sendSendgridMail } from "../providers/sendgridProvider";
-import type { VariablesType } from "../templates/customTemplate";
-import customTemplate from "../templates/customTemplate";
-import emailRatingTemplate from "../templates/emailRatingTemplate";
-import emailReminderTemplate from "../templates/emailReminderTemplate";
-import emailThankYouTemplate from "../templates/emailThankYouTemplate";
+import { getBatchId, sendSendgridMail } from "./providers/sendgridProvider";
 import type { AttendeeInBookingInfo, BookingInfo, timeUnitLowerCase } from "./smsReminderManager";
+import type { VariablesType } from "./templates/customTemplate";
+import customTemplate from "./templates/customTemplate";
+import emailRatingTemplate from "./templates/emailRatingTemplate";
+import emailReminderTemplate from "./templates/emailReminderTemplate";
+import emailThankYouTemplate from "./templates/emailThankYouTemplate";
 
 const log = logger.getSubLogger({ prefix: ["[emailReminderManager]"] });
 
@@ -34,12 +33,6 @@ function getiCalEventAsString(evt: BookingInfo, status?: ParticipationStatus) {
   let recurrenceRule: string | undefined = undefined;
   if (evt.eventType.recurringEvent?.count) {
     recurrenceRule = new RRule(evt.eventType.recurringEvent).toString().replace("RRULE:", "");
-  }
-
-  let location = bookingMetadataSchema.parse(evt.metadata || {})?.videoCallUrl;
-
-  if (!location) {
-    location = guessEventLocationType(location)?.label || evt.location || "";
   }
 
   const icsEvent = createEvent({
@@ -53,7 +46,7 @@ function getiCalEventAsString(evt: BookingInfo, status?: ParticipationStatus) {
     duration: { minutes: dayjs(evt.endTime).diff(dayjs(evt.startTime), "minute") },
     title: evt.title,
     description: evt.additionalNotes || "",
-    location,
+    location: evt.location || "",
     organizer: { email: evt.organizer.email || "", name: evt.organizer.name },
     attendees: [
       {
@@ -88,7 +81,7 @@ export interface ScheduleReminderArgs {
     time: number | null;
     timeUnit: TimeUnit | null;
   };
-  template: WorkflowTemplates;
+  template?: WorkflowTemplates;
   sender?: string | null;
   workflowStepId?: number;
   seatReferenceUid?: string;
@@ -402,7 +395,6 @@ export const deleteScheduledEmailReminder = async (reminderId: number, reference
 
       return;
     }
-    if (referenceId) await cancelScheduledEmail(referenceId);
 
     await prisma.workflowReminder.update({
       where: {

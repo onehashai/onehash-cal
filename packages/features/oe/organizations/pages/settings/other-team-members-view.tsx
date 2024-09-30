@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-import MemberInvitationModal from "@calcom/features/ee/teams/components/MemberInvitationModal";
+import MemberInvitationModal from "@calcom/features/oe/teams/components/MemberInvitationModal";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
 import { MembershipRole } from "@calcom/prisma/enums";
@@ -14,7 +14,6 @@ import { trpc } from "@calcom/trpc/react";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { Meta, showToast, Button } from "@calcom/ui";
 
-import { getLayout } from "../../../../settings/layouts/SettingsLayout";
 import MakeTeamPrivateSwitch from "../../../teams/components/MakeTeamPrivateSwitch";
 import MemberListItem from "../components/MemberListItem";
 
@@ -60,7 +59,7 @@ function MembersList(props: MembersListProps) {
   );
 }
 
-const MembersView = () => {
+const MembersView = ({ isAppDir }: { isAppDir?: boolean }) => {
   const { t, i18n } = useLocale();
   const router = useRouter();
   const params = useParamsWithFallback();
@@ -114,19 +113,10 @@ const MembersView = () => {
   useEffect(
     function refactorMeWithoutEffect() {
       if (otherMembersError || otherTeamError) {
-        router.push("/settings");
+        router.replace("/enterprise");
       }
     },
-    [otherMembersError, otherTeamError]
-  );
-
-  useEffect(
-    function refactorMeWithoutEffect() {
-      if (data) {
-        router.push("/settings");
-      }
-    },
-    [data]
+    [router, otherMembersError, otherTeamError]
   );
 
   const isPending = isTeamLoading || isOrgListLoading;
@@ -145,25 +135,27 @@ const MembersView = () => {
 
   return (
     <>
-      <Meta
-        title={t("team_members")}
-        description={t("members_team_description")}
-        CTA={
-          isOrgAdminOrOwner ? (
-            <Button
-              type="button"
-              color="primary"
-              StartIcon="plus"
-              className="ml-auto"
-              onClick={() => setShowMemberInvitationModal(true)}
-              data-testid="new-member-button">
-              {t("add")}
-            </Button>
-          ) : (
-            <></>
-          )
-        }
-      />
+      {!isAppDir ? (
+        <Meta
+          title={t("team_members")}
+          description={t("members_team_description")}
+          CTA={
+            isOrgAdminOrOwner ? (
+              <Button
+                type="button"
+                color="primary"
+                StartIcon="plus"
+                className="ml-auto"
+                onClick={() => setShowMemberInvitationModal(true)}
+                data-testid="new-member-button">
+                {t("add")}
+              </Button>
+            ) : (
+              <></>
+            )
+          }
+        />
+      ) : null}
       {!isPending && (
         <>
           <div>
@@ -224,7 +216,7 @@ const MembersView = () => {
                       if (Array.isArray(data.usernameOrEmail)) {
                         showToast(
                           t("email_invite_team_bulk", {
-                            userCount: data.usernameOrEmail.length,
+                            userCount: data.numUsersInvited,
                           }),
                           "success"
                         );
@@ -254,7 +246,5 @@ const MembersView = () => {
     </>
   );
 };
-
-MembersView.getLayout = getLayout;
 
 export default MembersView;

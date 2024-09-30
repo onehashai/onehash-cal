@@ -2,13 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Prisma } from "@prisma/client";
-import { LinkIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useLayoutEffect, useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
+import OrgAppearanceViewWrapper from "@calcom/features/oe/organizations/pages/settings/appearance";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -18,41 +19,56 @@ import { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import {
   Avatar,
+  BannerUploader,
   Button,
+  Editor,
   Form,
   ImageUploader,
   Label,
+  LinkIconButton,
   Meta,
   showToast,
-  TextField,
-  Editor,
-  LinkIconButton,
   SkeletonAvatar,
   SkeletonButton,
   SkeletonContainer,
   SkeletonText,
+  TextField,
+  Icon,
 } from "@calcom/ui";
+// if I include this in the above barrel import, I get a runtime error that the component is not exported.
+import { OrgBanner } from "@calcom/ui";
 
-import { getLayout } from "../../../../settings/layouts/SettingsLayout";
 import { useOrgBranding } from "../../../organizations/context/provider";
 
 const orgProfileFormSchema = z.object({
   name: z.string(),
-  logo: z.string().nullable(),
+  logoUrl: z.string().nullable(),
+  banner: z.string().nullable(),
+  calVideoLogo: z.string().nullable(),
   bio: z.string(),
 });
 
 type FormValues = {
   name: string;
-  logo: string | null;
+  logoUrl: string | null;
+  banner: string | null;
   bio: string;
   slug: string;
+  calVideoLogo: string | null;
 };
 
-const SkeletonLoader = ({ title, description }: { title: string; description: string }) => {
+const SkeletonLoader = ({
+  title,
+  description,
+  isAppDir,
+}: {
+  title: string;
+  description: string;
+  isAppDir?: boolean;
+}) => {
   return (
     <SkeletonContainer>
-      <Meta title={title} description={description} borderInShellHeader={true} />
+      {!isAppDir ? <Meta title={title} description={description} borderInShellHeader={true} /> : null}
       <div className="border-subtle space-y-6 rounded-b-xl border border-t-0 px-4 py-8">
         <div className="flex items-center">
           <SkeletonAvatar className="me-4 mt-0 h-16 w-16 px-4" />
@@ -68,7 +84,7 @@ const SkeletonLoader = ({ title, description }: { title: string; description: st
   );
 };
 
-const OrgProfileView = () => {
+const OrgProfileView = ({ isAppDir }: { isAppDir?: boolean }) => {
   const { t } = useLocale();
   const router = useRouter();
 
@@ -87,14 +103,16 @@ const OrgProfileView = () => {
   useEffect(
     function refactorMeWithoutEffect() {
       if (error) {
-        router.push("/settings");
+        router.replace("/enterprise");
       }
     },
-    [error]
+    [error, router]
   );
 
   if (isPending || !orgBranding || !currentOrganisation) {
-    return <SkeletonLoader title={t("profile")} description={t("profile_org_description")} />;
+    return (
+      <SkeletonLoader isAppDir={isAppDir} title={t("profile")} description={t("profile_org_description")} />
+    );
   }
 
   const isOrgAdminOrOwner =
@@ -108,8 +126,10 @@ const OrgProfileView = () => {
 
   const defaultValues: FormValues = {
     name: currentOrganisation?.name || "",
-    logo: currentOrganisation?.logo || "",
+    logoUrl: currentOrganisation?.logoUrl,
+    banner: currentOrganisation?.bannerUrl || "",
     bio: currentOrganisation?.bio || "",
+    calVideoLogo: currentOrganisation?.calVideoLogo || "",
     slug:
       currentOrganisation?.slug ||
       ((currentOrganisation?.metadata as Prisma.JsonObject)?.requestedSlug as string) ||
@@ -117,41 +137,48 @@ const OrgProfileView = () => {
   };
 
   return (
-    <>
-      <Meta title={t("profile")} description={t("profile_org_description")} borderInShellHeader={true} />
-      {isOrgAdminOrOwner ? (
-        <OrgProfileForm defaultValues={defaultValues} />
-      ) : (
-        <div className="border-subtle flex rounded-b-md border border-t-0 px-4 py-8 sm:px-6">
-          <div className="flex-grow">
-            <div>
-              <Label className="text-emphasis">{t("organization_name")}</Label>
-              <p className="text-default text-sm">{currentOrganisation?.name}</p>
+    <LicenseRequired>
+      {!isAppDir ? (
+        <Meta title={t("profile")} description={t("profile_org_description")} borderInShellHeader={true} />
+      ) : null}
+      <>
+        {isOrgAdminOrOwner ? (
+          <>
+            <OrgProfileForm defaultValues={defaultValues} />
+            <OrgAppearanceViewWrapper />
+          </>
+        ) : (
+          <div className="border-subtle flex rounded-b-md border border-t-0 px-4 py-8 sm:px-6">
+            <div className="flex-grow">
+              <div>
+                <Label className="text-emphasis">{t("organization_name")}</Label>
+                <p className="text-default text-sm">{currentOrganisation?.name}</p>
+              </div>
+              {!isBioEmpty && (
+                <>
+                  <Label className="text-emphasis mt-5">{t("about")}</Label>
+                  <div
+                    className="  text-subtle break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
+                    dangerouslySetInnerHTML={{ __html: md.render(currentOrganisation.bio || "") }}
+                  />
+                </>
+              )}
             </div>
-            {!isBioEmpty && (
-              <>
-                <Label className="text-emphasis mt-5">{t("about")}</Label>
-                <div
-                  className="  text-subtle break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
-                  dangerouslySetInnerHTML={{ __html: md.render(currentOrganisation.bio || "") }}
-                />
-              </>
-            )}
+            <div className="">
+              <LinkIconButton
+                Icon="link"
+                onClick={() => {
+                  navigator.clipboard.writeText(orgBranding.fullDomain);
+                  showToast("Copied to clipboard", "success");
+                }}>
+                {t("copy_link_org")}
+              </LinkIconButton>
+            </div>
           </div>
-          <div className="">
-            <LinkIconButton
-              Icon={LinkIcon}
-              onClick={() => {
-                navigator.clipboard.writeText(orgBranding.fullDomain);
-                showToast("Copied to clipboard", "success");
-              }}>
-              {t("copy_link_org")}
-            </LinkIconButton>
-          </div>
-        </div>
-      )}
-      {/* LEAVE ORG should go above here ^ */}
-    </>
+        )}
+        {/* LEAVE ORG should go above here ^ */}
+      </>
+    </LicenseRequired>
   );
 };
 
@@ -171,10 +198,12 @@ const OrgProfileForm = ({ defaultValues }: { defaultValues: FormValues }) => {
     },
     onSuccess: async (res) => {
       reset({
-        logo: (res.data?.logo || "") as string,
+        logoUrl: res.data?.logoUrl,
         name: (res.data?.name || "") as string,
         bio: (res.data?.bio || "") as string,
         slug: defaultValues["slug"],
+        banner: (res.data?.bannerUrl || "") as string,
+        calVideoLogo: (res.data?.calVideoLogo || "") as string,
       });
       await utils.viewer.teams.get.invalidate();
       await utils.viewer.organizations.listCurrent.invalidate();
@@ -194,10 +223,12 @@ const OrgProfileForm = ({ defaultValues }: { defaultValues: FormValues }) => {
       form={form}
       handleSubmit={(values) => {
         const variables = {
-          logo: values.logo,
+          logoUrl: values.logoUrl,
           name: values.name,
           slug: values.slug,
           bio: values.bio,
+          banner: values.banner,
+          calVideoLogo: values.calVideoLogo,
         };
 
         mutation.mutate(variables);
@@ -206,36 +237,109 @@ const OrgProfileForm = ({ defaultValues }: { defaultValues: FormValues }) => {
         <div className="flex items-center">
           <Controller
             control={form.control}
-            name="logo"
-            render={({ field: { value } }) => {
-              const showRemoveLogoButton = !!value;
-
+            name="logoUrl"
+            render={({ field: { value, onChange } }) => {
+              const showRemoveLogoButton = value !== null;
               return (
                 <>
                   <Avatar
-                    data-testid="profile-upload-avatar"
-                    alt={defaultValues.name || ""}
-                    imageSrc={getPlaceholderAvatar(value, defaultValues.name as string)}
+                    data-testid="profile-upload-logo"
+                    alt={form.getValues("name")}
+                    imageSrc={getPlaceholderAvatar(value, form.getValues("name"))}
+                    size="lg"
+                  />
+                  <div className="ms-4">
+                    <div className="flex gap-2">
+                      <ImageUploader
+                        target="logo"
+                        id="avatar-upload"
+                        buttonMsg={t("upload_logo")}
+                        handleAvatarChange={onChange}
+                        imageSrc={getPlaceholderAvatar(value, form.getValues("name"))}
+                        triggerButtonColor={showRemoveLogoButton ? "secondary" : "primary"}
+                      />
+                      {showRemoveLogoButton && (
+                        <Button color="secondary" onClick={() => onChange(null)}>
+                          {t("remove")}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              );
+            }}
+          />
+        </div>
+
+        <div className="my-4 flex flex-col gap-4">
+          <Controller
+            control={form.control}
+            name="banner"
+            render={({ field: { value, onChange } }) => {
+              const showRemoveBannerButton = !!value;
+
+              return (
+                <>
+                  <OrgBanner
+                    data-testid="profile-upload-banner"
+                    alt={`${defaultValues.name} Banner` || ""}
+                    className="grid min-h-[150px] w-full place-items-center rounded-md sm:min-h-[200px]"
+                    fallback={t("no_target", { target: "banner" })}
+                    imageSrc={value}
+                  />
+                  <div className="ms-4">
+                    <div className="flex gap-2">
+                      <BannerUploader
+                        height={500}
+                        width={1500}
+                        target="banner"
+                        uploadInstruction={t("org_banner_instructions", { height: 500, width: 1500 })}
+                        id="banner-upload"
+                        buttonMsg={t("upload_banner")}
+                        handleAvatarChange={onChange}
+                        imageSrc={value || undefined}
+                        triggerButtonColor={showRemoveBannerButton ? "secondary" : "primary"}
+                      />
+                      {showRemoveBannerButton && (
+                        <Button color="destructive" onClick={() => onChange(null)}>
+                          {t("remove")}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              );
+            }}
+          />
+        </div>
+        <div className="mt-2 flex items-center">
+          <Controller
+            control={form.control}
+            name="calVideoLogo"
+            render={({ field: { value, onChange } }) => {
+              const showRemoveLogoButton = !!value;
+              return (
+                <>
+                  <Avatar
+                    alt="calVideoLogo"
+                    imageSrc={value}
+                    fallback={<Icon name="plus" className="text-subtle h-6 w-6" />}
                     size="lg"
                   />
                   <div className="ms-4">
                     <div className="flex gap-2">
                       <ImageUploader
                         target="avatar"
-                        id="avatar-upload"
-                        buttonMsg={t("upload_logo")}
-                        handleAvatarChange={(newLogo) => {
-                          form.setValue("logo", newLogo, { shouldDirty: true });
-                        }}
+                        id="cal-video-logo-upload"
+                        buttonMsg={t("upload_cal_video_logo")}
+                        handleAvatarChange={onChange}
                         imageSrc={value || undefined}
+                        uploadInstruction={t("cal_video_logo_upload_instruction")}
                         triggerButtonColor={showRemoveLogoButton ? "secondary" : "primary"}
+                        testId="cal-video-logo"
                       />
                       {showRemoveLogoButton && (
-                        <Button
-                          color="secondary"
-                          onClick={() => {
-                            form.setValue("logo", null, { shouldDirty: true });
-                          }}>
+                        <Button color="secondary" onClick={() => onChange(null)}>
                           {t("remove")}
                         </Button>
                       )}
@@ -287,19 +391,23 @@ const OrgProfileForm = ({ defaultValues }: { defaultValues: FormValues }) => {
             disableLists
             firstRender={firstRender}
             setFirstRender={setFirstRender}
+            height="80px"
           />
         </div>
         <p className="text-default mt-2 text-sm">{t("org_description")}</p>
       </div>
       <SectionBottomActions align="end">
-        <Button color="primary" type="submit" loading={mutation.isPending} disabled={isDisabled}>
+        <Button
+          data-testid="update-org-profile-button"
+          color="primary"
+          type="submit"
+          loading={mutation.isPending}
+          disabled={isDisabled}>
           {t("update")}
         </Button>
       </SectionBottomActions>
     </Form>
   );
 };
-
-OrgProfileView.getLayout = getLayout;
 
 export default OrgProfileView;

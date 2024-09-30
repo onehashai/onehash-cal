@@ -1,3 +1,5 @@
+"use client";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -6,8 +8,7 @@ import z from "zod";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import { trpc } from "@calcom/trpc/react";
-import { Alert, Avatar, Button, Form, ImageUploader, Label, TextAreaField } from "@calcom/ui";
-import { Icon } from "@calcom/ui";
+import { Alert, Avatar, Button, Form, Icon, ImageUploader, Label, TextAreaField } from "@calcom/ui";
 
 const querySchema = z.object({
   id: z.string(),
@@ -21,7 +22,7 @@ export const AboutOrganizationForm = () => {
   const [serverErrorMessage, setServerErrorMessage] = useState<string | null>(null);
   const [image, setImage] = useState("");
 
-  const AboutOrganizationFormMethods = useForm<{
+  const aboutOrganizationFormMethods = useForm<{
     logo: string;
     bio: string;
   }>();
@@ -40,7 +41,7 @@ export const AboutOrganizationForm = () => {
   return (
     <>
       <Form
-        form={AboutOrganizationFormMethods}
+        form={aboutOrganizationFormMethods}
         className="space-y-5"
         handleSubmit={(v) => {
           if (!updateOrganizationMutation.isPending) {
@@ -56,7 +57,7 @@ export const AboutOrganizationForm = () => {
 
         <div>
           <Controller
-            control={AboutOrganizationFormMethods.control}
+            control={aboutOrganizationFormMethods.control}
             name="logo"
             render={() => (
               <>
@@ -76,7 +77,7 @@ export const AboutOrganizationForm = () => {
                       buttonMsg={t("upload")}
                       handleAvatarChange={(newAvatar: string) => {
                         setImage(newAvatar);
-                        AboutOrganizationFormMethods.setValue("logo", newAvatar);
+                        aboutOrganizationFormMethods.setValue("logo", newAvatar);
                       }}
                       imageSrc={image}
                     />
@@ -89,7 +90,7 @@ export const AboutOrganizationForm = () => {
 
         <div>
           <Controller
-            control={AboutOrganizationFormMethods.control}
+            control={aboutOrganizationFormMethods.control}
             name="bio"
             render={({ field: { value } }) => (
               <>
@@ -97,7 +98,7 @@ export const AboutOrganizationForm = () => {
                   name="about"
                   defaultValue={value}
                   onChange={(e) => {
-                    AboutOrganizationFormMethods.setValue("bio", e?.target.value);
+                    aboutOrganizationFormMethods.setValue("bio", e?.target.value);
                   }}
                 />
                 <p className="text-subtle text-sm">{t("organization_about_description")}</p>
@@ -109,7 +110,7 @@ export const AboutOrganizationForm = () => {
         <div className="flex">
           <Button
             disabled={
-              AboutOrganizationFormMethods.formState.isSubmitting || updateOrganizationMutation.isPending
+              aboutOrganizationFormMethods.formState.isSubmitting || updateOrganizationMutation.isPending
             }
             color="primary"
             EndIcon="arrow-right"

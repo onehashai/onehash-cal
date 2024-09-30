@@ -1,6 +1,6 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import InviteLinkSettingsModal from "@calcom/features/ee/teams/components/InviteLinkSettingsModal";
@@ -9,7 +9,7 @@ import { classNames } from "@calcom/lib";
 import { APP_NAME } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { useTelemetry, telemetryEventTypes } from "@calcom/lib/telemetry";
+import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { MembershipRole } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
@@ -143,7 +143,6 @@ export const AddNewTeamMembersForm = ({
                   language: i18n.language,
                   role: values.role,
                   usernameOrEmail: values.emailOrUsername,
-                  isOrg: !!isOrg,
                 },
                 {
                   onSuccess: async (data) => {
@@ -153,7 +152,7 @@ export const AddNewTeamMembersForm = ({
                     if (Array.isArray(data.usernameOrEmail)) {
                       showToast(
                         t("email_invite_team_bulk", {
-                          userCount: data.usernameOrEmail.length,
+                          userCount: data.numUsersInvited,
                         }),
                         "success"
                       );
@@ -200,13 +199,13 @@ export const AddNewTeamMembersForm = ({
         className="w-full justify-center"
         disabled={publishTeamMutation.isPending}
         onClick={() => {
-          let uri = `/settings/teams/${teamId}/profile`;
+          let uri = `/settings/teams/${teamId}/event-type`;
           if (isOrg) {
             uri = `/settings/organizations/${teamId}/add-teams`;
           }
           router.push(uri);
         }}>
-        {isOrg ? t("continue") : t("finish")}
+        {t("continue")}
       </Button>
     </>
   );
@@ -236,10 +235,8 @@ const PendingMemberItem = (props: { member: TeamMember; index: number; teamId: n
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const session = useSession();
+  const orgRole = session?.data?.user.org?.role;
   const bookerUrl = member.bookerUrl;
-  const { data: currentOrg } = trpc.viewer.organizations.listCurrent.useQuery(undefined, {
-    enabled: !!session.data?.user?.org,
-  });
   const removeMemberMutation = trpc.viewer.teams.removeMember.useMutation({
     async onSuccess() {
       await utils.viewer.teams.get.invalidate();
@@ -251,9 +248,7 @@ const PendingMemberItem = (props: { member: TeamMember; index: number; teamId: n
     },
   });
 
-  const isOrgAdminOrOwner =
-    currentOrg &&
-    (currentOrg.user.role === MembershipRole.OWNER || currentOrg.user.role === MembershipRole.ADMIN);
+  const isOrgAdminOrOwner = orgRole === MembershipRole.OWNER || orgRole === MembershipRole.ADMIN;
 
   return (
     <li
@@ -292,8 +287,8 @@ const PendingMemberItem = (props: { member: TeamMember; index: number; teamId: n
           className="h-[36px] w-[36px]"
           onClick={() => {
             removeMemberMutation.mutate({
-              teamId: teamId,
-              memberId: member.id,
+              teamIds: [teamId],
+              memberIds: [member.id],
               isOrg: !!props.isOrg,
             });
           }}

@@ -1,4 +1,4 @@
-export interface NewOrgFormValues {
+export interface NewOrganizationFormValues {
   name: string;
   slug: string;
   logo: string;

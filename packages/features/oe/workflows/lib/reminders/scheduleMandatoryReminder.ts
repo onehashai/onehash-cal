@@ -1,49 +1,42 @@
-import type { Workflow, WorkflowsOnEventTypes, WorkflowStep } from "@prisma/client";
-
-import type { getEventTypesFromDB } from "@calcom/features/bookings/lib/handleNewBooking";
+import type { getEventTypeResponse } from "@calcom/features/bookings/lib/handleNewBooking/getEventTypesFromDB";
+import { scheduleEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
+import type { Workflow } from "@calcom/features/oe/workflows/lib/types";
 import type { getDefaultEvent } from "@calcom/lib/defaultEvents";
 import logger from "@calcom/lib/logger";
 import { WorkflowTriggerEvents, TimeUnit, WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
 
-import { scheduleEmailReminder } from "./managers/emailReminderManager";
-import type { BookingInfo } from "./managers/smsReminderManager";
+import type { ExtendedCalendarEvent } from "./reminderScheduler";
 
 const log = logger.getSubLogger({ prefix: ["[scheduleMandatoryReminder]"] });
 
-export type NewBookingEventType =
-  | Awaited<ReturnType<typeof getDefaultEvent>>
-  | Awaited<ReturnType<typeof getEventTypesFromDB>>;
+export type NewBookingEventType = Awaited<ReturnType<typeof getDefaultEvent>> | getEventTypeResponse;
 
 export async function scheduleMandatoryReminder(
-  evt: BookingInfo,
-  workflows: (WorkflowsOnEventTypes & {
-    workflow: Workflow & {
-      steps: WorkflowStep[];
-    };
-  })[],
+  evt: ExtendedCalendarEvent,
+  workflows: Workflow[],
+  requiresConfirmation: boolean,
   hideBranding: boolean,
   seatReferenceUid: string | undefined
 ) {
   try {
     const hasExistingWorkflow = workflows.some((workflow) => {
       return (
-        workflow.workflow?.trigger === WorkflowTriggerEvents.BEFORE_EVENT &&
-        ((workflow.workflow.time !== null &&
-          workflow.workflow.time <= 12 &&
-          workflow.workflow?.timeUnit === TimeUnit.HOUR) ||
-          (workflow.workflow.time !== null &&
-            workflow.workflow.time <= 720 &&
-            workflow.workflow?.timeUnit === TimeUnit.MINUTE)) &&
-        workflow.workflow?.steps.some((step) => step?.action === WorkflowActions.EMAIL_ATTENDEE)
+        workflow.trigger === WorkflowTriggerEvents.BEFORE_EVENT &&
+        ((workflow.time !== null && workflow.time <= 12 && workflow.timeUnit === TimeUnit.HOUR) ||
+          (workflow.time !== null && workflow.time <= 720 && workflow.timeUnit === TimeUnit.MINUTE)) &&
+        workflow.steps.some((step) => step?.action === WorkflowActions.EMAIL_ATTENDEE)
       );
     });
 
-    if (!hasExistingWorkflow && evt.attendees.some((attendee) => attendee.email.includes("@gmail.com"))) {
+    if (
+      !hasExistingWorkflow &&
+      evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
+      !requiresConfirmation
+    ) {
       try {
         const filteredAttendees =
           evt.attendees?.filter((attendee) => attendee.email.includes("@gmail.com")) || [];
 
-        //Event Reminder Email scheduled for 1 hour before the event
         await scheduleEmailReminder({
           evt,
           triggerEvent: WorkflowTriggerEvents.BEFORE_EVENT,
@@ -59,6 +52,7 @@ export async function scheduleMandatoryReminder(
           includeCalendarEvent: false,
           isMandatoryReminder: true,
         });
+
         //Thank You Email Reminder is scheduled for 5 mins after the event
         await scheduleEmailReminder({
           evt,

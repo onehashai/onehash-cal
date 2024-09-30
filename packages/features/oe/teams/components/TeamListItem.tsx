@@ -2,14 +2,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
-import InviteLinkSettingsModal from "@calcom/features/ee/teams/components/InviteLinkSettingsModal";
-import MemberInvitationModal from "@calcom/features/ee/teams/components/MemberInvitationModal";
+import InviteLinkSettingsModal from "@calcom/ee/teams/components/InviteLinkSettingsModal";
+import { MemberInvitationModalWithoutMembers } from "@calcom/features/oe/teams/components/MemberInvitationModal";
 import classNames from "@calcom/lib/classNames";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getTeamUrlSync } from "@calcom/lib/getBookerUrl/client";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { useRefreshData } from "@calcom/lib/hooks/useRefreshData";
 import { MembershipRole } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
@@ -44,24 +44,30 @@ interface Props {
 
 export default function TeamListItem(props: Props) {
   const searchParams = useCompatSearchParams();
-  const { t, i18n } = useLocale();
+  const { t } = useLocale();
   const utils = trpc.useUtils();
+  const user = trpc.viewer.me.useQuery().data;
   const team = props.team;
 
   const showDialog = searchParams?.get("inviteModal") === "true";
   const [openMemberInvitationModal, setOpenMemberInvitationModal] = useState(showDialog);
   const [openInviteLinkSettingsModal, setOpenInviteLinkSettingsModal] = useState(false);
-
-  const teamQuery = trpc.viewer.teams.get.useQuery({ teamId: team?.id });
-  const inviteMemberMutation = trpc.viewer.teams.inviteMember.useMutation();
+  const refreshData = useRefreshData();
 
   const acceptOrLeaveMutation = trpc.viewer.teams.acceptOrLeave.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       showToast(t("success"), "success");
       utils.viewer.teams.get.invalidate();
       utils.viewer.teams.list.invalidate();
       utils.viewer.teams.hasTeamPlan.invalidate();
       utils.viewer.teams.listInvites.invalidate();
+      const userOrganizationId = user?.profile?.organization?.id;
+      const isSubTeamOfDifferentOrg = team.parentId ? team.parentId != userOrganizationId : false;
+      const isDifferentOrg = team.isOrganization && team.id !== userOrganizationId;
+      // If the user team being accepted is a sub-team of different organization or the different organization itself then page must be reloaded to let the session change reflect reliably everywhere.
+      if (variables.accept && (isSubTeamOfDifferentOrg || isDifferentOrg)) {
+        refreshData();
+      }
     },
   });
 
@@ -74,87 +80,45 @@ export default function TeamListItem(props: Props) {
 
   const acceptInvite = () => acceptOrLeave(true);
   const declineInvite = () => acceptOrLeave(false);
-  const orgBranding = useOrgBranding();
 
   const isOwner = props.team.role === MembershipRole.OWNER;
   const isInvitee = !props.team.accepted;
   const isAdmin = props.team.role === MembershipRole.OWNER || props.team.role === MembershipRole.ADMIN;
   const { hideDropdown, setHideDropdown } = props;
 
-  if (!team) return <></>;
+  const hideInvitationModal = () => {
+    setOpenMemberInvitationModal(false);
+  };
 
+  if (!team) return <></>;
+  const teamUrl = team.isOrganization
+    ? getTeamUrlSync({ orgSlug: team.slug, teamSlug: null })
+    : getTeamUrlSync({ orgSlug: team.parent ? team.parent.slug : null, teamSlug: team.slug });
   const teamInfo = (
     <div className="item-center flex px-5 py-5">
       <Avatar
         size="md"
-        imageSrc={getPlaceholderAvatar(team?.logoUrl, team?.name as string)}
-        alt="Team Logo"
+        imageSrc={getPlaceholderAvatar(team?.logoUrl || team?.parent?.logoUrl, team?.name as string)}
+        alt="Team logo"
         className="inline-flex justify-center"
       />
       <div className="ms-3 inline-block truncate">
         <span className="text-default text-sm font-bold">{team.name}</span>
         <span className="text-muted block text-xs">
-          {team.slug ? (
-            `${getTeamUrlSync({ orgSlug: team.parent ? team.parent.slug : null, teamSlug: team.slug })}`
-          ) : (
-            <Badge>{t("upgrade")}</Badge>
-          )}
+          {team.slug ? `${teamUrl}` : <Badge>{t("upgrade")}</Badge>}
         </span>
       </div>
     </div>
   );
 
   return (
-    <li className="">
-      <MemberInvitationModal
-        isOpen={openMemberInvitationModal}
+    <li>
+      <MemberInvitationModalWithoutMembers
+        hideInvitationModal={hideInvitationModal}
+        showMemberInvitationModal={openMemberInvitationModal}
         teamId={team.id}
         token={team.inviteToken?.token}
-        onExit={() => {
-          setOpenMemberInvitationModal(false);
-        }}
-        isPending={inviteMemberMutation.isPending}
-        onSubmit={(values, resetFields) => {
-          inviteMemberMutation.mutate(
-            {
-              teamId: team.id,
-              language: i18n.language,
-              role: values.role,
-              usernameOrEmail: values.emailOrUsername,
-            },
-            {
-              onSuccess: async (data) => {
-                await utils.viewer.teams.get.invalidate();
-                setOpenMemberInvitationModal(false);
-
-                if (Array.isArray(data.usernameOrEmail)) {
-                  showToast(
-                    t("email_invite_team_bulk", {
-                      userCount: data.usernameOrEmail.length,
-                    }),
-                    "success"
-                  );
-                  resetFields();
-                } else {
-                  showToast(
-                    t("email_invite_team", {
-                      email: data.usernameOrEmail,
-                    }),
-                    "success"
-                  );
-                }
-              },
-              onError: (error) => {
-                showToast(error.message, "error");
-              },
-            }
-          );
-        }}
-        onSettingsOpen={() => {
-          setOpenMemberInvitationModal(false);
-          setOpenInviteLinkSettingsModal(true);
-        }}
-        members={teamQuery?.data?.members || []}
+        onSettingsOpen={() => setOpenInviteLinkSettingsModal(true)}
       />
       {team.inviteToken && (
         <InviteLinkSettingsModal
