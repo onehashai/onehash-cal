@@ -30,7 +30,6 @@ function UserFound(props: UserFoundProps) {
 
   const [user] = users; //To be used when we only have a single user, not dynamic group
   useTheme(profile.theme);
-  const { t } = useLocale();
 
   const isBioEmpty = !user.bio || !user.bio.replace("<p><br></p>", "").length;
 
@@ -56,7 +55,7 @@ function UserFound(props: UserFoundProps) {
   }, [telemetry, router.asPath]); */
   if (entity.considerUnpublished) {
     return (
-      <div className="flex h-full min-h-[100dvh] items-center justify-center">
+      <div className="flex h-full min-h-[calc(100dvh)] items-center justify-center">
         <UnpublishedEntity {...entity} />
       </div>
     );
@@ -85,7 +84,7 @@ function UserFound(props: UserFoundProps) {
         <main
           className={classNames(
             shouldAlignCentrally ? "mx-auto" : "",
-            isEmbed ? "border-booker border-booker-width  bg-default rounded-md border" : "",
+            isEmbed ? "border-booker border-booker-width  bg-default rounded-md" : "",
             "max-w-3xl px-4 py-24"
           )}>
           <div className="mb-8 text-center">
@@ -127,36 +126,34 @@ function UserFound(props: UserFoundProps) {
             className={classNames("rounded-md ", !isEventListEmpty && "border-subtle border")}
             data-testid="event-types">
             {eventTypes.map((type) => (
-              <div
+              <Link
                 key={type.id}
                 style={{ display: "flex", ...eventTypeListItemEmbedStyles }}
-                className="bg-default border-subtle dark:bg-muted dark:hover:bg-emphasis hover:bg-muted group relative border-b transition first:rounded-t-md last:rounded-b-md last:border-b-0">
+                prefetch={false}
+                href={{
+                  pathname: `/${user.profile.username}/${type.slug}`,
+                  query,
+                }}
+                passHref
+                onClick={async () => {
+                  sdkActionManager?.fire("eventTypeSelected", {
+                    eventType: type,
+                  });
+                }}
+                className="bg-default border-subtle dark:bg-muted dark:hover:bg-emphasis hover:bg-muted group relative border-b transition first:rounded-t-md last:rounded-b-md last:border-b-0"
+                data-testid="event-type-link">
                 <Icon
                   name="arrow-right"
                   className="text-emphasis absolute right-4 top-4 h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100"
                 />
                 {/* Don't prefetch till the time we drop the amount of javascript in [user][type] page which is impacting score for [user] page */}
                 <div className="block w-full p-5">
-                  <Link
-                    prefetch={false}
-                    href={{
-                      pathname: `/${user.profile.username}/${type.slug}`,
-                      query,
-                    }}
-                    passHref
-                    onClick={async () => {
-                      sdkActionManager?.fire("eventTypeSelected", {
-                        eventType: type,
-                      });
-                    }}
-                    data-testid="event-type-link">
-                    <div className="flex flex-wrap items-center">
-                      <h2 className="text-default pr-2 text-sm font-semibold">{type.title}</h2>
-                    </div>
-                    <EventTypeDescription eventType={type} isPublic={true} shortenDescription />
-                  </Link>
+                  <div className="flex flex-wrap items-center">
+                    <h2 className="text-default pr-2 text-sm font-semibold">{type.title}</h2>
+                  </div>
+                  <EventTypeDescription eventType={type} isPublic={true} shortenDescription />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 

@@ -1,3 +1,5 @@
+import dayjs from "@calcom/dayjs";
+
 const VERCEL_URL = process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "";
 const RAILWAY_STATIC_URL = process.env.RAILWAY_STATIC_URL ? `https://${process.env.RAILWAY_STATIC_URL}` : "";
 const HEROKU_URL = process.env.HEROKU_APP_NAME ? `https://${process.env.HEROKU_APP_NAME}.herokuapp.com` : "";
@@ -29,6 +31,7 @@ export const SUPPORT_MAIL_ADDRESS = process.env.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS
 export const COMPANY_NAME = process.env.NEXT_PUBLIC_COMPANY_NAME || "OneHash";
 export const SENDER_ID = process.env.NEXT_PUBLIC_SENDER_ID || "OneHash Cal";
 export const SENDER_NAME = process.env.NEXT_PUBLIC_SENDGRID_SENDER_NAME || "OneHash";
+export const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || APP_NAME;
 
 // This is the URL from which all Cal Links and their assets are served.
 // Use website URL to make links shorter(cal.com and not app.cal.com)
@@ -62,6 +65,8 @@ export const TRIAL_LIMIT_DAYS = 14;
 
 export const HOSTED_CAL_FEATURES = process.env.NEXT_PUBLIC_HOSTED_CAL_FEATURES || !IS_SELF_HOSTED;
 
+export const IS_EUROPE = dayjs.tz.guess().indexOf("Europe") !== -1;
+
 /** @deprecated use `WEBAPP_URL` */
 export const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_WEBAPP_URL || `https://${process.env.VERCEL_URL}`;
 export const LOGO = "/calcom-logo-white-word.svg";
@@ -76,7 +81,6 @@ export const ANDROID_CHROME_ICON_192 = "/android-chrome-192x192.png";
 export const ANDROID_CHROME_ICON_256 = "/android-chrome-256x256.png";
 export const ROADMAP = "https://github.com/onehashai/onehash-cal/milestones";
 export const DESKTOP_APP_LINK = "https://www.onehash.ai";
-export const JOIN_DISCORD = "https://www.onehash.ai";
 export const POWERED_BY_URL = `${WEBSITE_URL}/?utm_source=embed&utm_medium=powered-by-button`;
 export const DOCS_URL = "https://help.onehash.ai/en/";
 export const BLOGS_URL = "https://www.onehash.ai/blog";
@@ -107,7 +111,15 @@ export const ENABLE_PROFILE_SWITCHER = process.env.NEXT_PUBLIC_ENABLE_PROFILE_SW
 export const ALLOWED_HOSTNAMES = JSON.parse(`[${process.env.ALLOWED_HOSTNAMES || ""}]`) as string[];
 export const RESERVED_SUBDOMAINS = JSON.parse(`[${process.env.RESERVED_SUBDOMAINS || ""}]`) as string[];
 
+export const ORGANIZATION_SELF_SERVE_MIN_SEATS =
+  process.env.NEXT_PUBLIC_ORGANIZATIONS_MIN_SELF_SERVE_SEATS || 30;
+export const ORGANIZATION_SELF_SERVE_PRICE = process.env.NEXT_PUBLIC_ORGANIZATIONS_SELF_SERVE_PRICE || 3700;
+
 export const ORGANIZATION_MIN_SEATS = 30;
+
+export const ENABLE_INFINITE_EVENT_TYPES_FOR_ORG = JSON.parse(
+  `[${process.env.ENABLE_INFINITE_EVENT_TYPES_FOR_ORG || ""}]`
+) as string[];
 
 // Needed for emails in E2E
 export const IS_MAILHOG_ENABLED = process.env.E2E_TEST_MAILHOG_ENABLED === "1";
@@ -165,7 +177,14 @@ export const KEYCLOAK_COOKIE_DOMAIN = process.env.NEXTAUTH_COOKIE_DOMAIN;
 export const CLOUDFLARE_SITE_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_SITEKEY;
 export const MINIMUM_NUMBER_OF_ORG_SEATS = 30;
 export const ORG_SELF_SERVE_ENABLED = process.env.NEXT_PUBLIC_ORG_SELF_SERVE_ENABLED === "1";
-export const ORG_MINIMUM_PUBLISHED_TEAMS_SELF_SERVE = 2;
+export const ORG_MINIMUM_PUBLISHED_TEAMS_SELF_SERVE = 0;
+export const ORG_MINIMUM_PUBLISHED_TEAMS_SELF_SERVE_HELPER_DIALOGUE = 2;
+
+export const CALCOM_PRIVATE_API_ROUTE = process.env.CALCOM_PRIVATE_API_ROUTE || "https://goblin.cal.com";
+export const WEBSITE_PRIVACY_POLICY_URL =
+  process.env.NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL || "https://cal.com/privacy";
+export const WEBSITE_TERMS_URL = process.env.NEXT_PUBLIC_WEBSITE_TERMS_URL || "https://cal.com/terms";
+
 /**
  * The maximum number of days we should check for if we don't find all required bookable days
  * Counter start from current day and we would like to not go beyond 2 months(max days possible) from current day.
@@ -192,3 +211,12 @@ export const RAZORPAY_UPI_ENABLED = process.env.RAZORPAY_UPI_ENABLED === "true";
 export const INNGEST_ID = process.env.INNGEST_ID ?? "onehash-cal";
 
 export const DEMO_URL = "https://app.cal.id/manas/demo";
+export const RECORDING_DEFAULT_ICON = IS_PRODUCTION
+  ? `${WEBAPP_URL}/start-recording.svg`
+  : `https://app.cal.com/start-recording.svg`;
+
+export const RECORDING_IN_PROGRESS_ICON = IS_PRODUCTION
+  ? `${WEBAPP_URL}/stop-recording.svg`
+  : `https://app.cal.com/stop-recording.svg`;
+
+export const ACCOUNT_DELETE_SURVEY = process.env.ACCOUNT_DELETE_SURVEY;

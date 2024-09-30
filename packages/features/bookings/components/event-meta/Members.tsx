@@ -1,22 +1,21 @@
 import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import { useBookerStore } from "@calcom/features/bookings/Booker/store";
+import type { BookerEvent } from "@calcom/features/bookings/types";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { getBookerBaseUrlSync } from "@calcom/lib/getBookerUrl/client";
 import { getTeamUrlSync } from "@calcom/lib/getBookerUrl/client";
 import { SchedulingType } from "@calcom/prisma/enums";
-import { AvatarGroup, Icon } from "@calcom/ui";
-
-import type { PublicEvent } from "../../types";
+import { AvatarGroup } from "@calcom/ui";
 
 export interface EventMembersProps {
   /**
    * Used to determine whether all members should be shown or not.
    * In case of Round Robin type, members aren't shown.
    */
-  schedulingType: PublicEvent["schedulingType"];
-  users: PublicEvent["users"];
-  profile: PublicEvent["profile"];
-  entity: PublicEvent["entity"];
+  schedulingType: BookerEvent["schedulingType"];
+  users: BookerEvent["users"];
+  profile: BookerEvent["profile"];
+  entity: BookerEvent["entity"];
 }
 
 export const EventMembers = ({ schedulingType, users, profile, entity }: EventMembersProps) => {
@@ -50,11 +49,6 @@ export const EventMembers = ({ schedulingType, users, profile, entity }: EventMe
 
   return (
     <>
-      <Icon
-        name="arrow-left"
-        className=" text-subtle mb-3 h-4 w-4"
-        onClick={() => window.history.length > 1 && window.history.go(-1)}
-      />
       <AvatarGroup
         size="sm"
         className="border-muted"

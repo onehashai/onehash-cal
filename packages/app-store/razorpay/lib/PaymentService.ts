@@ -40,18 +40,31 @@ export class PaymentService implements IAbstractPaymentService {
     }
   }
 
-  async create(
-    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-    bookingId: Booking["id"],
-    userId: Booking["userId"],
-    username: string | null,
-    bookerName: string,
-    bookerEmail: string,
-    paymentOption: PaymentOption,
-    bookingUid: string,
-    eventTitle?: string,
-    bookingTitle?: string
-  ) {
+  async create({
+    payment,
+    bookingId,
+    userId,
+    username,
+    bookerName,
+    paymentOption,
+    bookingUid,
+    bookerEmail,
+    bookerPhoneNumber,
+    eventTitle,
+    bookingTitle,
+  }: {
+    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+    bookingId: Booking["id"];
+    userId: Booking["userId"];
+    username: string | null;
+    bookerName: string;
+    paymentOption: PaymentOption;
+    bookingUid: string;
+    bookerPhoneNumber: string;
+    bookerEmail: string;
+    eventTitle?: string;
+    bookingTitle?: string;
+  }) {
     try {
       if (!this.credentials) {
         throw new Error("Razorpay: Credentials are not set for the payment service");

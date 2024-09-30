@@ -2,7 +2,7 @@ import type { GetServerSidePropsContext } from "next";
 
 import { getPremiumMonthlyPlanPriceId } from "@calcom/app-store/stripepayment/lib/utils";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import stripe from "@calcom/features/ee/payments/server/stripe";
 import { hostedCal, isSAMLLoginEnabled, samlProductID, samlTenantID } from "@calcom/features/ee/sso/lib/saml";
 import { ssoTenantProduct } from "@calcom/features/ee/sso/lib/sso";
@@ -37,6 +37,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       const availability = await checkUsername(usernameParam, currentOrgDomain);
       if (availability.available && availability.premium && IS_PREMIUM_USERNAME_ENABLED) {
         const stripePremiumUrl = await getStripePremiumUsernameUrl({
+          userId: session.user.id.toString(),
           userEmail: session.user.email,
           username: usernameParam,
           successDestination,
@@ -104,12 +105,14 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 };
 
 type GetStripePremiumUsernameUrl = {
+  userId: string;
   userEmail: string;
   username: string;
   successDestination: string;
 };
 
 const getStripePremiumUsernameUrl = async ({
+  userId,
   userEmail,
   username,
   successDestination,
@@ -136,6 +139,9 @@ const getStripePremiumUsernameUrl = async ({
     success_url: `${process.env.NEXT_PUBLIC_WEBAPP_URL}${successDestination}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: process.env.NEXT_PUBLIC_WEBAPP_URL || "https://app.cal.com",
     allow_promotion_codes: true,
+    metadata: {
+      dubCustomerId: userId, // pass the userId during checkout creation for sales conversion tracking: https://d.to/conversions/stripe
+    },
   });
 
   return checkoutSession.url;

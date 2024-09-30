@@ -4,7 +4,7 @@ import {
   isSMSAction,
   isTextMessageToAttendeeAction,
   isWhatsappAction,
-} from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
+} from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
 import { SENDER_NAME } from "@calcom/lib/constants";
 import { WorkflowActions, WorkflowMethods, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import type { CalendarEvent } from "@calcom/types/Calendar";

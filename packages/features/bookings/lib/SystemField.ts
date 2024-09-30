@@ -10,6 +10,7 @@ export const SystemField = z.enum([
   "rescheduleReason",
   "smsReminderNumber",
   "phone",
+  "attendeePhoneNumber",
 ]);
 
 export const SMS_REMINDER_NUMBER_FIELD = "smsReminderNumber";

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { getBookingForReschedule, getMultipleDurationValue } from "@calcom/features/bookings/lib/get-booking";
 import type { GetBookingType } from "@calcom/features/bookings/lib/get-booking";
-import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { UserRepository } from "@calcom/lib/server/repository/user";
 import slugify from "@calcom/lib/slugify";
 import prisma from "@calcom/prisma";
@@ -112,6 +112,7 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
     eventSlug: slug,
     isTeamEvent,
     org,
+    fromRedirectOfNonOrgLink: context.query.orgRedirection === "true",
   });
 
   if (!eventData) {

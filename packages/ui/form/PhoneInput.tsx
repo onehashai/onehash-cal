@@ -1,3 +1,5 @@
+"use client";
+
 import { isSupportedCountry } from "libphonenumber-js";
 import { useState, useEffect } from "react";
 import PhoneInput from "react-phone-input-2";
@@ -32,7 +34,6 @@ function BasePhoneInput({
     <PhoneInput
       {...rest}
       value={value ? value.trim().replace(/^\+?/, "+") : undefined}
-      country={value ? undefined : defaultCountry}
       enableSearch
       disableSearchIcon
       inputProps={{
@@ -64,12 +65,13 @@ function BasePhoneInput({
       }}
       dropdownStyle={{ width: "max-content" }}
       autoFormat={autoFormat}
+      country={defaultCountry}
     />
   );
 }
 
 const useDefaultCountry = () => {
-  const [defaultCountry, setDefaultCountry] = useState("us");
+  const [defaultCountry, setDefaultCountry] = useState("in");
   const query = trpc.viewer.public.countryCode.useQuery(undefined, {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

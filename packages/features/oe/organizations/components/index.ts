@@ -1,3 +1,3 @@
-export { CreateANewOrganizationForm } from "./OrgCreationForm";
-export { OrgAboutForm } from "./OrgAboutForm";
-export { OrgTeamsCreationForm } from "./OrgTeamsCreationForm";
+export { CreateANewOrganizationForm } from "./CreateANewOrganizationForm";
+export { AboutOrganizationForm } from "./AboutOrganizationForm";
+export { AddNewTeamsForm } from "./AddNewTeamsForm";

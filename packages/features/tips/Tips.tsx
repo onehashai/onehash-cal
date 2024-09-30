@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-restricted-imports
+import shuffle from "lodash/shuffle";
 import { useState, memo } from "react";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -112,7 +114,7 @@ export const tips = [
   },
 ];
 
-const reversedTips = tips.slice(0).reverse();
+const reversedTips = shuffle(tips).slice(0).reverse();
 
 function Tips() {
   const { t } = useLocale();

@@ -128,6 +128,7 @@ export type BookingFieldType = FormBuilderFieldType;
 export const bookingResponses = z
   .object({
     email: z.string(),
+    attendeePhoneNumber: z.string().optional(),
     //TODO: Why don't we move name out of bookingResponses and let it be handled like user fields?
     name: z.union([
       z.string(),
@@ -249,7 +250,7 @@ export const bookingCreateBodySchema = z.object({
   hashedLink: z.string().nullish(),
   seatReferenceUid: z.string().optional(),
   orgSlug: z.string().optional(),
-  teamMemberEmail: z.string().optional(),
+  teamMemberEmail: z.string().nullish(),
 });
 
 export const requiredCustomInputSchema = z.union([
@@ -656,7 +657,7 @@ export const allManagedEventTypeProps: { [k in keyof Omit<Prisma.EventTypeSelect
   customInputs: true,
   disableGuests: true,
   requiresConfirmation: true,
-  // requiresConfirmationWillBlockSlot: true,
+  requiresConfirmationWillBlockSlot: true,
   eventName: true,
   metadata: true,
   children: true,

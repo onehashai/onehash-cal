@@ -5,7 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import { RoutingFormEmbedButton, RoutingFormEmbedDialog } from "@calcom/features/embed/RoutingFormEmbed";
 import { classNames } from "@calcom/lib";
 import { WEBSITE_URL } from "@calcom/lib/constants";
@@ -465,7 +465,7 @@ export const FormAction = forwardRef(function FormAction<T extends typeof Button
           <div
             {...restProps}
             className={classNames(
-              "sm:hover:bg-subtle self-center rounded-md p-2 hover:bg-gray-200",
+              "sm:hover:bg-subtle self-center rounded-md p-2 transition hover:bg-gray-200",
               extraClassNames
             )}>
             <Switch

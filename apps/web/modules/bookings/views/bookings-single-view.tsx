@@ -109,7 +109,7 @@ export default function Success(props: PageProps) {
   const routerQuery = useRouterQuery();
   const pathname = usePathname();
   const searchParams = useCompatSearchParams();
-  const { eventType, bookingInfo, requiresLoginToUpdate, orgSlug } = props;
+  const { eventType, bookingInfo, requiresLoginToUpdate, orgSlug, rescheduledToUid } = props;
 
   const {
     allRemainingBookings,
@@ -145,7 +145,7 @@ export default function Success(props: PageProps) {
 
   const attendees = bookingInfo?.attendees;
 
-  const isGmail = !!attendees.find((attendee) => attendee.email.includes("gmail.com"));
+  const isGmail = !!attendees.find((attendee) => attendee?.email?.includes("gmail.com"));
 
   const [is24h, setIs24h] = useState(
     props?.userTimeFormat ? props.userTimeFormat === 24 : isBrowserLocale24h()
@@ -161,6 +161,7 @@ export default function Success(props: PageProps) {
   const [calculatedDuration, setCalculatedDuration] = useState<number | undefined>(undefined);
   const [comment, setComment] = useState("");
   const parsedRating = rating ? parseInt(rating, 10) : 3;
+  const currentUserEmail = searchParams?.get("cancelledBy") ?? session?.user?.email ?? undefined;
 
   const defaultRating = isNaN(parsedRating) ? 3 : parsedRating > 5 ? 5 : parsedRating < 1 ? 1 : parsedRating;
   const [rateValue, setRateValue] = useState<number>(defaultRating);
@@ -176,7 +177,7 @@ export default function Success(props: PageProps) {
     },
   });
 
-  const noShowMutation = trpc.viewer.public.noShow.useMutation({
+  const hostNoShowMutation = trpc.viewer.public.markHostAsNoShow.useMutation({
     onSuccess: async () => {
       showToast("Thank you, feedback submitted", "success");
     },
@@ -187,7 +188,7 @@ export default function Success(props: PageProps) {
 
   useEffect(() => {
     if (noShow) {
-      noShowMutation.mutate({ bookingUid: bookingInfo.uid });
+      hostNoShowMutation.mutate({ bookingUid: bookingInfo.uid, noShowHost: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -222,6 +223,7 @@ export default function Success(props: PageProps) {
     host: props.profile.name || "Nameless",
     location: location,
     bookingFields: bookingInfo.responses,
+    eventDuration: eventType.length,
     t,
   };
 
@@ -342,6 +344,8 @@ export default function Success(props: PageProps) {
 
   const providerName = guessEventLocationType(location)?.label;
   const rescheduleProviderName = guessEventLocationType(rescheduleLocation)?.label;
+  const isBookingInPast = new Date(bookingInfo.endTime) < new Date();
+  const isReschedulable = !isCancelled;
 
   const bookingCancelledEventProps = {
     booking: bookingInfo,
@@ -352,6 +356,33 @@ export default function Success(props: PageProps) {
     },
     eventType,
   };
+
+  const isRecurringBooking = props.recurringBookings;
+  const needsConfirmationAndReschedulable = needsConfirmation && isReschedulable;
+  const isNotAttendingSeatedEvent = isCancelled && seatReferenceUid;
+  const isEventCancelled = isCancelled && !seatReferenceUid;
+  const isPastBooking = isBookingInPast;
+
+  const successPageHeadline = (() => {
+    if (needsConfirmationAndReschedulable) {
+      return isRecurringBooking ? t("booking_submitted_recurring") : t("booking_submitted");
+    }
+
+    if (isNotAttendingSeatedEvent) {
+      return t("no_longer_attending");
+    }
+
+    if (isEventCancelled) {
+      return t("event_cancelled");
+    }
+
+    if (isPastBooking) {
+      return t("event_is_in_the_past");
+    }
+
+    return isRecurringBooking ? t("meeting_is_scheduled_recurring") : t("meeting_is_scheduled");
+  })();
+
   return (
     <div className={isEmbed ? "" : "h-screen"} data-testid="success-page">
       {!isEmbed && !isFeedbackMode && (
@@ -372,7 +403,7 @@ export default function Success(props: PageProps) {
           <Link
             href={allRemainingBookings ? "/bookings/recurring" : "/bookings/upcoming"}
             data-testid="back-to-bookings"
-            className="hover:bg-subtle text-subtle hover:text-default mt-2 inline-flex px-1 py-2 text-sm dark:hover:bg-transparent">
+            className="hover:bg-subtle text-subtle hover:text-default mt-2 inline-flex px-1 py-2 text-sm transition dark:hover:bg-transparent">
             <Icon name="chevron-left" className="h-5 w-5 rtl:rotate-180" /> {t("back_to_bookings")}
           </Link>
         </div>
@@ -404,7 +435,7 @@ export default function Success(props: PageProps) {
                 {!isFeedbackMode && (
                   <>
                     <div
-                      className={classNames(isRoundRobin && "relative mx-auto h-24 min-h-24 w-32 min-w-32")}>
+                      className={classNames(isRoundRobin && "min-h-24 min-w-32 relative mx-auto h-24 w-32")}>
                       {isRoundRobin && bookingInfo.user && (
                         <Avatar
                           className="mx-auto flex items-center justify-center"
@@ -413,7 +444,7 @@ export default function Success(props: PageProps) {
                           imageSrc={`${bookingInfo.user.avatarUrl}`}
                         />
                       )}
-                      {giphyImage && !needsConfirmation && !isCancelled && (
+                      {giphyImage && !needsConfirmation && isReschedulable && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={giphyImage} className="w-full rounded-lg" alt="Gif from Giphy" />
                       )}
@@ -422,14 +453,14 @@ export default function Success(props: PageProps) {
                           "mx-auto flex h-12 w-12 items-center justify-center rounded-full",
                           isRoundRobin &&
                             "border-cal-bg dark:border-cal-bg-muted absolute bottom-0 right-0 z-10 h-12 w-12 border-8",
-                          !giphyImage && !isCancelled && !needsConfirmation ? "bg-success" : "",
-                          !giphyImage && !isCancelled && needsConfirmation ? "bg-subtle" : "",
+                          !giphyImage && isReschedulable && !needsConfirmation ? "bg-success" : "",
+                          !giphyImage && isReschedulable && needsConfirmation ? "bg-subtle" : "",
                           isCancelled ? "bg-error" : ""
                         )}>
-                        {!giphyImage && !needsConfirmation && !isCancelled && (
+                        {!giphyImage && !needsConfirmation && isReschedulable && (
                           <Icon name="check" className="h-5 w-5 text-green-600 dark:text-green-400" />
                         )}
-                        {needsConfirmation && !isCancelled && (
+                        {needsConfirmation && isReschedulable && (
                           <Icon name="calendar" className="text-emphasis h-5 w-5" />
                         )}
                         {isCancelled && <Icon name="x" className="h-5 w-5 text-red-600 dark:text-red-200" />}
@@ -440,17 +471,7 @@ export default function Success(props: PageProps) {
                         className="text-emphasis text-2xl font-semibold leading-6"
                         data-testid={isCancelled ? "cancelled-headline" : ""}
                         id="modal-headline">
-                        {needsConfirmation && !isCancelled
-                          ? props.recurringBookings
-                            ? t("booking_submitted_recurring")
-                            : t("booking_submitted")
-                          : isCancelled
-                          ? seatReferenceUid
-                            ? t("no_longer_attending")
-                            : t("event_cancelled")
-                          : props.recurringBookings
-                          ? t("meeting_is_scheduled_recurring")
-                          : t("meeting_is_scheduled")}
+                        {successPageHeadline}
                       </h3>
                       <div className="mt-3">
                         <p className="text-default">{getTitle()}</p>
@@ -531,6 +552,11 @@ export default function Success(props: PageProps) {
                                   {attendee.name && (
                                     <p data-testid={`attendee-name-${attendee.name}`}>{attendee.name}</p>
                                   )}
+                                  {attendee.phoneNumber && (
+                                    <p data-testid={`attendee-phone-${attendee.phoneNumber}`}>
+                                      {attendee.phoneNumber}
+                                    </p>
+                                  )}
                                   <p data-testid={`attendee-email-${attendee.email}`}>{attendee.email}</p>
                                 </div>
                               ))}
@@ -580,6 +606,9 @@ export default function Success(props: PageProps) {
                             </div>
                           </>
                         )}
+
+                        {rescheduledToUid ? <RescheduledToLink rescheduledToUid={rescheduledToUid} /> : null}
+
                         {bookingInfo?.description && (
                           <>
                             <div className="mt-9 font-medium">{t("additional_notes")}</div>
@@ -611,7 +640,12 @@ export default function Success(props: PageProps) {
 
                           return (
                             <>
-                              <div className="text-emphasis mt-4 font-medium">{label}</div>
+                              <div
+                                className="text-emphasis mt-4 font-medium"
+                                dangerouslySetInnerHTML={{
+                                  __html: label,
+                                }}
+                              />
                               <p
                                 className="text-default break-words"
                                 data-testid="field-response"
@@ -651,7 +685,7 @@ export default function Success(props: PageProps) {
                     )}
                     {!requiresLoginToUpdate &&
                       (!needsConfirmation || !userIsOwner) &&
-                      !isCancelled &&
+                      isReschedulable &&
                       (!isCancellationMode ? (
                         <>
                           <hr className="border-subtle mb-8" />
@@ -665,7 +699,11 @@ export default function Success(props: PageProps) {
                                 <span className="text-default inline">
                                   <span className="underline" data-testid="reschedule-link">
                                     <Link
-                                      href={`/reschedule/${seatReferenceUid || bookingInfo?.uid}`}
+                                      href={`/reschedule/${seatReferenceUid || bookingInfo?.uid}${
+                                        currentUserEmail
+                                          ? `?rescheduledBy=${encodeURIComponent(currentUserEmail)}`
+                                          : ""
+                                      }`}
                                       legacyBehavior>
                                       {t("reschedule")}
                                     </Link>
@@ -704,14 +742,15 @@ export default function Success(props: PageProps) {
                             allRemainingBookings={allRemainingBookings}
                             seatReferenceUid={seatReferenceUid}
                             bookingCancelledEventProps={bookingCancelledEventProps}
-                            isLoggedInUserHost={props.isLoggedInUserHost ?? false}
+                            isLoggedInUserHost={!!props.isLoggedInUserHost ?? false}
+                            currentUserEmail={currentUserEmail}
                           />
                         </>
                       ))}
                     {userIsOwner &&
                       !needsConfirmation &&
                       !isCancellationMode &&
-                      !isCancelled &&
+                      isReschedulable &&
                       !!calculatedDuration && (
                         <>
                           <hr className="border-subtle mt-8" />
@@ -967,7 +1006,7 @@ export default function Success(props: PageProps) {
 
               {isGmail && !isFeedbackMode && (
                 <Alert
-                  className="main -mb-20 mt-4 inline-block sm:-mt-4 sm:mb-4 sm:w-full sm:max-w-xl sm:align-middle ltr:text-left rtl:text-right"
+                  className="main -mb-20 mt-4 inline-block ltr:text-left rtl:text-right sm:-mt-4 sm:mb-4 sm:w-full sm:max-w-xl sm:align-middle"
                   severity="warning"
                   message={
                     <div>
@@ -996,6 +1035,25 @@ export default function Success(props: PageProps) {
     </div>
   );
 }
+
+const RescheduledToLink = ({ rescheduledToUid }: { rescheduledToUid: string }) => {
+  const { t } = useLocale();
+  return (
+    <>
+      <div className="mt-3 font-medium">{t("rescheduled")}</div>
+      <div className="col-span-2 mb-2 mt-3">
+        <span className="underline">
+          <Link href={`/booking/${rescheduledToUid}`}>
+            <div className="flex items-center gap-1">
+              {t("view_booking")}
+              <Icon name="external-link" className="h-4 w-4" />
+            </div>
+          </Link>
+        </span>
+      </div>
+    </>
+  );
+};
 
 const DisplayLocation = ({
   locationToDisplay,

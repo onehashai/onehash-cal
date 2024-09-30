@@ -22,6 +22,7 @@ import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 import { cancelScheduledEmail, getBatchId, sendSendgridMail } from "../providers/sendgridProvider";
 import type { VariablesType } from "../templates/customTemplate";
 import customTemplate from "../templates/customTemplate";
+import emailRatingTemplate from "../templates/emailRatingTemplate";
 import emailReminderTemplate from "../templates/emailReminderTemplate";
 import emailThankYouTemplate from "../templates/emailThankYouTemplate";
 import type { AttendeeInBookingInfo, BookingInfo, timeUnitLowerCase } from "./smsReminderManager";
@@ -120,7 +121,6 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
     isMandatoryReminder,
     action,
   } = args;
-  if (action === WorkflowActions.EMAIL_ADDRESS) return;
   const { startTime, endTime } = evt;
   const uid = evt.uid as string;
   const currentDate = dayjs();
@@ -141,6 +141,12 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
   let timeZone = "";
 
   switch (action) {
+    case WorkflowActions.EMAIL_ADDRESS:
+      name = "";
+      attendeeToBeUsedInMail = evt.attendees[0];
+      attendeeName = evt.attendees[0].name;
+      timeZone = evt.organizer.timeZone;
+      break;
     case WorkflowActions.EMAIL_HOST:
       attendeeToBeUsedInMail = evt.attendees[0];
       name = evt.organizer.name;
@@ -157,13 +163,13 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
         // If it's an array, take the first entry (if it exists) and extract name and email (if object); otherwise, just put the email (if string)
         const emailData = sendTo[0];
         if (typeof emailData === "object" && emailData !== null) {
-          const { email } = emailData;
+          const { name, email } = emailData;
           attendeeEmailToBeUsedInMail = email;
         } else if (typeof emailData === "string") {
           attendeeEmailToBeUsedInMail = emailData;
         }
       } else if (typeof sendTo === "object" && sendTo !== null) {
-        const { email } = sendTo;
+        const { name, email } = sendTo;
         attendeeEmailToBeUsedInMail = email;
       }
 
@@ -199,8 +205,10 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
       additionalNotes: evt.additionalNotes,
       responses: evt.responses,
       meetingUrl: bookingMetadataSchema.parse(evt.metadata || {})?.videoCallUrl,
-      cancelLink: `/booking/${evt.uid}?cancel=true`,
-      rescheduleLink: `/${evt.organizer.username}/${evt.eventType.slug}?rescheduleUid=${evt.uid}`,
+      cancelLink: `${evt.bookerUrl}/booking/${evt.uid}?cancel=true`,
+      rescheduleLink: `${evt.bookerUrl}/reschedule/${evt.uid}`,
+      ratingUrl: `${evt.bookerUrl}/booking/${evt.uid}?rating`,
+      noShowUrl: `${evt.bookerUrl}/booking/${evt.uid}?noShow=true`,
     };
 
     const locale =
@@ -229,6 +237,20 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
       attendeeName,
       name
     );
+  } else if (template === WorkflowTemplates.RATING) {
+    emailContent = emailRatingTemplate({
+      isEditingMode: true,
+      action,
+      timeFormat: evt.organizer.timeFormat,
+      startTime,
+      endTime,
+      eventName: evt.title,
+      timeZone,
+      organizer: evt.organizer.name,
+      name,
+      ratingUrl: `${evt.bookerUrl}/booking/${evt.uid}?rating`,
+      noShowUrl: `${evt.bookerUrl}/booking/${evt.uid}?noShow=true`,
+    });
   } else if (template === WorkflowTemplates.COMPLETED) {
     emailContent = emailThankYouTemplate(
       evt.organizer.timeFormat,
@@ -371,23 +393,23 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
 
 export const deleteScheduledEmailReminder = async (reminderId: number, referenceId: string | null) => {
   try {
-    // if (!referenceId) {
-    //   return;
-    // }
+    if (!referenceId) {
+      await prisma.workflowReminder.delete({
+        where: {
+          id: reminderId,
+        },
+      });
 
-    // await prisma.workflowReminder.update({
-    //   where: {
-    //     id: reminderId,
-    //   },
-    //   data: {
-    //     cancelled: true,
-    //   },
-    // });
-
+      return;
+    }
     if (referenceId) await cancelScheduledEmail(referenceId);
-    await prisma.workflowReminder.delete({
+
+    await prisma.workflowReminder.update({
       where: {
         id: reminderId,
+      },
+      data: {
+        cancelled: true,
       },
     });
   } catch (error) {

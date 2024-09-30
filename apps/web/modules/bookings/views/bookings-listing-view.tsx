@@ -75,7 +75,6 @@ const descriptionByStatus: Record<NonNullable<BookingListingStatus>, string> = {
   past: "past_bookings",
   cancelled: "cancelled_bookings",
   unconfirmed: "unconfirmed_bookings",
-  all: "all",
 };
 
 const querySchema = z.object({
@@ -108,20 +107,6 @@ export default function Bookings() {
     }
   );
 
-  const allBookingsQuery = trpc.viewer.bookings.get.useInfiniteQuery(
-    {
-      limit: 10,
-      filters: {
-        status: "all",
-      },
-    },
-    {
-      // first render has status `undefined`
-      enabled: true,
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
-    }
-  );
-
   // Animate page (tab) transitions to look smoothing
 
   const buttonInView = useInViewObserver(() => {
@@ -132,19 +117,19 @@ export default function Bookings() {
 
   // export bookings
   const handleExportBookings = async () => {
-    let allBookings: BookingOutput[] = [];
+    const allBookings: BookingOutput[] = [];
 
-    // Function to fetch all pages recursively
-    const fetchAllBookings = async () => {
-      const data = await allBookingsQuery.fetchNextPage();
-      allBookings = allBookings.concat(data.data?.pages.map((page) => page.bookings).flat() ?? []);
-      // Recursively fetching next page if available
-      if (data.hasNextPage) {
-        await fetchAllBookings();
-      }
-    };
+    // // Function to fetch all pages recursively
+    // const fetchAllBookings = async () => {
+    //   const data = await allBookingsQuery.fetchNextPage();
+    //   allBookings = allBookings.concat(data.data?.pages.map((page) => page.bookings).flat() ?? []);
+    //   // Recursively fetching next page if available
+    //   if (data.hasNextPage) {
+    //     await fetchAllBookings();
+    //   }
+    // };
 
-    await fetchAllBookings();
+    // await fetchAllBookings();
     const allBookingsWithType: BookingExportType[] = [];
 
     allBookings.forEach((booking) => {

@@ -1,5 +1,4 @@
 import { Navbar } from "@/components/Navbar";
-import { CheckCircle2Icon } from "lucide-react";
 import { Inter } from "next/font/google";
 // eslint-disable-next-line @calcom/eslint/deprecated-imports-next-router
 import { useRouter } from "next/router";
@@ -38,7 +37,10 @@ export default function Bookings(props: { calUsername: string; calEmail: string 
           className="my-10 w-[440px] overflow-hidden rounded-md border-[0.7px] border-black px-10 py-5">
           {booking.status === "ACCEPTED" ? (
             <div className="mx-2 my-4 flex flex-col items-center justify-center text-center">
-              <CheckCircle2Icon className="my-5 flex h-[40px] w-[40px] rounded-full bg-green-500" />
+              <Icon
+                name="circle-check-big"
+                className="my-5 flex h-[40px] w-[40px] rounded-full bg-green-500"
+              />
               <h1 className="text-xl font-bold">This meeting is scheduled</h1>
               <p>We sent an email with a calendar invitation with the details to everyone.</p>
             </div>

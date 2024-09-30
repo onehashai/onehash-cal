@@ -16,13 +16,13 @@ import {
   OrgUpgradeBanner,
   type OrgUpgradeBannerProps,
 } from "@calcom/features/ee/organizations/components/OrgUpgradeBanner";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
 import useIntercom, { isInterComEnabled } from "@calcom/features/ee/support/lib/intercom/useIntercom";
+import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/ee/teams/components";
 import { useFlagMap } from "@calcom/features/flags/context/provider";
 import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
-import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
 import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog";
 import AdminPasswordBanner, {
   type AdminPasswordBannerProps,
@@ -34,7 +34,6 @@ import {
   InvalidAppCredentialBanners,
   type InvalidAppCredentialBannersProps,
 } from "@calcom/features/users/components/InvalidAppCredentialsBanner";
-import UserV2OptInBanner from "@calcom/features/users/components/UserV2OptInBanner";
 import VerifyEmailBanner, {
   type VerifyEmailBannerProps,
 } from "@calcom/features/users/components/VerifyEmailBanner";
@@ -43,8 +42,8 @@ import {
   APP_NAME,
   DESKTOP_APP_LINK,
   ENABLE_PROFILE_SWITCHER,
+  IS_CALCOM,
   IS_VISUAL_REGRESSION_TESTING,
-  JOIN_DISCORD,
   ROADMAP,
   TOP_BANNER_HEIGHT,
   WEBAPP_URL,
@@ -52,7 +51,11 @@ import {
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useFormbricks } from "@calcom/lib/formbricks-client";
 import getBrandColours from "@calcom/lib/getBrandColours";
+import { useBookerUrl } from "@calcom/lib/hooks/useBookerUrl";
+import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { ButtonState, useNotifications } from "@calcom/lib/hooks/useNotifications";
+import { useRefreshData } from "@calcom/lib/hooks/useRefreshData";
 import useTheme from "@calcom/lib/hooks/useTheme";
 import { isKeyInObject } from "@calcom/lib/isKeyInObject";
 import { localStorage } from "@calcom/lib/webstorage";
@@ -84,7 +87,6 @@ import {
   TermsOfUse,
   type IconName,
 } from "@calcom/ui";
-import { Discord } from "@calcom/ui/components/icon/Discord";
 import { useGetUserAttributes } from "@calcom/web/components/settings/platform/hooks/useGetUserAttributes";
 
 import federatedLogout from "../auth/lib/federatedLogout";
@@ -219,7 +221,8 @@ const useBanners = () => {
 
 const Layout = (props: LayoutProps) => {
   const banners = useBanners();
-
+  const pathname = usePathname();
+  const isFullPageWithoutSidebar = pathname?.startsWith("/apps/routing-forms/reporting/");
   const { data: user } = trpc.viewer.me.useQuery();
   const { boot } = useIntercom();
   const pageTitle = typeof props.heading === "string" && !props.title ? props.heading : props.title;
@@ -258,9 +261,8 @@ const Layout = (props: LayoutProps) => {
       <TimezoneChangeDialog />
 
       <div className="flex min-h-screen flex-col">
-        {banners && !props.isPlatformUser && (
+        {banners && !props.isPlatformUser && !isFullPageWithoutSidebar && (
           <div className="sticky top-0 z-10 w-full divide-y divide-black">
-            <UserV2OptInBanner />
             {Object.keys(banners).map((key) => {
               if (key === "teamUpgradeBanner") {
                 const Banner = BannerComponent[key];
@@ -388,6 +390,10 @@ function UserDropdown({ small }: UserDropdownProps) {
   const { isPlatformUser } = useGetUserAttributes();
   const { t } = useLocale();
   const { data: user } = useMeQuery();
+  const utils = trpc.useUtils();
+  const bookerUrl = useBookerUrl();
+  const pathname = usePathname();
+  const isPlatformPages = pathname?.startsWith("/settings/platform");
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
@@ -450,7 +456,7 @@ function UserDropdown({ small }: UserDropdownProps) {
               </span>
               <Icon
                 name="chevron-down"
-                className="group-hover:text-subtle text-muted h-4 w-4 flex-shrink-0 rtl:mr-4"
+                className="group-hover:text-subtle text-muted h-4 w-4 flex-shrink-0 transition rtl:mr-4"
                 aria-hidden="true"
               />
             </span>
@@ -471,7 +477,7 @@ function UserDropdown({ small }: UserDropdownProps) {
               <HelpMenuItem onHelpItemSelect={() => onHelpItemSelect()} />
             ) : (
               <>
-                {!isPlatformUser && (
+                {!isPlatformPages && (
                   <>
                     <DropdownMenuItem>
                       <DropdownItem
@@ -508,15 +514,6 @@ function UserDropdown({ small }: UserDropdownProps) {
                 )}
 
                 <DropdownMenuItem>
-                  <DropdownItem
-                    CustomStartIcon={<Discord className="text-default h-4 w-4" />}
-                    target="_blank"
-                    rel="noreferrer"
-                    href={JOIN_DISCORD}>
-                    {t("join_our_discord")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
                   <DropdownItem StartIcon="map" target="_blank" href={ROADMAP}>
                     {t("visit_roadmap")}
                   </DropdownItem>
@@ -530,7 +527,7 @@ function UserDropdown({ small }: UserDropdownProps) {
                     {t("help")}
                   </DropdownItem>
                 </DropdownMenuItem>
-                {!isPlatformUser && (
+                {!isPlatformPages && (
                   <DropdownMenuItem className="todesktop:hidden hidden lg:flex">
                     <DropdownItem
                       StartIcon="download"
@@ -542,6 +539,17 @@ function UserDropdown({ small }: UserDropdownProps) {
                   </DropdownMenuItem>
                 )}
 
+                {!isPlatformPages && isPlatformUser && (
+                  <DropdownMenuItem className="todesktop:hidden hidden lg:flex">
+                    <DropdownItem
+                      StartIcon="blocks"
+                      target="_blank"
+                      rel="noreferrer"
+                      href="/settings/platform">
+                      Platform
+                    </DropdownItem>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem>
@@ -565,6 +573,7 @@ function UserDropdown({ small }: UserDropdownProps) {
 export type NavigationItemType = {
   name: string;
   href: string;
+  isLoading?: boolean;
   onClick?: React.MouseEventHandler<HTMLAnchorElement | HTMLButtonElement>;
   target?: HTMLAnchorElement["target"];
   badge?: React.ReactNode;
@@ -661,7 +670,7 @@ const navigation: NavigationItemType[] = [
   {
     name: "insights",
     href: "/insights",
-    icon: "bar-chart",
+    icon: "chart-bar",
   },
 ];
 
@@ -673,31 +682,28 @@ const platformNavigation: NavigationItemType[] = [
   },
   {
     name: "Documentation",
-    //TODO:UPDATE LINK REFERENCE
-    href: "https://docs.cal.com/docs/platform",
-    icon: "bar-chart",
+    href: "https://chat.onehash.ai/hc/onehash-help-center/en/categories/onehash-cal",
+    icon: "chart-bar",
     target: "_blank",
   },
   {
     name: "API reference",
-    href: "https://api.cal.com/v2/docs#/",
+    href: "https://api.cal.id/docs#/",
     icon: "terminal",
     target: "_blank",
   },
-  {
-    name: "Atoms",
-    //TODO:UPDATE LINK REFERENCE
-    href: "https://docs.cal.com/docs/platform#atoms",
-    icon: "atom",
-    target: "_blank",
-  },
-  {
-    name: MORE_SEPARATOR_NAME,
-    //TODO:UPDATE LINK REFERENCE
-    href: "https://docs.cal.com/docs/platform/faq",
-    icon: "ellipsis",
-    target: "_blank",
-  },
+  // {
+  //   name: "Atoms",
+  //   href: "https://docs.cal.com/docs/platform#atoms",
+  //   icon: "atom",
+  //   target: "_blank",
+  // },
+  // {
+  //   name: MORE_SEPARATOR_NAME,
+  //   href: "https://docs.cal.com/docs/platform/faq",
+  //   icon: "ellipsis",
+  //   target: "_blank",
+  // },
 ];
 
 const getDesktopNavigationItems = (isPlatformNavigation = false) => {
@@ -788,8 +794,11 @@ const NavigationItem: React.FC<{
           aria-current={current ? "page" : undefined}>
           {item.icon && (
             <Icon
-              name={item.icon}
-              className="todesktop:!text-blue-500 mr-2 h-4 w-4 flex-shrink-0 md:ltr:mx-auto lg:ltr:mr-2 rtl:ml-2 [&[aria-current='page']]:text-inherit"
+              name={item.isLoading ? "rotate-cw" : item.icon}
+              className={classNames(
+                "todesktop:!text-blue-500 mr-2 h-4 w-4 flex-shrink-0 rtl:ml-2 md:ltr:mx-auto lg:ltr:mr-2 [&[aria-current='page']]:text-inherit",
+                item.isLoading && "animate-spin"
+              )}
               aria-hidden="true"
               aria-current={current ? "page" : undefined}
             />
@@ -919,9 +928,13 @@ function SideBarContainer({ bannersHeight, isPlatformUser = false }: SideBarCont
   return <SideBar isPlatformUser={isPlatformUser} bannersHeight={bannersHeight} user={data?.user} />;
 }
 
-function SideBar({ bannersHeight, user, isPlatformUser = false }: SideBarProps) {
+function SideBar({ bannersHeight, user }: SideBarProps) {
+  const { fetchAndCopyToClipboard } = useCopy();
   const { t, isLocaleReady } = useLocale();
   const orgBranding = useOrgBranding();
+  const pathname = usePathname();
+  const isPlatformPages = pathname?.startsWith("/settings/platform");
+  const [isReferalLoading, setIsReferalLoading] = useState(false);
 
   const publicPageUrl = useMemo(() => {
     if (!user?.org?.id) return `${process.env.NEXT_PUBLIC_WEBSITE_URL}/${user?.username}`;
@@ -951,17 +964,48 @@ function SideBar({ bannersHeight, user, isPlatformUser = false }: SideBarProps) 
       },
       icon: "copy",
     },
+    IS_CALCOM
+      ? {
+          name: "copy_referral_link",
+          href: "",
+          onClick: (e: { preventDefault: () => void }) => {
+            e.preventDefault();
+            setIsReferalLoading(true);
+            // Create an artificial delay to show the loading state so it doesnt flicker if this request is fast
+            setTimeout(() => {
+              fetchAndCopyToClipboard(
+                fetch("/api/generate-referral-link", {
+                  method: "POST",
+                })
+                  .then((res) => res.json())
+                  .then((res) => res.shortLink),
+                {
+                  onSuccess: () => showToast(t("link_copied"), "success"),
+                  onFailure: () => showToast("Copy to clipboard failed", "error"),
+                }
+              );
+              setIsReferalLoading(false);
+            }, 1000);
+          },
+          icon: "gift",
+          isLoading: isReferalLoading,
+        }
+      : null,
     {
       name: "settings",
       href: user?.org ? `/settings/organizations/profile` : "/settings/my-account/profile",
       icon: "settings",
     },
-  ];
+  ].filter(Boolean) as NavigationItemType[];
+
   return (
     <div className="relative">
       <aside
-        style={!isPlatformUser ? sidebarStylingAttributes : {}}
-        className="bg-muted border-muted fixed left-0 hidden h-full max-h-screen w-14 flex-col overflow-y-auto overflow-x-hidden border-r md:sticky md:flex lg:w-56 lg:px-3">
+        style={!isPlatformPages ? sidebarStylingAttributes : {}}
+        className={classNames(
+          "bg-muted border-muted fixed left-0 hidden h-full w-14 flex-col overflow-y-auto overflow-x-hidden border-r md:sticky md:flex lg:w-56 lg:px-3",
+          !isPlatformPages && "max-h-screen"
+        )}>
         <div className="flex h-full flex-col justify-between py-3 lg:pt-4">
           <header className="todesktop:-mt-3 todesktop:flex-col-reverse todesktop:[-webkit-app-region:drag] items-center justify-between md:hidden lg:flex">
             {orgBranding ? (
@@ -991,7 +1035,7 @@ function SideBar({ bannersHeight, user, isPlatformUser = false }: SideBarProps) 
                 </span>
               </div>
             )}
-            <div className="flex justify-end rtl:space-x-reverse">
+            <div className="flex w-full justify-end rtl:space-x-reverse">
               <button
                 color="minimal"
                 onClick={() => window.history.back()}
@@ -1022,10 +1066,10 @@ function SideBar({ bannersHeight, user, isPlatformUser = false }: SideBarProps) 
           <Link href="/event-types" className="text-center md:inline lg:hidden">
             <Logo small icon />
           </Link>
-          <Navigation isPlatformNavigation={isPlatformUser} />
+          <Navigation isPlatformNavigation={isPlatformPages} />
         </div>
 
-        {!isPlatformUser && (
+        {!isPlatformPages && (
           <div>
             {/* <Tips /> */}
             {bottomNavItems.map((item, index) => (
@@ -1045,10 +1089,11 @@ function SideBar({ bannersHeight, user, isPlatformUser = false }: SideBarProps) 
                   onClick={item.onClick}>
                   {!!item.icon && (
                     <Icon
-                      name={item.icon}
+                      name={item.isLoading ? "rotate-cw" : item.icon}
                       className={classNames(
                         "h-4 w-4 flex-shrink-0 [&[aria-current='page']]:text-inherit",
-                        "me-3 md:mx-auto lg:ltr:mr-2 lg:rtl:ml-2"
+                        "me-3 md:mx-auto lg:ltr:mr-2 lg:rtl:ml-2",
+                        item.isLoading && "animate-spin"
                       )}
                       aria-hidden="true"
                     />
@@ -1075,7 +1120,9 @@ function SideBar({ bannersHeight, user, isPlatformUser = false }: SideBarProps) 
 
 export function ShellMain(props: LayoutProps) {
   const router = useRouter();
-  const { isLocaleReady } = useLocale();
+  const { isLocaleReady, t } = useLocale();
+
+  const { buttonToShow, isLoading, enableNotifications, disableNotifications } = useNotifications();
 
   return (
     <>
@@ -1097,6 +1144,7 @@ export function ShellMain(props: LayoutProps) {
               StartIcon="arrow-left"
               aria-label="Go Back"
               className="rounded-md ltr:mr-2 rtl:ml-2"
+              data-testid="go-back-button"
             />
           )}
           {props.heading && (
@@ -1104,11 +1152,11 @@ export function ShellMain(props: LayoutProps) {
               className={classNames(props.large && "py-8", "flex w-full max-w-full items-center truncate")}>
               {props.HeadingLeftIcon && <div className="ltr:mr-4">{props.HeadingLeftIcon}</div>}
               <div
-                className={classNames("w-full truncate md:block ltr:mr-4 rtl:ml-4", props.headerClassName)}>
+                className={classNames("w-full truncate ltr:mr-4 rtl:ml-4 md:block", props.headerClassName)}>
                 {props.heading && (
                   <h3
                     className={classNames(
-                      "font-cal text-emphasis inline max-w-28 truncate text-lg font-semibold tracking-wide sm:max-w-72 sm:text-xl md:block md:max-w-80 xl:max-w-full",
+                      "font-cal text-emphasis max-w-28 sm:max-w-72 md:max-w-80 inline truncate text-lg font-semibold tracking-wide sm:text-xl md:block xl:max-w-full",
                       props.smallHeading ? "text-base" : "text-xl",
                       props.hideHeadingOnMobile && "hidden"
                     )}>
@@ -1127,13 +1175,30 @@ export function ShellMain(props: LayoutProps) {
                   className={classNames(
                     props.backPath
                       ? "relative"
-                      : "pwa:bottom-[max(7rem,_calc(5rem_+_env(safe-area-inset-bottom)))] fixed bottom-20 z-40 md:z-auto ltr:right-4 md:ltr:right-0 rtl:left-4 md:rtl:left-0",
+                      : "pwa:bottom-[max(7rem,_calc(5rem_+_env(safe-area-inset-bottom)))] fixed bottom-20 z-40 ltr:right-4 rtl:left-4 md:z-auto md:ltr:right-0 md:rtl:left-0",
                     "flex-shrink-0 [-webkit-app-region:no-drag] md:relative md:bottom-auto md:right-auto"
                   )}>
                   {isLocaleReady && props.CTA}
                 </div>
               )}
               {props.actions && props.actions}
+              {props.heading === "Bookings" && buttonToShow && (
+                <Button
+                  color="primary"
+                  onClick={buttonToShow === ButtonState.ALLOW ? enableNotifications : disableNotifications}
+                  loading={isLoading}
+                  disabled={buttonToShow === ButtonState.DENIED}
+                  tooltipSide="bottom"
+                  tooltip={
+                    buttonToShow === ButtonState.DENIED ? t("you_have_denied_notifications") : undefined
+                  }>
+                  {t(
+                    buttonToShow === ButtonState.DISABLE
+                      ? "disable_browser_notifications"
+                      : "allow_browser_notifications"
+                  )}
+                </Button>
+              )}
             </header>
           )}
         </div>
@@ -1187,10 +1252,10 @@ function TopNav() {
           <Logo />
         </Link>
         <div className="flex items-center gap-2 self-center">
-          <span className="hover:bg-muted hover:text-emphasis text-default group flex items-center rounded-full text-sm font-medium lg:hidden">
+          <span className="hover:bg-muted hover:text-emphasis text-default group flex items-center rounded-full text-sm font-medium transition lg:hidden">
             <KBarTrigger />
           </span>
-          <button className="hover:bg-muted hover:text-subtle text-muted rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2">
+          <button className="hover:bg-muted hover:text-subtle text-muted rounded-full p-1 transition focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2">
             <span className="sr-only">{t("settings")}</span>
             <Link href="/settings/my-account/profile">
               <Icon name="settings" className="text-default h-4 w-4" aria-hidden="true" />
@@ -1219,6 +1284,7 @@ function ProfileDropdown() {
   const { update, data: sessionData } = useSession();
   const { data } = trpc.viewer.me.useQuery();
   const [menuOpen, setMenuOpen] = useState(false);
+  const refreshData = useRefreshData();
 
   if (!data || !ENABLE_PROFILE_SWITCHER || !sessionData) {
     return null;
@@ -1254,7 +1320,7 @@ function ProfileDropdown() {
             </span>
             <Icon
               name="chevron-down"
-              className="group-hover:text-subtle text-muted h-4 w-4 flex-shrink-0 rtl:mr-4"
+              className="group-hover:text-subtle text-muted h-4 w-4 flex-shrink-0 transition rtl:mr-4"
               aria-hidden="true"
             />
           </span>
@@ -1267,7 +1333,7 @@ function ProfileDropdown() {
           onInteractOutside={() => {
             setMenuOpen(false);
           }}
-          className="hariom group min-w-56 overflow-hidden rounded-md">
+          className="hariom min-w-56 group overflow-hidden rounded-md">
           <DropdownMenuItem className="p-3 uppercase">
             <span>Switch to</span>
           </DropdownMenuItem>
@@ -1282,7 +1348,7 @@ function ProfileDropdown() {
                   update({
                     upId: option.value,
                   }).then(() => {
-                    window.location.reload();
+                    refreshData();
                   });
                 }}
                 className={classNames("flex w-full", isSelected ? "bg-subtle text-emphasis" : "")}>

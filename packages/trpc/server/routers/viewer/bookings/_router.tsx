@@ -1,6 +1,7 @@
 import authedProcedure from "../../../procedures/authedProcedure";
 import publicProcedure from "../../../procedures/publicProcedure";
 import { router } from "../../../trpc";
+import { ZAddGuestsInputSchema } from "./addGuests.schema";
 import { ZCancelScheduledWorkflowsInputSchema } from "./cancelWorkflows.schema";
 import { ZConfirmInputSchema } from "./confirm.schema";
 import { ZEditLocationInputSchema } from "./editLocation.schema";
@@ -16,6 +17,7 @@ type BookingsRouterHandlerCache = {
   get?: typeof import("./get.handler").getHandler;
   requestReschedule?: typeof import("./requestReschedule.handler").requestRescheduleHandler;
   editLocation?: typeof import("./editLocation.handler").editLocationHandler;
+  addGuests?: typeof import("./addGuests.handler").addGuestsHandler;
   confirm?: typeof import("./confirm.handler").confirmHandler;
   getBookingAttendees?: typeof import("./getBookingAttendees.handler").getBookingAttendeesHandler;
   find?: typeof import("./find.handler").getHandler;
@@ -78,6 +80,21 @@ export const bookingsRouter = router({
       input,
     });
   }),
+  addGuests: authedProcedure.input(ZAddGuestsInputSchema).mutation(async ({ input, ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.addGuests) {
+      UNSTABLE_HANDLER_CACHE.addGuests = await import("./addGuests.handler").then(
+        (mod) => mod.addGuestsHandler
+      );
+    }
+    if (!UNSTABLE_HANDLER_CACHE.addGuests) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.addGuests({
+      ctx,
+      input,
+    });
+  }),
 
   saveNote: bookingsProcedure.input(ZSaveNoteInputSchema).mutation(async ({ input }) => {
     if (!UNSTABLE_HANDLER_CACHE.saveNotes) {
@@ -113,7 +130,7 @@ export const bookingsRouter = router({
     });
   }),
 
-  confirm: bookingsProcedure.input(ZConfirmInputSchema).mutation(async ({ input, ctx }) => {
+  confirm: authedProcedure.input(ZConfirmInputSchema).mutation(async ({ input, ctx }) => {
     if (!UNSTABLE_HANDLER_CACHE.confirm) {
       UNSTABLE_HANDLER_CACHE.confirm = await import("./confirm.handler").then((mod) => mod.confirmHandler);
     }

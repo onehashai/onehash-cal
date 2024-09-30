@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect } from "react";
 import { create } from "zustand";
 
@@ -25,10 +27,12 @@ type StoreInitializeType = {
   bookingData?: GetBookingType | null | undefined;
   verifiedEmail?: string | null;
   rescheduleUid?: string | null;
+  rescheduledBy?: string | null;
   seatReferenceUid?: string;
   durationConfig?: number[] | null;
   org?: string | null;
   isInstantMeeting?: boolean;
+  teamMemberEmail?: string | null;
 };
 
 type SeatedEventData = {
@@ -111,11 +115,12 @@ export type BookerStore = {
   dayCount: number | null;
   setDayCount: (dayCount: number | null) => void;
   /**
-   * If booking is being rescheduled or it has seats, it receives a rescheduleUid or bookingUid
+   * If booking is being rescheduled or it has seats, it receives a rescheduleUid with rescheduledBy or bookingUid
    * the current booking details are passed in. The `bookingData`
    * object is something that's fetched server side.
    */
   rescheduleUid: string | null;
+  rescheduledBy: string | null;
   bookingUid: string | null;
   bookingData: GetBookingType | null;
   setBookingData: (bookingData: GetBookingType | null | undefined) => void;
@@ -144,6 +149,8 @@ export type BookerStore = {
 
   org?: string | null;
   setOrg: (org: string | null | undefined) => void;
+
+  teamMemberEmail?: string | null;
 };
 
 /**
@@ -205,6 +212,7 @@ export const useBookerStore = create<BookerStore>((set, get) => ({
   username: null,
   eventSlug: null,
   eventId: null,
+  rescheduledBy: null,
   verifiedEmail: null,
   setVerifiedEmail: (email: string | null) => {
     set({ verifiedEmail: email });
@@ -240,6 +248,7 @@ export const useBookerStore = create<BookerStore>((set, get) => ({
     month,
     eventId,
     rescheduleUid = null,
+    rescheduledBy = null,
     bookingUid = null,
     bookingData = null,
     layout,
@@ -247,6 +256,7 @@ export const useBookerStore = create<BookerStore>((set, get) => ({
     durationConfig,
     org,
     isInstantMeeting,
+    teamMemberEmail,
   }: StoreInitializeType) => {
     const selectedDateInStore = get().selectedDate;
 
@@ -258,7 +268,9 @@ export const useBookerStore = create<BookerStore>((set, get) => ({
       get().rescheduleUid === rescheduleUid &&
       get().bookingUid === bookingUid &&
       get().bookingData?.responses.email === bookingData?.responses.email &&
-      get().layout === layout
+      get().layout === layout &&
+      get().rescheduledBy === rescheduledBy &&
+      get().teamMemberEmail
     )
       return;
     set({
@@ -267,6 +279,7 @@ export const useBookerStore = create<BookerStore>((set, get) => ({
       eventId,
       org,
       rescheduleUid,
+      rescheduledBy,
       bookingUid,
       bookingData,
       layout: layout || BookerLayouts.MONTH_VIEW,
@@ -276,6 +289,7 @@ export const useBookerStore = create<BookerStore>((set, get) => ({
       selectedDate:
         selectedDateInStore ||
         (["week_view", "column_view"].includes(layout) ? dayjs().format("YYYY-MM-DD") : null),
+      teamMemberEmail,
     });
 
     if (durationConfig?.includes(Number(getQueryParam("duration")))) {
@@ -357,6 +371,7 @@ export const useInitializeBookerStore = ({
   month,
   eventId,
   rescheduleUid = null,
+  rescheduledBy = null,
   bookingData = null,
   verifiedEmail = null,
   layout,
@@ -364,6 +379,7 @@ export const useInitializeBookerStore = ({
   durationConfig,
   org,
   isInstantMeeting,
+  teamMemberEmail,
 }: StoreInitializeType) => {
   const initializeStore = useBookerStore((state) => state.initialize);
   useEffect(() => {
@@ -373,6 +389,7 @@ export const useInitializeBookerStore = ({
       month,
       eventId,
       rescheduleUid,
+      rescheduledBy,
       bookingData,
       layout,
       isTeamEvent,
@@ -380,6 +397,7 @@ export const useInitializeBookerStore = ({
       verifiedEmail,
       durationConfig,
       isInstantMeeting,
+      teamMemberEmail,
     });
   }, [
     initializeStore,
@@ -389,11 +407,13 @@ export const useInitializeBookerStore = ({
     month,
     eventId,
     rescheduleUid,
+    rescheduledBy,
     bookingData,
     layout,
     isTeamEvent,
     verifiedEmail,
     durationConfig,
     isInstantMeeting,
+    teamMemberEmail,
   ]);
 };

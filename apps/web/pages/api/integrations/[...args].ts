@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { Session } from "next-auth";
 
-import getInstalledAppPath from "@calcom/app-store/_utils/getInstalledAppPath";
 import { throwIfNotHaveAdminAccessToTeam } from "@calcom/app-store/_utils/throwIfNotHaveAdminAccessToTeam";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { deriveAppDictKeyFromType } from "@calcom/lib/deriveAppDictKeyFromType";
@@ -70,8 +69,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       await handler(req, res);
     } else {
       await defaultIntegrationAddHandler({ user: req.session?.user, teamId: Number(teamId), ...handler });
-      let redirectUrl = "/apps/installed";
-      redirectUrl = returnToCookie || handler.redirect?.url || getInstalledAppPath(handler);
+      const redirectUrl = handler.redirect?.url ?? undefined;
       res.json({ url: redirectUrl, newTab: handler.redirect?.newTab });
     }
     if (!res.writableEnded) return res.status(200);

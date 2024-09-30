@@ -1,6 +1,6 @@
 "use client";
 
-import MakeTeamPrivateSwitch from "@calcom/features/oe/teams/components/MakeTeamPrivateSwitch";
+import MakeTeamPrivateSwitch from "@calcom/features/ee/teams/components/MakeTeamPrivateSwitch";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { UserListTable } from "@calcom/features/users/components/UserTable/UserListTable";
 import { useLocale } from "@calcom/lib/hooks/useLocale";

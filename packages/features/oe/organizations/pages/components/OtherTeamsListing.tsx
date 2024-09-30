@@ -1,4 +1,4 @@
-import SkeletonLoaderTeamList from "@calcom/features/oe/teams/components/SkeletonloaderTeamList";
+import SkeletonLoaderTeamList from "@calcom/features/ee/teams/components/SkeletonloaderTeamList";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Alert, EmptyScreen } from "@calcom/ui";

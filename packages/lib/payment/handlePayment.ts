@@ -29,7 +29,8 @@ const handlePayment = async (
     metadata: Prisma.JsonValue;
   },
   bookerName: string,
-  bookerEmail: string
+  bookerEmail: string,
+  bookerPhoneNumber?: string | null
 ) => {
   const paymentApp = (await appStore[
     paymentAppCredentials?.app?.dirName as keyof typeof appStore
@@ -55,26 +56,39 @@ const handlePayment = async (
           currency: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].currency,
         },
         booking.id,
+        paymentOption,
         bookerEmail,
-        paymentOption
+        bookerPhoneNumber
       );
     } else {
-      paymentData = await paymentInstance.create(
-        {
+      paymentData = await paymentInstance.create({
+        payment: {
           amount: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].price,
           currency: selectedEventType?.metadata?.apps?.[paymentAppCredentials.appId].currency,
         },
-        booking.id,
-        booking.userId,
-        booking.user?.username ?? null,
-        bookerName,
-        bookerEmail,
-        paymentOption,
-        booking.uid,
-        selectedEventType.title,
-        evt.title
-      );
+        bookingId: booking.id,
+        userId: booking.userId,
+        username: booking.user?.username ?? null,
+        bookerName: bookerName,
+        paymentOption: paymentOption,
+        bookingUid: booking.uid,
+        bookerPhoneNumber: bookerPhoneNumber,
+        bookerEmail: bookerEmail,
+        eventTitle: selectedEventType.title,
+        bookingTitle: evt.title,
+      });
     }
+
+    if (!paymentData) {
+      console.error("Payment could not be created");
+      throw new Error("Payment could not be created");
+    }
+    try {
+      await paymentInstance.afterPayment(evt, booking, paymentData, selectedEventType?.metadata);
+    } catch (e) {
+      console.error(e);
+    }
+    return paymentData;
   } catch (e) {
     if (e instanceof Error && e.message === ErrorCode.PaymentCreationFailure) {
       const _metadata = isPrismaObjOrUndefined(booking.metadata) ? booking.metadata : {};
@@ -91,17 +105,6 @@ const handlePayment = async (
       });
     }
   }
-
-  if (!paymentData) {
-    console.error("Payment could not be created");
-    throw new Error("Payment could not be created");
-  }
-  try {
-    await paymentInstance.afterPayment(evt, booking, paymentData);
-  } catch (e) {
-    console.error(e);
-  }
-  return paymentData;
 };
 
 export { handlePayment };

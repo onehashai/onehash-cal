@@ -1,3 +1,5 @@
+"use client";
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -5,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
 import React, { Suspense, useEffect, useState, useMemo } from "react";
 
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -44,12 +46,12 @@ const tabs: VerticalTabItemProps[] = [
       // { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
     ],
   },
-  {
-    name: "billing",
-    href: "/settings/billing",
-    icon: "credit-card",
-    children: [{ name: "manage_billing", href: "/settings/billing" }],
-  },
+  // {
+  //   name: "billing",
+  //   href: "/settings/billing",
+  //   icon: "credit-card",
+  //   children: [{ name: "manage_billing", href: "/settings/billing" }],
+  // },
   {
     name: "import",
     href: "/settings/import",
@@ -64,8 +66,7 @@ const tabs: VerticalTabItemProps[] = [
       //
       { name: "webhooks", href: "/settings/developer/webhooks" },
       { name: "api_keys", href: "/settings/developer/api-keys" },
-      // TODO: hide this if they have an organisation
-      // { name: "admin_api", href: "/settings/organizations/admin-api" },
+      { name: "admin_api", href: "/settings/organizations/admin-api" },
       // TODO: Add profile level for embeds
       // { name: "embeds", href: "/v2/settings/developer/embeds" },
     ],
@@ -90,10 +91,6 @@ const tabs: VerticalTabItemProps[] = [
         name: "privacy",
         href: "/settings/organizations/privacy",
       },
-      {
-        name: "appearance",
-        href: "/settings/organizations/appearance",
-      },
       // {
       //   name: "billing",
       //   href: "/settings/organizations/billing",
@@ -109,7 +106,6 @@ const tabs: VerticalTabItemProps[] = [
       // },
       // {
       //   name: "admin_api",
-      //   // TODO:UPDATE LINK REFERENCE
       //   href: "https://cal.com/docs/enterprise-features/api/api-reference/bookings#admin-access",
       // },
     ],
@@ -150,12 +146,15 @@ const tabs: VerticalTabItemProps[] = [
 //     // TODO: Enable dsync for self hosters
 //     // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
 //   }
+//   if (tab.name === "admin" && IS_CALCOM) {
+//     tab.children?.push({ name: "create_license_key", href: "/settings/license-key/new" });
+//   }
 // });
 
 // The following keys are assigned to admin only
 const adminRequiredKeys = ["admin"];
 const organizationRequiredKeys = ["organization"];
-const organizationAdminKeys = ["privacy", "appearance", "billing", "OAuth Clients", "SSO", "directory_sync"];
+const organizationAdminKeys = ["privacy", "billing", "OAuth Clients", "SSO", "directory_sync"];
 
 const useTabs = () => {
   const session = useSession();
@@ -178,6 +177,16 @@ const useTabs = () => {
         const newArray = (tab?.children ?? []).filter(
           (child) => isOrgAdminOrOwner || !organizationAdminKeys.includes(child.name)
         );
+
+        // TODO: figure out feature flag as it doesnt cause a re-render of the component when loaded.
+        // You have to refresh the page to see the changes.
+        if (true) {
+          newArray.splice(4, 0, {
+            name: "attributes",
+            href: "/settings/organizations/attributes",
+          });
+        }
+
         return {
           ...tab,
           children: newArray,
@@ -186,12 +195,17 @@ const useTabs = () => {
         };
       } else if (
         tab.href === "/settings/security" &&
-        user?.identityProvider === (IdentityProvider.GOOGLE || IdentityProvider.KEYCLOAK) &&
+        user?.identityProvider === IdentityProvider.GOOGLE &&
         !user?.twoFactorEnabled &&
         !user?.passwordAdded
       ) {
         const filtered = tab?.children?.filter(
           (childTab) => childTab.href !== "/settings/security/two-factor-auth"
+        );
+        return { ...tab, children: filtered };
+      } else if (tab.href === "/settings/developer") {
+        const filtered = tab?.children?.filter(
+          (childTab) => isOrgAdminOrOwner || childTab.name !== "admin_api"
         );
         return { ...tab, children: filtered };
       }
@@ -219,7 +233,7 @@ const BackButtonInSidebar = ({ name }: { name: string }) => {
       data-testid={`vertical-tab-${name}`}>
       <Icon
         name="arrow-left"
-        className="h-4 w-4 stroke-[2px] md:mt-0 ltr:mr-[10px] rtl:ml-[10px] rtl:rotate-180"
+        className="h-4 w-4 stroke-[2px] ltr:mr-[10px] rtl:ml-[10px] rtl:rotate-180 md:mt-0"
       />
       <Skeleton title={name} as="p" className="min-h-4 max-w-36 truncate" loadingClassName="ms-3">
         {name}
@@ -281,7 +295,7 @@ const TeamListCollapsible = () => {
                 }>
                 <CollapsibleTrigger asChild>
                   <div
-                    className="hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis text-default flex h-9 w-full flex-row items-center rounded-md px-2 py-[10px]  text-left text-sm font-medium leading-none"
+                    className="hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis text-default flex h-9 w-full flex-row items-center rounded-md px-2 py-[10px] text-left text-sm font-medium leading-none transition"
                     onClick={() =>
                       setTeamMenuState([
                         ...teamMenuState,
@@ -301,7 +315,7 @@ const TeamListCollapsible = () => {
                     {!team.parentId && (
                       <img
                         src={getPlaceholderAvatar(team.logoUrl, team.name)}
-                        className="h-[16px] w-[16px] self-start rounded-full stroke-[2px] md:mt-0 ltr:mr-2 rtl:ml-2"
+                        className="h-[16px] w-[16px] self-start rounded-full stroke-[2px] ltr:mr-2 rtl:ml-2 md:mt-0"
                         alt={team.name || "Team logo"}
                       />
                     )}
@@ -441,7 +455,7 @@ const SettingsSidebarContainer = ({
                       {tab && tab.icon && (
                         <Icon
                           name={tab.icon}
-                          className="text-subtle h-[16px] w-[16px] stroke-[2px] md:mt-0 ltr:mr-3 rtl:ml-3"
+                          className="text-subtle h-[16px] w-[16px] stroke-[2px] ltr:mr-3 rtl:ml-3 md:mt-0"
                         />
                       )}
                       {!tab.icon && tab?.avatar && (
@@ -482,11 +496,11 @@ const SettingsSidebarContainer = ({
                 <React.Fragment key={tab.href}>
                   <div data-testid="tab-teams" className={`${!tab.children?.length ? "mb-3" : ""}`}>
                     <Link href={tab.href}>
-                      <div className="hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-default group flex h-9 w-full flex-row items-center rounded-md px-2 py-[10px]  text-sm font-medium leading-none">
+                      <div className="hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-default group flex h-9 w-full flex-row items-center rounded-md px-2 py-[10px] text-sm font-medium leading-none transition">
                         {tab && tab.icon && (
                           <Icon
                             name={tab.icon}
-                            className="text-subtle h-[16px] w-[16px] stroke-[2px] md:mt-0 ltr:mr-3 rtl:ml-3"
+                            className="text-subtle h-[16px] w-[16px] stroke-[2px] ltr:mr-3 rtl:ml-3 md:mt-0"
                           />
                         )}
                         <Skeleton
@@ -516,11 +530,11 @@ const SettingsSidebarContainer = ({
                 <React.Fragment key={tab.href}>
                   <div className={`${!tab.children?.length ? "mb-3" : ""}`}>
                     <Link href={tab.href}>
-                      <div className="hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-default group flex h-9 w-full flex-row items-center rounded-md px-2 py-[10px]  text-sm font-medium leading-none">
+                      <div className="hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-default group flex h-9 w-full flex-row items-center rounded-md px-2 py-[10px] text-sm font-medium leading-none transition">
                         {tab && tab.icon && (
                           <Icon
                             name={tab.icon}
-                            className="text-subtle h-[16px] w-[16px] stroke-[2px] md:mt-0 ltr:mr-3 rtl:ml-3"
+                            className="text-subtle h-[16px] w-[16px] stroke-[2px] ltr:mr-3 rtl:ml-3 md:mt-0"
                           />
                         )}
                         <Skeleton
@@ -555,7 +569,7 @@ const SettingsSidebarContainer = ({
                               }>
                               <CollapsibleTrigger asChild>
                                 <div
-                                  className="hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis text-default flex h-9 w-full flex-row items-center rounded-md px-2 py-[10px]  text-left text-sm font-medium leading-none"
+                                  className="hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis text-default flex h-9 w-full flex-row items-center rounded-md px-2 py-[10px] text-left text-sm font-medium leading-none transition"
                                   onClick={() =>
                                     setOtherTeamMenuState([
                                       ...otherTeamMenuState,
@@ -575,7 +589,7 @@ const SettingsSidebarContainer = ({
                                   {!otherTeam.parentId && (
                                     <img
                                       src={getPlaceholderAvatar(otherTeam.logoUrl, otherTeam.name)}
-                                      className="h-[16px] w-[16px] self-start rounded-full stroke-[2px] md:mt-0 ltr:mr-2 rtl:ml-2"
+                                      className="h-[16px] w-[16px] self-start rounded-full stroke-[2px] ltr:mr-2 rtl:ml-2 md:mt-0"
                                       alt={otherTeam.name || "Team logo"}
                                     />
                                   )}
@@ -643,10 +657,12 @@ const MobileSettingsContainer = (props: { onSideContainerOpen?: () => void }) =>
   );
 };
 
-export default function SettingsLayout({
-  children,
-  ...rest
-}: { children: React.ReactNode } & ComponentProps<typeof Shell>) {
+export type SettingsLayoutProps = {
+  children: React.ReactNode;
+  hideHeader?: boolean;
+} & ComponentProps<typeof Shell>;
+
+export default function SettingsLayout({ children, hideHeader, ...rest }: SettingsLayoutProps) {
   const pathname = usePathname();
   const state = useState(false);
   const { t } = useLocale();
@@ -690,7 +706,7 @@ export default function SettingsLayout({
       }>
       <div className="flex flex-1 [&>*]:flex-1">
         <div className="mx-auto max-w-full justify-center lg:max-w-3xl">
-          <ShellHeader />
+          {!hideHeader && <ShellHeader />}
           <ErrorBoundary>
             <Suspense fallback={<Icon name="loader" />}>{children}</Suspense>
           </ErrorBoundary>

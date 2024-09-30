@@ -9,7 +9,7 @@ import { getUsersAvailability } from "@calcom/core/getUserAvailability";
 import type { Dayjs } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
-import { getSlugOrRequestedSlug, orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug, orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { parseBookingLimit, parseDurationLimit } from "@calcom/lib";
 import { RESERVED_SUBDOMAINS } from "@calcom/lib/constants";
 import { getUTCOffsetByTimezone } from "@calcom/lib/date-fns";
@@ -37,6 +37,8 @@ import { TRPCError } from "@trpc/server";
 import type { GetScheduleOptions } from "./getSchedule.handler";
 import type { TGetScheduleInputSchema } from "./getSchedule.schema";
 import { handleNotificationWhenNoSlots } from "./handleNotificationWhenNoSlots";
+
+const log = logger.getSubLogger({ prefix: ["[slots/util]"] });
 
 export const checkIfIsAvailable = ({
   time,
@@ -134,6 +136,7 @@ export async function getEventType(
   organizationDetails: { currentOrgDomain: string | null; isValidOrgDomain: boolean }
 ) {
   const { eventTypeSlug, usernameList, isTeamEvent } = input;
+  log.info("getEventType", safeStringify({ usernameList, eventTypeSlug, isTeamEvent, organizationDetails }));
   const eventTypeId =
     input.eventTypeId ||
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -457,6 +460,7 @@ export async function getAvailableSlots({ input, ctx }: GetScheduleOptions): Pro
         afterEventBuffer: true,
         beforeEventBuffer: true,
         seatsPerTimeSlot: true,
+        requiresConfirmationWillBlockSlot: true,
         requiresConfirmation: true,
       },
     },
@@ -500,6 +504,7 @@ export async function getAvailableSlots({ input, ctx }: GetScheduleOptions): Pro
       eventType: {
         id: eventType.id,
         requiresConfirmation: true,
+        requiresConfirmationWillBlockSlot: true,
       },
       status: {
         in: [BookingStatus.PENDING],
@@ -748,16 +753,18 @@ export async function getAvailableSlots({ input, ctx }: GetScheduleOptions): Pro
   const availableDates = Object.keys(slotsMappedToDate);
   const allDatesWithBookabilityStatus = getAllDatesWithBookabilityStatus(availableDates);
   loggerWithEventDetails.debug(safeStringify({ availableDates }));
-  const utcOffset = input.timeZone ? getUTCOffsetByTimezone(input.timeZone) ?? 0 : 0;
 
+  const eventUtcOffset = getUTCOffsetByTimezone(eventTimeZone) ?? 0;
+  const bookerUtcOffset = input.timeZone ? getUTCOffsetByTimezone(input.timeZone) ?? 0 : 0;
   const periodLimits = calculatePeriodLimits({
     periodType: eventType.periodType,
     periodDays: eventType.periodDays,
     periodCountCalendarDays: eventType.periodCountCalendarDays,
     periodStartDate: eventType.periodStartDate,
     periodEndDate: eventType.periodEndDate,
-    allDatesWithBookabilityStatus,
-    utcOffset,
+    allDatesWithBookabilityStatusInBookerTz: allDatesWithBookabilityStatus,
+    eventUtcOffset,
+    bookerUtcOffset,
   });
   let foundAFutureLimitViolation = false;
   const withinBoundsSlotsMappedToDate = Object.entries(slotsMappedToDate).reduce(
@@ -814,7 +821,7 @@ export async function getAvailableSlots({ input, ctx }: GetScheduleOptions): Pro
     } catch (e) {
       loggerWithEventDetails.error(
         `Something has went wrong. Upstash could be down and we have caught the error to not block availability:
-  ${e}`
+ ${e}`
       );
     }
   }
@@ -833,7 +840,7 @@ async function getUserIdFromUsername(
   organizationDetails: { currentOrgDomain: string | null; isValidOrgDomain: boolean }
 ) {
   const { currentOrgDomain, isValidOrgDomain } = organizationDetails;
-
+  log.info("getUserIdFromUsername", safeStringify({ organizationDetails, username }));
   const [user] = await UserRepository.findUsersByUsername({
     usernameList: [username],
     orgSlug: isValidOrgDomain ? currentOrgDomain : null,

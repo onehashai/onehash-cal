@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-import { updateQuantitySubscriptionFromStripe } from "@calcom/features/oe/teams/lib/payments";
+import { updateQuantitySubscriptionFromStripe } from "@calcom/features/ee/teams/lib/payments";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";

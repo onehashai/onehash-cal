@@ -3,12 +3,13 @@ import Stripe from "stripe";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 
-import { sendAwaitingPaymentEmail } from "@calcom/emails";
+import { sendAwaitingPaymentEmailAndSMS } from "@calcom/emails";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
+import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 import type { IAbstractPaymentService } from "@calcom/types/PaymentService";
 
@@ -55,18 +56,31 @@ export class PaymentService implements IAbstractPaymentService {
   }
 
   /* This method is for creating charges at the time of booking */
-  async create(
-    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-    bookingId: Booking["id"],
-    userId: Booking["userId"],
-    username: string | null,
-    bookerName: string,
-    bookerEmail: string,
-    paymentOption: PaymentOption,
-    bookingUid: string,
-    eventTitle?: string,
-    bookingTitle?: string
-  ) {
+  async create({
+    payment,
+    bookingId,
+    userId,
+    username,
+    bookerName,
+    paymentOption,
+    bookingUid,
+    bookerEmail,
+    bookerPhoneNumber,
+    eventTitle,
+    bookingTitle,
+  }: {
+    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+    bookingId: Booking["id"];
+    userId: Booking["userId"];
+    username: string | null;
+    bookerName: string;
+    paymentOption: PaymentOption;
+    bookingUid: string;
+    bookerPhoneNumber: string;
+    bookerEmail: string;
+    eventTitle?: string;
+    bookingTitle?: string;
+  }) {
     try {
       // Ensure that the payment service can support the passed payment option
       if (paymentOptionEnum.parse(paymentOption) !== "ON_BOOKING") {
@@ -78,8 +92,9 @@ export class PaymentService implements IAbstractPaymentService {
       }
 
       const customer = await retrieveOrCreateStripeCustomerByEmail(
+        this.credentials.stripe_user_id,
         bookerEmail,
-        this.credentials.stripe_user_id
+        bookerPhoneNumber
       );
 
       const params: Stripe.PaymentIntentCreateParams = {
@@ -93,7 +108,8 @@ export class PaymentService implements IAbstractPaymentService {
           calAccountId: userId,
           calUsername: username,
           bookerName,
-          bookerEmail,
+          bookerEmail: bookerEmail,
+          bookerPhoneNumber: bookerPhoneNumber ?? null,
           eventTitle: eventTitle || "",
           bookingTitle: bookingTitle || "",
         },
@@ -142,8 +158,9 @@ export class PaymentService implements IAbstractPaymentService {
   async collectCard(
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
     bookingId: Booking["id"],
+    paymentOption: PaymentOption,
     bookerEmail: string,
-    paymentOption: PaymentOption
+    bookerPhoneNumber?: string | null
   ): Promise<Payment> {
     try {
       if (!this.credentials) {
@@ -156,8 +173,9 @@ export class PaymentService implements IAbstractPaymentService {
       }
 
       const customer = await retrieveOrCreateStripeCustomerByEmail(
+        this.credentials.stripe_user_id,
         bookerEmail,
-        this.credentials.stripe_user_id
+        bookerPhoneNumber
       );
 
       const params = {
@@ -165,6 +183,7 @@ export class PaymentService implements IAbstractPaymentService {
         payment_method_types: ["card"],
         metadata: {
           bookingId,
+          bookerPhoneNumber: bookerPhoneNumber ?? null,
         },
       };
 
@@ -333,22 +352,26 @@ export class PaymentService implements IAbstractPaymentService {
       startTime: { toISOString: () => string };
       uid: string;
     },
-    paymentData: Payment
+    paymentData: Payment,
+    eventTypeMetadata?: EventTypeMetadata
   ): Promise<void> {
-    await sendAwaitingPaymentEmail({
-      ...event,
-      paymentInfo: {
-        link: createPaymentLink({
-          paymentUid: paymentData.uid,
-          name: booking.user?.name,
-          email: booking.user?.email,
-          date: booking.startTime.toISOString(),
-        }),
-        paymentOption: paymentData.paymentOption || "ON_BOOKING",
-        amount: paymentData.amount,
-        currency: paymentData.currency,
+    await sendAwaitingPaymentEmailAndSMS(
+      {
+        ...event,
+        paymentInfo: {
+          link: createPaymentLink({
+            paymentUid: paymentData.uid,
+            name: booking.user?.name,
+            email: booking.user?.email,
+            date: booking.startTime.toISOString(),
+          }),
+          paymentOption: paymentData.paymentOption || "ON_BOOKING",
+          amount: paymentData.amount,
+          currency: paymentData.currency,
+        },
       },
-    });
+      eventTypeMetadata
+    );
   }
 
   async deletePayment(paymentId: Payment["id"]): Promise<boolean> {

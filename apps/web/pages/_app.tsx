@@ -51,8 +51,15 @@ function SessionManager({ children }: { children: React.ReactNode }) {
 function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
 
-  if (Component.PageWrapper !== undefined) return Component.PageWrapper(props);
-  return <Component {...pageProps} />;
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/service-worker.js");
+    }
+  }, []);
+
+  const content = Component.PageWrapper ? <Component.PageWrapper {...props} /> : <Component {...pageProps} />;
+
+  return content;
 }
 
 // Wraps MyApp with SessionManager to handle session expiration

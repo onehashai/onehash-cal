@@ -1,6 +1,7 @@
 import { AnimatePresence, LazyMotion, m } from "framer-motion";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef } from "react";
+import { Toaster } from "react-hot-toast";
 import StickyBox from "react-sticky-box";
 import { shallow } from "zustand/shallow";
 
@@ -30,7 +31,7 @@ import { useBookerStore } from "./store";
 import type { BookerProps, WrappedBookerProps } from "./types";
 
 const loadFramerFeatures = () => import("./framer-features").then((res) => res.default);
-const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+const PoweredBy = dynamic(() => import("@calcom/ee/components/PoweredBy"));
 const UnpublishedEntity = dynamic(() =>
   import("@calcom/ui/components/unpublished-entity/UnpublishedEntity").then((mod) => mod.UnpublishedEntity)
 );
@@ -123,6 +124,7 @@ const BookerComponent = ({
     setEmailVerificationModalVisible,
     handleVerifyEmail,
     renderConfirmNotVerifyEmailButtonCond,
+    isVerificationCodeSending,
   } = verifyEmail;
 
   const {
@@ -171,9 +173,10 @@ const BookerComponent = ({
         eventQuery={event}
         extraOptions={extraOptions}
         rescheduleUid={rescheduleUid}
+        isVerificationCodeSending={isVerificationCodeSending}
         isPlatform={isPlatform}>
         <>
-          {verifyCode ? (
+          {verifyCode && formEmail ? (
             <VerifyCodeDialog
               isOpenDialog={isEmailVerificationModalVisible}
               setIsOpenDialog={setEmailVerificationModalVisible}
@@ -254,6 +257,7 @@ const BookerComponent = ({
   if (bookerState === "loading") {
     return null;
   }
+
   return (
     <>
       {event.data && !isPlatform ? <BookingPageTagManager eventType={event.data} /> : <></>}
@@ -267,14 +271,15 @@ const BookerComponent = ({
         )}>
         <div
           ref={animationScope}
+          data-testid="booker-container"
           className={classNames(
             ...getBookerSizeClassNames(layout, bookerState, hideEventTypeDetails),
-            `bg-default dark:bg-muted grid max-w-full items-start sm:transition-[width] sm:duration-300 sm:motion-reduce:transition-none md:mt-16 md:flex-row dark:[color-scheme:dark]`,
+            `bg-default dark:bg-muted grid max-w-full items-start dark:[color-scheme:dark] sm:transition-[width] sm:duration-300 sm:motion-reduce:transition-none md:flex-row`,
             // We remove border only when the content covers entire viewport. Because in embed, it can almost never be the case that it covers entire viewport, we show the border there
             (layout === BookerLayouts.MONTH_VIEW || isEmbed) && "border-subtle rounded-md",
             !isEmbed && "sm:transition-[width] sm:duration-300",
             isEmbed && layout === BookerLayouts.MONTH_VIEW && "border-booker sm:border-booker-width",
-            !isEmbed && layout === BookerLayouts.MONTH_VIEW && `border-subtle`,
+            !isEmbed && layout === BookerLayouts.MONTH_VIEW && `border-subtle border`,
             `${customClassNames?.bookerContainer}`
           )}>
           <AnimatePresence>
@@ -286,7 +291,9 @@ const BookerComponent = ({
                   (layout === BookerLayouts.COLUMN_VIEW || layout === BookerLayouts.WEEK_VIEW) &&
                     "bg-default dark:bg-muted sticky top-0 z-10"
                 )}>
-                {!isPlatform ? (
+                {isPlatform && layout === BookerLayouts.MONTH_VIEW ? (
+                  <></>
+                ) : (
                   <Header
                     isMyLink={Boolean(username === sessionUsername)}
                     eventSlug={eventSlug}
@@ -316,8 +323,6 @@ const BookerComponent = ({
                       )
                     }
                   />
-                ) : (
-                  <></>
                 )}
               </BookerSection>
             )}
@@ -383,20 +388,20 @@ const BookerComponent = ({
                 scrollToTimeSlots={scrollToTimeSlots}
               />
             </BookerSection>
-            {layout === BookerLayouts.WEEK_VIEW && (
-              <BookerSection
-                key="large-calendar"
-                area="main"
-                className="border-subtle sticky top-0 ml-[-1px] h-full md:border-l"
-                {...fadeInLeft}>
-                <LargeCalendar
-                  extraDays={extraDays}
-                  schedule={schedule.data}
-                  isLoading={schedule.isPending}
-                  event={event}
-                />
-              </BookerSection>
-            )}
+
+            <BookerSection
+              key="large-calendar"
+              area="main"
+              visible={layout === BookerLayouts.WEEK_VIEW}
+              className="border-subtle sticky top-0 ml-[-1px] h-full md:border-l"
+              {...fadeInLeft}>
+              <LargeCalendar
+                extraDays={extraDays}
+                schedule={schedule.data}
+                isLoading={schedule.isPending}
+                event={event}
+              />
+            </BookerSection>
             <BookerSection
               key="timeslots"
               area={{ default: "main", month_view: "timeslots" }}
@@ -405,7 +410,7 @@ const BookerComponent = ({
                 layout === BookerLayouts.COLUMN_VIEW
               }
               className={classNames(
-                "border-subtle rtl:border-default flex h-full w-full flex-col overflow-x-auto px-5 py-3 pb-0 ltr:md:border-l rtl:border-r",
+                "border-subtle rtl:border-default flex h-full w-full flex-col overflow-x-auto px-5 py-3 pb-0 rtl:border-r ltr:md:border-l",
                 layout === BookerLayouts.MONTH_VIEW &&
                   "h-full overflow-hidden md:w-[var(--booker-timeslots-width)]",
                 layout !== BookerLayouts.MONTH_VIEW && "sticky top-0"
@@ -434,7 +439,7 @@ const BookerComponent = ({
           }}
         />
 
-        {bookerState !== "booking" && event.data?.isInstantEvent && (
+        {bookerState !== "booking" && event.data?.showInstantEventConnectNowModal && (
           <div
             className={classNames(
               "animate-fade-in-up  z-40 my-2 opacity-0",
@@ -453,7 +458,7 @@ const BookerComponent = ({
           <m.span
             key="logo"
             className={classNames(
-              "-z-10 mb-6 mt-auto pt-6 [&_img]:h-[32px]",
+              "mb-6 mt-auto pt-6 [&_img]:h-[15px]",
               hasDarkBackground ? "dark" : "",
               layout === BookerLayouts.MONTH_VIEW ? "block" : "hidden"
             )}>
@@ -467,6 +472,7 @@ const BookerComponent = ({
         visible={bookerState === "booking" && shouldShowFormInDialog}>
         {EventBooker}
       </BookFormAsModal>
+      <Toaster position="bottom-right" />
     </>
   );
 };

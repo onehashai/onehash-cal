@@ -8,7 +8,8 @@ import { createAProfileForAnExistingUser } from "@calcom/lib/createAProfileForAn
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { getTranslation } from "@calcom/lib/server/i18n";
-import { isTeamAdmin, updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
+import { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
+import { isTeamAdmin } from "@calcom/lib/server/queries";
 import { isOrganisationAdmin } from "@calcom/lib/server/queries/organisations";
 import { ProfileRepository } from "@calcom/lib/server/repository/profile";
 import { getParsedTeam } from "@calcom/lib/server/repository/teamUtils";
@@ -16,7 +17,7 @@ import { UserRepository } from "@calcom/lib/server/repository/user";
 import slugify from "@calcom/lib/slugify";
 import { prisma } from "@calcom/prisma";
 import type { Membership, OrganizationSettings, Team } from "@calcom/prisma/client";
-import { Prisma, type User as UserType, type UserPassword } from "@calcom/prisma/client";
+import { type User as UserType, type UserPassword, Prisma } from "@calcom/prisma/client";
 import type { Profile as ProfileType } from "@calcom/prisma/client";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -24,7 +25,7 @@ import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 import { TRPCError } from "@trpc/server";
 
 import { isEmail } from "../util";
-import type { InviteMemberOptions, TeamWithParent } from "./types";
+import type { TeamWithParent } from "./types";
 
 const log = logger.getSubLogger({ prefix: ["inviteMember.utils"] });
 export type Invitee = Pick<
@@ -48,7 +49,17 @@ type ExistingUserWithInviteStatusAndProfile = ExistingUserWithInviteStatus & {
   } | null;
 };
 
-export async function checkPermissions({
+type InvitableExistingUser = UserWithMembership & {
+  newRole: MembershipRole;
+};
+
+type InvitableExistingUserWithProfile = InvitableExistingUser & {
+  profile: {
+    username: string;
+  } | null;
+};
+
+export async function ensureAtleastAdminPermissions({
   userId,
   teamId,
   isOrg,
@@ -242,7 +253,7 @@ export function getOrgConnectionInfo({
   if (team.parentId || isOrg) {
     orgId = team.parentId || team.id;
     if (email.split("@")[1] == orgAutoAcceptDomain) {
-      // We discourage self-served organizations from being able to auto-accept feature by having a barrier of a fixed number of paying teams in the account for creating the organization
+      // We discourage self-served organizations from being able to use auto-accept feature by having a barrier of a fixed number of paying teams in the account for creating the organization
       // We can't put restriction of a published organization here because when we move teams during the onboarding of the organization, it isn't published at the moment and we really need those members to be auto-added
       // Further, sensitive operations like member editing and impersonating are disabled by default, unless reviewed by the ADMIN team
       autoAccept = !!orgVerified;
@@ -358,19 +369,21 @@ export async function createNewUsersConnectToOrgIfExists({
 }
 
 export async function createMemberships({
-  input,
+  teamId,
+  language,
   invitees,
   parentId,
   accepted,
 }: {
-  input: Omit<InviteMemberOptions["input"], "usernameOrEmail">;
-  invitees: (ExistingUserWithInviteStatus & {
+  teamId: number;
+  language: string;
+  invitees: (InvitableExistingUser & {
     needToCreateOrgMembership: boolean | null;
   })[];
   parentId: number | null;
   accepted: boolean;
 }) {
-  log.debug("Creating memberships for", safeStringify({ input, invitees, parentId, accepted }));
+  log.debug("Creating memberships for", safeStringify({ teamId, language, invitees, parentId, accepted }));
   try {
     await prisma.membership.createMany({
       data: invitees.flatMap((invitee) => {
@@ -384,7 +397,7 @@ export async function createMemberships({
         const data = [];
         // membership for the team
         data.push({
-          teamId: input.teamId,
+          teamId,
           userId: invitee.id,
           accepted,
           role: role,
@@ -404,7 +417,7 @@ export async function createMemberships({
     });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
-      logger.error("Failed to create memberships", input.teamId);
+      logger.error("Failed to create memberships", teamId);
     } else {
       throw e;
     }
@@ -446,7 +459,7 @@ export async function sendSignupToOrganizationEmail({
     from: inviterName || `${team.name}'s admin`,
     to: usernameOrEmail,
     teamName: team.name,
-    joinLink: SIGNUP_URL,
+    joinLink: SIGNUP_URL as string,
     isCalcomMember: false,
     isOrg: isOrg,
     parentTeamName: team?.parent?.name,
@@ -490,12 +503,10 @@ export function getOrgState(
 
   return {
     isInOrgScope: false,
-  } as {
-    isInOrgScope: false;
-    orgVerified: never;
-    autoAcceptEmailDomain: never;
-    orgConfigured: never;
-    orgPublished: never;
+    orgVerified: null,
+    autoAcceptEmailDomain: null,
+    orgConfigured: null,
+    orgPublished: null,
   };
 }
 
@@ -561,7 +572,7 @@ export const groupUsersByJoinability = ({
   connectionInfoMap,
 }: {
   team: TeamWithParent;
-  existingUsersWithMemberships: ExistingUserWithInviteStatusAndProfile[];
+  existingUsersWithMemberships: InvitableExistingUserWithProfile[];
   connectionInfoMap: Record<string, ReturnType<typeof getOrgConnectionInfo>>;
 }) => {
   const usersToAutoJoin = [];
@@ -611,11 +622,7 @@ export const sendExistingUserTeamInviteEmails = async ({
 }: {
   language: TFunction;
   isAutoJoin: boolean;
-  existingUsersWithMemberships: (UserWithMembership & {
-    profile: {
-      username: string;
-    } | null;
-  })[];
+  existingUsersWithMemberships: Omit<InvitableExistingUserWithProfile, "canBeInvited" | "newRole">[];
   currentUserTeamName?: string;
   currentUserParentTeamName: string | undefined;
   currentUserName?: string | null;
@@ -689,7 +696,6 @@ export const sendExistingUserTeamInviteEmails = async ({
 type inviteMemberHandlerInput = {
   teamId: number;
   role?: "ADMIN" | "MEMBER" | "OWNER";
-  isOrg: boolean;
   language: string;
 };
 
@@ -697,20 +703,24 @@ export async function handleExistingUsersInvites({
   invitableExistingUsers,
   team,
   orgConnectInfoByUsernameOrEmail,
-  input,
+  teamId,
+  language,
   inviter,
   orgSlug,
+  isOrg,
 }: {
-  invitableExistingUsers: Awaited<ReturnType<typeof findUsersWithInviteStatus>>;
+  invitableExistingUsers: InvitableExistingUser[];
   team: TeamWithParent;
   orgConnectInfoByUsernameOrEmail: Record<string, { orgId: number | undefined; autoAccept: boolean }>;
-  input: inviteMemberHandlerInput;
+  teamId: number;
+  language: string;
   inviter: {
     name: string | null;
   };
+  isOrg: boolean;
   orgSlug: string | null;
 }) {
-  const translation = await getTranslation(input.language ?? "en", "common");
+  const translation = await getTranslation(language, "common");
   if (!team.isOrganization) {
     const [autoJoinUsers, regularUsers] = groupUsersByJoinability({
       existingUsersWithMemberships: invitableExistingUsers.map((u) => {
@@ -734,7 +744,8 @@ export async function handleExistingUsersInvites({
     // invited users can autojoin, create their memberships in org
     if (autoJoinUsers.length) {
       await createMemberships({
-        input,
+        teamId,
+        language,
         invitees: autoJoinUsers,
         parentId: team.parentId,
         accepted: true,
@@ -751,7 +762,7 @@ export async function handleExistingUsersInvites({
         currentUserTeamName: team?.name,
         existingUsersWithMemberships: autoJoinUsers,
         language: translation,
-        isOrg: input.isOrg,
+        isOrg: isOrg,
         teamId: team.id,
         isAutoJoin: true,
         currentUserParentTeamName: team?.parent?.name,
@@ -762,7 +773,8 @@ export async function handleExistingUsersInvites({
     // invited users cannot autojoin, create provisional memberships and send email
     if (regularUsers.length) {
       await createMemberships({
-        input,
+        teamId,
+        language,
         invitees: regularUsers,
         parentId: team.parentId,
         accepted: false,
@@ -772,7 +784,7 @@ export async function handleExistingUsersInvites({
         currentUserTeamName: team?.name,
         existingUsersWithMemberships: regularUsers,
         language: translation,
-        isOrg: input.isOrg,
+        isOrg: isOrg,
         teamId: team.id,
         isAutoJoin: false,
         currentUserParentTeamName: team?.parent?.name,
@@ -853,7 +865,7 @@ export async function handleExistingUsersInvites({
       currentUserTeamName: team?.name,
       existingUsersWithMemberships: autoJoinUsers,
       language: translation,
-      isOrg: input.isOrg,
+      isOrg,
       teamId: team.id,
       isAutoJoin: true,
       currentUserParentTeamName: team?.parent?.name,
@@ -866,7 +878,7 @@ export async function handleExistingUsersInvites({
       currentUserTeamName: team?.name,
       existingUsersWithMemberships: regularUsers,
       language: translation,
-      isOrg: input.isOrg,
+      isOrg,
       teamId: team.id,
       isAutoJoin: false,
       currentUserParentTeamName: team?.parent?.name,
@@ -879,25 +891,29 @@ export async function handleNewUsersInvites({
   invitationsForNewUsers,
   team,
   orgConnectInfoByUsernameOrEmail,
-  input,
+  teamId,
+  language,
+  isOrg,
   autoAcceptEmailDomain,
   inviter,
 }: {
   invitationsForNewUsers: Invitation[];
-  input: inviteMemberHandlerInput;
+  teamId: number;
+  language: string;
   orgConnectInfoByUsernameOrEmail: Record<string, { orgId: number | undefined; autoAccept: boolean }>;
   autoAcceptEmailDomain: string | null;
   team: TeamWithParent;
   inviter: {
     name: string | null;
   };
+  isOrg: boolean;
 }) {
-  const translation = await getTranslation(input.language ?? "en", "common");
+  const translation = await getTranslation(language, "common");
 
   await createNewUsersConnectToOrgIfExists({
     invitations: invitationsForNewUsers,
-    isOrg: input.isOrg,
-    teamId: input.teamId,
+    isOrg,
+    teamId: teamId,
     orgConnectInfoByUsernameOrEmail,
     autoAcceptEmailDomain: autoAcceptEmailDomain,
     parentId: team.parentId,
@@ -912,8 +928,8 @@ export async function handleNewUsersInvites({
       },
       translation,
       inviterName: inviter.name ?? "",
-      teamId: input.teamId,
-      isOrg: input.isOrg,
+      teamId,
+      isOrg,
     });
   });
   await sendEmails(sendVerifyEmailsPromises);

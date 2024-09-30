@@ -2,16 +2,21 @@ import type { GetServerSidePropsContext } from "next";
 import nookies from "nookies";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { WEBAPP_URL, KEYCLOAK_COOKIE_DOMAIN } from "@calcom/lib/constants";
+import {
+  ENABLE_INFINITE_EVENT_TYPES_FOR_ORG,
+  KEYCLOAK_COOKIE_DOMAIN,
+  WEBAPP_URL,
+} from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 
+import { ssrInit } from "@server/lib/ssr";
+
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
-  const { ssrInit } = await import("@server/lib/ssr");
   const ssr = await ssrInit(context, {
     noI18nPreload: false,
     noQueryPrefetch: true,
   });
-  const session = await getServerSession({ req: context.req, res: context.res });
+  const session = await getServerSession({ req: context.req });
 
   const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
   const useSecureCookies = WEBAPP_URL?.startsWith("https://");
@@ -44,5 +49,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     }
   }
 
-  return { props: { trpcState: ssr.dehydrate() } };
+  const isInfiniteScrollEnabled = session?.user?.org?.slug
+    ? ENABLE_INFINITE_EVENT_TYPES_FOR_ORG.includes(session.user.org.slug)
+    : false;
+
+  return { props: { trpcState: ssr.dehydrate(), isInfiniteScrollEnabled } };
 };

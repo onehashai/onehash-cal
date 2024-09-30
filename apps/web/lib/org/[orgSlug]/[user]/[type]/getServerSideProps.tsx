@@ -1,13 +1,13 @@
 import type { GetServerSidePropsContext } from "next";
 import z from "zod";
 
-import { getSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
 import slugify from "@calcom/lib/slugify";
 import prisma from "@calcom/prisma";
 
 import { getServerSideProps as GSSTeamTypePage } from "@lib/team/[slug]/[type]/getServerSideProps";
 
-import { getServerSideProps as GSSUserTypePage } from "~/users/views/users-type-public-view.getServerSideProps";
+import { getServerSideProps as GSSUserTypePage } from "@server/lib/[user]/[type]/getServerSideProps";
 
 const paramsSchema = z.object({
   orgSlug: z.string().transform((s) => slugify(s)),

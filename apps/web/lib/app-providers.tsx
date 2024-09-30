@@ -10,12 +10,13 @@ import type { AppProps as NextAppProps, AppProps as NextJsAppProps } from "next/
 import type { ParsedUrlQuery } from "querystring";
 import type { PropsWithChildren, ReactNode } from "react";
 import { useEffect } from "react";
+import CacheProvider from "react-inlinesvg/provider";
 
+import { OrgBrandingProvider } from "@calcom/features/ee/organizations/context/provider";
 import DynamicHelpscoutProvider from "@calcom/features/ee/support/lib/helpscout/providerDynamic";
 import DynamicIntercomProvider from "@calcom/features/ee/support/lib/intercom/providerDynamic";
 import { FeatureProvider } from "@calcom/features/flags/context/provider";
 import { useFlags } from "@calcom/features/flags/hooks";
-import { OrgBrandingProvider } from "@calcom/features/oe/organizations/context/provider";
 import { MetaProvider } from "@calcom/ui";
 
 import useIsBookingPage from "@lib/hooks/useIsBookingPage";
@@ -300,7 +301,10 @@ const AppProviders = (props: AppPropsWithChildren) => {
               router={props.router}>
               <FeatureFlagsProvider>
                 <OrgBrandProvider>
-                  <MetaProvider>{props.children}</MetaProvider>
+                  {/* @ts-expect-error FIXME remove this comment when upgrading typescript to v5 */}
+                  <CacheProvider>
+                    <MetaProvider>{props.children}</MetaProvider>
+                  </CacheProvider>
                 </OrgBrandProvider>
               </FeatureFlagsProvider>
             </CalcomThemeProvider>

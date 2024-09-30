@@ -1,7 +1,7 @@
 import { stringify } from "querystring";
 import z from "zod";
 
-import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import logger from "@calcom/lib/logger";
 import { TRPCError } from "@calcom/trpc/server";
 import type { AppGetServerSidePropsContext, AppPrisma } from "@calcom/types/AppGetServerSideProps";
@@ -12,8 +12,8 @@ import getFieldIdentifier from "../../lib/getFieldIdentifier";
 import { getSerializableForm } from "../../lib/getSerializableForm";
 import { processRoute } from "../../lib/processRoute";
 import { substituteVariables } from "../../lib/substituteVariables";
-import transformResponse from "../../lib/transformResponse";
-import type { Response } from "../../types/types";
+import { getFieldResponseForJsonLogic } from "../../lib/transformResponse";
+import type { FormResponse } from "../../types/types";
 import { isAuthorizedToViewTheForm } from "../routing-link/getServerSideProps";
 
 const log = logger.getSubLogger({ prefix: ["[routing-forms]", "[router]"] });
@@ -96,7 +96,7 @@ export const getServerSideProps = async function getServerSideProps(
     form: enrichFormWithMigrationData(formWithUserProfile),
   });
 
-  const response: Response = {};
+  const response: FormResponse = {};
   if (!serializableForm.fields) {
     throw new Error("Form has no fields");
   }
@@ -105,7 +105,7 @@ export const getServerSideProps = async function getServerSideProps(
 
     response[field.id] = {
       label: field.label,
-      value: transformResponse({ field, value: fieldResponse }),
+      value: getFieldResponseForJsonLogic({ field, value: fieldResponse }),
     };
   });
 

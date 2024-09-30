@@ -1,4 +1,4 @@
-import { cancelWorkflowReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
+import { cancelWorkflowReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 
 import { TRPCError } from "@trpc/server";
 

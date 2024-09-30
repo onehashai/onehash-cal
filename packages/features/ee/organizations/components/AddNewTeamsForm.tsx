@@ -1,3 +1,5 @@
+"use client";
+
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -236,7 +238,7 @@ const AddNewTeamsFormChild = ({
           EndIcon="arrow-right"
           color="primary"
           className="mt-6 w-full justify-center"
-          data-testid="continue_or_checkout"
+          data-testId="continue_or_checkout"
           disabled={createTeamsMutation.isPending || createTeamsMutation.isSuccess}
           onClick={handleFormSubmit}>
           {allowWizardCompletionWithoutUpgrading ? t("continue") : t("checkout")}

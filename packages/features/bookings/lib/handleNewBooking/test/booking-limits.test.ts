@@ -274,14 +274,18 @@ describe("handleNewBooking", () => {
 
           const createdBooking = await handleNewBooking(reqFollowingYear);
 
-          expect(createdBooking.responses).toContain({
-            email: booker.email,
-            name: booker.name,
-          });
+          expect(createdBooking.responses).toEqual(
+            expect.objectContaining({
+              email: booker.email,
+              name: booker.name,
+            })
+          );
 
-          expect(createdBooking).toContain({
-            location: "New York",
-          });
+          expect(createdBooking).toEqual(
+            expect.objectContaining({
+              location: "New York",
+            })
+          );
 
           await expectBookingToBeInDatabase({
             description: "",
@@ -652,15 +656,6 @@ describe("handleNewBooking", () => {
             active: true,
             eventTypeId: 1,
             appId: null,
-          },
-        ],
-        workflows: [
-          {
-            userId: organizer.id,
-            trigger: "NEW_EVENT",
-            action: "EMAIL_HOST",
-            template: "REMINDER",
-            activeEventTypeId: 1,
           },
         ],
         eventTypes: [

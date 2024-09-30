@@ -4,7 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { localeOptions } from "@calcom/lib/i18n";
+import { defaultLocaleOption, localeOptions } from "@calcom/lib/i18n";
 import { nameOfDay } from "@calcom/lib/weekday";
 import {
   Avatar,
@@ -75,9 +75,8 @@ export const UserForm = ({
     { value: "CAL", label: "CAL" },
     { value: "GOOGLE", label: "GOOGLE" },
     { value: "SAML", label: "SAML" },
-    { value: "KEYCLOAK", label: "KEYCLOAK" },
   ];
-  const defaultLocale = defaultValues?.locale || localeOptions[0].value;
+  const defaultLocale = defaultValues?.locale || defaultLocaleOption.value;
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -97,7 +96,9 @@ export const UserForm = ({
       timeZone: defaultValues?.timeZone || "",
       weekStart: {
         value: defaultValues?.weekStart || weekStartOptions[0].value,
-        label: nameOfDay(localeProp, defaultValues?.weekStart === "Sunday" ? 0 : 1),
+        label:
+          weekStartOptions.find((option) => option.value === defaultValues?.weekStart)?.label ||
+          weekStartOptions[0].label,
       },
       role: {
         value: defaultValues?.role || userRoleOptions[0].value,

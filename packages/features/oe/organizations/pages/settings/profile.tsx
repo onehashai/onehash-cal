@@ -8,7 +8,7 @@ import { useState, useLayoutEffect, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";

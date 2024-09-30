@@ -26,10 +26,31 @@ export class PaymentService implements IAbstractPaymentService {
     }
   }
 
-  async create(
-    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-    bookingId: Booking["id"]
-  ) {
+  async create({
+    payment,
+    bookingId,
+    userId,
+    username,
+    bookerName,
+    paymentOption,
+    bookingUid,
+    bookerEmail,
+    bookerPhoneNumber,
+    eventTitle,
+    bookingTitle,
+  }: {
+    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+    bookingId: Booking["id"];
+    userId: Booking["userId"];
+    username: string | null;
+    bookerName: string;
+    paymentOption: PaymentOption;
+    bookingUid: string;
+    bookerPhoneNumber: string;
+    bookerEmail: string;
+    eventTitle?: string;
+    bookingTitle?: string;
+  }) {
     try {
       const booking = await prisma.booking.findFirst({
         select: {
@@ -102,8 +123,8 @@ export class PaymentService implements IAbstractPaymentService {
   async collectCard(
     _payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
     _bookingId: number,
-    _bookerEmail: string,
-    _paymentOption: PaymentOption
+    _paymentOption: PaymentOption,
+    _bookerEmail: string
   ): Promise<Payment> {
     throw new Error("Method not implemented");
   }

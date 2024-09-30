@@ -16,6 +16,7 @@ export const metadata = {
   dirName: "office365calendar",
   url: "https://www.onehash.ai",
   email: "support@onehash.ai",
+  isOAuth: true,
 } as AppMeta;
 
 export default metadata;

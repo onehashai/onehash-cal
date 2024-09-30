@@ -1,4 +1,3 @@
-import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -54,10 +53,6 @@ const UserProfile = (props: IUserProfileProps) => {
     });
   });
 
-  async function updateProfileHandler(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-  }
-
   return (
     <form onSubmit={onSubmit}>
       <div className="flex flex-row items-center justify-start rtl:justify-end">
@@ -87,7 +82,6 @@ const UserProfile = (props: IUserProfileProps) => {
               nativeInputValueSetter?.call(avatarRef.current, newAvatar);
               const ev2 = new Event("input", { bubbles: true });
               avatarRef.current?.dispatchEvent(ev2);
-              updateProfileHandler(ev2 as unknown as FormEvent<HTMLFormElement>);
               setImageSrc(newAvatar);
             }}
             imageSrc={imageSrc}

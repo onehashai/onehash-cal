@@ -1,14 +1,12 @@
 {
   "name": "@calcom/api-proxy",
   "version": "1.0.0",
-  "description": "Public API for OneHash",
-  "main": "index.ts",
-  "repository": "git@github.com:calcom/api.git",
-  "author": "OneHash Inc.",
-  "private": true,
+  "description": "Public API for OneHash Cal",
+  "main": "index.js",
   "scripts": {
     "dev": "node ./index.js"
   },
+  "author": "",
   "license": "ISC",
   "dependencies": {
     "connect": "^3.7.0",

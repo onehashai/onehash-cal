@@ -2,9 +2,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
-import InviteLinkSettingsModal from "@calcom/features/oe/teams/components/InviteLinkSettingsModal";
-import MemberInvitationModal from "@calcom/features/oe/teams/components/MemberInvitationModal";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import InviteLinkSettingsModal from "@calcom/features/ee/teams/components/InviteLinkSettingsModal";
+import MemberInvitationModal from "@calcom/features/ee/teams/components/MemberInvitationModal";
 import classNames from "@calcom/lib/classNames";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getTeamUrlSync } from "@calcom/lib/getBookerUrl/client";

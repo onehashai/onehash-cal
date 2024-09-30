@@ -32,7 +32,7 @@ The SDK is also meant to be used as an authenticated user, to do that, you need 
 ```typescript
 const authedSdk = new Cal("your_client_id", {
   clientSecret: "your_client_secret",
-  accessToken: "your_user_access_token"
+  accessToken: "your_user_access_token",
 });
 
 const schedule = await authedSdk.schedules.createSchedule({
@@ -59,7 +59,7 @@ sdk.secrets().updateAccessToken(oauth.accessToken, oauth.refreshToken);
 ## Configuration
 
 | Option                     | Required | Description                                                                                         |
-|----------------------------|----------|-----------------------------------------------------------------------------------------------------|
+| -------------------------- | -------- | --------------------------------------------------------------------------------------------------- |
 | `authOptions.clientSecret` | `TRUE`   | The Client Secret corresponding to the client ID passed as the first parameter.                     |
 | `authOptions.accessToken`  | `FALSE`  | `Optional` Access token when authenticating as a specific user.                                     |
 | `authOptions.refreshToken` | `FALSE`  | `Optional` If provided, the SDK can handle refreshing access tokens automatically when they expire. |

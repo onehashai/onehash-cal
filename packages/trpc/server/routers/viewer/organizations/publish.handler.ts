@@ -1,5 +1,5 @@
 import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-billing";
-import { purchaseTeamOrOrgSubscription } from "@calcom/features/oe/teams/lib/payments";
+import { purchaseTeamOrOrgSubscription } from "@calcom/features/ee/teams/lib/payments";
 import { IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { isOrganisationAdmin } from "@calcom/lib/server/queries/organisations";
 import { closeComUpdateTeam } from "@calcom/lib/sync/SyncServiceManager";
@@ -46,6 +46,7 @@ export const publishHandler = async ({ ctx }: PublishOptions) => {
       userId: ctx.user.id,
       isOrg: true,
       pricePerSeat: metadata.data?.orgPricePerSeat ?? null,
+      billingPeriod: metadata.data?.billingPeriod ?? undefined,
     });
 
     if (!checkoutSession.url)

@@ -2,7 +2,7 @@ import { useRef } from "react";
 
 import dayjs from "@calcom/dayjs";
 import { AvailableTimes, AvailableTimesSkeleton } from "@calcom/features/bookings";
-import type { useEventReturnType } from "@calcom/features/bookings/Booker/utils/event";
+import type { BookerEvent } from "@calcom/features/bookings/types";
 import { useNonEmptyScheduleDays } from "@calcom/features/schedules";
 import { useSlotsForAvailableDates } from "@calcom/features/schedules/lib/use-schedule/useSlotsForDate";
 import { classNames } from "@calcom/lib";
@@ -19,7 +19,9 @@ type AvailableTimeSlotsProps = {
   isLoading: boolean;
   seatsPerTimeSlot?: number | null;
   showAvailableSeatsCount?: boolean | null;
-  event: useEventReturnType;
+  event: {
+    data?: Pick<BookerEvent, "length"> | null;
+  };
   customClassNames?: {
     availableTimeSlotsContainer?: string;
     availableTimeSlotsTitle?: string;
@@ -101,8 +103,8 @@ export const AvailableTimeSlots = ({
                 availableTimeSlotsTitle: customClassNames?.availableTimeSlotsTitle,
                 availableTimeSlotsTimeFormatToggle: customClassNames?.availableTimeSlotsTimeFormatToggle,
               }}
-              key={schedule.date}
-              date={dayjs(schedule.date)}
+              key={slots.date}
+              date={dayjs(slots.date)}
               showTimeFormatToggle={!isColumnView}
               availableMonth={
                 dayjs(selectedDate).format("MM") !== dayjs(schedule.date).format("MM")
@@ -124,9 +126,9 @@ export const AvailableTimeSlots = ({
         {isLoading && // Shows exact amount of days as skeleton.
           Array.from({ length: 1 + (extraDays ?? 0) }).map((_, i) => <AvailableTimesSkeleton key={i} />)}
         {!isLoading &&
-          currentSchedule.length > 0 &&
-          currentSchedule.map((schedule) => (
-            <div key={schedule.date} className="scroll-bar h-full w-full overflow-y-auto overflow-x-hidden">
+          slotsPerDay.length > 0 &&
+          slotsPerDay.map((slots) => (
+            <div key={slots.date} className="scroll-bar h-full w-full overflow-y-auto overflow-x-hidden">
               <AvailableTimes
                 className={customClassNames?.availableTimeSlotsContainer}
                 customClassNames={customClassNames?.availableTimes}

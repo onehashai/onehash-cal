@@ -1,7 +1,9 @@
+"use client";
+
 import { Suspense } from "react";
 
 import NoSSR from "@calcom/core/components/NoSSR";
-import { Meta, SkeletonText, SkeletonContainer } from "@calcom/ui";
+import { SkeletonText, SkeletonContainer, Meta } from "@calcom/ui";
 
 import { FlagAdminList } from "../components/FlagAdminList";
 

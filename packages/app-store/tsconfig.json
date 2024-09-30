@@ -11,8 +11,7 @@
       "@prisma/client/*": ["@calcom/prisma/client/*"]
     },
     "resolveJsonModule": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true
+    "experimentalDecorators": true
   },
   "include": [
     "next-env.d.ts",

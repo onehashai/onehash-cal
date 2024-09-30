@@ -1,5 +1,5 @@
+import { updateQuantitySubscriptionFromStripe } from "@calcom/features/ee/teams/lib/payments";
 import removeMember from "@calcom/features/ee/teams/lib/removeMember";
-import { updateQuantitySubscriptionFromStripe } from "@calcom/features/oe/teams/lib/payments";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
@@ -28,7 +28,10 @@ export const removeMemberHandler = async ({ ctx, input }: RemoveMemberOptions) =
   });
 
   const { memberIds, teamIds, isOrg } = input;
-  const isAdmin = teamIds.every(async (teamId) => await isTeamAdmin(ctx.user.id, teamId));
+
+  const isAdmin = await Promise.all(
+    teamIds.map(async (teamId) => await isTeamAdmin(ctx.user.id, teamId))
+  ).then((results) => results.every((result) => result));
 
   const isOrgAdmin = ctx.user.profile?.organizationId
     ? await isTeamAdmin(ctx.user.id, ctx.user.profile?.organizationId)

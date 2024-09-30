@@ -5,18 +5,6 @@
       "schedule": "0 5 * * *"
     },
     {
-      "path": "/api/cron/workflows/scheduleEmailReminders",
-      "schedule": "0 0 */3 * *"
-    },
-    {
-      "path": "/api/cron/workflows/scheduleSMSReminders",
-      "schedule": "0 0 */3 * *"
-    },
-    {
-      "path": "/api/cron/workflows/scheduleWhatsappReminders",
-      "schedule": "0 0 */3 * *"
-    },
-    {
       "path": "/api/tasks/cron",
       "schedule": "* * * * *"
     },

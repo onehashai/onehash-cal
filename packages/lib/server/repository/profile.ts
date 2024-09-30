@@ -1,7 +1,7 @@
 import type { User as PrismaUser } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 
-import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import { Prisma } from "@calcom/prisma/client";
@@ -23,6 +23,7 @@ const userSelect = Prisma.validator<Prisma.UserSelect>()({
   startTime: true,
   endTime: true,
   bufferTime: true,
+  isPlatformManaged: true,
 });
 
 const membershipSelect = Prisma.validator<Prisma.MembershipSelect>()({
@@ -43,6 +44,7 @@ const organizationSelect = {
   logoUrl: true,
   calVideoLogo: true,
   bannerUrl: true,
+  isPlatform: true,
 };
 
 export enum LookupTarget {
@@ -329,6 +331,12 @@ export class ProfileRepository {
       return null;
     }
     const user = profile.user;
+    if (profile.organization?.isPlatform && !user.isPlatformManaged) {
+      return {
+        ...this.buildPersonalProfileFromUser({ user }),
+        ...ProfileRepository.getInheritedDataFromUser({ user }),
+      };
+    }
     return {
       ...profile,
       ...ProfileRepository.getInheritedDataFromUser({ user }),

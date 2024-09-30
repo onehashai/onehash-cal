@@ -1,4 +1,4 @@
-import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import type { Prisma } from "@calcom/prisma/client";
 import { userMetadata } from "@calcom/prisma/zod-utils";
 import type { AppGetServerSidePropsContext, AppPrisma } from "@calcom/types/AppGetServerSideProps";
@@ -58,6 +58,9 @@ export const getServerSideProps = async function getServerSideProps(
   const { currentOrgDomain } = orgDomainConfig(context.req);
 
   const isEmbed = params.appPages[1] === "embed";
+  if (context.query["flag.coep"] === "true") {
+    context.res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  }
 
   const form = await prisma.app_RoutingForms_Form.findFirst({
     where: {

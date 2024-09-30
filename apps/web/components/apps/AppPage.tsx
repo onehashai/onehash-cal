@@ -1,13 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { IframeHTMLAttributes } from "react";
 import React, { useEffect, useState } from "react";
 
 import useAddAppMutation from "@calcom/app-store/_utils/useAddAppMutation";
 import { AppDependencyComponent, InstallAppButton } from "@calcom/app-store/components";
+import { doesAppSupportTeamInstall, isConferencing } from "@calcom/app-store/utils";
 import DisconnectIntegration from "@calcom/features/apps/components/DisconnectIntegration";
+import { AppOnboardingSteps } from "@calcom/lib/apps/appOnboardingSteps";
+import { getAppOnboardingUrl } from "@calcom/lib/apps/getAppOnboardingUrl";
 import classNames from "@calcom/lib/classNames";
-import { APP_NAME, COMPANY_NAME, SUPPORT_MAIL_ADDRESS } from "@calcom/lib/constants";
+import { APP_NAME, COMPANY_NAME, SUPPORT_MAIL_ADDRESS, WEBAPP_URL } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
@@ -74,6 +78,7 @@ export const AppPage = ({
   dirName,
 }: AppPageProps) => {
   const { t, i18n } = useLocale();
+  const router = useRouter();
   const searchParams = useCompatSearchParams();
 
   const hasDescriptionItems = descriptionItems && descriptionItems.length > 0;
@@ -81,12 +86,52 @@ export const AppPage = ({
   const mutation = useAddAppMutation(null, {
     onSuccess: (data) => {
       if (data?.setupPending) return;
+      setIsLoading(false);
       showToast(t("app_successfully_installed"), "success");
     },
     onError: (error) => {
       if (error instanceof Error) showToast(error.message || t("app_could_not_be_installed"), "error");
+      setIsLoading(false);
     },
   });
+
+  /**
+   * @todo Refactor to eliminate the isLoading state by using mutation.isPending directly.
+   * Currently, the isLoading state is used to manage the loading indicator due to the delay in loading the next page,
+   * which is caused by heavy queries in getServersideProps. This causes the loader to turn off before the page changes.
+   */
+  const [isLoading, setIsLoading] = useState<boolean>(mutation.isPending);
+
+  const handleAppInstall = async () => {
+    setIsLoading(true);
+    if (isConferencing(categories)) {
+      const onBoardingUrl = await getAppOnboardingUrl({
+        slug: slug,
+        step: AppOnboardingSteps.EVENT_TYPES_STEP,
+      });
+      mutation.mutate({
+        type,
+        variant,
+        slug,
+        returnTo: WEBAPP_URL + onBoardingUrl,
+      });
+    } else if (
+      !doesAppSupportTeamInstall({
+        appCategories: categories,
+        concurrentMeetings: concurrentMeetings,
+        isPaid: !!paid,
+      })
+    ) {
+      mutation.mutate({ type });
+    } else {
+      const onBoardingUrl = await getAppOnboardingUrl({
+        slug: slug,
+        step: AppOnboardingSteps.ACCOUNTS_STEP,
+      });
+
+      router.push(onBoardingUrl);
+    }
+  };
 
   const priceInDollar = Intl.NumberFormat("en-US", {
     style: "currency",
@@ -139,7 +184,7 @@ export const AppPage = ({
               typeof descriptionItem === "object" ? (
                 <div
                   key={`iframe-${index}`}
-                  className="mr-4 max-h-full min-h-[315px] min-w-[90%] max-w-full snap-center last:mb-0 lg:mb-4 lg:mr-0 [&_iframe]:h-full [&_iframe]:min-h-[315px] [&_iframe]:w-full">
+                  className="mr-4 max-h-full min-h-[315px] min-w-[90%] max-w-full snap-center overflow-hidden rounded-md last:mb-0 lg:mb-4 lg:mr-0 [&_iframe]:h-full [&_iframe]:min-h-[315px] [&_iframe]:w-full">
                   <iframe allowFullScreen {...descriptionItem.iframe} />
                 </div>
               ) : (
@@ -167,7 +212,7 @@ export const AppPage = ({
           <header>
             <div className="mb-4 flex items-center">
               <Image
-                className={classNames(logo.includes("-dark") && "dark:invert", "h-16 min-h-16 w-16 min-w-16")}
+                className={classNames(logo.includes("-dark") && "dark:invert", "min-h-16 min-w-16 h-16 w-16")}
                 src={logo}
                 alt={name}
                 width={64}
@@ -224,24 +269,13 @@ export const AppPage = ({
                     if (useDefaultComponent) {
                       props = {
                         ...props,
-                        onClick: () => {
-                          mutation.mutate({ type, variant, slug });
+                        onClick: async () => {
+                          await handleAppInstall();
                         },
-                        loading: mutation.isPending,
+                        loading: isLoading,
                       };
                     }
-                    return (
-                      <InstallAppButtonChild
-                        appCategories={categories}
-                        userAdminTeams={appDbQuery.data?.userAdminTeams}
-                        addAppMutationInput={{ type, variant, slug }}
-                        multiInstall
-                        concurrentMeetings={concurrentMeetings}
-                        paid={paid}
-                        dirName={dirName}
-                        {...props}
-                      />
-                    );
+                    return <InstallAppButtonChild multiInstall paid={paid} {...props} />;
                   }}
                 />
               )}
@@ -264,23 +298,14 @@ export const AppPage = ({
                 if (useDefaultComponent) {
                   props = {
                     ...props,
-                    onClick: () => {
-                      mutation.mutate({ type, variant, slug });
+                    onClick: async () => {
+                      await handleAppInstall();
                     },
-                    loading: mutation.isPending,
+                    loading: isLoading,
                   };
                 }
                 return (
-                  <InstallAppButtonChild
-                    appCategories={categories}
-                    userAdminTeams={appDbQuery.data?.userAdminTeams}
-                    addAppMutationInput={{ type, variant, slug }}
-                    credentials={appDbQuery.data?.credentials}
-                    concurrentMeetings={concurrentMeetings}
-                    paid={paid}
-                    dirName={dirName}
-                    {...props}
-                  />
+                  <InstallAppButtonChild credentials={appDbQuery.data?.credentials} paid={paid} {...props} />
                 );
               }}
             />

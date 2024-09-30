@@ -1,6 +1,6 @@
 import type { WorkflowStep } from "@prisma/client";
 
-import { isSMSOrWhatsappAction } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
+import { isSMSOrWhatsappAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
 import { classNames } from "@calcom/lib";
 import { Icon } from "@calcom/ui";
 
