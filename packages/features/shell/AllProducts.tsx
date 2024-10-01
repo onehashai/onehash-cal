@@ -88,7 +88,7 @@ const AllProducts = () => {
 
               <DropdownMenuItem>
                 <DropdownItem
-                  StartIcon="line-chart"
+                  StartIcon="chart-line"
                   target="_blank"
                   rel="noreferrer"
                   href={ONEHASH_ERP_URL}

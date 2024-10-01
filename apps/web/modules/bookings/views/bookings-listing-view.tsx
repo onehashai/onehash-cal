@@ -5,7 +5,6 @@ import { Fragment, useState } from "react";
 import { z } from "zod";
 
 import { WipeMyCalActionButton } from "@calcom/app-store/wipemycalother/components";
-import { MeetLocationType } from "@calcom/core/location";
 import dayjs from "@calcom/dayjs";
 import ExportBookingsButton from "@calcom/features/bookings/components/ExportBookingsButton";
 import { FilterToggle } from "@calcom/features/bookings/components/FilterToggle";
@@ -129,31 +128,37 @@ export default function Bookings() {
   });
 
   const handleExportBookings = (allBookings: AllBookingOutput[]) => {
-    const allBookingsWithType: BookingExportType[] = [];
-    allBookings.forEach((booking) => {
-      let type: BookingListingByStatusType | null = null;
-      let startDate = "";
-
+    const getTypeAndStartDate = (booking) => {
       const endTime = new Date(booking.endTime);
-      if (endTime >= new Date()) {
-        if (booking.status === BookingStatus.PENDING) {
-          type = "Unconfirmed";
-        } else if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
-          type = "Cancelled";
-        } else if (booking.recurringEventId !== null) {
-          type = "Recurring";
-        } else {
-          type = "Upcoming";
-        }
+      const isUpcoming = endTime >= new Date();
+      let type: BookingListingByStatusType | null;
+      let startDate: string;
+
+      if (isUpcoming) {
+        type =
+          booking.status === BookingStatus.PENDING
+            ? "Unconfirmed"
+            : booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED
+            ? "Cancelled"
+            : booking.recurringEventId !== null
+            ? "Recurring"
+            : "Upcoming";
+
         startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("ddd, D MMM");
       } else {
-        if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
-          type = "Cancelled";
-        } else {
-          type = "Past";
-        }
+        type =
+          booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED
+            ? "Cancelled"
+            : "Past";
+
         startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("D MMMM YYYY");
       }
+
+      return { type, startDate };
+    };
+
+    const allBookingsWithType: BookingExportType[] = allBookings.map((booking) => {
+      const { type, startDate } = getTypeAndStartDate(booking);
 
       const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} to ${formatTime(
         booking.endTime,
@@ -161,53 +166,13 @@ export default function Bookings() {
         user?.timeZone
       )}`;
 
-      allBookingsWithType.push({
+      return {
         ...booking,
         type,
         startDate: `"${startDate}"`,
         interval,
         description: `"${booking.description}"`,
-      });
-    });
-
-    allBookings.forEach((booking) => {
-      let type: BookingListingByStatusType | null = null;
-      let startDate = "";
-
-      const endTime = new Date(booking.endTime);
-      if (endTime >= new Date()) {
-        if (booking.status === BookingStatus.PENDING) {
-          type = "Unconfirmed";
-        } else if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
-          type = "Cancelled";
-        } else if (booking.recurringEventId !== null) {
-          type = "Recurring";
-        } else {
-          type = "Upcoming";
-        }
-        startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("ddd, D MMM");
-      } else {
-        if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
-          type = "Cancelled";
-        } else {
-          type = "Past";
-        }
-        startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("D MMMM YYYY");
-      }
-
-      const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} to ${formatTime(
-        booking.endTime,
-        user?.timeFormat,
-        user?.timeZone
-      )}`;
-
-      allBookingsWithType.push({
-        ...booking,
-        type,
-        startDate: `"${startDate}"`,
-        interval,
-        description: `"${booking.description}"`,
-      });
+      };
     });
 
     const header = [
@@ -228,27 +193,38 @@ export default function Bookings() {
       "Recurring Event ID",
       "Is Recorded",
     ];
-    const csvData = allBookingsWithType.map((booking) => {
-      //type,startDate,interval,description
-      return [
-        booking.id,
-        booking.title,
-        booking.description,
-        booking.type,
-        booking.eventType?.title ?? "",
-        booking.startDate,
-        booking.interval,
-        booking.location === MeetLocationType ? "Google Meet" : booking.location?.split("\n").join(" ") ?? "",
-        booking.attendees.map((attendee) => attendee.email).join(";"),
-        booking.paid.toString(),
-        booking.payment.map((pay) => pay.currency).join(";"),
-        booking.payment.map((pay) => pay.amount).join(";"),
-        booking.payment.map((pay) => pay.success).join(";"),
-        booking.rescheduled?.toString() ?? "",
-        booking.recurringEventId ?? "",
-        booking.isRecorded.toString(),
-      ];
-    });
+
+    const formatLocation = (location) => {
+      const cleanLocation = location.includes("integrations:")
+        ? location
+            .replace("integrations:", "")
+            .split(":")
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(" ")
+            .trim()
+        : location;
+
+      return cleanLocation.includes("\n") ? cleanLocation.replace("\n", " ").trim() : cleanLocation;
+    };
+
+    const csvData = allBookingsWithType.map((booking) => [
+      booking.id,
+      booking.title,
+      booking.description,
+      booking.type,
+      booking.eventType?.title ?? "",
+      booking.startDate,
+      booking.interval,
+      formatLocation(booking.location),
+      booking.attendees.map((attendee) => attendee.email).join(";"),
+      booking.paid.toString(),
+      booking.payment.map((pay) => pay.currency).join(";"),
+      booking.payment.map((pay) => pay.amount).join(";"),
+      booking.payment.map((pay) => pay.success).join(";"),
+      booking.rescheduled?.toString() ?? "",
+      booking.recurringEventId ?? "",
+      booking.isRecorded.toString(),
+    ]);
 
     const csvContent = [header.join(","), ...csvData.map((row) => row.join(","))].join("\n");
 
@@ -258,6 +234,7 @@ export default function Bookings() {
     link.setAttribute("download", "all-bookings.csv");
     document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
 
   // Define the export bookings function after the mutation

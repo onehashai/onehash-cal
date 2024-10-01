@@ -216,6 +216,7 @@ export async function getBookings({
       select: {
         slug: true,
         id: true,
+        title: true,
         eventName: true,
         price: true,
         recurringEvent: true,
@@ -229,9 +230,11 @@ export async function getBookings({
           select: {
             id: true,
             name: true,
+            slug: true,
             members: true,
           },
         },
+        bookingFields: true,
       },
     },
     status: true,
@@ -249,6 +252,7 @@ export async function getBookings({
         id: true,
         name: true,
         email: true,
+        username: true,
       },
     },
     rescheduled: true,
@@ -269,8 +273,16 @@ export async function getBookings({
         },
       },
     },
+    cancellationReason: true,
+    workflowReminders: {
+      select: {
+        referenceId: true,
+        id: true,
+        method: true,
+      },
+    },
+    responses: true,
   };
-
   const [
     // Quering these in parallel to save time.
     // Note that because we are applying `take` to individual queries, we will usually get more bookings then we need. It is okay to have more bookings faster than having what we need slower
