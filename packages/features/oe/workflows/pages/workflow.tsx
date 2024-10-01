@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { WorkflowStep } from "@prisma/client";
+import LicenseRequired from "ee/common/components/LicenseRequired";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -21,7 +22,6 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import type { MultiSelectCheckboxesOptionType as Option } from "@calcom/ui";
 import { Alert, Badge, Button, Form, showToast } from "@calcom/ui";
 
-import LicenseRequired from "../../common/components/LicenseRequired";
 import SkeletonLoader from "../components/SkeletonLoaderEdit";
 import WorkflowDetailsPage from "../components/WorkflowDetailsPage";
 import { isSMSAction, isSMSOrWhatsappAction } from "../lib/actionHelperFunctions";

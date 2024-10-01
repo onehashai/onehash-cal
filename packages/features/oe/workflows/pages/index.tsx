@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 
+import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import Shell, { ShellMain } from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -18,7 +19,6 @@ import { AnimatedPopover, Avatar, CreateButtonWithTeamsList, showToast } from "@
 import { FilterResults } from "../../../filters/components/FilterResults";
 import { TeamsFilter } from "../../../filters/components/TeamsFilter";
 import { getTeamsFiltersFromQuery } from "../../../filters/lib/getTeamsFiltersFromQuery";
-import LicenseRequired from "../../common/components/LicenseRequired";
 import EmptyScreen from "../components/EmptyScreen";
 import SkeletonLoader from "../components/SkeletonLoaderList";
 import WorkflowList from "../components/WorkflowListPage";
