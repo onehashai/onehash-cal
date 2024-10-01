@@ -63,13 +63,15 @@ export default class CalendlyAPIService {
   }
 
   async requestConfiguration() {
-    const { accessToken, createdAt, expiresIn } = this.apiConfig;
+    // const { accessToken, createdAt, expiresIn } = this.apiConfig;
+    const config = await this.getConfigFromDB();
+    const { accessToken, createdAt, expiresIn } = config;
     const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
     if (isTokenExpired) {
-      const freshAccessToken = await this.refreshAccessToken();
+      const updatedConfig = await this.refreshAccessToken(config.refreshToken);
       return {
         headers: {
-          Authorization: `Bearer ${freshAccessToken}`,
+          Authorization: `Bearer ${updatedConfig.accessToken}`,
         },
       };
     }
@@ -80,9 +82,8 @@ export default class CalendlyAPIService {
     };
   }
 
-  private async refreshAccessToken() {
-    const res = await this.requestNewAccessToken();
-    const data = res.data;
+  private async refreshAccessToken(refreshToken) {
+    const data = await this.requestNewAccessToken(refreshToken);
 
     const updatedDoc = await prisma.integrationAccounts.update({
       where: {
@@ -99,11 +100,14 @@ export default class CalendlyAPIService {
       },
     });
 
-    this.apiConfig.accessToken = updatedDoc.accessToken;
-    this.apiConfig.refreshToken = updatedDoc.refreshToken;
-    this.apiConfig.createdAt = updatedDoc.createdAt;
-    this.apiConfig.expiresIn = updatedDoc.expiresIn;
-    return updatedDoc.accessToken;
+    this.apiConfig = {
+      ...this.apiConfig,
+      accessToken: data.accessToken,
+      refreshToken: data.refresh_token,
+      createdAt: data.created_at,
+      expiresIn: data.expires_in,
+    };
+    return updatedDoc;
   }
 
   private async fetchDataWithRetry({
@@ -199,12 +203,6 @@ export default class CalendlyAPIService {
     }
   };
 
-  getUserEventType = async (uuid: string) => {
-    const { data } = await this.request.get(`/event_types/${uuid}`, await this.requestConfiguration());
-
-    return data;
-  };
-
   getUserScheduledEvents = async ({
     userUri,
     count,
@@ -263,16 +261,6 @@ export default class CalendlyAPIService {
     }
   };
 
-  getUserScheduledEvent = async (uuid: string) => {
-    try {
-      const { data } = await this.request.get(`/scheduled_events/${uuid}`, await this.requestConfiguration());
-
-      return data;
-    } catch (error) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
   getUserScheduledEventInvitees = async ({
     uuids,
     batch,
@@ -296,11 +284,19 @@ export default class CalendlyAPIService {
             const response = await this.request.get(url, await this.requestConfiguration());
             return response.data;
           } catch (e) {
-            if (e.response.status === 429 || e.response.status === 520) {
-              throw new RetryAfterError(
-                `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
-                waitTime
-              );
+            if (e.response) {
+              if (e.response.status === 429 || e.response.status === 520) {
+                throw new RetryAfterError(
+                  `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
+                  waitTime
+                );
+              }
+              if (e.response.status === 400) {
+                throw new RetryAfterError(
+                  `RetryError - getUserScheduledEventInvitees: Status 400- URL (${url})`,
+                  waitTime
+                );
+              }
             }
             throw new NonRetriableError(
               `NonRetriableError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`
@@ -327,38 +323,6 @@ export default class CalendlyAPIService {
       return results;
     });
     return data as { uuid: string; invitees: CalendlyScheduledEventInvitee[] }[];
-  };
-
-  getUserEventTypeAvailTimes = async (eventUri: string, startTime: string, endTime: string) => {
-    try {
-      const queryParams = [`start_time=${startTime}`, `end_time=${endTime}`, `event_type=${eventUri}`].join(
-        "&"
-      );
-
-      const url = `/event_type_available_times?${queryParams}`;
-
-      const { data } = await this.request.get(url, await this.requestConfiguration());
-
-      return data;
-    } catch (error: unknown) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
-
-  getUserBusyTimes = async (userUri: string, startTime: string, endTime: string) => {
-    try {
-      const queryParams = [`user=${userUri}`, `start_time=${startTime}`, `end_time=${endTime}`].join("&");
-
-      const url = `/user_busy_times?${queryParams}`;
-
-      const { data } = await this.request.get(url, await this.requestConfiguration());
-
-      return data;
-    } catch (error: unknown) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
   };
 
   getUserAvailabilitySchedules = async ({
@@ -402,67 +366,53 @@ export default class CalendlyAPIService {
     }
   };
 
-  markAsNoShow = async (uri: string) => {
+  getConfigFromDB = async () => {
     try {
-      const { data } = await this.request.post(
-        "/invitee_no_shows",
-        {
-          invitee: uri,
+      const userConfig = await prisma.integrationAccounts.findFirst({
+        where: {
+          userId: this.apiConfig.userId,
+          provider: IntegrationProvider.CALENDLY,
         },
-        await this.requestConfiguration()
-      );
-
-      return data;
+      });
+      return userConfig;
     } catch (error) {
       console.error("Internal server error:", error instanceof Error ? error.message : String(error));
       throw error;
     }
   };
 
-  undoNoShow = async (inviteeUuid: string) => {
+  requestNewAccessToken = async (refreshToken) => {
     try {
-      await this.request.delete(`/invitee_no_shows/${inviteeUuid}`, await this.requestConfiguration());
-    } catch (error) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
+      // const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
+      const { oauthUrl, clientID, clientSecret } = this.apiConfig;
 
-  cancelEvent = async (uuid: string, reason: string) => {
-    try {
-      const { data } = await this.request.post(
-        `/scheduled_events/${uuid}/cancellation`,
-        {
-          reason: reason,
-        },
-        await this.requestConfiguration()
-      );
-
-      return data;
-    } catch (error) {
-      console.error("Internal server error:", error instanceof Error ? error.message : String(error));
-      throw error;
-    }
-  };
-
-  requestNewAccessToken = () => {
-    const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
-
-    return axios.post(
-      `${oauthUrl}/token`,
-      {
+      const url = `${oauthUrl}/token`;
+      const postData = {
         client_id: clientID,
         client_secret: clientSecret,
         grant_type: "refresh_token",
         refresh_token: refreshToken,
-      },
-      {
+      };
+      const res = await fetch(url, {
+        method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
+        body: new URLSearchParams(postData),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`Failed to refresh token: ${errorData.error_description}`);
       }
-    );
+      const data = await res.json();
+      return data;
+    } catch (e) {
+      console.error("Error refreshing access token:", e);
+      throw e;
+    }
   };
+
   _isRequestResponseOk(response: AxiosResponse) {
     return response.status >= 200 && response.status < 300;
   }

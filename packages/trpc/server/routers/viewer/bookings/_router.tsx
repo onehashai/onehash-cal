@@ -7,6 +7,7 @@ import { ZConfirmInputSchema } from "./confirm.schema";
 import { ZEditLocationInputSchema } from "./editLocation.schema";
 import { ZFindInputSchema } from "./find.schema";
 import { ZGetInputSchema } from "./get.schema";
+import { ZGetAllInputSchema } from "./getAll.schema";
 import { ZGetBookingAttendeesInputSchema } from "./getBookingAttendees.schema";
 import { ZInstantBookingInputSchema } from "./getInstantBookingLocation.schema";
 import { ZRequestRescheduleInputSchema } from "./requestReschedule.schema";
@@ -15,6 +16,7 @@ import { bookingsProcedure } from "./util";
 
 type BookingsRouterHandlerCache = {
   get?: typeof import("./get.handler").getHandler;
+  getAll?: typeof import("./getAll.handler").getAllHandler;
   requestReschedule?: typeof import("./requestReschedule.handler").requestRescheduleHandler;
   editLocation?: typeof import("./editLocation.handler").editLocationHandler;
   addGuests?: typeof import("./addGuests.handler").addGuestsHandler;
@@ -40,6 +42,22 @@ export const bookingsRouter = router({
     }
 
     return UNSTABLE_HANDLER_CACHE.get({
+      ctx,
+      input,
+    });
+  }),
+
+  getAll: authedProcedure.input(ZGetAllInputSchema).mutation(async ({ input, ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.getAll) {
+      UNSTABLE_HANDLER_CACHE.getAll = await import("./getAll.handler").then((mod) => mod.getAllHandler);
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.getAll) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.getAll({
       ctx,
       input,
     });

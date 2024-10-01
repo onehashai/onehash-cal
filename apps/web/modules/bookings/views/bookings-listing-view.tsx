@@ -20,7 +20,7 @@ import { BookingStatus } from "@calcom/prisma/client";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import type { HorizontalTabItemProps, VerticalTabItemProps } from "@calcom/ui";
-import { Alert, Button, EmptyScreen, HorizontalTabs } from "@calcom/ui";
+import { Alert, Button, EmptyScreen, HorizontalTabs, showToast } from "@calcom/ui";
 
 import { useInViewObserver } from "@lib/hooks/useInViewObserver";
 import useMeQuery from "@lib/hooks/useMeQuery";
@@ -32,8 +32,9 @@ import { validStatuses } from "~/bookings/lib/validStatuses";
 
 type BookingListingStatus = z.infer<NonNullable<typeof filterQuerySchema>>["status"];
 type BookingOutput = RouterOutputs["viewer"]["bookings"]["get"]["bookings"][0];
+type AllBookingOutput = RouterOutputs["viewer"]["bookings"]["getAll"][0];
 type BookingListingByStatusType = "Unconfirmed" | "Cancelled" | "Recurring" | "Upcoming" | "Past";
-type BookingExportType = BookingOutput & {
+type BookingExportType = AllBookingOutput & {
   type: BookingListingByStatusType;
   startDate: string;
   interval: string;
@@ -115,22 +116,59 @@ export default function Bookings() {
     }
   });
 
-  // export bookings
-  const handleExportBookings = async () => {
-    const allBookings: BookingOutput[] = [];
+  const { status: _status, ...filterQueryWithoutStatus } = filterQuery;
 
-    // // Function to fetch all pages recursively
-    // const fetchAllBookings = async () => {
-    //   const data = await allBookingsQuery.fetchNextPage();
-    //   allBookings = allBookings.concat(data.data?.pages.map((page) => page.bookings).flat() ?? []);
-    //   // Recursively fetching next page if available
-    //   if (data.hasNextPage) {
-    //     await fetchAllBookings();
-    //   }
-    // };
+  // Define the mutation first
+  const { mutate: fetchAllBookingsMutation, isPending } = trpc.viewer.bookings.getAll.useMutation({
+    async onSuccess(response) {
+      handleExportBookings(response);
+    },
+    onError() {
+      showToast(t("unexpected_error_try_again"), "error");
+    },
+  });
 
-    // await fetchAllBookings();
+  const handleExportBookings = (allBookings: AllBookingOutput[]) => {
     const allBookingsWithType: BookingExportType[] = [];
+    allBookings.forEach((booking) => {
+      let type: BookingListingByStatusType | null = null;
+      let startDate = "";
+
+      const endTime = new Date(booking.endTime);
+      if (endTime >= new Date()) {
+        if (booking.status === BookingStatus.PENDING) {
+          type = "Unconfirmed";
+        } else if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
+          type = "Cancelled";
+        } else if (booking.recurringEventId !== null) {
+          type = "Recurring";
+        } else {
+          type = "Upcoming";
+        }
+        startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("ddd, D MMM");
+      } else {
+        if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
+          type = "Cancelled";
+        } else {
+          type = "Past";
+        }
+        startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("D MMMM YYYY");
+      }
+
+      const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} to ${formatTime(
+        booking.endTime,
+        user?.timeFormat,
+        user?.timeZone
+      )}`;
+
+      allBookingsWithType.push({
+        ...booking,
+        type,
+        startDate: `"${startDate}"`,
+        interval,
+        description: `"${booking.description}"`,
+      });
+    });
 
     allBookings.forEach((booking) => {
       let type: BookingListingByStatusType | null = null;
@@ -191,15 +229,16 @@ export default function Bookings() {
       "Is Recorded",
     ];
     const csvData = allBookingsWithType.map((booking) => {
+      //type,startDate,interval,description
       return [
         booking.id,
         booking.title,
         booking.description,
         booking.type,
-        booking.eventType.title ?? "",
+        booking.eventType?.title ?? "",
         booking.startDate,
         booking.interval,
-        booking.location === MeetLocationType ? "Google Meet" : booking.location ?? "",
+        booking.location === MeetLocationType ? "Google Meet" : booking.location?.split("\n").join(" ") ?? "",
         booking.attendees.map((attendee) => attendee.email).join(";"),
         booking.paid.toString(),
         booking.payment.map((pay) => pay.currency).join(";"),
@@ -219,6 +258,16 @@ export default function Bookings() {
     link.setAttribute("download", "all-bookings.csv");
     document.body.appendChild(link);
     link.click();
+  };
+
+  // Define the export bookings function after the mutation
+  const handleOnClickExportBookings = async () => {
+    fetchAllBookingsMutation({
+      filters: {
+        ...filterQueryWithoutStatus,
+      },
+    });
+    return;
   };
 
   const isEmpty = !query.data?.pages[0]?.bookings.length;
@@ -277,7 +326,10 @@ export default function Bookings() {
           <HorizontalTabs tabs={tabs} />
           <div className="flex flex-wrap gap-2">
             <FilterToggle setIsFiltersVisible={setIsFiltersVisible} />
-            <ExportBookingsButton handleExportBookings={handleExportBookings} />
+            <ExportBookingsButton
+              handleOnClickExportBookings={handleOnClickExportBookings}
+              isLoading={isPending}
+            />
           </div>
         </div>
         <FiltersContainer isFiltersVisible={isFiltersVisible} />
@@ -286,7 +338,7 @@ export default function Bookings() {
             {query.status === "error" && (
               <Alert severity="error" title={t("something_went_wrong")} message={query.error.message} />
             )}
-            {(query.status === "loading" || query.isPaused) && <SkeletonLoader />}
+            {(query.status === "pending" || query.isPaused) && <SkeletonLoader />}
             {query.status === "success" && !isEmpty && (
               <>
                 {!!bookingsToday.length && status === "upcoming" && (

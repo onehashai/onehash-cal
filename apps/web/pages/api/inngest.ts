@@ -22,6 +22,7 @@ const handleCalendlyImportFn = inngestClient.createFunction(
   { event: `import-from-calendly-${key}` },
   async ({ event, step, logger }) => {
     await handleCalendlyImportEvent(
+      event.data.sendCampaignEmails,
       event.data.userCalendlyIntegrationProvider,
       event.data.user,
       step,

@@ -4,11 +4,14 @@ import { useRouter } from "next/navigation";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
-import { Icon, List, showToast } from "@calcom/ui";
+import { CheckboxField, Icon, showToast } from "@calcom/ui";
 import { Button } from "@calcom/ui";
+
+import useCalendlyImport from "@lib/hooks/useCalendlyImport";
 
 const ImportData = () => {
   const [user] = trpc.viewer.me.useSuspenseQuery();
+  const { handleChangeNotifyUsers, sendCampaignEmails } = useCalendlyImport(user.id);
   const router = useRouter();
   const { t } = useLocale();
 
@@ -48,16 +51,25 @@ const ImportData = () => {
 
   return (
     <>
-      <List className="bg-default divide-subtle border-subtle mx-1 divide-y rounded-md border p-0 dark:bg-black sm:mx-0">
-        {user && (
+      {user && (
+        <>
           <div className=" flex w-full items-center justify-between rounded border border-gray-300 px-4 py-2">
             <p>Import from Calendly</p>
             <Button onClick={handleOnClickImport} color="secondary" StartIcon="plus">
               {t("import")}
             </Button>
           </div>
-        )}
-      </List>
+          <div className="mt-3 px-4">
+            <CheckboxField
+              checked={sendCampaignEmails}
+              description={t("notify_past_bookers")}
+              onChange={(e) => {
+                handleChangeNotifyUsers(e.target.checked);
+              }}
+            />
+          </div>
+        </>
+      )}
 
       <Button
         type="button"
