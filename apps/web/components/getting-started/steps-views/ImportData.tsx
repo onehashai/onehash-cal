@@ -48,7 +48,7 @@ const ImportData = () => {
 
   return (
     <>
-      <List className="bg-default divide-subtle border-subtle mx-1 divide-y rounded-md border p-0 sm:mx-0 dark:bg-black">
+      <List className="bg-default divide-subtle border-subtle mx-1 divide-y rounded-md border p-0 dark:bg-black sm:mx-0">
         {user && (
           <div className=" flex w-full items-center justify-between rounded border border-gray-300 px-4 py-2">
             <p>Import from Calendly</p>

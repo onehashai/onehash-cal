@@ -35,7 +35,7 @@ type CreateOptions = {
 };
 
 export const createHandler = async ({ ctx, input }: CreateOptions) => {
-  const { schedulingType, teamId, metadata, locations: inputLocations, scheduleId, ...rest } = input;
+  const { schedulingType, teamId, metadata, locations: inputLocations, scheduleId, length, ...rest } = input;
 
   const userId = ctx.user.id;
   const isManagedEventType = schedulingType === SchedulingType.MANAGED;

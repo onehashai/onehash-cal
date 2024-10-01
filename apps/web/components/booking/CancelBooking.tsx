@@ -46,10 +46,11 @@ export default function CancelBooking(props: Props) {
   const [loading, setLoading] = useState(false);
   const telemetry = useTelemetry();
   const [error, setError] = useState<string | null>(booking ? null : t("booking_already_cancelled"));
-  const [autorefund, setAutoRefund] = useState<boolean>(false);
+  const [autoRefund, setAutoRefund] = useState<boolean>(false);
 
   const cancelBookingRef = useCallback((node: HTMLTextAreaElement) => {
     if (node !== null) {
+      // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- CancelBooking is not usually used in embed mode
       node.scrollIntoView({ behavior: "smooth" });
       node.focus();
     }
@@ -68,7 +69,7 @@ export default function CancelBooking(props: Props) {
         allRemainingBookings,
         // @NOTE: very important this shouldn't cancel with number ID use uid instead
         seatReferenceUid,
-        autorefund,
+        autoRefund,
       }),
       headers: {
         "Content-Type": "application/json",
@@ -127,7 +128,7 @@ export default function CancelBooking(props: Props) {
                 <label className="text-default font-medium">{t("autorefund")}</label>
                 <Switch
                   tooltip={t("autorefund_info")}
-                  checked={autorefund}
+                  checked={autoRefund}
                   onCheckedChange={(val) => {
                     setAutoRefund(val);
                   }}

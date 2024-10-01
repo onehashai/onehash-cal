@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import dynamic from "next/dynamic";
 import Head from "next/head";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense } from "react";
@@ -19,6 +19,7 @@ import type { getServerSideProps } from "@lib/getting-started/[[...step]]/getSer
 
 import { ConnectedCalendars } from "@components/getting-started/steps-views/ConnectCalendars";
 import { ConnectedVideoStep } from "@components/getting-started/steps-views/ConnectedVideoStep";
+import { ImportData } from "@components/getting-started/steps-views/ImportData";
 import { SetupAvailability } from "@components/getting-started/steps-views/SetupAvailability";
 import UserProfile from "@components/getting-started/steps-views/UserProfile";
 import { UserSettings } from "@components/getting-started/steps-views/UserSettings";
@@ -30,7 +31,10 @@ const steps = [
   "connected-video",
   "setup-availability",
   "user-profile",
+  "import-data",
 ] as const;
+
+const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
 const stepTransform = (step: (typeof steps)[number]) => {
   const stepIndex = steps.indexOf(step);
@@ -88,6 +92,10 @@ const OnboardingPage = (props: PageProps) => {
       title: `${t("nearly_there")}`,
       subtitle: [`${t("nearly_there_instructions")}`],
     },
+    {
+      title: `${t("import_data")}`,
+      subtitle: [`${t("import_data_instructions")}`],
+    },
   ];
 
   // TODO: Add this in when we have solved the ability to move to tokens accept invite and note invitedto
@@ -105,8 +113,25 @@ const OnboardingPage = (props: PageProps) => {
     const newStep = steps[index];
     router.push(`/getting-started/${stepTransform(newStep)}`);
   };
+  const utils = trpc.useUtils();
 
   const currentStepIndex = steps.indexOf(currentStep);
+
+  const onSuccess = async () => {
+    await utils.viewer.me.invalidate();
+
+    goToIndex(currentStepIndex + 1);
+  };
+  const userMutation = trpc.viewer.updateProfile.useMutation({
+    onSuccess: onSuccess,
+  });
+  const handleSkip = () => {
+    userMutation.mutate({
+      metadata: {
+        currentOnboardingStep: steps[currentStepIndex + 1],
+      },
+    });
+  };
 
   return (
     <div
@@ -155,18 +180,20 @@ const OnboardingPage = (props: PageProps) => {
                     defaultScheduleId={user.defaultScheduleId}
                   />
                 )}
-                {currentStep === "user-profile" && <UserProfile />}
+                {currentStep === "user-profile" && <UserProfile nextStep={() => goToIndex(5)} />}
+                {currentStep === "import-data" && <ImportData />}
               </Suspense>
             </StepCard>
 
             {headers[currentStepIndex]?.skipText && (
               <div className="flex w-full flex-row justify-center">
                 <Button
-                  color="minimal"
+                  color="secondary"
                   data-testid="skip-step"
                   onClick={(event) => {
                     event.preventDefault();
-                    goToIndex(currentStepIndex + 1);
+
+                    handleSkip();
                   }}
                   className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium">
                   {headers[currentStepIndex]?.skipText}
@@ -174,14 +201,8 @@ const OnboardingPage = (props: PageProps) => {
               </div>
             )}
           </div>
-          <div className="flex w-full flex-row justify-center">
-            <Button
-              color="minimal"
-              data-testid="sign-out"
-              onClick={() => signOut({ callbackUrl: "/auth/logout" })}
-              className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium">
-              {t("sign_out")}
-            </Button>
+          <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+            <PoweredBy logoOnly />
           </div>
         </div>
       </div>

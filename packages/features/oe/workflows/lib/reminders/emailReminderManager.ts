@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import dayjs from "@calcom/dayjs";
 import { preprocessNameFieldDataWithVariant } from "@calcom/features/form-builder/utils";
+import { WEBSITE_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import type { TimeUnit } from "@calcom/prisma/enums";
@@ -183,6 +184,8 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
     emailSubject,
     emailBody: `<body style="white-space: pre-wrap;">${emailBody}</body>`,
   };
+  const bookerUrl = evt.bookerUrl ?? WEBSITE_URL;
+
   if (emailBody) {
     const variables: VariablesType = {
       eventName: evt.title || "",
@@ -198,10 +201,10 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
       additionalNotes: evt.additionalNotes,
       responses: evt.responses,
       meetingUrl: bookingMetadataSchema.parse(evt.metadata || {})?.videoCallUrl,
-      cancelLink: `${evt.bookerUrl}/booking/${evt.uid}?cancel=true`,
-      rescheduleLink: `${evt.bookerUrl}/reschedule/${evt.uid}`,
-      ratingUrl: `${evt.bookerUrl}/booking/${evt.uid}?rating`,
-      noShowUrl: `${evt.bookerUrl}/booking/${evt.uid}?noShow=true`,
+      cancelLink: `${bookerUrl}/booking/${evt.uid}?cancel=true`,
+      rescheduleLink: `${bookerUrl}/reschedule/${evt.uid}`,
+      ratingUrl: `${bookerUrl}/booking/${evt.uid}?rating`,
+      noShowUrl: `${bookerUrl}/booking/${evt.uid}?noShow=true`,
     };
 
     const locale =
@@ -241,8 +244,8 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
       timeZone,
       organizer: evt.organizer.name,
       name,
-      ratingUrl: `${evt.bookerUrl}/booking/${evt.uid}?rating`,
-      noShowUrl: `${evt.bookerUrl}/booking/${evt.uid}?noShow=true`,
+      ratingUrl: `${bookerUrl}/booking/${evt.uid}?rating`,
+      noShowUrl: `${bookerUrl}/booking/${evt.uid}?noShow=true`,
     });
   } else if (template === WorkflowTemplates.COMPLETED) {
     emailContent = emailThankYouTemplate(

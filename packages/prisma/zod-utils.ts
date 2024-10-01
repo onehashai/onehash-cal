@@ -326,7 +326,7 @@ export const schemaBookingCancelParams = z.object({
   cancellationReason: z.string().optional(),
   seatReferenceUid: z.string().optional(),
   cancelledBy: z.string().email({ message: "Invalid email" }).optional(),
-  autorefund: z.boolean(),
+  autoRefund: z.boolean(),
 });
 
 export const vitalSettingsUpdateSchema = z.object({
@@ -662,6 +662,7 @@ export const allManagedEventTypeProps: { [k in keyof Omit<Prisma.EventTypeSelect
   metadata: true,
   children: true,
   hideCalendarNotes: true,
+  hideCalendarEventDetails: true,
   minimumBookingNotice: true,
   beforeEventBuffer: true,
   afterEventBuffer: true,

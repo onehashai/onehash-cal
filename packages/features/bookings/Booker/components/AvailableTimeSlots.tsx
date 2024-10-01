@@ -87,7 +87,7 @@ export const AvailableTimeSlots = ({
     ? nonEmptyScheduleDaysFromSelectedDate.slice(0, extraDays)
     : [];
 
-  const currentSchedule = useSlotsForAvailableDates(dates, schedule?.slots);
+  const slotsPerDay = useSlotsForAvailableDates(dates, schedule?.slots);
 
   return (
     <>
@@ -95,8 +95,8 @@ export const AvailableTimeSlots = ({
         {isLoading ? (
           <div className="mb-3 h-8" />
         ) : (
-          currentSchedule.length > 0 &&
-          currentSchedule.map((schedule) => (
+          slotsPerDay.length > 0 &&
+          slotsPerDay.map((slots) => (
             <AvailableTimesHeader
               customClassNames={{
                 availableTimeSlotsHeaderContainer: customClassNames?.availableTimeSlotsHeaderContainer,
@@ -107,8 +107,8 @@ export const AvailableTimeSlots = ({
               date={dayjs(slots.date)}
               showTimeFormatToggle={!isColumnView}
               availableMonth={
-                dayjs(selectedDate).format("MM") !== dayjs(schedule.date).format("MM")
-                  ? dayjs(schedule.date).format("MMM")
+                dayjs(selectedDate).format("MM") !== dayjs(slots.date).format("MM")
+                  ? dayjs(slots.date).format("MMM")
                   : undefined
               }
             />
@@ -134,7 +134,7 @@ export const AvailableTimeSlots = ({
                 customClassNames={customClassNames?.availableTimes}
                 showTimeFormatToggle={!isColumnView}
                 onTimeSelect={onTimeSelect}
-                slots={schedule.slots}
+                slots={slots.slots}
                 seatsPerTimeSlot={seatsPerTimeSlot}
                 showAvailableSeatsCount={showAvailableSeatsCount}
                 event={event}

@@ -302,6 +302,7 @@ const AppearanceView = ({
               description={t("bookerlayout_user_settings_description")}
               isDisabled={isBookerLayoutFormSubmitting || !isBookerLayoutFormDirty}
               isLoading={mutation.isPending}
+              user={user}
             />
           </Form>
 

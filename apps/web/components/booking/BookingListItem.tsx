@@ -381,6 +381,10 @@ function BookingListItem(booking: BookingItemProps) {
   const showPendingPayment = paymentAppData.enabled && booking.payment.length && !booking.paid;
   const [expanded, setExpanded] = useState(false);
 
+  useEffect(() => {
+    if (expanded) console.log("booking.eventType", booking.eventType);
+  }, [expanded]);
+
   const attendeePhoneNo = booking.responses?.phone as string | undefined;
   const [notes, setNotes] = useState<string>(meetingNote || "");
 
@@ -639,26 +643,11 @@ function BookingListItem(booking: BookingItemProps) {
             )}
           </div>
         </td>
-        <td className={`w-full px-4${isRejected ? " line-through" : ""}`}>
-          {/* Time and Badges for mobile */}
-          <div className="w-full pb-2 pt-4 sm:hidden">
-            <div className="flex w-full items-center justify-between sm:hidden">
-              <div className="text-emphasis text-sm leading-6">{startTime}</div>
-              <div className="text-subtle pr-2 text-sm">
-                {formatTime(booking.startTime, userTimeFormat, userTimeZone)} -{" "}
-                {formatTime(booking.endTime, userTimeFormat, userTimeZone)}
-                <MeetingTimeInTimezones
-                  timeFormat={userTimeFormat}
-                  userTimezone={userTimeZone}
-                  startTime={booking.startTime}
-                  endTime={booking.endTime}
-                  attendees={booking.attendees}
-                />
-              </div>
-            </div>
-          </div>
-        </td>
-        <td data-testid="title-and-attendees" className={`w-full px-4${isRejected ? " line-through" : ""}`}>
+        <td
+          data-testid="title-and-attendees"
+          className={`my-auto flex w-full items-center align-middle px-4${
+            isRejected ? " line-through" : ""
+          }`}>
           <div>
             {/* Time and Badges for mobile */}
             <div className="w-full pb-2 pt-4 sm:hidden">
@@ -744,7 +733,7 @@ function BookingListItem(booking: BookingItemProps) {
             </div>
           </div>
         </td>
-        <td className="flex w-full flex-col flex-wrap items-end justify-end space-x-2 space-y-2 py-4 pl-4 text-right text-sm font-medium ltr:pr-4 rtl:pl-4 sm:flex-row sm:flex-nowrap sm:items-start sm:space-y-0 sm:pl-0">
+        <td className="flex w-full flex-col flex-wrap items-end justify-end space-x-2 space-y-2 py-4 pl-4 text-right text-sm font-medium ltr:pr-4 rtl:pl-4 sm:flex-row sm:flex-nowrap sm:space-y-0 sm:pl-0 md:items-center">
           {isUpcoming && !isCancelled ? (
             <>
               {isPending && (userId === booking.user?.id || booking.isUserTeamAdminOrOwner) && (
@@ -770,7 +759,7 @@ function BookingListItem(booking: BookingItemProps) {
             </div>
           )}
           {isOrganizer ? (
-            <div className="text-md flex pl-3 ">
+            <div className="text-md flex items-center pl-3">
               <p className="mt-px">{t("details")}</p>
               <Icon
                 name="chevron-right"
