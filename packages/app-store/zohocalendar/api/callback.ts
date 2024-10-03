@@ -28,10 +28,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
 
-  if (location && typeof location !== "string") {
-    res.status(400).json({ message: "`location` must be a string" });
-    return;
-  }
+  // if (location && typeof location !== "string") {
+  //   res.status(400).json({ message: "`location` must be a string" });
+  //   return;
+  // }
 
   if (!req.session?.user?.id) {
     return res.status(401).json({ message: "You must be logged in to do this" });
@@ -52,15 +52,15 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     code,
   };
 
-  let server_location;
+  // let server_location;
 
-  if (location === "us") {
-    server_location = "com";
-  } else if (location === "au") {
-    server_location = "com.au";
-  } else {
-    server_location = location;
-  }
+  // if (location === "us") {
+  //   server_location = "com";
+  // } else if (location === "au") {
+  //   server_location = "com.au";
+  // } else {
+  //   server_location = location;
+  // }
 
   const query = stringify(params);
   const url = `https://accounts.${domain}/oauth/v2/token`;

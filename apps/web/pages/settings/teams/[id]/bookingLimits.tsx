@@ -1,4 +1,4 @@
-import TeamBookingLimitsView from "@calcom/features/ee/teams/pages/team-booking-limits-view";
+import TeamBookingLimitsView from "@calcom/features/oe/teams/pages/team-booking-limits-view";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta } from "@calcom/ui";

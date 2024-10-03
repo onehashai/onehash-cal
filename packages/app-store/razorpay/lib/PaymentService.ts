@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 
 import { default as Razorpay } from "@calcom/app-store/razorpay/lib/Razorpay";
-import { sendAwaitingPaymentEmail } from "@calcom/emails";
+import { sendAwaitingPaymentEmailAndSMS } from "@calcom/emails";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
@@ -191,7 +191,8 @@ export class PaymentService implements IAbstractPaymentService {
       startTime: { toISOString: () => string };
       uid: string;
     },
-    paymentData: Payment
+    paymentData: Payment,
+    eventTypeMetadata?: EventTypeMetadata
   ): Promise<void> {
     const paymentLink = isPrismaObjOrUndefined(paymentData.data)?.paymentLink;
 
@@ -199,15 +200,18 @@ export class PaymentService implements IAbstractPaymentService {
       return Promise.resolve();
     }
 
-    await sendAwaitingPaymentEmail({
-      ...event,
-      paymentInfo: {
-        link: paymentLink as string,
-        paymentOption: paymentData.paymentOption || "ON_BOOKING",
-        amount: paymentData.amount,
-        currency: paymentData.currency,
+    await sendAwaitingPaymentEmailAndSMS(
+      {
+        ...event,
+        paymentInfo: {
+          link: paymentLink as string,
+          paymentOption: paymentData.paymentOption || "ON_BOOKING",
+          amount: paymentData.amount,
+          currency: paymentData.currency,
+        },
       },
-    });
+      eventTypeMetadata
+    );
   }
 
   async deletePayment(paymentId: number): Promise<boolean> {
