@@ -571,7 +571,8 @@ const mapEventTypeAndBookingsToInputSchema = (
                 guests: scheduledEvent.event_guests?.map((g) => g.email),
               }
             : {};
-        const uid = scheduledEvent.uri.substring(scheduledEvent.uri.lastIndexOf("/") + 1);
+        //creating uid with userId so that a user can import the bookings to multiple accounts
+        const uid = scheduledEvent.uri.substring(scheduledEvent.uri.lastIndexOf("/") + 1) + userIntID;
         return {
           uid,
           user: { connect: { id: userIntID } },
