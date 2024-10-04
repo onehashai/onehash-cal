@@ -18,7 +18,7 @@ const msg = {
       [
         {
           tag: "text",
-          text: 'It allows users to send a unique "cal.com" URL that allows anyone to create bookings on their calendars',
+          text: 'It allows users to send a unique "cal.id" URL that allows anyone to create bookings on their calendars',
         },
       ],
       [
@@ -36,7 +36,7 @@ const msg = {
       [
         {
           tag: "text",
-          text: "1. Visit https://cal.com and sign up for an account.",
+          text: "1. Visit https://cal.id and sign up for an account.",
         },
       ],
       [

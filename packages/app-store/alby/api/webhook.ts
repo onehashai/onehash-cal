@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { albyCredentialKeysSchema } from "@calcom/app-store/alby/lib";
 import parseInvoice from "@calcom/app-store/alby/lib/parseInvoice";
+import { APP_NAME } from "@calcom/lib/constants";
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import { HttpError as HttpCode } from "@calcom/lib/http-error";
@@ -42,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { data: parsedPayload } = parse;
 
-    if (parsedPayload.metadata?.payer_data?.appId !== "cal.com") {
+    if (parsedPayload.metadata?.payer_data?.appId !== APP_NAME.replace(" ", "-")) {
       throw new HttpCode({ statusCode: 204, message: "Payment not for cal.com" });
     }
 
