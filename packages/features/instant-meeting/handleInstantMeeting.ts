@@ -148,7 +148,7 @@ const triggerBrowserNotifications = async (args: {
           action: "connect-action",
           title: "Connect and join",
           type: "button",
-          image: "https://cal.com/api/logo?type=icon",
+          image: "https://cal.id/api/logo?type=icon",
         },
       ],
     });

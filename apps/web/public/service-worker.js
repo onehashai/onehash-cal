@@ -1,3 +1,5 @@
+
+import {WEBAPP_URL} from "@calcom/lib/constants"
 self.addEventListener("push", async (event) => {
   let notificationData = event.data.json();
 
@@ -13,14 +15,14 @@ self.addEventListener("push", async (event) => {
 
 
   const title = notificationData.title || "You have a new notification from Cal.com";
-  const image = "https://cal.com/api/logo?type=icon";
+  const image = "https://cal.id/api/logo?type=icon";
   const newNotificationOptions = {
     requireInteraction: true,
     ...notificationData,
     icon: image,
     badge: image,
     data: {
-      url: notificationData.data?.url || "https://app.cal.com",
+      url: notificationData.data?.url || WEBAPP_URL,
     },
     silent: false,
     vibrate: [300, 100, 400],
