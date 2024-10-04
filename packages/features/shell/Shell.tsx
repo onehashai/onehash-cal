@@ -54,7 +54,6 @@ import getBrandColours from "@calcom/lib/getBrandColours";
 import { useBookerUrl } from "@calcom/lib/hooks/useBookerUrl";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { ButtonState, useNotifications } from "@calcom/lib/hooks/useNotifications";
 import { useRefreshData } from "@calcom/lib/hooks/useRefreshData";
 import useTheme from "@calcom/lib/hooks/useTheme";
 import { isKeyInObject } from "@calcom/lib/isKeyInObject";
@@ -1127,7 +1126,8 @@ export function ShellMain(props: LayoutProps) {
   const router = useRouter();
   const { isLocaleReady, t } = useLocale();
 
-  const { buttonToShow, isLoading, enableNotifications, disableNotifications } = useNotifications();
+  // TODO:NOTIFICATIONS
+  // const { buttonToShow, isLoading, enableNotifications, disableNotifications } = useNotifications();
 
   return (
     <>
@@ -1187,7 +1187,8 @@ export function ShellMain(props: LayoutProps) {
                 </div>
               )}
               {props.actions && props.actions}
-              {props.heading === "Bookings" && buttonToShow && (
+              {/* TODO:NOTIFICATIONS */}
+              {/* {props.heading === "Bookings" && buttonToShow && (
                 <Button
                   color="primary"
                   onClick={buttonToShow === ButtonState.ALLOW ? enableNotifications : disableNotifications}
@@ -1203,7 +1204,7 @@ export function ShellMain(props: LayoutProps) {
                       : "allow_browser_notifications"
                   )}
                 </Button>
-              )}
+              )} */}
             </header>
           )}
         </div>
