@@ -472,3 +472,29 @@ export async function updateNewTeamMemberEventTypes(userId: number, teamId: numb
       })
     ));
 }
+
+export async function updateEventTypesOnMemberDepart(userId: number, teamId: number) {
+  const parentEventTypes = await prisma.eventType.findMany({
+    where: {
+      team: { id: teamId },
+      schedulingType: "MANAGED",
+    },
+    select: {
+      slug: true,
+    },
+  });
+
+  if (parentEventTypes.length === 0) {
+    console.log("No managed event types found for the team.");
+    return;
+  }
+
+  await prisma.eventType.deleteMany({
+    where: {
+      userId: userId,
+      slug: {
+        in: parentEventTypes.map((event) => event.slug),
+      },
+    },
+  });
+}

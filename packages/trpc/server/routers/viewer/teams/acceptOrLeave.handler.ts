@@ -1,5 +1,5 @@
 import { createAProfileForAnExistingUser } from "@calcom/lib/createAProfileForAnExistingUser";
-import { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
+import { updateNewTeamMemberEventTypes, updateEventTypesOnMemberDepart } from "@calcom/lib/server/queries";
 import { closeComUpsertTeamUser } from "@calcom/lib/sync/SyncServiceManager";
 import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
@@ -57,7 +57,11 @@ export const acceptOrLeaveHandler = async ({ ctx, input }: AcceptOrLeaveOptions)
         organizationId: idOfOrganizationInContext,
       });
     }
-    await updateNewTeamMemberEventTypes(ctx.user.id, input.teamId);
+    try {
+      await updateNewTeamMemberEventTypes(ctx.user.id, input.teamId);
+    } catch (e) {
+      console.error("error", e);
+    }
     closeComUpsertTeamUser(team, ctx.user, teamMembership.role);
   } else {
     try {
@@ -83,11 +87,11 @@ export const acceptOrLeaveHandler = async ({ ctx, input }: AcceptOrLeaveOptions)
           },
         });
       }
-
+      await updateEventTypesOnMemberDepart(ctx.user.id, input.teamId);
       // Sync Services: Close.com
       if (ownerMembership) closeComUpsertTeamUser(ownerMembership.team, ctx.user, membership.role);
     } catch (e) {
-      console.log(e);
+      console.log("Team leave error ", e);
     }
   }
 };
