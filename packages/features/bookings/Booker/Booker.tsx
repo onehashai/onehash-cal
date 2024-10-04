@@ -1,4 +1,4 @@
-import { AnimatePresence, LazyMotion, m } from "framer-motion";
+import { AnimatePresence, LazyMotion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef } from "react";
 import { Toaster } from "react-hot-toast";
@@ -31,7 +31,7 @@ import { useBookerStore } from "./store";
 import type { BookerProps, WrappedBookerProps } from "./types";
 
 const loadFramerFeatures = () => import("./framer-features").then((res) => res.default);
-const PoweredBy = dynamic(() => import("@calcom/ee/components/PoweredBy"));
+const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 const UnpublishedEntity = dynamic(() =>
   import("@calcom/ui/components/unpublished-entity/UnpublishedEntity").then((mod) => mod.UnpublishedEntity)
 );
@@ -455,17 +455,9 @@ const BookerComponent = ({
             />
           </div>
         )}
-        {!hideBranding && !isPlatform && (
-          <m.span
-            key="logo"
-            className={classNames(
-              "mb-6 mt-auto pt-6 [&_img]:h-[15px]",
-              hasDarkBackground ? "dark" : "",
-              layout === BookerLayouts.MONTH_VIEW ? "block" : "hidden"
-            )}>
-            <PoweredBy logoOnly />
-          </m.span>
-        )}
+        <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+          <PoweredBy logoOnly />
+        </div>
       </div>
 
       <BookFormAsModal

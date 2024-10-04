@@ -78,7 +78,12 @@ type BookingItemProps = BookingItem & {
 function BookingListItem(booking: BookingItemProps) {
   const { userId, userTimeZone, userTimeFormat, userEmail } = booking.loggedInUser;
 
-  const isOrganizer = booking.user.id === userId;
+  //TODO:INSTANT MEETING
+  let isOrganizer = false;
+
+  if (booking.user) {
+    isOrganizer = booking.user.id === userId || !!booking.eventType.team;
+  }
 
   const {
     t,
@@ -381,10 +386,6 @@ function BookingListItem(booking: BookingItemProps) {
   const showPendingPayment = paymentAppData.enabled && booking.payment.length && !booking.paid;
   const [expanded, setExpanded] = useState(false);
 
-  useEffect(() => {
-    if (expanded) console.log("booking.eventType", booking.eventType);
-  }, [expanded]);
-
   const attendeePhoneNo = booking.responses?.phone as string | undefined;
   const [notes, setNotes] = useState<string>(meetingNote || "");
 
@@ -408,7 +409,7 @@ function BookingListItem(booking: BookingItemProps) {
     const createReinviteeAttendeeLink = () => {
       const ownerSlug = booking.eventType.team ? booking.eventType.team.slug : booking.user?.username;
       const eventSlug = booking.eventType.slug;
-      const bookingUrl = `${bookerUrl}/${ownerSlug}/${eventSlug}`;
+      const bookingUrl = `${bookerUrl}/${booking.eventType.team ? "team/" : ""}${ownerSlug}/${eventSlug}`;
 
       const queryParams = {
         name: booking.attendees[0].name,
