@@ -15,7 +15,7 @@ export const metadata = {
   publisher: "OneHash",
   slug: "caldav-calendar",
   url: "https://cal.com/",
-  email: "help@cal.com",
+  email: "support@onehash.ai",
   dirName: "caldavcalendar",
 } as App;
 
