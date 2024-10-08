@@ -17,11 +17,10 @@ function SkeletonLoader() {
 }
 
 interface GenericEventTypeAppSettingsInterfaceProps {
-  getAppData: GetAppData;
-  setAppData: SetAppData;
+  getAppData?: GetAppData;
+  setAppData?: SetAppData;
   disabled?: boolean;
   appSchema: Record<string, any>;
-  loading: boolean;
 }
 
 const GenericEventTypeAppSettingsInterface = ({
@@ -99,9 +98,7 @@ export function DynamicComponent<T extends Record<string, React.ComponentType<an
   if (loading) return <SkeletonLoader />;
 
   if (!componentMap[dirName]) {
-    return appSchema ? (
-      <GenericEventTypeAppSettingsInterface {...rest} appSchema={appSchema} loading={loading} />
-    ) : null;
+    return appSchema ? <GenericEventTypeAppSettingsInterface {...rest} appSchema={appSchema} /> : null;
   }
 
   const Component = componentMap[dirName];
