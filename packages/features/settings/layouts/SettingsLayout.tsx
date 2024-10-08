@@ -199,10 +199,11 @@ const useTabs = () => {
         !user?.twoFactorEnabled &&
         !user?.passwordAdded
       ) {
-        const filtered = tab?.children?.filter(
-          (childTab) => childTab.href !== "/settings/security/two-factor-auth"
-        );
-        return { ...tab, children: filtered };
+        return { ...tab };
+        // const filtered = tab?.children?.filter(
+        //   (childTab) => childTab.href !== "/settings/security/two-factor-auth"
+        // );
+        // return { ...tab, children: filtered };
       } else if (tab.href === "/settings/developer") {
         const filtered = tab?.children?.filter(
           (childTab) => isOrgAdminOrOwner || childTab.name !== "admin_api"
@@ -369,7 +370,7 @@ const TeamListCollapsible = () => {
                         disableChevron
                       />
                       {/* Hide if there is a parent ID */}
-                      {!team.parentId ? (
+                      {/* {!team.parentId ? (
                         <>
                           <VerticalTabItem
                             name={t("billing")}
@@ -378,7 +379,7 @@ const TeamListCollapsible = () => {
                             disableChevron
                           />
                         </>
-                      ) : null}
+                      ) : null} */}
                       <VerticalTabItem
                         name={t("booking_limits")}
                         href={`/settings/teams/${team.id}/bookingLimits`}

@@ -45,15 +45,15 @@ const tabs: VerticalTabItemProps[] = [
     children: [
       { name: "password", href: "/settings/security/password" },
       { name: "impersonation", href: "/settings/security/impersonation" },
-      { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
+      // { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
     ],
   },
-  {
-    name: "billing",
-    href: "/settings/billing",
-    icon: "credit-card",
-    children: [{ name: "manage_billing", href: "/settings/billing" }],
-  },
+  // {
+  //   name: "billing",
+  //   href: "/settings/billing",
+  //   icon: "credit-card",
+  //   children: [{ name: "manage_billing", href: "/settings/billing" }],
+  // },
   {
     name: "developer",
     href: "/settings/developer",
@@ -138,7 +138,7 @@ const tabs: VerticalTabItemProps[] = [
 
 tabs.find((tab) => {
   if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
-    tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
+    // tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
     // TODO: Enable dsync for self hosters
     // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
   }
@@ -220,9 +220,9 @@ const useTabs = () => {
 
 const BackButtonInSidebar = ({ name }: { name: string }) => {
   return (
-    <Link
-      href="/"
-      className="hover:bg-subtle todesktop:mt-10 [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-emphasis group my-6 flex h-6 max-h-6 w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium leading-4 transition"
+    <div
+      onClick={() => window.history.back()}
+      className="hover:bg-subtle todesktop:mt-10 [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-emphasis group my-6 flex h-6 max-h-6 w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium leading-4"
       data-testid={`vertical-tab-${name}`}>
       <Icon
         name="arrow-left"
@@ -231,7 +231,7 @@ const BackButtonInSidebar = ({ name }: { name: string }) => {
       <Skeleton title={name} as="p" className="min-h-4 max-w-36 truncate" loadingClassName="ms-3">
         {name}
       </Skeleton>
-    </Link>
+    </div>
   );
 };
 
@@ -364,7 +364,7 @@ const TeamListCollapsible = () => {
                         disableChevron
                       />
                       {/* Hide if there is a parent ID */}
-                      {!team.parentId ? (
+                      {/* {!team.parentId ? (
                         <>
                           <VerticalTabItem
                             name={t("billing")}
@@ -373,7 +373,7 @@ const TeamListCollapsible = () => {
                             disableChevron
                           />
                         </>
-                      ) : null}
+                      ) : null} */}
                       <VerticalTabItem
                         name={t("booking_limits")}
                         href={`/settings/teams/${team.id}/bookingLimits`}

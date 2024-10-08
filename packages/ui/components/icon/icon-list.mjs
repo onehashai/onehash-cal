@@ -23,6 +23,7 @@ export const lucideIconList = new Set([
   "calendar-check-2",
   "calendar-days",
   "calendar-heart",
+  "calendar-plus",
   "calendar-search",
   "calendar-x-2",
   "calendar",
