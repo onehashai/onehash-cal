@@ -232,7 +232,7 @@ export const ConfigureStepCard: FC<ConfigureStepCardProps> = (props) => {
         {fields.map((group, groupIndex) => (
           <div key={group.fieldId}>
             {eventTypeGroups[groupIndex].eventTypes.some((eventType) => eventType.selected === true) && (
-              <div className="mb-2 mt-4 flex items-center">
+              <div className="mb-2 mt-4 flex items-center gap-2">
                 <Avatar
                   alt=""
                   imageSrc={group.image} // if no image, use default avatar
