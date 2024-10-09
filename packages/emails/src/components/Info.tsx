@@ -35,8 +35,10 @@ export const Info = (props: {
     <>
       {props.withSpacer && <Spacer />}
       <div>
-        <p style={{ color: "#101010" }}>{props.label}</p>
-        {props.link && (
+        <p style={{ color: "#101010" }}>
+          {props.isLabelHTML ? <StyledHtmlContent htmlContent={safeLabel} /> : props.label}
+        </p>
+        {props.link ? (
           <a
             href={props.link as string}
             target="_blank"
@@ -47,23 +49,20 @@ export const Info = (props: {
               whiteSpace: "pre-wrap",
               textDecoration: props.lineThrough ? "line-through" : undefined,
             }}>
-            {props.description}
+            {props.formatted ? <StyledHtmlContent htmlContent={safeDescription} /> : props.description}
           </a>
+        ) : (
+          <p
+            style={{
+              color: "#101010",
+              fontWeight: 400,
+              lineHeight: "24px",
+              whiteSpace: "pre-wrap",
+              textDecoration: props.lineThrough ? "line-through" : undefined,
+            }}>
+            {props.formatted ? <StyledHtmlContent htmlContent={safeDescription} /> : props.description}
+          </p>
         )}
-
-        <p style={{ color: "#101010" }}>
-          {props.isLabelHTML ? <StyledHtmlContent htmlContent={safeLabel} /> : props.label}
-        </p>
-        <p
-          style={{
-            color: "#101010",
-            fontWeight: 400,
-            lineHeight: "24px",
-            whiteSpace: "pre-wrap",
-            textDecoration: props.lineThrough ? "line-through" : undefined,
-          }}>
-          {props.formatted ? <StyledHtmlContent htmlContent={safeDescription} /> : props.description}
-        </p>
         {props.extraInfo}
       </div>
     </>
