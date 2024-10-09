@@ -45,7 +45,7 @@ import {
   deleteWebhookScheduledTriggers,
   scheduleTrigger,
 } from "@calcom/features/webhooks/lib/scheduleTrigger";
-import { isPrismaObjOrUndefined } from "@calcom/lib";
+import { isPrismaObj, isPrismaObjOrUndefined } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { getUTCOffsetByTimezone } from "@calcom/lib/date-fns";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";
@@ -892,6 +892,10 @@ async function handler(
       timeZone: organizerUser.timeZone,
       language: { translate: tOrganizer, locale: organizerUser.locale ?? "en" },
       timeFormat: getTimeFormatStringFromUserTimeFormat(organizerUser.timeFormat),
+      phoneNumber:
+        isPrismaObj(organizerUser.metadata) && organizerUser.metadata?.phoneNumber
+          ? (organizerUser.metadata?.phoneNumber as string)
+          : undefined,
     },
     responses: reqBody.calEventResponses || null,
     userFieldsResponses: reqBody.calEventUserFieldsResponses || null,
@@ -1409,9 +1413,11 @@ async function handler(
   } else if (isConfirmedByDefault) {
     // Use EventManager to conditionally use all needed integrations.
     const createManager = await eventManager.create(evt);
+
     if (evt.location) {
       booking.location = evt.location;
     }
+
     // This gets overridden when creating the event - to check if notes have been hidden or not. We just reset this back
     // to the default description when we are sending the emails.
     evt.description = eventType.description;
