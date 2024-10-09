@@ -12,10 +12,7 @@ import {
 } from "./constants";
 
 export function getWorkflowActionOptions(t: TFunction, isTeamsPlan?: boolean, isOrgsPlan?: boolean) {
-  return WORKFLOW_ACTIONS.filter(
-    //removing WHATSAPP_ATTENDEE and WHATSAPP_NUMBER until it's ready from twilio
-    (action) => !isWhatsappAction(action)
-  ).map((action) => {
+  return WORKFLOW_ACTIONS.map((action) => {
     const actionString = t(`${action.toLowerCase()}_action`);
 
     return {

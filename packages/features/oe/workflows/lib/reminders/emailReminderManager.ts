@@ -32,7 +32,7 @@ const log = logger.getSubLogger({ prefix: ["[emailReminderManager]"] });
 function getiCalEventAsString(evt: BookingInfo, status?: ParticipationStatus) {
   const uid = uuidv4();
   let recurrenceRule: string | undefined = undefined;
-  if (evt.eventType.recurringEvent?.count) {
+  if (evt.eventType?.recurringEvent?.count) {
     recurrenceRule = new RRule(evt.eventType.recurringEvent).toString().replace("RRULE:", "");
   }
 

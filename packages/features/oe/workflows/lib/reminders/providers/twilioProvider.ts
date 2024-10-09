@@ -21,7 +21,7 @@ function createTwilioClient() {
 function getDefaultSender(whatsapp = false) {
   let defaultSender = process.env.TWILIO_PHONE_NUMBER;
   if (whatsapp) {
-    defaultSender = `whatsapp:+${process.env.TWILIO_WHATSAPP_PHONE_NUMBER}`;
+    defaultSender = `whatsapp:${process.env.TWILIO_WHATSAPP_PHONE_NUMBER}`;
   }
   return defaultSender || "";
 }
