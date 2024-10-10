@@ -186,7 +186,7 @@ export default function Bookings() {
       "Location",
       "Attendees",
       "Paid",
-      "Current",
+      "Currency",
       "Amount",
       "Payment Status",
       "Rescheduled",
@@ -194,7 +194,8 @@ export default function Bookings() {
       "Is Recorded",
     ];
 
-    const formatLocation = (location) => {
+    const formatLocation = (location: string | null) => {
+      if (location == null) return "N/A";
       const cleanLocation = location.includes("integrations:")
         ? location
             .replace("integrations:", "")
@@ -219,7 +220,7 @@ export default function Bookings() {
       booking.attendees.map((attendee) => attendee.email).join(";"),
       booking.paid.toString(),
       booking.payment.map((pay) => pay.currency).join(";"),
-      booking.payment.map((pay) => pay.amount).join(";"),
+      booking.payment.map((pay) => pay.amount / 100).join(";"),
       booking.payment.map((pay) => pay.success).join(";"),
       booking.rescheduled?.toString() ?? "",
       booking.recurringEventId ?? "",

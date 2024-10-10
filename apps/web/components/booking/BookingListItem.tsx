@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 
 import type { getEventLocationValue } from "@calcom/app-store/locations";
@@ -17,7 +17,6 @@ import ViewRecordingsDialog from "@calcom/features/ee/video/ViewRecordingsDialog
 import classNames from "@calcom/lib/classNames";
 import { formatTime } from "@calcom/lib/date-fns";
 import getPaymentAppData from "@calcom/lib/getPaymentAppData";
-import { useBookerUrl } from "@calcom/lib/hooks/useBookerUrl";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useGetTheme } from "@calcom/lib/hooks/useTheme";
@@ -386,7 +385,7 @@ function BookingListItem(booking: BookingItemProps) {
   const showPendingPayment = paymentAppData.enabled && booking.payment.length && !booking.paid;
   const [expanded, setExpanded] = useState(false);
 
-  const attendeePhoneNo = booking.responses?.phone as string | undefined;
+  const attendeePhoneNo = isPrismaObjOrUndefined(booking.responses)?.phone as string | undefined;
   const [notes, setNotes] = useState<string>(meetingNote || "");
 
   const [showRTE, setShowRTE] = useState(false);
@@ -401,37 +400,6 @@ function BookingListItem(booking: BookingItemProps) {
   const handleMeetingNoteSave = (): void => {
     saveNotesMutation.mutate({ bookingId: booking.id, meetingNote: notes });
   };
-
-  const [reinviteeAttendeeLink, setReinviteeAttendeeLink] = useState<string>("");
-
-  const bookerUrl = useBookerUrl();
-  useEffect(() => {
-    const createReinviteeAttendeeLink = () => {
-      const ownerSlug = booking.eventType.team ? booking.eventType.team.slug : booking.user?.username;
-      const eventSlug = booking.eventType.slug;
-      const bookingUrl = `${bookerUrl}/${booking.eventType.team ? "team/" : ""}${ownerSlug}/${eventSlug}`;
-
-      const queryParams = {
-        name: booking.attendees[0].name,
-        email: booking.attendees[0].email,
-      };
-
-      const urlSearchParams = new URLSearchParams(queryParams);
-
-      const guests = booking.responses?.guests;
-      if (guests && Array.isArray(guests) && guests.length > 0) {
-        guests.forEach((guest) => {
-          urlSearchParams.append("guests", guest);
-        });
-      }
-
-      return `${bookingUrl}?${urlSearchParams}`;
-    };
-
-    if (booking.attendees.length > 0) {
-      setReinviteeAttendeeLink(createReinviteeAttendeeLink());
-    }
-  }, [bookerUrl, booking]);
 
   const openWhatsAppChat = (phoneNumber: string) => {
     // Dimensions and other properties of the popup window
@@ -910,14 +878,6 @@ function BookingListItem(booking: BookingItemProps) {
                   color="secondary"
                   onClick={() => setMarkNoShowDialogIsOpen(true)}>
                   {t("mark_no_show")}
-                </Button>
-              )}
-              {isBookingInPast && booking.eventType && (
-                <Button
-                  className="flex w-full justify-center"
-                  color="secondary"
-                  onClick={() => window.open(reinviteeAttendeeLink, "_blank")}>
-                  {t("reinvitee_attendee")}
                 </Button>
               )}
             </div>
