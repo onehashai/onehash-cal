@@ -221,17 +221,8 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
           );
         },
         cell: ({ row }) => {
-          const { username } = row.original;
           return (
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => {
-                handleSelectMember(username);
-                row.toggleSelected(!!value);
-              }}
-              aria-label="Select row"
-              className="translate-y-[2px]"
-            />
+            <Checkbox checked={row.getIsSelected()} aria-label="Select row" className="translate-y-[2px]" />
           );
         },
       });
