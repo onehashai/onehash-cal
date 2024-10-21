@@ -79,7 +79,7 @@ export const APPLE_TOUCH_ICON = "/apple-touch-icon.png";
 export const MSTILE_ICON = "/mstile-150x150.png";
 export const ANDROID_CHROME_ICON_192 = "/android-chrome-192x192.png";
 export const ANDROID_CHROME_ICON_256 = "/android-chrome-256x256.png";
-export const ROADMAP = "https://github.com/onehashai/onehash-cal/milestones";
+export const ROADMAP = "https://roadmap.onehash.ai";
 export const DESKTOP_APP_LINK = "https://www.onehash.ai";
 export const POWERED_BY_URL = `${WEBSITE_URL}/?utm_source=embed&utm_medium=powered-by-button`;
 export const DOCS_URL = "https://help.onehash.ai/en/";
@@ -216,3 +216,5 @@ export const RECORDING_IN_PROGRESS_ICON = IS_PRODUCTION
   : `https://app.cal.com/stop-recording.svg`;
 
 export const ACCOUNT_DELETE_SURVEY = process.env.ACCOUNT_DELETE_SURVEY;
+
+export const ONEHASH_CHAT_ORIGIN = process.env.ONEHASH_CHAT_ORIGIN;

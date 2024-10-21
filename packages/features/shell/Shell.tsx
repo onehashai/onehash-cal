@@ -12,7 +12,6 @@ import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookin
 import ImpersonatingBanner, {
   type ImpersonatingBannerProps,
 } from "@calcom/features/ee/impersonation/components/ImpersonatingBanner";
-import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
 import useIntercom, { isInterComEnabled } from "@calcom/features/ee/support/lib/intercom/useIntercom";
 import { useFlagMap } from "@calcom/features/flags/context/provider";
 import { KBarContent, KBarRoot, KBarTrigger } from "@calcom/features/kbar/Kbar";
@@ -22,6 +21,7 @@ import {
 } from "@calcom/features/oe/organizations/components/OrgUpgradeBanner";
 import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import HelpMenuItem from "@calcom/features/oe/support/components/HelpMenuItem";
 import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
 import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog";
 import AdminPasswordBanner, {
@@ -1180,7 +1180,7 @@ export function ShellMain(props: LayoutProps) {
                   className={classNames(
                     props.backPath
                       ? "relative"
-                      : "pwa:bottom-[max(7rem,_calc(5rem_+_env(safe-area-inset-bottom)))] fixed bottom-20 z-40 ltr:right-4 rtl:left-4 md:z-auto md:ltr:right-0 md:rtl:left-0",
+                      : "pwa:bottom-[max(7rem,_calc(5srem_+_env(safe-area-inset-bottom)))] fixed bottom-24 z-40 ltr:right-6 rtl:left-4 md:z-auto md:ltr:right-0 md:rtl:left-0",
                     "flex-shrink-0 [-webkit-app-region:no-drag] md:relative md:bottom-auto md:right-auto"
                   )}>
                   {isLocaleReady && props.CTA}

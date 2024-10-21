@@ -51,11 +51,11 @@ function SessionManager({ children }: { children: React.ReactNode }) {
 function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js");
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  //     navigator.serviceWorker.register("/service-worker.js");
+  //   }
+  // }, []);
 
   const content = Component.PageWrapper ? <Component.PageWrapper {...props} /> : <Component {...pageProps} />;
 

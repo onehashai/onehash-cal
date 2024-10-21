@@ -32,7 +32,7 @@ import {
   TITLE_FIELD,
 } from "@calcom/features/bookings/lib/SystemField";
 import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
-import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
+import { APP_NAME, ONEHASH_CHAT_ORIGIN, WEBAPP_URL } from "@calcom/lib/constants";
 import {
   formatToLocalizedDate,
   formatToLocalizedTime,
@@ -104,7 +104,10 @@ const useBrandColors = ({
 };
 
 export default function Success(props: PageProps) {
-  const { t } = useLocale();
+  const {
+    t,
+    i18n: { language },
+  } = useLocale();
   const router = useRouter();
   const routerQuery = useRouterQuery();
   const pathname = usePathname();
@@ -185,11 +188,45 @@ export default function Success(props: PageProps) {
       showToast(err.message, "error");
     },
   });
+  const getEventTimeData = () => {
+    const _calculatedDuration = dayjs(bookingInfo.endTime).diff(dayjs(bookingInfo.startTime), "minutes");
+
+    const dateStr = formatToLocalizedDate(date, language, "full", tz);
+    const time = `${formatToLocalizedTime(date, language, undefined, !is24h, tz)} - ${formatToLocalizedTime(
+      dayjs(date).add(_calculatedDuration, "m"),
+      language,
+      undefined,
+      !is24h,
+      tz
+    )}`;
+    const timezone = `${formatToLocalizedTimezone(date, language, tz)}`;
+    return {
+      time: time,
+      date: dateStr,
+      timezone,
+    };
+  };
+  const handleChatMessagePopup = () => {
+    if (window.opener) {
+      const payload = {
+        event_scheduled_at: { ...getEventTimeData() },
+        ...(bookingInfo?.attendees[0]?.name && { event_booker: bookingInfo.attendees[0].name }),
+        ...(bookingInfo?.user?.name && { event_organizer: bookingInfo.user.name }),
+      };
+
+      // Use payload as needed
+
+      window.opener.postMessage({ payload }, ONEHASH_CHAT_ORIGIN);
+      window.close();
+    }
+  };
 
   useEffect(() => {
     if (noShow) {
       hostNoShowMutation.mutate({ bookingUid: bookingInfo.uid, noShowHost: true });
     }
+    handleChatMessagePopup();
+    console.log("time", getEventTimeData());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
