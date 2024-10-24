@@ -455,9 +455,11 @@ const BookerComponent = ({
             />
           </div>
         )}
-        <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-          <PoweredBy logoOnly />
-        </div>
+        {!getQueryParam("widget_view") && (
+          <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+            <PoweredBy logoOnly />
+          </div>
+        )}
       </div>
 
       <BookFormAsModal

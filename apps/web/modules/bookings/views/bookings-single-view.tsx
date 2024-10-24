@@ -207,17 +207,14 @@ export default function Success(props: PageProps) {
     };
   };
   const handleChatMessagePopup = () => {
-    if (window.opener) {
+    if (window.parent) {
       const payload = {
         event_scheduled_at: { ...getEventTimeData() },
         ...(bookingInfo?.attendees[0]?.name && { event_booker: bookingInfo.attendees[0].name }),
         ...(bookingInfo?.user?.name && { event_organizer: bookingInfo.user.name }),
       };
 
-      // Use payload as needed
-
-      window.opener.postMessage({ payload }, ONEHASH_CHAT_ORIGIN);
-      window.close();
+      if (ONEHASH_CHAT_ORIGIN) window.parent.postMessage({ payload }, ONEHASH_CHAT_ORIGIN);
     }
   };
 
@@ -226,7 +223,6 @@ export default function Success(props: PageProps) {
       hostNoShowMutation.mutate({ bookingUid: bookingInfo.uid, noShowHost: true });
     }
     handleChatMessagePopup();
-    console.log("time", getEventTimeData());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

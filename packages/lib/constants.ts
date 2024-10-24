@@ -217,4 +217,8 @@ export const RECORDING_IN_PROGRESS_ICON = IS_PRODUCTION
 
 export const ACCOUNT_DELETE_SURVEY = process.env.ACCOUNT_DELETE_SURVEY;
 
-export const ONEHASH_CHAT_ORIGIN = process.env.ONEHASH_CHAT_ORIGIN;
+export const ONEHASH_CHAT_ORIGIN = process.env.NEXT_PUBLIC_ONEHASH_CHAT_ORIGIN;
+
+export const ONEHASH_CHAT_INTEGRATION_PAGE = `${ONEHASH_CHAT_ORIGIN}/app/accounts/4/settings/integrations/onehash_app`;
+export const ONEHASH_CHAT_SYNC_BASE_URL = `${ONEHASH_CHAT_ORIGIN}/api/oh/integrations`;
+export const ONEHASH_API_KEY = process.env.ONEHASH_API_KEY;

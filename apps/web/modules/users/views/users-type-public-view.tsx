@@ -35,7 +35,6 @@ function Type({
   orgBannerUrl,
 }: PageProps) {
   const searchParams = useSearchParams();
-
   return (
     <main className={getBookerWrapperClasses({ isEmbed: !!isEmbed })}>
       <BookerSeo

@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
+import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import { getDefaultLocations } from "@calcom/lib/server";
 import { EventTypeRepository } from "@calcom/lib/server/repository/eventType";
 import type { PrismaClient } from "@calcom/prisma";
@@ -24,6 +25,7 @@ type User = {
     id: SessionUser["id"] | null;
   };
   metadata: SessionUser["metadata"];
+  email: SessionUser["email"];
 };
 
 type CreateOptions = {
@@ -104,6 +106,14 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
       ...data,
       profileId: profile.id,
     });
+    if (ctx.user.metadata?.oh_chat_enabled) {
+      await handleOHChatSync({
+        id: eventType.id,
+        email: ctx.user.email,
+        title: eventType.title,
+        url: `${WEBAPP_URL}/${ctx.user.username}/${eventType.slug}`,
+      });
+    }
     return { eventType };
   } catch (e) {
     console.warn(e);
@@ -114,4 +124,35 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
     }
     throw new TRPCError({ code: "BAD_REQUEST" });
   }
+};
+
+const handleOHChatSync = async ({
+  id,
+  email,
+  title,
+  url,
+}: {
+  id: string;
+  email: string;
+  title: string;
+  url: string;
+}): Promise<void> => {
+  const data = {
+    email,
+    cal_events: [
+      {
+        uid: id,
+        title,
+        url,
+      },
+    ],
+  };
+  await fetch(`${ONEHASH_CHAT_SYNC_BASE_URL}/cal_event`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ONEHASH_API_KEY}`,
+    },
+    body: JSON.stringify(data),
+  });
 };

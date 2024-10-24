@@ -8,6 +8,7 @@ import {
   allowDisablingHostConfirmationEmails,
 } from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import { validateIntervalLimitOrder } from "@calcom/lib";
+import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server";
 import { validateBookerLayouts } from "@calcom/lib/validateBookerLayouts";
@@ -465,6 +466,14 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     return acc;
   }, {});
 
+  if (ctx.user.metadata?.oh_chat_enabled) {
+    await handleOHChatSync({
+      id,
+      email: ctx.user.email,
+      username: ctx.user.username,
+      updatedValues,
+    });
+  }
   // Handling updates to children event types (managed events types)
   await updateChildrenEventTypes({
     eventTypeId: id,
@@ -489,4 +498,37 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     }
   }
   return { eventType };
+};
+
+const handleOHChatSync = async ({
+  id,
+  username,
+  email,
+  updatedValues,
+}: {
+  id: string;
+  username: string;
+  email: string;
+  updatedValues: Record<string, any>;
+}): Promise<void> => {
+  if (!updatedValues.slug && !updatedValues.title) return Promise.resolve();
+  const updatedData = {
+    email,
+    cal_events: [
+      {
+        uid: id,
+        ...(updatedValues.slug ? { url: `${WEBAPP_URL}/${username}/${updatedValues.slug}` } : {}),
+        ...(updatedValues.title ? { title: updatedValues.title } : {}),
+      },
+    ],
+  };
+
+  await fetch(`${ONEHASH_CHAT_SYNC_BASE_URL}/cal_event`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ONEHASH_API_KEY}`,
+    },
+    body: JSON.stringify(updatedData),
+  });
 };
