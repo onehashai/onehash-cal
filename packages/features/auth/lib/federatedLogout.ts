@@ -18,12 +18,12 @@ export default async function federatedLogout() {
   }
 }
 
-export async function logoutAndDeleteUser(deleteAccount: () => Promise<void>) {
+export async function logoutAndDeleteUser(deleteAccount: (url: string) => Promise<void>) {
   try {
-    const res = await fetch("/api/auth/federated-logout");
-    const status = await res.json();
-    if (res.ok) {
-      await deleteAccount();
+    const response = await fetch("/api/auth/federated-logout");
+    const data = await response.json();
+    if (response.ok) {
+      await deleteAccount(data.data);
       return;
     }
     console.error("Failed to logout user from Keycloak", status);

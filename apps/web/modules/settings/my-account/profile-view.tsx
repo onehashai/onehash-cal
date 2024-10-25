@@ -166,18 +166,18 @@ const ProfileView = () => {
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [hasDeleteErrors, setHasDeleteErrors] = useState(false);
   const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
+  const [redirectUrl, setRedirectUrl] = useState("");
   const form = useForm<DeleteAccountValues>();
 
   const onDeleteMeSuccessMutation = async () => {
     await utils.viewer.me.invalidate();
+    setIsAccountDeleting(false);
+
     showToast(t("Your account was deleted"), "success");
 
     setHasDeleteErrors(false); // dismiss any open errors
-    if (process.env.NEXT_PUBLIC_WEBAPP_URL === "https://app.cal.com") {
-      signOut({ callbackUrl: "/auth/logout?survey=true" });
-    } else {
-      signOut({ callbackUrl: "/auth/logout" });
-    }
+    await signOut({ redirect: false });
+    if (redirectUrl !== "") window.location.href = redirectUrl;
   };
 
   const confirmPasswordMutation = trpc.viewer.auth.verifyPassword.useMutation({
@@ -221,7 +221,8 @@ const ProfileView = () => {
 
   const onConfirmButton = (e: Event | React.MouseEvent<HTMLElement, MouseEvent>) => {
     e.preventDefault();
-    const deleteAccount = async () => {
+    const deleteAccount = async (url: string) => {
+      setRedirectUrl(url);
       if (isCALIdentityProvider) {
         const totpCode = form.getValues("totpCode");
         const password = passwordRef.current.value;
@@ -232,9 +233,7 @@ const ProfileView = () => {
     };
     setIsAccountDeleting(true);
 
-    logoutAndDeleteUser(deleteAccount).finally(() => {
-      setIsAccountDeleting(false);
-    });
+    logoutAndDeleteUser(deleteAccount);
   };
 
   const onConfirm = ({ totpCode }: DeleteAccountValues, e: BaseSyntheticEvent | undefined) => {
