@@ -57,12 +57,12 @@ export class PaymentService implements IAbstractPaymentService {
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
     bookingId: Booking["id"];
     userId: Booking["userId"];
-    username?: string;
-    bookerName?: string;
+    username: string | null;
+    bookerName: string | null;
     paymentOption: PaymentOption;
     bookingUid: string;
     bookerEmail: string;
-    bookerPhoneNumber?: string;
+    bookerPhoneNumber?: string | null;
     eventTitle?: string;
     bookingTitle?: string;
   }) {
@@ -79,7 +79,7 @@ export class PaymentService implements IAbstractPaymentService {
         amount: payment.amount,
         currency: payment.currency,
         customer: {
-          name: bookerName,
+          name: bookerName ?? "",
           email: bookerEmail,
         },
         eventTitle: eventTitle || bookingTitle || "",

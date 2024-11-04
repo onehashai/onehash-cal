@@ -49,11 +49,11 @@ export class PaymentService implements IAbstractPaymentService {
     bookingId: Booking["id"];
     userId: Booking["userId"];
     username: string | null;
-    bookerName: string;
+    bookerName: string | null;
     paymentOption: PaymentOption;
     bookingUid: string;
-    bookerPhoneNumber: string;
     bookerEmail: string;
+    bookerPhoneNumber?: string | null;
     eventTitle?: string;
     bookingTitle?: string;
   }) {

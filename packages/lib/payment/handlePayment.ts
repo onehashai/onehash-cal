@@ -91,7 +91,7 @@ const handlePayment = async (
     return paymentData;
   } catch (e) {
     if (e instanceof Error && e.message === ErrorCode.PaymentCreationFailure) {
-      const _metadata = isPrismaObjOrUndefined(booking.metadata) ? booking.metadata : {};
+      const _metadata = isPrismaObjOrUndefined(booking.metadata) ? (booking.metadata as object) : {};
       await prisma.booking.update({
         where: {
           id: booking.id,
