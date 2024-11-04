@@ -5,10 +5,31 @@ import prisma from "@calcom/prisma";
 import type { IAbstractPaymentService } from "@calcom/types/PaymentService";
 
 export class PaymentService implements IAbstractPaymentService {
-  async create(
-    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-    bookingId: Booking["id"]
-  ) {
+  async create({
+    payment,
+    bookingId,
+    userId,
+    username,
+    bookerName,
+    paymentOption,
+    bookingUid,
+    bookerEmail,
+    bookerPhoneNumber,
+    eventTitle,
+    bookingTitle,
+  }: {
+    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+    bookingId: Booking["id"];
+    userId: Booking["userId"];
+    username?: string;
+    bookerName?: string;
+    paymentOption: PaymentOption;
+    bookingUid: string;
+    bookerEmail: string;
+    bookerPhoneNumber?: string;
+    eventTitle?: string;
+    bookingTitle?: string;
+  }) {
     try {
       const booking = await prisma.booking.findFirst({
         select: {

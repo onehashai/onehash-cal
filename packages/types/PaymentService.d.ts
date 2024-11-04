@@ -30,12 +30,12 @@ export interface IAbstractPaymentService {
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
     bookingId: Booking["id"];
     userId: Booking["userId"];
-    username: string | null;
-    bookerName: string | null;
+    username?: string;
+    bookerName?: string;
     paymentOption: PaymentOption;
     bookingUid: string;
     bookerEmail: string;
-    bookerPhoneNumber?: string | null;
+    bookerPhoneNumber?: string;
     eventTitle?: string;
     bookingTitle?: string;
   }): Promise<Payment>;

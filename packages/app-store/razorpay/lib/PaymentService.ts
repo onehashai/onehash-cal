@@ -10,6 +10,7 @@ import { getErrorFromUnknown } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
+import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 import type { IAbstractPaymentService } from "@calcom/types/PaymentService";
 
@@ -56,12 +57,12 @@ export class PaymentService implements IAbstractPaymentService {
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
     bookingId: Booking["id"];
     userId: Booking["userId"];
-    username: string | null;
-    bookerName: string;
+    username?: string;
+    bookerName?: string;
     paymentOption: PaymentOption;
     bookingUid: string;
-    bookerPhoneNumber: string;
     bookerEmail: string;
+    bookerPhoneNumber?: string;
     eventTitle?: string;
     bookingTitle?: string;
   }) {
