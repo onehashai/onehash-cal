@@ -102,6 +102,7 @@ export class PaymentService implements IAbstractPaymentService {
         currency: payment.currency,
         payment_method_types: ["card"],
         customer: customer.id,
+        description: bookingTitle,
         metadata: {
           identifier: "cal.com",
           bookingId,
