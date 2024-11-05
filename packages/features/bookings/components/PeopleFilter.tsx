@@ -43,7 +43,7 @@ export const PeopleFilter = () => {
   }
 
   return (
-    <AnimatedPopover text={getTextForPopover()} prefix={`${t("people")}: `}>
+    <AnimatedPopover text={getTextForPopover()} prefix={`${t("host")}: `}>
       <FilterCheckboxFieldsContainer>
         <FilterCheckboxField
           id="all"

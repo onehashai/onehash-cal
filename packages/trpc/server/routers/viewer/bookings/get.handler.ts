@@ -185,6 +185,18 @@ export async function getBookings({
     };
   }
 
+  if (filters?.attendees) {
+    bookingWhereInputFilters.attendees = {
+      attendees: {
+        some: {
+          name: {
+            in: filters?.attendees,
+          },
+        },
+      },
+    };
+  }
+
   if (filters?.afterStartDate) {
     bookingWhereInputFilters.afterStartDate = {
       startTime: {
