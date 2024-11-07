@@ -672,15 +672,15 @@ export default function Success(props: PageProps) {
                           const label = field.label || t(field.defaultLabel || "");
 
                           return (
-                            <>
+                            <div className="grid grid-cols-3" key={label}>
                               <div
-                                className="text-emphasis mt-4 font-medium"
+                                className="text-emphasis  font-medium"
                                 dangerouslySetInnerHTML={{
                                   __html: label,
                                 }}
                               />
                               <p
-                                className="text-default break-words"
+                                className="text-default col-span-2  break-words "
                                 data-testid="field-response"
                                 data-fob-field={field.name}>
                                 {field.type === "boolean"
@@ -689,7 +689,7 @@ export default function Success(props: PageProps) {
                                     : t("no")
                                   : response.toString()}
                               </p>
-                            </>
+                            </div>
                           );
                         })}
                       </div>
