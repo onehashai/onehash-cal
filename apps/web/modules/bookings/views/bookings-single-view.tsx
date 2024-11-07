@@ -651,7 +651,7 @@ export default function Success(props: PageProps) {
                           </>
                         )}
                       </div>
-                      <div className="text-bookingdark dark:border-darkgray-200 mt-8 text-left dark:text-gray-300">
+                      <div className="text-bookingdark dark:border-darkgray-200 mt-3 text-left dark:text-gray-300">
                         {Object.entries(bookingInfo.responses).map(([name, response]) => {
                           const field = eventType.bookingFields.find((field) => field.name === name);
                           // We show location in the "where" section
