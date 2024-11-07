@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 
 import { sendAwaitingPaymentEmailAndSMS } from "@calcom/emails";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
@@ -63,11 +64,11 @@ export class PaymentService implements IAbstractPaymentService {
     username,
     bookerName,
     paymentOption,
-    bookingUid,
     bookerEmail,
     bookerPhoneNumber,
     eventTitle,
     bookingTitle,
+    responses,
   }: {
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
     bookingId: Booking["id"];
@@ -75,11 +76,11 @@ export class PaymentService implements IAbstractPaymentService {
     username: string | null;
     bookerName: string;
     paymentOption: PaymentOption;
-    bookingUid: string;
     bookerEmail: string;
     bookerPhoneNumber?: string | null;
     eventTitle?: string;
     bookingTitle?: string;
+    responses?: Prisma.JsonValue;
   }) {
     try {
       // Ensure that the payment service can support the passed payment option
@@ -91,10 +92,25 @@ export class PaymentService implements IAbstractPaymentService {
         throw new Error("Stripe credentials not found");
       }
 
+      const responsesObj = isPrismaObjOrUndefined(responses)
+        ? (responses as {
+            [key: string]: unknown;
+          })
+        : {};
       const customer = await retrieveOrCreateStripeCustomerByEmail(
         this.credentials.stripe_user_id,
         bookerEmail,
-        bookerPhoneNumber
+        bookerPhoneNumber,
+        bookerName,
+        responses
+          ? {
+              line1: responsesObj["_line1"] as string,
+              postal_code: responsesObj["postal_code"] as string,
+              city: responsesObj["city"] as string,
+              state: responsesObj["state"] as string,
+              country: responsesObj["country"] as string,
+            }
+          : undefined
       );
 
       const params: Stripe.PaymentIntentCreateParams = {
@@ -104,7 +120,7 @@ export class PaymentService implements IAbstractPaymentService {
         customer: customer.id,
         description: bookingTitle,
         metadata: {
-          identifier: "cal.com",
+          identifier: "OneHash Cal",
           bookingId,
           calAccountId: userId,
           calUsername: username,
@@ -115,6 +131,24 @@ export class PaymentService implements IAbstractPaymentService {
           bookingTitle: bookingTitle || "",
         },
       };
+
+      // curl https://api.stripe.com/v1/payment_intents \
+      // -u "sk_test_tR3PYbcVNZZ796tH88S4VQ2u:" \
+      // -d amount = 2000 \
+      // -d currency = usd \
+      // -d "automatic_payment_methods[enabled]" = true
+
+      // const paymentIntent = await fetch("https://api.stripe.com/v1/payment_intents", {
+      //   method: 'POST',
+      //   body:  new URLSearchParams(params),
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     "Authorization": `Bearer ${process.env.STRIPE_PRIVATE_KEY || ""}`,
+      //   }
+      // })
+
+      // console.log("_paymentIntent",paymentIntent);
+      // throw new Error("PaymentIntent")
 
       const paymentIntent = await this.stripe.paymentIntents.create(params, {
         stripeAccount: this.credentials.stripe_user_id,

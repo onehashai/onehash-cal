@@ -62,6 +62,7 @@ function Type({
           searchParams?.get("duration"),
           eventData.length
         )}
+        billingAddressRequired={eventData.metadata?.billingAddressRequired}
       />
     </main>
   );

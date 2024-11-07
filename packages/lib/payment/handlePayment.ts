@@ -27,6 +27,7 @@ const handlePayment = async (
     startTime: { toISOString: () => string };
     uid: string;
     metadata: Prisma.JsonValue;
+    responses?: Prisma.JsonValue;
   },
   bookerName: string,
   bookerEmail: string,
@@ -76,6 +77,9 @@ const handlePayment = async (
         bookerEmail: bookerEmail,
         eventTitle: selectedEventType.title,
         bookingTitle: evt.title,
+        ...(booking.responses && {
+          responses: booking.responses,
+        }),
       });
     }
 

@@ -60,6 +60,7 @@ export type SeatedBooking = Prisma.BookingGetPayload<{
     smsReminderNumber: true;
     endTime: true;
     metadata: true;
+    responses: true;
   };
 }>;
 

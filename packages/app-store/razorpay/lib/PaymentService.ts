@@ -1,4 +1,4 @@
-import type { Booking, Payment, PaymentOption, Prisma } from "@prisma/client";
+import type { Booking, Payment, Prisma } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 
@@ -44,25 +44,17 @@ export class PaymentService implements IAbstractPaymentService {
   async create({
     payment,
     bookingId,
-    userId,
-    username,
     bookerName,
-    paymentOption,
     bookingUid,
     bookerEmail,
-    bookerPhoneNumber,
     eventTitle,
     bookingTitle,
   }: {
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
     bookingId: Booking["id"];
-    userId: Booking["userId"];
-    username: string | null;
-    bookerName: string | null;
-    paymentOption: PaymentOption;
+    bookerName: string;
     bookingUid: string;
     bookerEmail: string;
-    bookerPhoneNumber?: string | null;
     eventTitle?: string;
     bookingTitle?: string;
   }) {
@@ -72,14 +64,13 @@ export class PaymentService implements IAbstractPaymentService {
       }
 
       const uid = uuidv4();
-
       const paymentLinkRes = await this.razorpay.createPaymentLink({
         bookingUid,
         reference_id: uid,
         amount: payment.amount,
         currency: payment.currency,
         customer: {
-          name: bookerName ?? "",
+          name: bookerName,
           email: bookerEmail,
         },
         eventTitle: eventTitle || bookingTitle || "",
