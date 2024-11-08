@@ -92,25 +92,24 @@ export class PaymentService implements IAbstractPaymentService {
         throw new Error("Stripe credentials not found");
       }
 
-      const responsesObj = isPrismaObjOrUndefined(responses)
-        ? (responses as {
-            [key: string]: unknown;
-          })
-        : {};
+      const responsesObj =
+        isPrismaObjOrUndefined(responses) &&
+        (responses as {
+          [key: string]: unknown;
+        });
+
       const customer = await retrieveOrCreateStripeCustomerByEmail(
         this.credentials.stripe_user_id,
         bookerEmail,
         bookerPhoneNumber,
         bookerName,
-        responses
-          ? {
-              line1: responsesObj["_line1"] as string,
-              postal_code: responsesObj["postal_code"] as string,
-              city: responsesObj["city"] as string,
-              state: responsesObj["state"] as string,
-              country: responsesObj["country"] as string,
-            }
-          : undefined
+        responsesObj && {
+          line1: responsesObj["_line1"] as string,
+          postal_code: responsesObj["postal_code"] as string,
+          city: responsesObj["city"] as string,
+          state: responsesObj["state"] as string,
+          country: responsesObj["country"] as string,
+        }
       );
 
       const params: Stripe.PaymentIntentCreateParams = {

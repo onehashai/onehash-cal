@@ -124,7 +124,6 @@ export async function retrieveOrCreateStripeCustomerByEmail(
       email,
       phone: phoneNumber ?? undefined,
     };
-    console.log("body__", body);
     const newCustomer = await stripe.customers.create(body, {
       stripeAccount: stripeAccountId,
     });
