@@ -116,6 +116,7 @@
   "payment_error_description":"Malfunctioned payment request",
   "attendee":"Attendee",
   "host":"Host",
+  "visit":"Visit",
 "book_members":"Book Members",
 "view_membership":"View Membership",
   "notify_past_bookers":"Notify past bookers about your migration",

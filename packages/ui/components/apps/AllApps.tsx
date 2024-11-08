@@ -131,7 +131,7 @@ function CategoryTab({ selectedCategory, categories, searchText }: CategoryTabPr
               selectedCategory === cat ? "bg-emphasis text-default" : "bg-muted text-emphasis",
               "hover:bg-emphasis rounded-md px-4 py-2.5 text-sm font-medium capitalize transition hover:cursor-pointer"
             )}>
-            {cat === AppCategories.onehash ? "OneHash" : category.name}
+            {cat === AppCategories.onehash ? "OneHash" : cat}
           </li>
         ))}
       </ul>
