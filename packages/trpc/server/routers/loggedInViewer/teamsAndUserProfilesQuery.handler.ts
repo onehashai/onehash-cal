@@ -1,5 +1,3 @@
-import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
-import { withRoleCanCreateEntity } from "@calcom/lib/entityPermissionUtils";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import type { PrismaClient } from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -59,26 +57,27 @@ export const teamsAndUserProfilesQuery = async ({ ctx, input }: TeamsAndUserProf
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
   }
 
-  let teamsData;
-
-  if (input?.includeOrg) {
-    teamsData = user.teams.map((membership) => ({
-      ...membership,
-      team: {
-        ...membership.team,
-        metadata: teamMetadataSchema.parse(membership.team.metadata),
-      },
-    }));
-  } else {
-    teamsData = user.teams
-      .filter((membership) => !membership.team.isOrganization)
-      .map((membership) => ({
+  let teamsData = [];
+  if (input?.includeTeams) {
+    if (input?.includeOrg) {
+      teamsData = user.teams.map((membership) => ({
         ...membership,
         team: {
           ...membership.team,
           metadata: teamMetadataSchema.parse(membership.team.metadata),
         },
       }));
+    } else {
+      teamsData = user.teams
+        .filter((membership) => !membership.team.isOrganization)
+        .map((membership) => ({
+          ...membership,
+          team: {
+            ...membership.team,
+            metadata: teamMetadataSchema.parse(membership.team.metadata),
+          },
+        }));
+    }
   }
 
   return [

@@ -376,6 +376,7 @@ export const userMetadata = z
       .optional(),
     currentOnboardingStep: z.string().optional(),
     phoneNumber: z.string().optional(),
+    connectedChatAccounts: z.number().optional(),
   })
   .nullable();
 
