@@ -481,7 +481,11 @@ export const getOptions = ({
     }) {
       log.debug("callbacks:jwt", safeStringify({ token, user, account, trigger, session }));
       // The data available in 'session' depends on what data was supplied in update method call of session
+      const licenseKeyService = await LicenseKeySingleton.getInstance();
 
+      const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
+
+      token["hasValidLicense"] = hasValidLicense;
       // Saving session in Keycloak Session Modal
       let browser_token = "";
       if (account?.id_token) {
@@ -492,6 +496,7 @@ export const getOptions = ({
             metadata: account,
           },
         });
+        token["keycloak_token"] = browser_token;
       }
 
       if (trigger === "update") {
@@ -548,7 +553,6 @@ export const getOptions = ({
         }
 
         const profileOrg = profile?.organization;
-        token.keycloak_token = browser_token;
         let orgRole: MembershipRole | undefined;
         // Get users role of org
         if (profileOrg) {
@@ -668,16 +672,13 @@ export const getOptions = ({
     },
     async session({ session, token, user }) {
       log.debug("callbacks:session - Session callback called", safeStringify({ session, token, user }));
-      const licenseKeyService = await LicenseKeySingleton.getInstance();
-      const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
-
       const profileId = token.profileId;
-      session.keycloak_token = token.keycloak_token;
       const calendsoSession: Session = {
         ...session,
         profileId,
+        // keycloak_token: token.keycloak_token,
         upId: token.upId || session.upId,
-        hasValidLicense,
+        hasValidLicense: token.hasValidLicense,
         user: {
           ...session.user,
           id: token.id as number,

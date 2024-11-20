@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { isPrismaObj } from "@calcom/lib";
 import prisma from "@calcom/prisma";
 
@@ -20,10 +21,15 @@ function sendEndSessionEndpointToURL(token: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (req.cookies["keycloak_token"]) {
+    const session = await getServerSession({ req, res });
+
+    if (!session) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    if (session.keycloak_token) {
       const keycloak_session = await prisma.keycloakSessionInfo.findUnique({
         where: {
-          browserToken: req.cookies["keycloak_token"],
+          browserToken: session.keycloak_token,
         },
       });
       if (!keycloak_session) {
@@ -38,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const url = sendEndSessionEndpointToURL(idToken);
       await prisma.keycloakSessionInfo.delete({
         where: {
-          browserToken: req.cookies["keycloak_token"],
+          browserToken: session.keycloak_token,
         },
       });
       return res.status(200).json({ data: url });

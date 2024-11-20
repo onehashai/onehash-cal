@@ -3,7 +3,6 @@ import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 
 import type { AuthOptions, Session } from "next-auth";
 import { getToken } from "next-auth/jwt";
 
-import { LicenseKeySingleton } from "@calcom/ee/common/server/LicenseKeyService";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -65,8 +64,7 @@ export async function getServerSession(options: {
     return null;
   }
 
-  const licenseKeyService = await LicenseKeySingleton.getInstance();
-  const hasValidLicense = await licenseKeyService.checkLicense();
+  const hasValidLicense = token.hasValidLicense;
 
   let upId = token.upId;
 

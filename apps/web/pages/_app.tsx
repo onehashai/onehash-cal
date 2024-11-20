@@ -1,8 +1,7 @@
 import type { IncomingMessage } from "http";
 import { signOut } from "next-auth/react";
 import type { AppContextType, AppInitialProps } from "next/dist/shared/lib/utils";
-import { useRouter } from "next/navigation";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 
 import { trpc } from "@calcom/trpc/react";
 
@@ -12,37 +11,24 @@ import "../styles/globals.css";
 
 // Higher-level component where session state is managed
 function SessionManager({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const hasNavigated = useRef(false);
-
-  useEffect(() => {
-    fetch("/api/auth/keycloak/userinfo")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then(async (data) => {
-        if (
-          data.message === "Session expired. Please log in again." ||
-          data.message === "Access Token absent. Please log in again." ||
-          data.message === "Keycloak Session not found. Please log in again."
-        ) {
-          await router.push("/event-types");
-          hasNavigated.current = true;
-        }
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (hasNavigated.current) {
-      signOut();
+  const checkKeyCloakSession = async () => {
+    try {
+      const response = await fetch("/api/auth/keycloak/userinfo");
+      const data = await response.json();
+      if (
+        data.message === "Session expired. Please log in again." ||
+        data.message === "Access Token absent. Please log in again." ||
+        data.message === "Keycloak Session not found. Please log in again."
+      ) {
+        await signOut();
+      }
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
     }
-  }, [hasNavigated.current]);
+  };
+  useEffect(() => {
+    checkKeyCloakSession();
+  }, []);
 
   return <>{children}</>;
 }
