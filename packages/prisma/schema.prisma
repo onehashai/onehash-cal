@@ -1141,6 +1141,7 @@ enum WorkflowTemplates {
   RESCHEDULED
   COMPLETED
   RATING
+  THANKYOU
 }
 
 enum WorkflowMethods {
