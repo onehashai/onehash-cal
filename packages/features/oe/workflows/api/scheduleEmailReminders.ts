@@ -1,5 +1,6 @@
 /* Schedule any workflow reminder that falls within 72 hours for email */
 import type { NextApiRequest, NextApiResponse } from "next";
+import emailThankYouTemplate from "oe/workflows/lib/reminders/templates/emailThankYouTemplate";
 import { v4 as uuidv4 } from "uuid";
 
 import dayjs from "@calcom/dayjs";
@@ -265,8 +266,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             ratingUrl: `${bookerUrl}/booking/${reminder.booking.uid}?rating` || "",
             noShowUrl: `${bookerUrl}/booking/${reminder.booking.uid}?noShow=true` || "",
           });
+        } else if (reminder.workflowStep.template === WorkflowTemplates.THANKYOU) {
+          emailContent = emailThankYouTemplate({
+            isEditingMode: false,
+            timeFormat: getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
+            startTime: reminder.booking.startTime.toISOString() || "",
+            endTime: reminder.booking.endTime.toISOString() || "",
+            eventName: reminder.booking.eventType?.title || "",
+            timeZone,
+            otherPerson: reminder.booking.user?.name || "",
+            name: name || "",
+          });
         }
-
         if (emailContent.emailSubject.length > 0 && !emailBodyEmpty && sendTo) {
           const batchId = await getBatchId();
 

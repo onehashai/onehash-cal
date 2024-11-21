@@ -69,7 +69,7 @@ const emailRatingTemplate = ({
   const branding =
     !isBrandingDisabled && !isEditingMode ? `<div>_<br><br>Scheduling by ${APP_NAME}</div>` : "";
 
-  const endingHtml = `This survey was triggered by a Workflow in Cal.${branding}`;
+  const endingHtml = `This survey was triggered by a Workflow in OneHash Cal.${branding}`;
 
   const emailBody = `<body>${introHtml}${ratingHtml}<p>${noShowHtml}${eventHtml}${dateTimeHtml}${attendeeHtml}${endingHtml}</p></body>`;
 

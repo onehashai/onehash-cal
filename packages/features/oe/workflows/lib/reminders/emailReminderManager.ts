@@ -247,16 +247,17 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
       ratingUrl: `${bookerUrl}/booking/${evt.uid}?rating`,
       noShowUrl: `${bookerUrl}/booking/${evt.uid}?noShow=true`,
     });
-  } else if (template === WorkflowTemplates.COMPLETED) {
-    emailContent = emailThankYouTemplate(
-      evt.organizer.timeFormat,
+  } else if (template === WorkflowTemplates.THANKYOU) {
+    emailContent = emailThankYouTemplate({
+      isEditingMode: false,
+      timeFormat: evt.organizer.timeFormat,
       startTime,
       endTime,
-      evt.title,
+      eventName: evt.title,
       timeZone,
-      attendeeName,
-      name
-    );
+      otherPerson: attendeeName,
+      name,
+    });
   }
 
   // Allows debugging generated email content without waiting for sendgrid to send emails

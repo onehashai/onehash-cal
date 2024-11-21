@@ -1427,6 +1427,7 @@
   "rescheduled": "Rescheduled",
   "completed": "Completed",
   "rating": "Rating",
+  "thankyou":"Thank you",
   "reminder_email": "Reminder: {{eventType}} with {{name}} at {{date}}",
   "not_triggering_existing_bookings": "Won't trigger for already existing bookings as user will be asked for phone number when booking the event.",
   "minute_one": "{{count}} minute",
