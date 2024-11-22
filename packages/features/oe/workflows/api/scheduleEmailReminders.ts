@@ -1,6 +1,5 @@
 /* Schedule any workflow reminder that falls within 72 hours for email */
 import type { NextApiRequest, NextApiResponse } from "next";
-import emailThankYouTemplate from "oe/workflows/lib/reminders/templates/emailThankYouTemplate";
 import { v4 as uuidv4 } from "uuid";
 
 import dayjs from "@calcom/dayjs";
@@ -30,6 +29,7 @@ import type { VariablesType } from "../lib/reminders/templates/customTemplate";
 import customTemplate from "../lib/reminders/templates/customTemplate";
 import emailRatingTemplate from "../lib/reminders/templates/emailRatingTemplate";
 import emailReminderTemplate from "../lib/reminders/templates/emailReminderTemplate";
+import emailThankYouTemplate from "../lib/reminders/templates/emailThankYouTemplate";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const authHeader = req.headers.authorization;
