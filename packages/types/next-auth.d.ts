@@ -69,7 +69,7 @@ declare module "next-auth/jwt" {
     };
     organizationId?: number | null;
     locale?: string;
-    keycloak_token?: string | null;
+    // keycloak_token?: string | null;
     hasValidLicense: boolean;
   }
 }

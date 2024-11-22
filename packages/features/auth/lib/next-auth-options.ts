@@ -1,5 +1,5 @@
 import type { Membership, Team, UserPermissionRole } from "@prisma/client";
-import type { AuthOptions, Session, User } from "next-auth";
+import type { AuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { encode } from "next-auth/jwt";
 import type { Provider } from "next-auth/providers";
@@ -14,7 +14,7 @@ import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/Imperso
 import { clientSecretVerifier, hostedCal, isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
 import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-import { HOSTED_CAL_FEATURES, IS_CALCOM } from "@calcom/lib/constants";
+import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { ENABLE_PROFILE_SWITCHER, IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
 import { defaultCookies } from "@calcom/lib/default-cookies";
@@ -29,6 +29,7 @@ import prisma from "@calcom/prisma";
 import { IdentityProvider, MembershipRole } from "@calcom/prisma/enums";
 import { teamMetadataSchema, userMetadata } from "@calcom/prisma/zod-utils";
 
+import { KEYCLOAK_COOKIE_DOMAIN } from "./../../../lib/constants";
 import { ErrorCode } from "./ErrorCode";
 import { isPasswordValid } from "./isPasswordValid";
 import CalComAdapter from "./next-auth-custom-adapter";
@@ -426,10 +427,11 @@ const mapIdentityProvider = (providerName: string) => {
 };
 
 export const getOptions = ({
-  getDubId,
+  res,
+  keycloak_token,
 }: {
-  /** so we can extract the Dub cookie in both pages and app routers */
-  getDubId: () => string | undefined;
+  res: NextApiResponse;
+  keycloak_token: string;
 }): AuthOptions => ({
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
@@ -486,18 +488,6 @@ export const getOptions = ({
       const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
 
       token["hasValidLicense"] = hasValidLicense;
-      // Saving session in Keycloak Session Modal
-      let browser_token = "";
-      if (account?.id_token) {
-        browser_token = randomString(256);
-        await prisma.keycloakSessionInfo.create({
-          data: {
-            browserToken: browser_token,
-            metadata: account,
-          },
-        });
-        token["keycloak_token"] = browser_token;
-      }
 
       if (trigger === "update") {
         return {
@@ -649,7 +639,6 @@ export const getOptions = ({
         if (!existingUser) {
           return await autoMergeIdentities();
         }
-        token.keycloak_token = browser_token;
         return {
           ...token,
           id: existingUser.id,
@@ -986,38 +975,42 @@ export const getOptions = ({
   },
   events: {
     async signIn(message) {
-      /* only run this code if:
-         - it's a hosted cal account
-         - DUB_API_KEY is configured
-         - it's a new user
-      */
-      const user = message.user as User & {
-        username: string;
-        createdDate: string;
-      };
-      // check if the user was created in the last 10 minutes
-      // this is a workaround – in the future once we move to use the Account model in the DB
-      // we should use NextAuth's isNewUser flag instead: https://next-auth.js.org/configuration/events#signin
-      const isNewUser = new Date(user.createdDate) > new Date(Date.now() - 10 * 60 * 1000);
-      if ((isENVDev || IS_CALCOM) && process.env.DUB_API_KEY && isNewUser) {
-        // const clickId = getDubId();
-        // // check if there's a clickId (dub_id) cookie set by @dub/analytics
-        // if (clickId) {
-        //   // here we use waitUntil – meaning this code will run async to not block the main thread
-        //   waitUntil(
-        //     // if so, send a lead event to Dub
-        //     // @see https://d.to/conversions/next-auth
-        //     dub.track.lead({
-        //       clickId,
-        //       eventName: "Sign Up",
-        //       customerId: user.id.toString(),
-        //       customerName: user.name,
-        //       customerEmail: user.email,
-        //       customerAvatar: user.image,
-        //     })
-        //   );
-        // }
+      //setting keycloak session in Db and token in cookie
+      const { account } = message;
+      let browser_token = "";
+      if (account?.id_token) {
+        browser_token = randomString(256);
+        await prisma.keycloakSessionInfo.create({
+          data: {
+            browserToken: browser_token,
+            metadata: account,
+          },
+        });
+        const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
+        const useSecureCookies = WEBAPP_URL?.startsWith("https://");
+
+        res.setHeader("Set-Cookie", [
+          `keycloak_token=${browser_token}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
+            useSecureCookies ? "None" : "Lax"
+          }`,
+        ]);
       }
+    },
+    async signOut(_) {
+      //Cleaning the keycloak cookie and session
+      await prisma.keycloakSessionInfo.delete({
+        where: {
+          browserToken: keycloak_token,
+        },
+      });
+      const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
+      const useSecureCookies = WEBAPP_URL?.startsWith("https://");
+
+      res.setHeader("Set-Cookie", [
+        `keycloak_token=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
+          useSecureCookies ? "None" : "Lax"
+        }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+      ]);
     },
   },
 });

@@ -42,11 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ message: "id_token not found in metadata" });
       }
       const url = sendEndSessionEndpointToURL(idToken);
-      await prisma.keycloakSessionInfo.delete({
-        where: {
-          browserToken: session.keycloak_token,
-        },
-      });
       return res.status(200).json({ data: url });
     }
     return res.status(500).json({ message: "keycloak_token not found in browser" });

@@ -82,6 +82,8 @@ export async function getServerSession(options: {
     upId,
   });
 
+  const keycloak_token = req.cookies.keycloak_token;
+
   const session: Session = {
     hasValidLicense,
     expires: new Date(typeof token.exp === "number" ? token.exp * 1000 : Date.now()).toISOString(),
@@ -103,7 +105,7 @@ export async function getServerSession(options: {
     },
     profileId: token.profileId,
     upId,
-    keycloak_token: token.keycloak_token,
+    keycloak_token: keycloak_token,
   };
 
   if (token?.impersonatedBy?.id) {

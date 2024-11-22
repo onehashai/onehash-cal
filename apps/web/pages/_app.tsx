@@ -15,6 +15,10 @@ function SessionManager({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch("/api/auth/keycloak/userinfo");
       const data = await response.json();
+      //Will logout,if  any of these happen
+      //1. keycloak cookie cleared
+      //2. keycloak session deleted from DB
+      //3. Session expired on KEYCLOAK SSO
       if (
         data.message === "Session expired. Please log in again." ||
         data.message === "Access Token absent. Please log in again." ||
