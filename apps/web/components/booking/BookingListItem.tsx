@@ -76,7 +76,6 @@ type BookingItemProps = BookingItem & {
 
 function BookingListItem(booking: BookingItemProps) {
   const { userId, userTimeZone, userTimeFormat, userEmail } = booking.loggedInUser;
-
   //TODO:INSTANT MEETING
   let isOrganizer = false;
 

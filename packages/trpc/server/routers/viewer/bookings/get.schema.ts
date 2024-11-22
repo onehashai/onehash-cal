@@ -12,6 +12,12 @@ export const ZGetInputSchema = z.object({
     beforeEndDate: z.string().optional(),
     attendees: z.string().array().optional(),
   }),
+  teamMember: z
+    .object({
+      id: z.number(),
+      email: z.string(),
+    })
+    .optional(),
   limit: z.number().min(1).max(100).nullish(),
   cursor: z.number().nullish(), // <-- "cursor" needs to exist when using useInfiniteQuery, but can be any type
 });
