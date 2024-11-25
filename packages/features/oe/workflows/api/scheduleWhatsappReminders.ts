@@ -14,7 +14,7 @@ import * as twilio from "../lib/reminders/providers/twilioProvider";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const authHeader = req.headers.authorization;
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== process.env.CRON_SECRET) {
     return res.status(401).json({ message: "Not authenticated" });
   }
 

@@ -28,14 +28,15 @@ export async function scheduleMandatoryReminder(
       );
     });
 
+    //Allowing scheduled emails for all email providers
     if (
       !hasExistingWorkflow &&
-      evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
+      // evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
       !requiresConfirmation
     ) {
       try {
-        const filteredAttendees =
-          evt.attendees?.filter((attendee) => attendee.email.includes("@gmail.com")) || [];
+        const filteredAttendees = evt.attendees;
+        // ?.filter((attendee) => attendee.email.includes("@gmail.com")) || [];
 
         await scheduleEmailReminder({
           evt,
