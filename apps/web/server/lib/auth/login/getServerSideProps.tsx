@@ -90,7 +90,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   }
   return {
     props: {
-      csrfToken: await getCsrfToken(context),
+      csrfToken: (await getCsrfToken(context)) ?? null,
       trpcState: ssr.dehydrate(),
       isGoogleLoginEnabled: IS_GOOGLE_LOGIN_ENABLED,
       isSAMLLoginEnabled,

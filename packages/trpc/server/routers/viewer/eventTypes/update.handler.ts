@@ -7,7 +7,7 @@ import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
 } from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
-import { validateIntervalLimitOrder } from "@calcom/lib";
+import { isPrismaObjOrUndefined, validateIntervalLimitOrder } from "@calcom/lib";
 import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server";
@@ -37,6 +37,8 @@ type User = {
     id: SessionUser["profile"]["id"] | null;
   };
   selectedCalendars: SessionUser["selectedCalendars"];
+  metadata: SessionUser["metadata"];
+  email: SessionUser["email"];
 };
 
 type UpdateOptions = {
@@ -82,6 +84,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
   const eventType = await ctx.prisma.eventType.findUniqueOrThrow({
     where: { id },
     select: {
+      id: true,
       title: true,
       isRRWeightsEnabled: true,
       aiPhoneCallConfig: {
@@ -466,11 +469,12 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     return acc;
   }, {});
 
-  if (ctx.user.metadata?.oh_chat_enabled) {
+  if (!teamId && isPrismaObjOrUndefined(ctx.user.metadata)?.connectedChatAccounts && ctx.user?.username) {
     await handleOHChatSync({
-      id,
-      email: ctx.user.email,
-      username: ctx.user.username,
+      prismaClient: ctx.prisma,
+      eventTypeId: eventType.id,
+      userId: ctx.user.id,
+      username: ctx.user?.username,
       updatedValues,
     });
   }
@@ -501,22 +505,41 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
 };
 
 const handleOHChatSync = async ({
-  id,
+  prismaClient,
+  eventTypeId,
   username,
-  email,
   updatedValues,
+  userId,
 }: {
-  id: string;
+  prismaClient: PrismaClient;
+  eventTypeId: number;
   username: string;
-  email: string;
+  userId: number;
   updatedValues: Record<string, any>;
 }): Promise<void> => {
   if (!updatedValues.slug && !updatedValues.title) return Promise.resolve();
+  const credentials = await prismaClient.credential.findMany({
+    where: {
+      appId: "onehast-chat",
+      userId,
+    },
+  });
+
+  if (credentials.length == 0) return Promise.resolve();
+
+  const account_user_ids: number[] = credentials.reduce<number[]>((acc, cred) => {
+    const accountUserId = isPrismaObjOrUndefined(cred.key)?.account_user_id as number | undefined;
+    if (accountUserId !== undefined) {
+      acc.push(accountUserId);
+    }
+    return acc;
+  }, []);
+
   const updatedData = {
-    email,
+    account_user_ids,
     cal_events: [
       {
-        uid: id,
+        uid: eventTypeId,
         ...(updatedValues.slug ? { url: `${WEBAPP_URL}/${username}/${updatedValues.slug}` } : {}),
         ...(updatedValues.title ? { title: updatedValues.title } : {}),
       },

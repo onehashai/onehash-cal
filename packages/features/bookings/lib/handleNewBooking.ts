@@ -47,6 +47,7 @@ import {
 } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import { isPrismaObj, isPrismaObjOrUndefined } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
+import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL } from "@calcom/lib/constants";
 import { getUTCOffsetByTimezone } from "@calcom/lib/date-fns";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";
 import { ErrorCode } from "@calcom/lib/errorCodes";
@@ -1669,6 +1670,7 @@ async function handler(
     });
 
     req.statusCode = 201;
+
     // TODO: Refactor better so this booking object is not passed
     // all around and instead the individual fields are sent as args.
     const bookingResponse = {
@@ -1835,6 +1837,27 @@ async function handler(
     paymentRequired: false,
   };
 
+  if (
+    booking.status === BookingStatus.ACCEPTED &&
+    isPrismaObjOrUndefined(organizerUser.metadata)?.connectedChatAccounts
+  ) {
+    await handleOHChatSync({
+      userId: organizerUser.id,
+      booking: {
+        hostName: organizerUser.name ?? "Cal User",
+        bookingLocation,
+        // bookingLocation:evt.location,
+        bookingEventType: eventType.title,
+        bookingStartTime: evt.startTime,
+        bookingEndTime: evt.endTime,
+        bookerEmail,
+        bookerPhone: bookerPhoneNumber,
+        bookingUid: booking.uid,
+      },
+      isRescheduleEvent: !!rescheduleUid,
+    });
+  }
+
   return {
     ...bookingResponse,
     ...luckyUserResponse,
@@ -1868,4 +1891,61 @@ function getVideoCallDetails({
   const videoCallUrl = metadata.hangoutLink || updatedVideoEvent?.url;
 
   return { videoCallUrl, metadata, updatedVideoEvent };
+}
+
+async function handleOHChatSync({
+  userId,
+  booking,
+  isRescheduleEvent = false,
+}: {
+  userId: number;
+  booking: {
+    hostName: string;
+    bookingLocation: string;
+    bookingEventType: string;
+    bookingStartTime: string;
+    bookingEndTime: string;
+    bookingUid: string;
+    bookerEmail?: string;
+    bookerPhone?: string;
+  };
+  isRescheduleEvent: boolean;
+}) {
+  let data;
+  if (isRescheduleEvent) {
+    const { bookerPhone, bookerEmail, ...restBooking } = booking;
+    data = {
+      booking: restBooking,
+    };
+  } else {
+    const credentials = await prisma.credential.findMany({
+      where: {
+        appId: "onehast-chat",
+        userId,
+      },
+    });
+
+    if (credentials.length == 0) return Promise.resolve();
+
+    const account_user_ids: number[] = credentials.reduce<number[]>((acc, cred) => {
+      const accountUserId = isPrismaObjOrUndefined(cred.key)?.account_user_id as number | undefined;
+      if (accountUserId !== undefined) {
+        acc.push(accountUserId);
+      }
+      return acc;
+    }, []);
+    data = {
+      account_user_ids,
+      booking,
+    };
+  }
+
+  await fetch(`${ONEHASH_CHAT_SYNC_BASE_URL}/cal_booking`, {
+    method: isRescheduleEvent ? "PATCH" : "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ONEHASH_API_KEY}`,
+    },
+    body: JSON.stringify(data),
+  });
 }

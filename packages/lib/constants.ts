@@ -219,6 +219,6 @@ export const ACCOUNT_DELETE_SURVEY = process.env.ACCOUNT_DELETE_SURVEY;
 
 export const ONEHASH_CHAT_ORIGIN = process.env.NEXT_PUBLIC_ONEHASH_CHAT_ORIGIN;
 
-export const ONEHASH_CHAT_INTEGRATION_PAGE = `${ONEHASH_CHAT_ORIGIN}/app?from=cal`;
+export const ONEHASH_CHAT_INTEGRATION_PAGE = `${ONEHASH_CHAT_ORIGIN}/app?to=cal_integration`;
 export const ONEHASH_CHAT_SYNC_BASE_URL = `${ONEHASH_CHAT_ORIGIN}/api/oh/integrations`;
 export const ONEHASH_API_KEY = process.env.ONEHASH_API_KEY;

@@ -8,6 +8,7 @@ import { sendCancelledEmailsAndSMS } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { deleteWebhookScheduledTriggers } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
+import { ONEHASH_API_KEY, ONEHASH_CHAT_ORIGIN } from "@calcom/lib/constants";
 import { deletePayment } from "@calcom/lib/payment/deletePayment";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { bookingMinimalSelect, prisma } from "@calcom/prisma";
@@ -28,6 +29,51 @@ const isVideoOrConferencingApp = (app: App) =>
 
 const getRemovedIntegrationNameFromAppSlug = (slug: string) =>
   slug === "msteams" ? "office365_video" : slug.split("-")[0];
+
+const unsetConnectedChatAccounts = async (user_id: number, userMetadata: Prisma.JsonValue) => {
+  const existingMetadata = isPrismaObjOrUndefined(userMetadata);
+  const connectedChatAccounts = (existingMetadata?.connectedChatAccounts as number) ?? 0;
+
+  if (connectedChatAccounts === 0) {
+    return Promise.resolve();
+    // throw new Error("User already has no connected chat accounts");
+  }
+
+  if (connectedChatAccounts === 1) {
+    delete existingMetadata?.connectedChatAccounts;
+  } else {
+    if (existingMetadata) {
+      existingMetadata.connectedChatAccounts = connectedChatAccounts - 1;
+    }
+  }
+
+  await prisma.user.update({
+    where: { id: user_id },
+    data: { metadata: existingMetadata },
+  });
+};
+const handleOhChatCredentialDelete = async (
+  credential: {
+    key: Prisma.JsonValue;
+  },
+  userId: number,
+  userMetadata: string | number | boolean | Prisma.JsonObject | Prisma.JsonArray | null
+) => {
+  const account_user_id = isPrismaObjOrUndefined(credential.key)?.account_user_id ?? undefined;
+  if (account_user_id) {
+    const res = await fetch(`${ONEHASH_CHAT_ORIGIN}/onehash/cal/action/${account_user_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ONEHASH_API_KEY}`,
+      },
+    });
+    if (!res.ok) {
+      throw new Error("Couldn't unsync app from OneHash Chat");
+    }
+    await unsetConnectedChatAccounts(userId, userMetadata);
+  }
+};
 
 const locationsSchema = z.array(z.object({ type: z.string() }));
 type TlocationsSchema = z.infer<typeof locationsSchema>;
@@ -62,6 +108,10 @@ const handleDeleteCredential = async ({
 
   if (!credential) {
     throw new Error("Credential not found");
+  }
+
+  if (credential.appId === "onehash-chat") {
+    await handleOhChatCredentialDelete(credential, userId, userMetadata);
   }
 
   const eventTypes = await prisma.eventType.findMany({

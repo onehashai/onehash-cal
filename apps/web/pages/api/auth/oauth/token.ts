@@ -93,5 +93,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     expiresIn: 30 * 24 * 60 * 60, // 30 days
   });
 
-  res.status(200).json({ access_token, refresh_token });
+  res.status(200).json({
+    access_token,
+    refresh_token,
+    ...(redirect_uri === process.env.ONEHASH_CHAT_REDIRECT_URI && { cal_user_id: accessCode.userId }),
+  });
 }
