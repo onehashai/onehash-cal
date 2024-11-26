@@ -71,7 +71,7 @@ const handleOhChatCredentialDelete = async (
     if (!res.ok) {
       throw new Error("Couldn't unsync app from OneHash Chat");
     }
-    await unsetConnectedChatAccounts(userId, userMetadata);
+    // await unsetConnectedChatAccounts(userId, userMetadata);
   }
 };
 
