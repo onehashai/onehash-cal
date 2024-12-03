@@ -289,7 +289,6 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
       showToast(message, "error");
     },
   }); */
-
   //trigger
   if (!step) {
     const trigger = form.getValues("trigger");
@@ -702,6 +701,30 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                   )}
                 </div>
               )}
+              {form.watch("trigger") === WorkflowTriggerEvents.AFTER_EVENT &&
+                isAttendeeAction(form.getValues(`steps.${step.stepNumber - 1}.action`)) && (
+                  <div className="mt-2">
+                    <Controller
+                      name={`steps.${step.stepNumber - 1}.disableOnMarkNoShow`}
+                      control={form.control}
+                      render={() => (
+                        <CheckboxField
+                          disabled={props.readOnly}
+                          defaultChecked={
+                            form.getValues(`steps.${step.stepNumber - 1}.disableOnMarkNoShow`) || false
+                          }
+                          description={t("disable_on_mark_no_show")}
+                          onChange={(e) => {
+                            form.setValue(
+                              `steps.${step.stepNumber - 1}.disableOnMarkNoShow`,
+                              e.target.checked
+                            );
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
+                )}
               {canRequirePhoneNumber(form.getValues(`steps.${step.stepNumber - 1}.action`)) && (
                 <div className="mt-2">
                   <Controller

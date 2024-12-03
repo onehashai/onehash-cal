@@ -123,6 +123,7 @@
   "members_upcoming_bookings": "Member's upcoming bookings",
   "notify_past_bookers":"Notify past bookers about your migration",
   "select_host_placeholder":"Choose Your Host",
+  "disable_on_mark_no_show":"Disable workflow step on Mark Attendee as No-Show",
   "identity_provider": "Identity provider",
   "trial_days_left": "You have $t(day, {\"count\": {{days}} }) left on your PRO trial",
   "day_one": "{{count}} day",

@@ -992,7 +992,7 @@ async function handler(
 
   // For seats, if the booking already exists then we want to add the new attendee to the existing booking
   if (eventType.seatsPerTimeSlot) {
-    const newBooking = await handleSeats({
+    const newSeat = await handleSeats({
       rescheduleUid,
       reqBookingUid: reqBody.bookingUid,
       eventType,
@@ -1027,12 +1027,12 @@ async function handler(
       rescheduledBy: reqBody.rescheduledBy,
     });
 
-    if (newBooking) {
+    if (newSeat) {
       req.statusCode = 201;
       const bookingResponse = {
-        ...newBooking,
+        ...newSeat,
         user: {
-          ...newBooking.user,
+          ...newSeat.user,
           email: null,
         },
         paymentRequired: false,
@@ -1125,6 +1125,23 @@ async function handler(
     );
     evt.uid = booking?.uid ?? null;
     evt.oneTimePassword = booking?.oneTimePassword ?? null;
+
+    //adding attendee ID to   evtWithMetadata.attendees
+    const attendeeMap = booking.attendees.reduce(
+      (
+        mapObj: {
+          [key: string]: number;
+        },
+        attendee
+      ) => {
+        mapObj[attendee.email] = attendee.id;
+        return mapObj;
+      },
+      {}
+    );
+    evt.attendees.forEach((attendee: { id?: number; email: string; name: string }) => {
+      attendee.id = attendeeMap[attendee.email];
+    });
 
     if (booking && booking.id && eventType.seatsPerTimeSlot) {
       const currentAttendee = booking.attendees.find(
@@ -1818,6 +1835,9 @@ async function handler(
       isFirstRecurringEvent: req.body.allRecurringDates ? req.body.isFirstRecurringSlot : undefined,
       hideBranding: !!eventType.owner?.hideBranding,
       seatReferenceUid: evt.attendeeSeatId,
+      //TODO:NOSHOW ,Don't need to specify the bookerID, as for SMS/Whatsapp we create the
+      // data from the booking booker present in workflowReminder.booking.attendees[0]
+      // bookerId: attendeeMap[bookerEmail],
     });
   } catch (error) {
     loggerWithEventDetails.error("Error while scheduling workflow reminders", JSON.stringify({ error }));

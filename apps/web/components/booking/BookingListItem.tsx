@@ -826,7 +826,7 @@ function BookingListItem(booking: BookingItemProps) {
 
               {booking.eventType.bookingFields &&
                 Object.entries(booking.responses).map(([name, response]) => {
-                  const field = booking.eventType.bookingFields.find((field) => field.name === name);
+                  const field = booking.eventType.bookingFields?.find((field) => field.name === name);
 
                   if (!field) return null;
                   const isSystemField = SystemField.safeParse(field.name);

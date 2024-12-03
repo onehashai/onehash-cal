@@ -1,4 +1,5 @@
 import type { Membership, Team, UserPermissionRole } from "@prisma/client";
+import type { NextApiResponse } from "next";
 import type { AuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { encode } from "next-auth/jwt";
@@ -431,7 +432,7 @@ export const getOptions = ({
   keycloak_token,
 }: {
   res: NextApiResponse;
-  keycloak_token: string;
+  keycloak_token?: string;
 }): AuthOptions => ({
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
@@ -665,7 +666,6 @@ export const getOptions = ({
       const calendsoSession: Session = {
         ...session,
         profileId,
-        // keycloak_token: token.keycloak_token,
         upId: token.upId || session.upId,
         hasValidLicense: token.hasValidLicense,
         user: {
@@ -992,25 +992,27 @@ export const getOptions = ({
         res.setHeader("Set-Cookie", [
           `keycloak_token=${browser_token}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
             useSecureCookies ? "None" : "Lax"
-          }`,
+          }; Max-Age=${7776000}`,
         ]);
       }
     },
     async signOut(_) {
       //Cleaning the keycloak cookie and session
-      await prisma.keycloakSessionInfo.delete({
-        where: {
-          browserToken: keycloak_token,
-        },
-      });
-      const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
-      const useSecureCookies = WEBAPP_URL?.startsWith("https://");
+      if (keycloak_token) {
+        await prisma.keycloakSessionInfo.delete({
+          where: {
+            browserToken: keycloak_token,
+          },
+        });
+        const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
+        const useSecureCookies = WEBAPP_URL?.startsWith("https://");
 
-      res.setHeader("Set-Cookie", [
-        `keycloak_token=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
-          useSecureCookies ? "None" : "Lax"
-        }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
-      ]);
+        res.setHeader("Set-Cookie", [
+          `keycloak_token=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
+            useSecureCookies ? "None" : "Lax"
+          }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+        ]);
+      }
     },
   },
 });

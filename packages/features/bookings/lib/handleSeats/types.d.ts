@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Attendee, Prisma } from "@prisma/client";
 import type z from "zod";
 
 import type { Workflow } from "@calcom/features/oe/workflows/lib/types";
@@ -71,6 +71,7 @@ export type HandleSeatsResultBooking =
       paymentUid?: string;
       message?: string;
       paymentId?: number;
+      attendees: Attendee[];
     })
   | null;
 

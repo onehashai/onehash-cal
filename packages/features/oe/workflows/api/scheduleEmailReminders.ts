@@ -13,15 +13,10 @@ import { SchedulingType, WorkflowActions, WorkflowMethods, WorkflowTemplates } f
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 
 import type { PartialWorkflowReminder } from "../lib/getWorkflowReminders";
-import {
-  getAllRemindersToCancel,
-  getAllRemindersToDelete,
-  getAllUnscheduledReminders,
-} from "../lib/getWorkflowReminders";
+import { getAllRemindersToCancel, getAllUnscheduledReminders } from "../lib/getWorkflowReminders";
 import { getiCalEventAsString } from "../lib/getiCalEventAsString";
 import {
   cancelScheduledEmail,
-  deleteScheduledSend,
   getBatchId,
   sendSendgridMail,
 } from "../lib/reminders/providers/sendgridProvider";
@@ -31,36 +26,7 @@ import emailRatingTemplate from "../lib/reminders/templates/emailRatingTemplate"
 import emailReminderTemplate from "../lib/reminders/templates/emailReminderTemplate";
 import emailThankYouTemplate from "../lib/reminders/templates/emailThankYouTemplate";
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const authHeader = req.headers.authorization;
-  if (!process.env.CRON_SECRET || authHeader !== process.env.CRON_SECRET) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-
-  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_EMAIL) {
-    res.status(405).json({ message: "No SendGrid API key or email" });
-    return;
-  }
-
-  // delete batch_ids with already past scheduled date from scheduled_sends
-  const remindersToDelete: { referenceId: string | null }[] = await getAllRemindersToDelete();
-
-  const deletePromises: Promise<any>[] = [];
-
-  for (const reminder of remindersToDelete) {
-    const deletePromise = deleteScheduledSend(reminder.referenceId);
-    deletePromises.push(deletePromise);
-  }
-
-  Promise.allSettled(deletePromises).then((results) => {
-    results.forEach((result) => {
-      if (result.status === "rejected") {
-        logger.error(`Error deleting batch id from scheduled_sends: ${result.reason}`);
-      }
-    });
-  });
-
-  //delete workflow reminders with past scheduled date
+async function deletePastReminders() {
   await prisma.workflowReminder.deleteMany({
     where: {
       method: WorkflowMethods.EMAIL,
@@ -69,8 +35,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       },
     },
   });
+}
 
-  //cancel reminders for cancelled/rescheduled bookings that are scheduled within the next hour
+async function invokeCancelledReminders() {
   const remindersToCancel: { referenceId: string | null; id: number }[] = await getAllRemindersToCancel();
 
   const cancelUpdatePromises: Promise<any>[] = [];
@@ -97,16 +64,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   });
-
-  // schedule all unscheduled reminders within the next 72 hours
+}
+async function scheduleReminders() {
   const sendEmailPromises: Promise<any>[] = [];
 
   const unscheduledReminders: PartialWorkflowReminder[] = await getAllUnscheduledReminders();
-
-  if (!unscheduledReminders.length) {
-    res.status(200).json({ message: "No Emails to schedule" });
-    return;
-  }
 
   for (const reminder of unscheduledReminders) {
     if (!reminder.booking) {
@@ -134,7 +96,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             }
             break;
           case WorkflowActions.EMAIL_ATTENDEE:
-            sendTo = reminder.booking.attendees[0].email;
+            //TODO:check if reminder has reference to attendee
+            //if yes pick email from there
+            sendTo = reminder.attendee ? reminder.attendee.email : reminder.booking.attendees[0].email;
             break;
           case WorkflowActions.EMAIL_ADDRESS:
             sendTo = reminder.workflowStep.sendTo;
@@ -142,23 +106,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         const name =
           reminder.workflowStep.action === WorkflowActions.EMAIL_ATTENDEE
-            ? reminder.booking.attendees[0].name
+            ? reminder.attendee
+              ? reminder.attendee.name
+              : reminder.booking.attendees[0].name
             : reminder.booking.user?.name;
 
         const attendeeName =
           reminder.workflowStep.action === WorkflowActions.EMAIL_ATTENDEE
             ? reminder.booking.user?.name
+            : reminder.attendee
+            ? reminder.attendee.name
             : reminder.booking.attendees[0].name;
 
         const timeZone =
           reminder.workflowStep.action === WorkflowActions.EMAIL_ATTENDEE
-            ? reminder.booking.attendees[0].timeZone
+            ? reminder.attendee
+              ? reminder.attendee.timeZone
+              : reminder.booking.attendees[0].timeZone
             : reminder.booking.user?.timeZone;
 
         const locale =
           reminder.workflowStep.action === WorkflowActions.EMAIL_ATTENDEE ||
           reminder.workflowStep.action === WorkflowActions.SMS_ATTENDEE
-            ? reminder.booking.attendees[0].locale
+            ? reminder.attendee
+              ? reminder.attendee.locale
+              : reminder.booking.attendees[0].locale
             : reminder.booking.user?.locale;
 
         let emailContent = {
@@ -191,8 +163,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           const variables: VariablesType = {
             eventName: reminder.booking.eventType?.title || "",
             organizerName: reminder.booking.user?.name || "",
-            attendeeName: reminder.booking.attendees[0].name,
-            attendeeEmail: reminder.booking.attendees[0].email,
+            attendeeName: reminder.attendee ? reminder.attendee.name : reminder.booking.attendees[0].name,
+            attendeeEmail: reminder.attendee ? reminder.attendee.email : reminder.booking.attendees[0].email,
             eventDate: dayjs(reminder.booking.startTime).tz(timeZone),
             eventEndTime: dayjs(reminder.booking?.endTime).tz(timeZone),
             timeZone: timeZone,
@@ -385,6 +357,51 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   });
+  return unscheduledReminders;
+}
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const authHeader = req.headers.authorization;
+  if (!process.env.CRON_SECRET || authHeader !== process.env.CRON_SECRET) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_EMAIL) {
+    res.status(405).json({ message: "No SendGrid API key or email" });
+    return;
+  }
+
+  //TODO:NOSHOW ,
+  //the code below removes the cancel status from the "cancelled" scheduled sends,
+  // which are already passed, but sendgrid says they themselves discard the
+  //scheduled sends marked with "Cancelled " once their scheduled time is reached
+
+  // // delete batch_ids with already past scheduled date from scheduled_sends
+  // const remindersToDelete: { referenceId: string | null }[] = await getAllRemindersToDelete();
+
+  // const deletePromises: Promise<any>[] = [];
+
+  // for (const reminder of remindersToDelete) {
+  //   const deletePromise = deleteScheduledSend(reminder.referenceId);
+  //   deletePromises.push(deletePromise);
+  // }
+
+  // Promise.allSettled(deletePromises).then((results) => {
+  //   results.forEach((result) => {
+  //     if (result.status === "rejected") {
+  //       logger.error(`Error deleting batch id from scheduled_sends: ${result.reason}`);
+  //     }
+  //   });
+  // });
+
+  //delete workflow reminders with past scheduled date
+  await deletePastReminders();
+
+  //cancel reminders for cancelled/rescheduled bookings that are scheduled within the next hour
+  await invokeCancelledReminders();
+
+  // schedule all unscheduled reminders within the next 72 hours
+  const unscheduledReminders: PartialWorkflowReminder[] = await scheduleReminders();
 
   res.status(200).json({ message: `${unscheduledReminders.length} Emails to schedule` });
 }

@@ -18,50 +18,28 @@ import type { VariablesType } from "../lib/reminders/templates/customTemplate";
 import customTemplate from "../lib/reminders/templates/customTemplate";
 import smsReminderTemplate from "../lib/reminders/templates/smsReminderTemplate";
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const authHeader = req.headers.authorization;
-  if (!process.env.CRON_SECRET || authHeader !== process.env.CRON_SECRET) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-
-  //delete all scheduled sms reminders where scheduled date is past current date
-  await prisma.workflowReminder.deleteMany({
-    where: {
-      OR: [
-        {
-          method: WorkflowMethods.SMS,
-          scheduledDate: {
-            lte: dayjs().toISOString(),
-          },
-        },
-        {
-          retryCount: {
-            gt: 1,
-          },
-        },
-      ],
-    },
-  });
-
-  //find all unscheduled SMS reminders
-  const unscheduledReminders = (await prisma.workflowReminder.findMany({
+async function getUnscheduledReminders() {
+  return prisma.workflowReminder.findMany({
     where: {
       method: WorkflowMethods.SMS,
       scheduled: false,
       scheduledDate: {
         lte: dayjs().add(7, "day").toISOString(),
       },
+      NOT: {
+        cancelled: true,
+      },
     },
     select: {
       ...select,
       retryCount: true,
     },
-  })) as (PartialWorkflowReminder & { retryCount: number })[];
-
-  if (!unscheduledReminders.length) {
-    res.json({ ok: true });
-    return;
-  }
+  });
+}
+async function scheduleReminders() {
+  const unscheduledReminders = (await getUnscheduledReminders()) as (PartialWorkflowReminder & {
+    retryCount: number;
+  })[];
 
   for (const reminder of unscheduledReminders) {
     if (!reminder.workflowStep || !reminder.booking) {
@@ -197,7 +175,79 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       console.log(`Error scheduling SMS with error ${error}`);
     }
   }
-  res.status(200).json({ message: "SMS scheduled" });
+  return unscheduledReminders.length;
+}
+
+async function deletePastReminders() {
+  await prisma.workflowReminder.deleteMany({
+    where: {
+      OR: [
+        {
+          method: WorkflowMethods.SMS,
+          scheduledDate: {
+            lte: dayjs().toISOString(),
+          },
+        },
+        {
+          retryCount: {
+            gt: 1,
+          },
+        },
+      ],
+    },
+  });
+}
+
+async function invokeCancelledReminders() {
+  const scheduledSendsToCancel = await prisma.workflowReminder.findMany({
+    where: {
+      method: WorkflowMethods.SMS,
+      scheduled: true,
+      cancelled: true,
+      scheduledDate: {
+        lte: dayjs().add(1, "hour").toISOString(),
+      },
+    },
+  });
+
+  const cancellationPromises = [];
+  for (const scheduledSendToCancel of scheduledSendsToCancel) {
+    if (scheduledSendToCancel.referenceId) {
+      // Twilio cancel request promise
+      const cancellationReqPromise = twilio.cancelSMS(scheduledSendToCancel.referenceId);
+
+      // Prisma update promise
+      const statusUpdatePromise = prisma.workflowReminder.update({
+        where: {
+          id: scheduledSendToCancel.id,
+        },
+        data: {
+          referenceId: null,
+          scheduled: false,
+        },
+      });
+
+      cancellationPromises.push(cancellationReqPromise, statusUpdatePromise);
+    }
+  }
+
+  await Promise.all(cancellationPromises);
+}
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const authHeader = req.headers.authorization;
+  if (!process.env.CRON_SECRET || authHeader !== process.env.CRON_SECRET) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  //delete all scheduled sms reminders where scheduled date is past current date
+  await deletePastReminders();
+
+  // Cancel Scheduled sends whose workflow reminders are marked as Cancelled
+  await invokeCancelledReminders();
+
+  //find all unscheduled SMS reminders
+  const remindersToScheduleNum = await scheduleReminders();
+  res.status(200).json({ message: `${remindersToScheduleNum} SMS scheduled` });
 }
 
 export default defaultHandler({

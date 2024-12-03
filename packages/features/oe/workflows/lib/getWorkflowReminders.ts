@@ -1,6 +1,13 @@
 import dayjs from "@calcom/dayjs";
 import prisma from "@calcom/prisma";
-import type { EventType, Prisma, User, WorkflowReminder, WorkflowStep } from "@calcom/prisma/client";
+import type {
+  Attendee,
+  EventType,
+  Prisma,
+  User,
+  WorkflowReminder,
+  WorkflowStep,
+} from "@calcom/prisma/client";
 import { WorkflowMethods } from "@calcom/prisma/enums";
 
 type PartialWorkflowStep =
@@ -44,6 +51,7 @@ export type PartialWorkflowReminder = Pick<
   "id" | "isMandatoryReminder" | "scheduledDate"
 > & {
   booking: PartialBooking | null;
+  attendee: Attendee | null;
 } & { workflowStep: PartialWorkflowStep };
 
 async function getWorkflowReminders<T extends Prisma.WorkflowReminderSelect>(
@@ -99,6 +107,7 @@ type RemindersToCancelType = { referenceId: string | null; id: number };
 
 export async function getAllRemindersToCancel(): Promise<RemindersToCancelType[]> {
   const whereFilter: Prisma.WorkflowReminderWhereInput = {
+    method: WorkflowMethods.EMAIL,
     cancelled: true,
     scheduled: true, //if it is false then they are already cancelled
     scheduledDate: {
@@ -190,6 +199,13 @@ export const select: Prisma.WorkflowReminderSelect = {
       },
     },
   },
+  attendee: {
+    select: {
+      name: true,
+      email: true,
+      timeZone: true,
+    },
+  },
 };
 
 export async function getAllUnscheduledReminders(): Promise<PartialWorkflowReminder[]> {
@@ -199,7 +215,8 @@ export async function getAllUnscheduledReminders(): Promise<PartialWorkflowRemin
     scheduledDate: {
       lte: dayjs().add(72, "hour").toISOString(),
     },
-    OR: [{ cancelled: false }, { cancelled: null }],
+    // NOT: [{ paused: true }, { cancelled: true }],
+    NOT: { cancelled: true },
   };
 
   const unscheduledReminders = (await getWorkflowReminders(whereFilter, select)) as PartialWorkflowReminder[];

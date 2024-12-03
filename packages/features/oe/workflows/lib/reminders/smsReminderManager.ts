@@ -247,13 +247,18 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
 
 export const deleteScheduledSMSReminder = async (reminderId: number, referenceId: string | null) => {
   try {
-    if (referenceId) {
-      await twilio.cancelSMS(referenceId);
-    }
+    //TODO:NOSHOW , We will just mark the reminder as cancelled ,and cron job will handle the cancellation
+    // as now we can also reschedule the cancelled sms/whatsapp
+    // if (referenceId) {
+    // await twilio.cancelSMS(referenceId);
+    // }
 
-    await prisma.workflowReminder.delete({
+    await prisma.workflowReminder.update({
       where: {
         id: reminderId,
+      },
+      data: {
+        cancelled: true,
       },
     });
   } catch (error) {

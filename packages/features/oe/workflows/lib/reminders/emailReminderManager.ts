@@ -86,6 +86,7 @@ export interface ScheduleReminderArgs {
   sender?: string | null;
   workflowStepId?: number;
   seatReferenceUid?: string;
+  attendeeId?: number;
 }
 
 interface scheduleEmailReminderArgs extends ScheduleReminderArgs {
@@ -114,6 +115,7 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
     includeCalendarEvent,
     isMandatoryReminder,
     action,
+    attendeeId,
   } = args;
   const { startTime, endTime } = evt;
   const uid = evt.uid as string;
@@ -341,6 +343,7 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
               scheduled: true,
               referenceId: batchId,
               seatReferenceId: seatReferenceUid,
+              ...(attendeeId && { attendeeId: attendeeId }),
             },
           });
         } else {
@@ -353,6 +356,7 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
               referenceId: batchId,
               seatReferenceId: seatReferenceUid,
               isMandatoryReminder: true,
+              ...(attendeeId && { attendeeId: attendeeId }),
             },
           });
         }
@@ -360,6 +364,8 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
         log.error(`Error scheduling email with error ${error}`);
       }
     } else if (scheduledDate.isAfter(currentDate.add(72, "hour"))) {
+      //TODO:create a separate workflowReminder for each sendTo email with attendee reference
+
       // Write to DB and send to CRON if scheduled reminder date is past 72 hours
       if (!isMandatoryReminder) {
         await prisma.workflowReminder.create({
@@ -370,6 +376,7 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
             scheduledDate: scheduledDate.toDate(),
             scheduled: false,
             seatReferenceId: seatReferenceUid,
+            ...(attendeeId && { attendeeId: attendeeId }),
           },
         });
       } else {
@@ -381,6 +388,7 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
             scheduled: false,
             seatReferenceId: seatReferenceUid,
             isMandatoryReminder: true,
+            ...(attendeeId && { attendeeId: attendeeId }),
           },
         });
       }
@@ -390,15 +398,17 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
 
 export const deleteScheduledEmailReminder = async (reminderId: number, referenceId: string | null) => {
   try {
-    if (!referenceId) {
-      await prisma.workflowReminder.delete({
-        where: {
-          id: reminderId,
-        },
-      });
+    //TODO:NOSHOW , We will not delete the unscheduled emails as now we can reschedule the same in future
+    // so we only mark them as cancelled
+    // if (!referenceId) {
+    //   await prisma.workflowReminder.delete({
+    //     where: {
+    //       id: reminderId,
+    //     },
+    //   });
 
-      return;
-    }
+    //   return;
+    // }
 
     await prisma.workflowReminder.update({
       where: {
