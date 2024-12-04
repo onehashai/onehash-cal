@@ -11,7 +11,7 @@ jobs:
   cron-scheduleWhatsappReminders:
     env:
       APP_URL: ${{ secrets.APP_URL }}
-      STAG_APP_URL: ${{ secrets.STAG_APP_URL }}  # Assuming you have a separate secret for the STAG URL
+      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}  # Assuming you have a separate secret for the STAG URL
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
     runs-on: ubuntu-latest
     steps:
@@ -25,9 +25,9 @@ jobs:
             -sSf
 
       - name: cURL request to staging
-        if: ${{ env.STAG_APP_URL && env.CRON_SECRET }}
+        if: ${{ env.APP_URL_STAG && env.CRON_SECRET }}
         run: |
-          curl ${{ env.STAG_APP_URL }}/api/cron/workflows/scheduleWhatsappReminders \
+          curl ${{ env.APP_URL_STAG }}/api/cron/workflows/scheduleWhatsappReminders \
             -X POST \
             -H 'content-type: application/json' \
             -H 'authorization: ${{ env.CRON_SECRET }}' \
