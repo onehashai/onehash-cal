@@ -26,9 +26,7 @@ async function getUnscheduledReminders() {
       scheduledDate: {
         lte: dayjs().add(7, "day").toISOString(),
       },
-      NOT: {
-        cancelled: true,
-      },
+      OR: [{ cancelled: null }, { cancelled: false }],
     },
     select: {
       ...select,
@@ -235,7 +233,7 @@ async function invokeCancelledReminders() {
 }
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const authHeader = req.headers.authorization;
-  if (!process.env.CRON_SECRET || authHeader !== process.env.CRON_SECRET) {
+  if (!process.env.CRON_API_KEY || authHeader !== process.env.CRON_API_KEY) {
     return res.status(401).json({ message: "Not authenticated" });
   }
 
