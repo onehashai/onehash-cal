@@ -4,6 +4,8 @@ on:
   schedule:
     # Runs "At every 15th minute." (see https://crontab.guru)
     - cron: "*/15 * * * *"
+  workflow_dispatch:
+
 
 jobs:
   cron-scheduleWhatsappReminders:

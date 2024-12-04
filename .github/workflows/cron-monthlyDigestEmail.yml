@@ -6,6 +6,8 @@ on:
   schedule:
     # Runs on the 28th, 29th, 30th and 31st of every month (see https://crontab.guru)
     - cron: "59 23 28-31 * *"
+  workflow_dispatch:
+
 jobs:
   cron-monthlyDigestEmail:
     env:
