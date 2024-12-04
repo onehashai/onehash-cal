@@ -20,7 +20,7 @@ jobs:
           curl ${{ env.APP_URL }}/api/cron/workflows/scheduleSMSReminders \
             -X POST \
             -H 'content-type: application/json' \
-            -H 'authorization: ${{ env.CRON_SECRET }}' \
+            -H 'Authorization: Bearer ${{ env.CRON_SECRET }}' \
             -sSf
 
       - name: cURL request to staging
@@ -29,5 +29,5 @@ jobs:
           curl ${{ env.APP_URL_STAG }}/api/cron/workflows/scheduleSMSReminders \
             -X POST \
             -H 'content-type: application/json' \
-            -H 'authorization: ${{ env.CRON_SECRET }}' \
+            -H 'Authorization: Bearer ${{ env.CRON_SECRET }}' \
             -sSf
