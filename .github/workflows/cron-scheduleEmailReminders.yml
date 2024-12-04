@@ -10,23 +10,23 @@ jobs:
     env:
       APP_URL: ${{ secrets.APP_URL }}
       STAG_APP_URL: ${{ secrets.STAG_APP_URL }}  # Assuming you have a separate secret for the STAG URL
-      CRON_API_KEY: ${{ secrets.CRON_API_KEY }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
     runs-on: ubuntu-latest
     steps:
       - name: cURL request to production
-        if: ${{ env.APP_URL && env.CRON_API_KEY }}
+        if: ${{ env.APP_URL && env.CRON_SECRET }}
         run: |
           curl ${{ env.APP_URL }}/api/cron/workflows/scheduleEmailReminders \
             -X POST \
             -H 'content-type: application/json' \
-            -H 'authorization: ${{ env.CRON_API_KEY }}' \
+            -H 'authorization: ${{ env.CRON_SECRET }}' \
             -sSf
 
       - name: cURL request to staging
-        if: ${{ env.STAG_APP_URL && env.CRON_API_KEY }}
+        if: ${{ env.STAG_APP_URL && env.CRON_SECRET }}
         run: |
           curl ${{ env.STAG_APP_URL }}/api/cron/workflows/scheduleEmailReminders \
             -X POST \
             -H 'content-type: application/json' \
-            -H 'authorization: ${{ env.CRON_API_KEY }}' \
+            -H 'authorization: ${{ env.CRON_SECRET }}' \
             -sSf
