@@ -238,7 +238,8 @@ async function handleScheduledWorkflows(
     prisma.workflowReminder.updateMany({
       where: {
         bookingUid: bookingUid,
-        NOT: { cancelled: true },
+        OR: [{ cancelled: null }, { cancelled: false }],
+
         attendeeId: { in: markedNoShowAttendeesIDs },
       },
       data: { cancelled: true },

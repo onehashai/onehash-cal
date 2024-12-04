@@ -215,8 +215,7 @@ export async function getAllUnscheduledReminders(): Promise<PartialWorkflowRemin
     scheduledDate: {
       lte: dayjs().add(72, "hour").toISOString(),
     },
-    // NOT: [{ paused: true }, { cancelled: true }],
-    NOT: { cancelled: true },
+    OR: [{ cancelled: null }, { cancelled: false }],
   };
 
   const unscheduledReminders = (await getWorkflowReminders(whereFilter, select)) as PartialWorkflowReminder[];

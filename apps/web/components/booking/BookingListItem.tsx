@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
 
 import type { getEventLocationValue } from "@calcom/app-store/locations";
 import { getSuccessPageLocationMessage, guessEventLocationType } from "@calcom/app-store/locations";
@@ -48,7 +47,6 @@ import {
   DropdownItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuCheckboxItem,
 } from "@calcom/ui";
 
 import { AddGuestsDialog } from "@components/dialog/AddGuestsDialog";
@@ -424,15 +422,32 @@ function BookingListItem(booking: BookingItemProps) {
     window.open(url, "_blank", options);
   };
 
-  const attendeeList = booking.attendees.map((attendee) => {
-    return {
-      name: attendee.name,
-      email: attendee.email,
-      id: attendee.id,
-      noShow: attendee.noShow || false,
-      phoneNumber: attendee.phoneNumber,
-    };
+  const [attendeeList, setAttendeeList] = useState<AttendeeProps[]>(
+    booking.attendees.map((attendee) => {
+      return {
+        name: attendee.name,
+        email: attendee.email,
+        id: attendee.id,
+        noShow: attendee.noShow || false,
+        phoneNumber: attendee.phoneNumber,
+      };
+    })
+  );
+
+  const noShowMutation = trpc.viewer.markNoShow.useMutation({
+    onSuccess: async (data) => {
+      showToast(t(data.message), "success");
+    },
+    onError: (err) => {
+      showToast(err.message, "error");
+    },
   });
+
+  const onSubmitNoShow = (data: { attendees: AttendeeProps[] }) => {
+    noShowMutation.mutate({ bookingUid: booking.uid, attendees: data.attendees });
+    setAttendeeList(data.attendees);
+    setMarkNoShowDialogIsOpen(false);
+  };
   return (
     <>
       <RescheduleDialog
@@ -478,7 +493,8 @@ function BookingListItem(booking: BookingItemProps) {
       <MarkNoShowDialog
         isOpenDialog={markNoShowDialogIsOpen}
         setIsOpenDialog={setMarkNoShowDialogIsOpen}
-        workflows={booking.workflowReminders}
+        attendees={attendeeList}
+        onSubmitNoShow={onSubmitNoShow}
       />
       <MeetingNotesDialog
         notes={notes}
@@ -825,6 +841,7 @@ function BookingListItem(booking: BookingItemProps) {
               )}
 
               {booking.eventType.bookingFields &&
+                booking.responses &&
                 Object.entries(booking.responses).map(([name, response]) => {
                   const field = booking.eventType.bookingFields?.find((field) => field.name === name);
 
@@ -1007,29 +1024,29 @@ const Attendee = (attendeeProps: AttendeeProps & NoShowProps) => {
   const { email, name, bookingUid, isBookingInPast, noShow: noShowAttendee, phoneNumber } = attendeeProps;
   const { t } = useLocale();
 
-  const [noShow, setNoShow] = useState(noShowAttendee);
+  // const [noShow, setNoShow] = useState(noShowAttendee);
   const [openDropdown, setOpenDropdown] = useState(false);
   const { copyToClipboard, isCopied } = useCopy();
 
-  const noShowMutation = trpc.viewer.markNoShow.useMutation({
-    onSuccess: async (data) => {
-      showToast(data.message, "success");
-    },
-    onError: (err) => {
-      showToast(err.message, "error");
-    },
-  });
+  // const noShowMutation = trpc.viewer.markNoShow.useMutation({
+  //   onSuccess: async (data) => {
+  //     showToast(data.message, "success");
+  //   },
+  //   onError: (err) => {
+  //     showToast(err.message, "error");
+  //   },
+  // });
 
-  function toggleNoShow({
-    attendee,
-    bookingUid,
-  }: {
-    attendee: { email: string; noShow: boolean };
-    bookingUid: string;
-  }) {
-    noShowMutation.mutate({ bookingUid, attendees: [attendee] });
-    setNoShow(!noShow);
-  }
+  // function toggleNoShow({
+  //   attendee,
+  //   bookingUid,
+  // }: {
+  //   attendee: { email: string; noShow: boolean };
+  //   bookingUid: string;
+  // }) {
+  //   noShowMutation.mutate({ bookingUid, attendees: [attendee] });
+  //   setNoShow(!noShow);
+  // }
 
   return (
     <Dropdown open={openDropdown} onOpenChange={setOpenDropdown}>
@@ -1038,7 +1055,7 @@ const Attendee = (attendeeProps: AttendeeProps & NoShowProps) => {
           data-testid="guest"
           onClick={(e) => e.stopPropagation()}
           className="radix-state-open:text-blue-500 transition hover:text-blue-500">
-          {noShow ? (
+          {noShowAttendee ? (
             <s>
               {name || email} <Icon name="eye-off" className="inline h-4" />
             </s>
@@ -1075,7 +1092,7 @@ const Attendee = (attendeeProps: AttendeeProps & NoShowProps) => {
             {!isCopied ? t("copy") : t("copied")}
           </DropdownItem>
         </DropdownMenuItem>
-        {isBookingInPast && (
+        {/* {isBookingInPast && (
           <DropdownMenuItem className="focus:outline-none">
             {noShow ? (
               <DropdownItem
@@ -1101,7 +1118,7 @@ const Attendee = (attendeeProps: AttendeeProps & NoShowProps) => {
               </DropdownItem>
             )}
           </DropdownMenuItem>
-        )}
+        )} */}
       </DropdownMenuContent>
     </Dropdown>
   );
@@ -1113,7 +1130,6 @@ type GroupedAttendeeProps = {
 };
 
 const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
-  const { bookingUid } = groupedAttendeeProps;
   const attendees = groupedAttendeeProps.attendees.map((attendee) => {
     return {
       id: attendee.id,
@@ -1123,35 +1139,20 @@ const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
     };
   });
   const { t } = useLocale();
-  const noShowMutation = trpc.viewer.markNoShow.useMutation({
-    onSuccess: async (data) => {
-      showToast(t(data.message), "success");
-    },
-    onError: (err) => {
-      showToast(err.message, "error");
-    },
-  });
-  const { control, handleSubmit } = useForm<{
-    attendees: AttendeeProps[];
-  }>({
-    defaultValues: {
-      attendees,
-    },
-    mode: "onBlur",
-  });
-
-  const { fields } = useFieldArray({
-    control,
-    name: "attendees",
-  });
-
-  const onSubmit = (data: { attendees: AttendeeProps[] }) => {
-    const filteredData = data.attendees.slice(1);
-    noShowMutation.mutate({ bookingUid, attendees: filteredData });
-    setOpenDropdown(false);
-  };
-
   const [openDropdown, setOpenDropdown] = useState(false);
+  const copyToClipboard = (e: React.MouseEvent<HTMLSpanElement>) => {
+    const content = (e.target as HTMLSpanElement).innerText;
+
+    navigator.clipboard
+      .writeText(content)
+      .then(() => {
+        showToast(t("copied"), "success");
+      })
+      .catch(() => {
+        showToast(t("failed_to_copy"), "error");
+      })
+      .finally(() => setOpenDropdown(false));
+  };
 
   return (
     <Dropdown open={openDropdown} onOpenChange={setOpenDropdown}>
@@ -1164,42 +1165,15 @@ const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuLabel className="text-xs font-medium uppercase">
-          {t("mark_as_no_show_title")}
-        </DropdownMenuLabel>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          {fields.slice(1).map((field, index) => (
-            <Controller
-              key={field.id}
-              name={`attendees.${index + 1}.noShow`}
-              control={control}
-              render={({ field: { onChange, value } }) => (
-                <DropdownMenuCheckboxItem
-                  checked={value || false}
-                  onCheckedChange={onChange}
-                  className="pr-8 focus:outline-none"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onChange(!value);
-                  }}>
-                  <span className={value ? "line-through" : ""}>{field.email}</span>
-                </DropdownMenuCheckboxItem>
-              )}
-            />
-          ))}
-          <DropdownMenuSeparator />
-          <div className=" flex justify-end p-2">
-            <Button
-              data-testid="update-no-show"
-              color="secondary"
-              onClick={(e) => {
-                e.preventDefault();
-                handleSubmit(onSubmit)();
-              }}>
-              {t("mark_as_no_show_title")}
-            </Button>
-          </div>
-        </form>
+        <div className="flex flex-col gap-3 px-4 py-3">
+          {attendees.slice(1).map((attendee) => {
+            return (
+              <div className={`hover:bg-slate-50 ${attendee.noShow && "line-through"}`} key={attendee.id}>
+                <span onClick={copyToClipboard}>{attendee.name?.trim() || attendee.email} </span>
+              </div>
+            );
+          })}
+        </div>
       </DropdownMenuContent>
     </Dropdown>
   );
