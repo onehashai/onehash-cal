@@ -96,6 +96,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.status(200).json({
     access_token,
     refresh_token,
-    ...(redirect_uri === process.env.ONEHASH_CHAT_REDIRECT_URI && { cal_user_id: accessCode.userId }),
   });
 }

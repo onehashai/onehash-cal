@@ -1,5 +1,4 @@
 import type { IncomingHttpHeaders } from "http";
-import jwt from "jsonwebtoken";
 import type { NextApiRequest, NextApiResponse } from "next";
 import z from "zod";
 
@@ -9,18 +8,29 @@ import { ONEHASH_API_KEY, WEBAPP_URL } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
-import type { OAuthTokenPayload } from "@calcom/types/oauth";
+
+const getSchema = z.object({
+  account_name: z.string(),
+  account_user_id: z.number().or(z.string()), // account_user_id can be a number or a string
+  user_id: z.number().or(z.string()),
+  user_name: z.string(),
+  user_email: z.string(),
+});
 
 const postSchema = z.object({
   account_name: z.string(),
   account_user_id: z.number(),
-  user_id: z.number(),
-  user_name: z.string(),
-  user_email: z.string(),
+  account_user_email: z.string(),
+  cal_user_slug: z.string(),
 });
+type PostSchemaType = z.infer<typeof postSchema>;
+type PostWithoutSlug = Omit<PostSchemaType, "cal_user_slug">;
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     switch (req.method) {
+      case "GET":
+        return await getHandler(req, res);
       case "POST":
         return await postHandler(req, res);
       case "DELETE":
@@ -41,16 +51,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
+const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     if (!checkIfTokenIsValid(req.headers)) return res.status(401).json({ message: "Unauthorized" });
 
-    // const payloadFromToken: OAuthTokenPayload = (await getPayloadFromToken(req.headers)) as OAuthTokenPayload;
-    // if (!payloadFromToken.userId) return res.status(403).json({ message: "Unable to find user" });
-    const { account_user_id, account_name, user_id, user_email, user_name } = postSchema.parse(req.body);
+    const { account_user_id, account_name, user_id, user_email, user_name } = getSchema.parse(req.query);
     const user = await prisma.user.findUnique({
       where: {
-        id: user_id,
+        id: Number(user_id),
       },
       select: {
         id: true,
@@ -125,7 +133,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
       user: user,
       slug: "onehash-chat",
       key: {
-        account_user_id,
+        account_user_id: Number(account_user_id),
         account_name,
         user_email,
         user_name,
@@ -137,7 +145,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res.json({ cal_events, bookings, user_id: user.id });
   } catch (err) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    throw err;
   }
 };
 
@@ -164,7 +172,61 @@ const deleteHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     console.log("deleted_chat_accounts");
     return res.json({ message: "Deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    throw error;
+  }
+};
+
+const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
+  try {
+    if (!checkIfTokenIsValid(req.headers)) return res.status(401).json({ message: "Unauthorized" });
+
+    const { account_user_email, account_user_id, account_name, cal_user_slug } = postSchema.parse(req.body);
+
+    const cal_user = await prisma.user.findFirst({
+      where: {
+        username: cal_user_slug,
+      },
+      select: {
+        id: true,
+        metadata: true,
+      },
+    });
+
+    if (!cal_user) return res.status(401).json({ message: `Cal user with slug ${cal_user_slug} not found` });
+    const existingMetadata = isPrismaObjOrUndefined(cal_user?.metadata) ?? {};
+    const chat_integration_requests =
+      (existingMetadata?.chat_integration_requests as Array<PostWithoutSlug>) ?? [];
+
+    const isExistingRequest = chat_integration_requests.some(
+      (request) => request.account_user_id === account_user_id
+    );
+
+    if (isExistingRequest) {
+      return res.status(400).json({ message: "Request with this account_user_id already exists." });
+    }
+
+    chat_integration_requests.push({
+      account_user_email,
+      account_user_id,
+      account_name,
+    });
+
+    const updatedMetadata = {
+      ...existingMetadata,
+      chat_integration_requests,
+    };
+
+    await prisma.user.update({
+      where: {
+        id: cal_user.id,
+      },
+      data: {
+        metadata: updatedMetadata,
+      },
+    });
+    return res.json({ message: "Integration Request raised" });
+  } catch (error) {
+    throw error;
   }
 };
 
@@ -220,25 +282,6 @@ async function unsetConnectedChatAccounts(user_id: number) {
     data: { metadata: existingMetadata },
   });
 }
-
-const getPayloadFromToken = async (headers: IncomingHttpHeaders) => {
-  const authHeader = headers["authorization"];
-  if (!authHeader) return null;
-
-  const access_token = authHeader.split(" ")[1];
-  const secretKey = process.env.CALENDSO_ENCRYPTION_KEY || "";
-  const decoded = await new Promise<OAuthTokenPayload | string>((resolve, reject) => {
-    jwt.verify(access_token, secretKey, (err, decoded) => {
-      if (err) {
-        reject(new Error(`Invalid token: ${err.message}`));
-      } else {
-        resolve(decoded as OAuthTokenPayload);
-      }
-    });
-  });
-
-  return decoded;
-};
 
 const checkIfTokenIsValid = (headers: IncomingHttpHeaders) => {
   const authHeader = headers["authorization"];

@@ -21,18 +21,9 @@ export default function Authorize() {
   const router = useRouter();
   const searchParams = useCompatSearchParams();
 
-  const [disableTeam, setDisableTeam] = useState(false);
-
   const client_id = (searchParams?.get("client_id") as string) || "";
   const state = searchParams?.get("state") as string;
   const scope = searchParams?.get("scope") as string;
-
-  useEffect(() => {
-    if (state) {
-      const stateObj = JSON.parse(state);
-      setDisableTeam(stateObj.team === "disabled");
-    }
-  }, [state]);
 
   const queryString = searchParams?.toString();
   const [selectedAccount, setSelectedAccount] = useState<{ value: string; label: string } | null>();
@@ -48,9 +39,7 @@ export default function Authorize() {
     }
   );
 
-  const { data, isPending: isPendingProfiles } = trpc.viewer.teamsAndUserProfilesQuery.useQuery({
-    includeTeams: !disableTeam,
-  });
+  const { data, isPending: isPendingProfiles } = trpc.viewer.teamsAndUserProfilesQuery.useQuery();
 
   const generateAuthCodeMutation = trpc.viewer.oAuth.generateAuthCode.useMutation({
     onSuccess: (data) => {

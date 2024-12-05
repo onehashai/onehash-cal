@@ -58,26 +58,24 @@ export const teamsAndUserProfilesQuery = async ({ ctx, input }: TeamsAndUserProf
   }
 
   let teamsData = [];
-  if (input?.includeTeams) {
-    if (input?.includeOrg) {
-      teamsData = user.teams.map((membership) => ({
+  if (input?.includeOrg) {
+    teamsData = user.teams.map((membership) => ({
+      ...membership,
+      team: {
+        ...membership.team,
+        metadata: teamMetadataSchema.parse(membership.team.metadata),
+      },
+    }));
+  } else {
+    teamsData = user.teams
+      .filter((membership) => !membership.team.isOrganization)
+      .map((membership) => ({
         ...membership,
         team: {
           ...membership.team,
           metadata: teamMetadataSchema.parse(membership.team.metadata),
         },
       }));
-    } else {
-      teamsData = user.teams
-        .filter((membership) => !membership.team.isOrganization)
-        .map((membership) => ({
-          ...membership,
-          team: {
-            ...membership.team,
-            metadata: teamMetadataSchema.parse(membership.team.metadata),
-          },
-        }));
-    }
   }
 
   return [

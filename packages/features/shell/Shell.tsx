@@ -37,6 +37,7 @@ import {
 import VerifyEmailBanner, {
   type VerifyEmailBannerProps,
 } from "@calcom/features/users/components/VerifyEmailBanner";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import classNames from "@calcom/lib/classNames";
 import {
   APP_NAME,
@@ -735,9 +736,57 @@ const getDesktopNavigationItems = (isPlatformNavigation = false) => {
   return { desktopNavigationItems, mobileNavigationBottomItems, mobileNavigationMoreItems };
 };
 
+type TIntegrationRequest = {
+  account_name: string;
+  account_user_id: number;
+  account_user_email: string;
+};
 const Navigation = ({ isPlatformNavigation = false }: { isPlatformNavigation?: boolean }) => {
   const { desktopNavigationItems } = getDesktopNavigationItems(isPlatformNavigation);
+  const { data: user } = useMeQuery();
 
+  const [integrationRequests, setIntegrationRequests] = useState<TIntegrationRequest[]>([]);
+
+  useEffect(() => {
+    const userMeta = isPrismaObjOrUndefined(user?.metadata);
+    if (userMeta) {
+      setIntegrationRequests((userMeta.chat_integration_requests as TIntegrationRequest[]) ?? []);
+    }
+  }, [user]);
+
+  const { t } = useLocale();
+
+  const [loadingBtn, setLoadingBtn] = useState<string>("");
+
+  const handleReq = async (account_user_id: number, accept: boolean) => {
+    try {
+      setLoadingBtn(`${account_user_id}-${accept ? "a" : "r"}`);
+      const cal_user_id = user?.id;
+      if (!cal_user_id) return;
+      const res = await fetch("/api/integrations/oh/chat/internal", {
+        method: "POST",
+        body: JSON.stringify({
+          cal_user_id,
+          account_user_id,
+          status: accept,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok) {
+        showToast("Failed to handle request", "error");
+        return;
+      }
+      const data = await res.json();
+      showToast(data.message, "success");
+      setIntegrationRequests((prev) => {
+        return prev.filter((el) => el.account_user_id !== account_user_id);
+      });
+    } finally {
+      setLoadingBtn("");
+    }
+  };
   return (
     <nav className="mt-2 flex-1 md:px-2 lg:mt-4 lg:px-0">
       {desktopNavigationItems.map((item) => (
@@ -747,6 +796,55 @@ const Navigation = ({ isPlatformNavigation = false }: { isPlatformNavigation?: b
         <KBarTrigger />
       </div>
       <AllProducts />
+
+      {integrationRequests?.length > 0 && (
+        <div className="md:px-2 md:py-1.5">
+          <Tooltip side="top" content={t("chat_integration_desc")}>
+            <div className="flex gap-3 md:hidden md:gap-2 lg:flex ">
+              <Icon name="webhook" className="h-4 w-4" />
+              <span className="text-default text-sm">Chat Integrations</span>
+            </div>
+          </Tooltip>
+
+          <div className="scrollbar-none max-h-[400px] overflow-y-auto overflow-x-hidden">
+            {integrationRequests.map((req) => (
+              <div key={req.account_user_id} className="my-2 rounded-md border p-2">
+                <div className="mb-2 text-sm font-normal">
+                  <p className="break-words">
+                    {`${t("email")} :`} <span className="text-default">{`${req.account_user_email}`}</span>
+                  </p>
+                  <p>
+                    Account : <span className="text-default capitalize">{`${req.account_name}`}</span>
+                  </p>
+                </div>
+
+                <div className="space-between flex gap-2">
+                  <Button
+                    size="sm"
+                    loading={loadingBtn === `${req.account_user_id}-a`}
+                    disabled={loadingBtn.includes(`${req.account_user_id}`)}
+                    onClick={() => {
+                      handleReq(req.account_user_id, true);
+                    }}
+                    color="secondary">
+                    <span className="text-sm font-normal">Accept</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    loading={loadingBtn === `${req.account_user_id}-r`}
+                    disabled={loadingBtn.includes(`${req.account_user_id}`)}
+                    onClick={() => {
+                      handleReq(req.account_user_id, false);
+                    }}
+                    color="destructive">
+                    <span className="text-sm font-normal">Reject</span>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
