@@ -1084,14 +1084,28 @@ const Attendee = (attendeeProps: AttendeeProps & NoShowProps) => {
             StartIcon={isCopied ? "clipboard-check" : "clipboard"}
             onClick={(e) => {
               e.preventDefault();
-              const isEmailCopied = isSmsCalEmail(email);
-              copyToClipboard(isEmailCopied ? email : phoneNumber ?? "");
+              copyToClipboard(email);
               setOpenDropdown(false);
-              showToast(isEmailCopied ? t("email_copied") : t("phone_number_copied"), "success");
+              showToast(t("email_copied"), "success");
             }}>
             {!isCopied ? t("copy") : t("copied")}
           </DropdownItem>
         </DropdownMenuItem>
+
+        {phoneNumber && (
+          <DropdownMenuItem className="focus:outline-none">
+            <DropdownItem
+              StartIcon={isCopied ? "clipboard-check" : "clipboard"}
+              onClick={(e) => {
+                e.preventDefault();
+                copyToClipboard(phoneNumber);
+                setOpenDropdown(false);
+                showToast(t("phone_number_copied"), "success");
+              }}>
+              {!isCopied ? t("copy") : t("copied")}
+            </DropdownItem>
+          </DropdownMenuItem>
+        )}
         {/* {isBookingInPast && (
           <DropdownMenuItem className="focus:outline-none">
             {noShow ? (
