@@ -13,7 +13,6 @@ const postSchema = z.object({
 
 async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    console.log("req_body", req.body);
     const { account_user_id, cal_user_id, status } = postSchema.parse(req.body);
     const user = await prisma.user.findFirst({
       where: {
@@ -72,7 +71,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       },
     });
 
-    return res.json({ message: `${status ? "Sucessfully integrated" : "Rejected "}` });
+    return res.json({ message: `${status ? "Successfully integrated" : "Rejected "}` });
   } catch (e) {
     console.error("Error", e);
     throw e;

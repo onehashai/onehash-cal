@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 import { Dialog, DialogContent } from "@calcom/ui";
@@ -9,14 +9,28 @@ interface IGroupMeetingDialog {
   link: string;
 }
 
-export const GroupMeetingDialog = (props: IGroupMeetingDialog) => {
-  const { isOpenDialog, setIsOpenDialog, link } = props;
+export const GroupMeetingDialog = ({ isOpenDialog, setIsOpenDialog, link }: IGroupMeetingDialog) => {
   const [loading, setLoading] = useState(true);
+
+  const handleMessage = (event: MessageEvent) => {
+    if (event.data === "close-dialog") {
+      setIsOpenDialog(false);
+    }
+  };
 
   const handleLoad = () => {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (isOpenDialog) {
+      window.addEventListener("message", handleMessage);
+    }
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [isOpenDialog]);
   return (
     <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
       <DialogContent size="xl">

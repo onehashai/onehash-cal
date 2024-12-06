@@ -159,6 +159,8 @@ export default function Success(props: PageProps) {
 
   const isBackgroundTransparent = useIsBackgroundTransparent();
   const isEmbed = useIsEmbed();
+  const isIFrame = typeof window !== "undefined" && window.self !== window.top;
+
   const shouldAlignCentrallyInEmbed = useEmbedNonStylesConfig("align") !== "left";
   const shouldAlignCentrally = !isEmbed || shouldAlignCentrallyInEmbed;
   const [calculatedDuration, setCalculatedDuration] = useState<number | undefined>(undefined);
@@ -431,14 +433,25 @@ export default function Success(props: PageProps) {
           status={status}
         />
       )}
-      {isLoggedIn && !isEmbed && !isFeedbackMode && (
-        <div className="-mb-4 ml-4 mt-2">
+      {isLoggedIn && !isEmbed && !isFeedbackMode && !isIFrame && (
+        <div className="-mb-4 ml-4 mt-2 ">
           <Link
             href={allRemainingBookings ? "/bookings/recurring" : "/bookings/upcoming"}
             data-testid="back-to-bookings"
             className="hover:bg-subtle text-subtle hover:text-default mt-2 inline-flex px-1 py-2 text-sm transition dark:hover:bg-transparent">
             <Icon name="chevron-left" className="h-5 w-5 rtl:rotate-180" /> {t("back_to_bookings")}
           </Link>
+        </div>
+      )}
+      {isIFrame && (
+        <div className="float-right mb-4 mr-4 mt-2">
+          <Button
+            onClick={() => window.parent.postMessage("close-dialog", "*")}
+            color="minimal"
+            StartIcon="x"
+            className="mt-2  px-1 py-2 ">
+            {t("close")}
+          </Button>
         </div>
       )}
       <HeadSeo origin={getOrgFullOrigin(orgSlug)} title={title} description={title} />
