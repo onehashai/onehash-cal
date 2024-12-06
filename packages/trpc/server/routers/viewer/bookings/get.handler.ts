@@ -25,9 +25,15 @@ export const getHandler = async ({ ctx, input }: GetOptions) => {
   const { prisma, user } = ctx;
   const defaultStatus = "upcoming";
   const bookingListingByStatus = [input.filters.status || defaultStatus];
+  const teamMember = input.teamMember;
+
+  const _user = teamMember || { id: user.id, email: user.email };
 
   const { bookings, recurringInfo, nextCursor } = await getAllUserBookings({
-    ctx: { user: { id: user.id, email: user.email }, prisma: prisma },
+    ctx: {
+      user: _user,
+      prisma: prisma,
+    },
     bookingListingByStatus: bookingListingByStatus,
     take: take,
     skip: skip,
@@ -185,6 +191,18 @@ export async function getBookings({
     };
   }
 
+  if (filters?.attendees) {
+    bookingWhereInputFilters.attendees = {
+      attendees: {
+        some: {
+          name: {
+            in: filters?.attendees,
+          },
+        },
+      },
+    };
+  }
+
   if (filters?.afterStartDate) {
     bookingWhereInputFilters.afterStartDate = {
       startTime: {
@@ -274,13 +292,6 @@ export async function getBookings({
       },
     },
     cancellationReason: true,
-    workflowReminders: {
-      select: {
-        referenceId: true,
-        id: true,
-        method: true,
-      },
-    },
     responses: true,
   };
   const [

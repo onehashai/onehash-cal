@@ -94,6 +94,7 @@ export const AppForm = ({
         { label: "Messaging", value: "messaging" },
         { label: "Payment", value: "payment" },
         { label: "Other", value: "other" },
+        { label: "OneHash", value: "onehash" },
       ],
       defaultValue: "",
       explainer: "This is how apps are categorized in App Store.",

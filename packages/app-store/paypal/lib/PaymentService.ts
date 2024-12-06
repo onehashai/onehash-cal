@@ -35,27 +35,9 @@ export class PaymentService implements IAbstractPaymentService {
   async create({
     payment,
     bookingId,
-    userId,
-    username,
-    bookerName,
-    paymentOption,
-    bookingUid,
-    bookerEmail,
-    bookerPhoneNumber,
-    eventTitle,
-    bookingTitle,
   }: {
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
     bookingId: Booking["id"];
-    userId: Booking["userId"];
-    username: string | null;
-    bookerName: string;
-    paymentOption: PaymentOption;
-    bookingUid: string;
-    bookerPhoneNumber: string;
-    bookerEmail: string;
-    eventTitle?: string;
-    bookingTitle?: string;
   }) {
     try {
       const booking = await prisma.booking.findFirst({

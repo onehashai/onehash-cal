@@ -1,5 +1,7 @@
 import { WorkflowRepository } from "@calcom/lib/server/repository/workflow";
 
+import { TRPCError } from "@trpc/server";
+
 import type { TCancelScheduledWorkflowsSchema } from "./cancelWorkflows.schema";
 
 type CancelScheduledWorkflowsOptions = {

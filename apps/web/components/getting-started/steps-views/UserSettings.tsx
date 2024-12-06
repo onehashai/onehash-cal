@@ -438,7 +438,7 @@ const UserSettings = (props: IUserSettingsProps) => {
         type="submit"
         className="mt-8 flex w-full flex-row justify-center"
         loading={mutation.isPending}
-        disabled={mutation.isPending}>
+        disabled={mutation.isPending || selectedBusiness === null}>
         {t("next_step_text")}
         <Icon name="arrow-right" className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>

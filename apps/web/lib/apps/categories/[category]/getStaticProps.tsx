@@ -6,7 +6,6 @@ import type { AppCategories } from "@calcom/prisma/enums";
 
 export const getStaticProps = async (context: GetStaticPropsContext) => {
   const category = context.params?.category as AppCategories;
-
   const appQuery = await prisma.app.findMany({
     where: {
       categories: {

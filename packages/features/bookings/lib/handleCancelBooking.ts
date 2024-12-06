@@ -38,6 +38,7 @@ import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import { getAllWorkflowsFromEventType } from "@calcom/trpc/server/routers/viewer/workflows/util";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
+import { ONEHASH_CHAT_SYNC_BASE_URL, ONEHASH_API_KEY } from "./../../../lib/constants";
 import { getAllCredentials } from "./getAllCredentialsForUsersOnEvent/getAllCredentials";
 import cancelAttendeeSeat from "./handleSeats/cancel/cancelAttendeeSeat";
 
@@ -232,6 +233,7 @@ async function handler(req: CustomRequest) {
       timeZone: true,
       timeFormat: true,
       locale: true,
+      metadata: true,
     },
   });
 
@@ -512,6 +514,8 @@ async function handler(req: CustomRequest) {
   const webhookTriggerPromises = [];
   const workflowReminderPromises = [];
   const paymentCancellationPromises = [];
+  const organizerHasIntegratedOHChat = !!isPrismaObjOrUndefined(organizer.metadata)?.connectedChatAccounts;
+  const cancelledBookingsUids = [];
 
   for (const booking of updatedBookings) {
     // delete scheduled webhook triggers of cancelled bookings
@@ -543,6 +547,8 @@ async function handler(req: CustomRequest) {
 
       paymentCancellationPromises.push(Promise.all([cancelPaymentPromise, updateBookingPromise]));
     }
+
+    cancelledBookingsUids.push(booking.uid);
   }
 
   await Promise.all([...webhookTriggerPromises, ...workflowReminderPromises]).catch((error) => {
@@ -567,6 +573,9 @@ async function handler(req: CustomRequest) {
   } catch (error) {
     console.error("Error deleting event", error);
   }
+  if (organizerHasIntegratedOHChat) {
+    await handleOHChatSync(cancelledBookingsUids);
+  }
 
   req.statusCode = 200;
   return {
@@ -576,5 +585,19 @@ async function handler(req: CustomRequest) {
     bookingId: bookingToDelete.id,
     bookingUid: bookingToDelete.uid,
   } satisfies HandleCancelBookingResponse;
+}
+
+async function handleOHChatSync(bookingUids: string[]) {
+  if (bookingUids.length === 0) return Promise.resolve();
+
+  const queryParams = new URLSearchParams({ bookingUids: bookingUids.join(",") });
+
+  await fetch(`${ONEHASH_CHAT_SYNC_BASE_URL}/cal_booking?${queryParams}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ONEHASH_API_KEY}`,
+    },
+  });
 }
 export default handler;

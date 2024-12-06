@@ -66,6 +66,7 @@ const BookerComponent = ({
   isPlatform,
   orgBannerUrl,
   customClassNames,
+  billingAddressRequired,
 }: BookerProps & WrappedBookerProps) => {
   const { t } = useLocale();
   const [bookerState, setBookerState] = useBookerStore((state) => [state.state, state.setState], shallow);
@@ -175,7 +176,8 @@ const BookerComponent = ({
         extraOptions={extraOptions}
         rescheduleUid={rescheduleUid}
         isVerificationCodeSending={isVerificationCodeSending}
-        isPlatform={isPlatform}>
+        isPlatform={isPlatform}
+        billingAddressRequired={billingAddressRequired}>
         <>
           {verifyCode && formEmail ? (
             <VerifyCodeDialog
@@ -362,7 +364,7 @@ const BookerComponent = ({
             <BookerSection
               key="book-event-form"
               area="main"
-              className="sticky top-0 ml-[-1px] h-full p-6 md:w-[var(--booker-main-width)] md:border-l"
+              className="sticky top-0 ml-[-1px] max-h-[600px] overflow-y-auto p-6 md:w-[var(--booker-main-width)] md:border-l "
               {...fadeInLeft}
               visible={bookerState === "booking" && !shouldShowFormInDialog}>
               {EventBooker}
@@ -455,9 +457,11 @@ const BookerComponent = ({
             />
           </div>
         )}
-        <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-          <PoweredBy logoOnly />
-        </div>
+        {!getQueryParam("widget_view") && (
+          <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+            <PoweredBy logoOnly />
+          </div>
+        )}
       </div>
 
       <BookFormAsModal

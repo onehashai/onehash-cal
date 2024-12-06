@@ -1,7 +1,7 @@
 import type { TFunction } from "next-i18next";
 import { Trans } from "next-i18next";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FieldError } from "react-hook-form";
 
 import type { BookerEvent } from "@calcom/features/bookings/types";
@@ -28,6 +28,7 @@ type BookEventFormProps = {
   extraOptions: Record<string, string | string[]>;
   isPlatform?: boolean;
   isVerificationCodeSending: boolean;
+  billingAddressRequired?: boolean;
 };
 
 export const BookEventForm = ({
@@ -44,6 +45,7 @@ export const BookEventForm = ({
   extraOptions,
   isVerificationCodeSending,
   isPlatform = false,
+  billingAddressRequired = false,
 }: Omit<BookEventFormProps, "event"> & {
   eventQuery: {
     isError: boolean;
@@ -68,6 +70,44 @@ export const BookEventForm = ({
     return eventType?.price > 0 && !Number.isNaN(paymentAppData.price) && paymentAppData.price > 0;
   }, [eventType]);
 
+  useEffect(() => {
+    if (eventType && billingAddressRequired) {
+      const appended = eventType.bookingFields.some((field) => field.name === "_line1");
+      if (!appended)
+        eventType.bookingFields.push(
+          {
+            name: "_line1",
+            type: "address",
+            defaultLabel: "Address Line 1",
+            required: true,
+          },
+          {
+            name: "city",
+            type: "address",
+            defaultLabel: "City",
+            required: true,
+          },
+          {
+            name: "state",
+            type: "address",
+            defaultLabel: "State",
+            required: true,
+          },
+          {
+            name: "country",
+            type: "address",
+            defaultLabel: "Country",
+            required: true,
+          },
+          {
+            name: "postal_code",
+            type: "address",
+            defaultLabel: "Postal Code",
+            required: true,
+          }
+        );
+    }
+  }, [eventType]);
   if (eventQuery.isError) return <Alert severity="warning" message={t("error_booking_event")} />;
   if (eventQuery.isPending || !eventQuery.data) return <FormSkeleton />;
   if (!timeslot)

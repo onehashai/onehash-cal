@@ -547,16 +547,17 @@ model BookingReference {
 }
 
 model Attendee {
-  id          Int          @id @default(autoincrement())
-  email       String
-  name        String
-  timeZone    String
-  phoneNumber String?
-  locale      String?      @default("en")
-  booking     Booking?     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  bookingId   Int?
-  bookingSeat BookingSeat?
-  noShow      Boolean?     @default(false)
+  id               Int                @id @default(autoincrement())
+  email            String
+  name             String
+  timeZone         String
+  phoneNumber      String?
+  locale           String?            @default("en")
+  booking          Booking?           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId        Int?
+  bookingSeat      BookingSeat?
+  noShow           Boolean?           @default(false)
+  workflowReminder WorkflowReminder[]
 
   @@index([email])
   @@index([bookingId])
@@ -908,6 +909,7 @@ enum AppCategories {
   // Wherever video is in use, conferencing should also be used for legacy apps can have it.
   conferencing
   crm
+  onehash
 }
 
 model App {
@@ -1012,6 +1014,7 @@ model WorkflowStep {
   sender                    String?
   numberVerificationPending Boolean            @default(true)
   includeCalendarEvent      Boolean            @default(false)
+  disableOnMarkNoShow       Boolean?
 
   @@index([workflowId])
 }
@@ -1110,6 +1113,8 @@ model WorkflowReminder {
   seatReferenceId     String?
   isMandatoryReminder Boolean?        @default(false)
   retryCount          Int             @default(0)
+  attendeeId          Int?
+  attendee            Attendee?       @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
 
   @@index([bookingUid])
   @@index([workflowStepId])
@@ -1140,6 +1145,7 @@ enum WorkflowTemplates {
   RESCHEDULED
   COMPLETED
   RATING
+  THANKYOU
 }
 
 enum WorkflowMethods {

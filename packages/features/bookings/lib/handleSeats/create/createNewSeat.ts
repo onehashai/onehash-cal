@@ -74,9 +74,6 @@ const createNewSeat = async (
     where: {
       uid: seatedBooking.uid,
     },
-    include: {
-      attendees: true,
-    },
     data: {
       attendees: {
         create: {

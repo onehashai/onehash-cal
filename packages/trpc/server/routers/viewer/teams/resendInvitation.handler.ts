@@ -35,7 +35,7 @@ export const resendInvitationHandler = async ({ ctx, input }: InviteMemberOption
   });
 
   const inviteTeamOptions = {
-    joinLink: `${WEBAPP_URL}/auth/login?callbackUrl=/settings/teams`,
+    joinLink: `${WEBAPP_URL}/auth/login?callbackUrl=/teams`,
     isCalcomMember: true,
     isAutoJoin: false,
   };

@@ -112,6 +112,7 @@ export const EventTypeMetaDataSchema = z
       .optional(),
     bookerLayouts: bookerLayouts.optional(),
     whatsappNumber: z.string().optional(),
+    billingAddressRequired: z.boolean().optional(),
   })
   .nullable();
 
@@ -375,6 +376,7 @@ export const userMetadata = z
       .optional(),
     currentOnboardingStep: z.string().optional(),
     phoneNumber: z.string().optional(),
+    connectedChatAccounts: z.number().optional(),
   })
   .nullable();
 

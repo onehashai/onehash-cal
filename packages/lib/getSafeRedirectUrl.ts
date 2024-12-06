@@ -7,9 +7,12 @@ export const getSafeRedirectUrl = (url = "") => {
   }
 
   //It is important that this fn is given absolute URL because urls that don't start with HTTP can still deceive browser into redirecting to another domain
-  if (url.search(/^https?:\/\//) === -1) {
-    throw new Error("Pass an absolute URL");
+  if (!/^https?:\/\//.test(url)) {
+    url = `${WEBAPP_URL}/${url}`;
   }
+  // if (url.search(/^https?:\/\//) === -1) {
+  //   throw new Error("Pass an absolute URL");
+  // }
 
   const urlParsed = new URL(url);
 

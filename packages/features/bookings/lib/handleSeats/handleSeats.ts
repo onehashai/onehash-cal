@@ -63,6 +63,8 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
       status: true,
       smsReminderNumber: true,
       endTime: true,
+      metadata: true,
+      responses: true,
     },
   });
 
@@ -104,6 +106,22 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
       ...(typeof resultBooking.metadata === "object" && resultBooking.metadata),
       ...reqBodyMetadata,
     };
+
+    const attendeeMap = resultBooking.attendees.reduce(
+      (
+        mapObj: {
+          [key: string]: number;
+        },
+        attendee
+      ) => {
+        mapObj[attendee.email] = attendee.id;
+        return mapObj;
+      },
+      {}
+    );
+    evt.attendees.forEach((attendee: { id?: number; email: string; name: string }) => {
+      attendee.id = attendeeMap[attendee.email];
+    });
     try {
       await scheduleWorkflowReminders({
         workflows,

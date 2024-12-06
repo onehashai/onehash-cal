@@ -3,6 +3,7 @@ import EventManager from "@calcom/core/EventManager";
 import dayjs from "@calcom/dayjs";
 import { refreshCredentials } from "@calcom/features/bookings/lib/getAllCredentialsForUsersOnEvent/refreshCredentials";
 import { HttpError } from "@calcom/lib/http-error";
+import { WorkflowRepository } from "@calcom/lib/server/repository/workflow";
 import prisma from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/enums";
 import type { Person } from "@calcom/types/Calendar";
@@ -137,6 +138,8 @@ const rescheduleSeatedBooking = async (
       eventManager
     );
   }
+
+  await WorkflowRepository.deleteAllWorkflowReminders(originalRescheduledBooking.workflowReminders);
 
   return resultBooking;
 };

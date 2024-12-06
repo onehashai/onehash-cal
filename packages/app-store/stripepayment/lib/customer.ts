@@ -83,10 +83,27 @@ export async function deleteStripeCustomer(user: UserType): Promise<string | nul
   return deletedCustomer.id;
 }
 
+function getNameFromEmail(email: string) {
+  const localPart = email.split("@")[0];
+  return localPart
+    .replace(/[\W\d_\.]/g, " ")
+    .split(" ")
+    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export async function retrieveOrCreateStripeCustomerByEmail(
   stripeAccountId: string,
   email: string,
-  phoneNumber?: string | null
+  phoneNumber?: string | null,
+  bookerName?: string,
+  address?: {
+    city: string;
+    country: string;
+    line1: string;
+    postal_code: string;
+    state: string;
+  }
 ) {
   const customer = await stripe.customers.list(
     {
@@ -101,12 +118,15 @@ export async function retrieveOrCreateStripeCustomerByEmail(
   if (customer.data[0]?.id) {
     return customer.data[0];
   } else {
-    const newCustomer = await stripe.customers.create(
-      { email, phone: phoneNumber ?? undefined },
-      {
-        stripeAccount: stripeAccountId,
-      }
-    );
+    const body = {
+      name: bookerName ?? getNameFromEmail(email),
+      ...(address && { address }),
+      email,
+      phone: phoneNumber ?? undefined,
+    };
+    const newCustomer = await stripe.customers.create(body, {
+      stripeAccount: stripeAccountId,
+    });
     return newCustomer;
   }
 }

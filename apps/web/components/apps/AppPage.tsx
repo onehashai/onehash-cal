@@ -11,12 +11,28 @@ import DisconnectIntegration from "@calcom/features/apps/components/DisconnectIn
 import { AppOnboardingSteps } from "@calcom/lib/apps/appOnboardingSteps";
 import { getAppOnboardingUrl } from "@calcom/lib/apps/getAppOnboardingUrl";
 import classNames from "@calcom/lib/classNames";
-import { APP_NAME, COMPANY_NAME, SUPPORT_MAIL_ADDRESS, WEBAPP_URL } from "@calcom/lib/constants";
+import {
+  APP_NAME,
+  COMPANY_NAME,
+  ONEHASH_CHAT_INTEGRATION_PAGE,
+  SUPPORT_MAIL_ADDRESS,
+  WEBAPP_URL,
+} from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import type { App as AppType } from "@calcom/types/App";
-import { Badge, Button, Icon, SkeletonButton, SkeletonText, showToast } from "@calcom/ui";
+import {
+  Badge,
+  Button,
+  Icon,
+  SkeletonButton,
+  SkeletonText,
+  showToast,
+  Dropdown,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "@calcom/ui";
 
 import { InstallAppButtonChild } from "./InstallAppButtonChild";
 
@@ -141,7 +157,7 @@ export const AppPage = ({
 
   const [existingCredentials, setExistingCredentials] = useState<number[]>([]);
   const [showDisconnectIntegration, setShowDisconnectIntegration] = useState(false);
-
+  const [ohChatAppCredentials, setOhChatAppCredentials] = useState(undefined);
   const appDbQuery = trpc.viewer.appCredentialsByType.useQuery({ appType: type });
 
   useEffect(
@@ -153,6 +169,12 @@ export const AppPage = ({
         data?.userAdminTeams.length ? credentialsCount >= data?.userAdminTeams.length : credentialsCount > 0
       );
       setExistingCredentials(data?.credentials.map((credential) => credential.id) || []);
+      if (slug === "onehash-chat")
+        setOhChatAppCredentials(
+          data?.credentials.map((c) => {
+            return { ...c.key, credentialId: c.id };
+          }) || []
+        );
     },
     [appDbQuery.data]
   );
@@ -169,6 +191,7 @@ export const AppPage = ({
   // variant not other allows, an app to be shown in calendar category without requiring an actual calendar connection e.g. vimcal
   // Such apps, can only be installed once.
   const allowedMultipleInstalls = categories.indexOf("calendar") > -1 && variant !== "other";
+  // const allowedMultipleInstalls = true;
   useEffect(() => {
     if (searchParams?.get("defaultInstall") === "true") {
       mutation.mutate({ type, variant, slug, defaultInstall: true });
@@ -252,64 +275,132 @@ export const AppPage = ({
           </header>
         </div>
         {!appDbQuery.isPending ? (
-          isGlobal ||
-          (existingCredentials.length > 0 && allowedMultipleInstalls ? (
+          // Edge case for prop.slug === "onehash-chat"
+          slug === "onehash-chat" ? (
             <div className="flex space-x-3">
-              <Button StartIcon="check" color="secondary" disabled>
-                {existingCredentials.length > 0
-                  ? t("active_install", { count: existingCredentials.length })
-                  : t("default")}
+              <Button
+                color="primary"
+                onClick={() => {
+                  window.location.href = ONEHASH_CHAT_INTEGRATION_PAGE;
+                }}
+                loading={isLoading}>
+                {existingCredentials.length > 0 ? t("install_another") : t("install_app")}
               </Button>
-              {!isGlobal && (
-                <InstallAppButton
-                  type={type}
-                  disableInstall={disableInstall}
-                  teamsPlanRequired={teamsPlanRequired}
-                  render={({ useDefaultComponent, ...props }) => {
-                    if (useDefaultComponent) {
-                      props = {
-                        ...props,
-                        onClick: async () => {
-                          await handleAppInstall();
-                        },
-                        loading: isLoading,
-                      };
-                    }
-                    return <InstallAppButtonChild multiInstall paid={paid} {...props} />;
-                  }}
-                />
+              {existingCredentials.length > 0 && (
+                <>
+                  <Dropdown modal={false}>
+                    <DropdownMenuTrigger asChild>
+                      <Button color="secondary">{t("remove_app")}</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {ohChatAppCredentials?.map((c, i) => {
+                        return (
+                          <div
+                            className="flex w-full gap-2 p-2"
+                            key={`${c.account_name}-${c.account_user_id}`}>
+                            <div className="mx-2 w-full text-start">
+                              <p>User : {c.user_email}</p>
+                              <p className="font-semibold text-indigo-600">Account: {c.account_name}</p>
+                            </div>
+
+                            <DisconnectIntegration
+                              buttonProps={{ color: "secondary" }}
+                              label={t("disconnect")}
+                              credentialId={c.credentialId}
+                              onSuccess={() => {
+                                appDbQuery.refetch();
+                              }}
+                            />
+                          </div>
+                          // <DropdownMenuItem key={`${c.account_name}-${c.account_user_id}`}>
+                          //   <DropdownItem
+                          //     type="button"
+                          //     onClick={() => {
+                          //       if (disButtonRef.current[i]) {
+                          //         disButtonRef.current[i].click();
+                          //       }
+                          //     }}>
+                          //     <div className="flex w-full gap-2">
+                          // <div className="mx-2 w-full text-start">
+                          //   <p>User : {c.user_email}</p>
+                          //   <p className="font-semibold text-indigo-600">Account: {c.account_name}</p>
+                          // </div>
+
+                          //     </div>
+                          //   </DropdownItem>
+                          // </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </Dropdown>
+                </>
               )}
             </div>
-          ) : showDisconnectIntegration ? (
-            <DisconnectIntegration
-              buttonProps={{ color: "secondary" }}
-              label={t("disconnect")}
-              credentialId={existingCredentials[0]}
-              onSuccess={() => {
-                appDbQuery.refetch();
-              }}
-            />
           ) : (
-            <InstallAppButton
-              type={type}
-              disableInstall={disableInstall}
-              teamsPlanRequired={teamsPlanRequired}
-              render={({ useDefaultComponent, ...props }) => {
-                if (useDefaultComponent) {
-                  props = {
-                    ...props,
-                    onClick: async () => {
-                      await handleAppInstall();
-                    },
-                    loading: isLoading,
-                  };
-                }
-                return (
-                  <InstallAppButtonChild credentials={appDbQuery.data?.credentials} paid={paid} {...props} />
-                );
-              }}
-            />
-          ))
+            // Original logic for other cases
+            isGlobal ||
+            (existingCredentials.length > 0 && allowedMultipleInstalls ? (
+              <div className="flex space-x-3">
+                <Button StartIcon="check" color="secondary" disabled>
+                  {existingCredentials.length > 0
+                    ? t("active_install", { count: existingCredentials.length })
+                    : t("default")}
+                </Button>
+                {!isGlobal && (
+                  <InstallAppButton
+                    type={type}
+                    disableInstall={disableInstall}
+                    teamsPlanRequired={teamsPlanRequired}
+                    render={({ useDefaultComponent, ...props }) => {
+                      if (useDefaultComponent) {
+                        props = {
+                          ...props,
+                          onClick: async () => {
+                            await handleAppInstall();
+                          },
+                          loading: isLoading,
+                        };
+                      }
+                      return <InstallAppButtonChild multiInstall paid={paid} {...props} />;
+                    }}
+                  />
+                )}
+              </div>
+            ) : showDisconnectIntegration ? (
+              <DisconnectIntegration
+                buttonProps={{ color: "secondary" }}
+                label={t("disconnect")}
+                credentialId={existingCredentials[0]}
+                onSuccess={() => {
+                  appDbQuery.refetch();
+                }}
+              />
+            ) : (
+              <InstallAppButton
+                type={type}
+                disableInstall={disableInstall}
+                teamsPlanRequired={teamsPlanRequired}
+                render={({ useDefaultComponent, ...props }) => {
+                  if (useDefaultComponent) {
+                    props = {
+                      ...props,
+                      onClick: async () => {
+                        await handleAppInstall();
+                      },
+                      loading: isLoading,
+                    };
+                  }
+                  return (
+                    <InstallAppButtonChild
+                      credentials={appDbQuery.data?.credentials}
+                      paid={paid}
+                      {...props}
+                    />
+                  );
+                }}
+              />
+            ))
+          )
         ) : (
           <SkeletonButton className="h-10 w-24" />
         )}

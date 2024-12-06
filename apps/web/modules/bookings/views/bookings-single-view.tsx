@@ -32,7 +32,7 @@ import {
   TITLE_FIELD,
 } from "@calcom/features/bookings/lib/SystemField";
 import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
-import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
+import { APP_NAME, ONEHASH_CHAT_ORIGIN, WEBAPP_URL } from "@calcom/lib/constants";
 import {
   formatToLocalizedDate,
   formatToLocalizedTime,
@@ -104,7 +104,10 @@ const useBrandColors = ({
 };
 
 export default function Success(props: PageProps) {
-  const { t } = useLocale();
+  const {
+    t,
+    i18n: { language },
+  } = useLocale();
   const router = useRouter();
   const routerQuery = useRouterQuery();
   const pathname = usePathname();
@@ -156,6 +159,8 @@ export default function Success(props: PageProps) {
 
   const isBackgroundTransparent = useIsBackgroundTransparent();
   const isEmbed = useIsEmbed();
+  const isIFrame = typeof window !== "undefined" && window.self !== window.top;
+
   const shouldAlignCentrallyInEmbed = useEmbedNonStylesConfig("align") !== "left";
   const shouldAlignCentrally = !isEmbed || shouldAlignCentrallyInEmbed;
   const [calculatedDuration, setCalculatedDuration] = useState<number | undefined>(undefined);
@@ -185,11 +190,41 @@ export default function Success(props: PageProps) {
       showToast(err.message, "error");
     },
   });
+  const getEventTimeData = () => {
+    const _calculatedDuration = dayjs(bookingInfo.endTime).diff(dayjs(bookingInfo.startTime), "minutes");
+
+    const dateStr = formatToLocalizedDate(date, language, "full", tz);
+    const time = `${formatToLocalizedTime(date, language, undefined, !is24h, tz)} - ${formatToLocalizedTime(
+      dayjs(date).add(_calculatedDuration, "m"),
+      language,
+      undefined,
+      !is24h,
+      tz
+    )}`;
+    const timezone = `${formatToLocalizedTimezone(date, language, tz)}`;
+    return {
+      time: time,
+      date: dateStr,
+      timezone,
+    };
+  };
+  const handleChatMessagePopup = () => {
+    if (window.parent) {
+      const payload = {
+        event_scheduled_at: { ...getEventTimeData() },
+        ...(bookingInfo?.attendees[0]?.name && { event_booker: bookingInfo.attendees[0].name }),
+        ...(bookingInfo?.user?.name && { event_organizer: bookingInfo.user.name }),
+      };
+
+      if (ONEHASH_CHAT_ORIGIN) window.parent.postMessage({ payload }, ONEHASH_CHAT_ORIGIN);
+    }
+  };
 
   useEffect(() => {
     if (noShow) {
       hostNoShowMutation.mutate({ bookingUid: bookingInfo.uid, noShowHost: true });
     }
+    handleChatMessagePopup();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -398,14 +433,25 @@ export default function Success(props: PageProps) {
           status={status}
         />
       )}
-      {isLoggedIn && !isEmbed && !isFeedbackMode && (
-        <div className="-mb-4 ml-4 mt-2">
+      {isLoggedIn && !isEmbed && !isFeedbackMode && !isIFrame && (
+        <div className="-mb-4 ml-4 mt-2 ">
           <Link
             href={allRemainingBookings ? "/bookings/recurring" : "/bookings/upcoming"}
             data-testid="back-to-bookings"
             className="hover:bg-subtle text-subtle hover:text-default mt-2 inline-flex px-1 py-2 text-sm transition dark:hover:bg-transparent">
             <Icon name="chevron-left" className="h-5 w-5 rtl:rotate-180" /> {t("back_to_bookings")}
           </Link>
+        </div>
+      )}
+      {isIFrame && (
+        <div className="float-right mb-4 mr-4 mt-2">
+          <Button
+            onClick={() => window.parent.postMessage("close-dialog", "*")}
+            color="minimal"
+            StartIcon="x"
+            className="mt-2  px-1 py-2 ">
+            {t("close")}
+          </Button>
         </div>
       )}
       <HeadSeo origin={getOrgFullOrigin(orgSlug)} title={title} description={title} />
@@ -618,7 +664,7 @@ export default function Success(props: PageProps) {
                           </>
                         )}
                       </div>
-                      <div className="text-bookingdark dark:border-darkgray-200 mt-8 text-left dark:text-gray-300">
+                      <div className="text-bookingdark dark:border-darkgray-200 mt-3 text-left dark:text-gray-300">
                         {Object.entries(bookingInfo.responses).map(([name, response]) => {
                           const field = eventType.bookingFields.find((field) => field.name === name);
                           // We show location in the "where" section
@@ -639,15 +685,15 @@ export default function Success(props: PageProps) {
                           const label = field.label || t(field.defaultLabel || "");
 
                           return (
-                            <>
+                            <div className="grid grid-cols-3" key={label}>
                               <div
-                                className="text-emphasis mt-4 font-medium"
+                                className="text-emphasis  font-medium"
                                 dangerouslySetInnerHTML={{
                                   __html: label,
                                 }}
                               />
                               <p
-                                className="text-default break-words"
+                                className="text-default col-span-2  break-words "
                                 data-testid="field-response"
                                 data-fob-field={field.name}>
                                 {field.type === "boolean"
@@ -656,7 +702,7 @@ export default function Success(props: PageProps) {
                                     : t("no")
                                   : response.toString()}
                               </p>
-                            </>
+                            </div>
                           );
                         })}
                       </div>

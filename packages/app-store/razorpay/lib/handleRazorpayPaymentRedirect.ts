@@ -57,11 +57,11 @@ const handleRazorpayPaymentRedirect = async (params: PaymentParams): Promise<str
 
   try {
     if (!validatePaymentRedirect(params, razorpay_signature)) {
-      console.error("Payment verification failed");
+      console.error("error:Payment verification failed");
       return "error";
     }
     if (razorpay_payment_link_status !== "paid") {
-      console.log("Payment not made");
+      console.error("error:Payment not made");
       return "failed";
     }
 

@@ -1,5 +1,3 @@
-import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
-import { withRoleCanCreateEntity } from "@calcom/lib/entityPermissionUtils";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import type { PrismaClient } from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -59,8 +57,7 @@ export const teamsAndUserProfilesQuery = async ({ ctx, input }: TeamsAndUserProf
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
   }
 
-  let teamsData;
-
+  let teamsData = [];
   if (input?.includeOrg) {
     teamsData = user.teams.map((membership) => ({
       ...membership,

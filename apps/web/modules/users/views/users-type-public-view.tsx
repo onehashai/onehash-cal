@@ -35,7 +35,6 @@ function Type({
   orgBannerUrl,
 }: PageProps) {
   const searchParams = useSearchParams();
-
   return (
     <main className={getBookerWrapperClasses({ isEmbed: !!isEmbed })}>
       <BookerSeo
@@ -63,6 +62,7 @@ function Type({
           searchParams?.get("duration"),
           eventData.length
         )}
+        billingAddressRequired={eventData.metadata?.billingAddressRequired}
       />
     </main>
   );

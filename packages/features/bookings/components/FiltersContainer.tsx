@@ -6,6 +6,8 @@ import { TeamsFilter } from "@calcom/features/filters/components/TeamsFilter";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Tooltip, Button } from "@calcom/ui";
 
+import { AttendeeFilter } from "./AttendeeFilter";
+import { DateFilter } from "./DateFilter";
 import { EventTypeFilter } from "./EventTypeFilter";
 
 export interface FiltersContainerProps {
@@ -21,9 +23,11 @@ export function FiltersContainer({ isFiltersVisible }: FiltersContainerProps) {
     <div ref={animationParentRef}>
       {isFiltersVisible ? (
         <div className="no-scrollbar flex w-full space-x-2 overflow-x-scroll rtl:space-x-reverse">
+          <AttendeeFilter />
           <PeopleFilter />
           <EventTypeFilter />
           <TeamsFilter />
+          <DateFilter />
           <Tooltip content={t("remove_filters")}>
             <Button
               color="secondary"

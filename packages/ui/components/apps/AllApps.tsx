@@ -1,7 +1,6 @@
 "use client";
 
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import type { AppCategories } from "@prisma/client";
 import { usePathname, useRouter } from "next/navigation";
 import type { UIEvent } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +9,7 @@ import { classNames } from "@calcom/lib";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { UserAdminTeams } from "@calcom/lib/server/repository/user";
+import { AppCategories } from "@calcom/prisma/enums";
 import type { AppFrontendPayload as App } from "@calcom/types/App";
 import type { CredentialFrontendPayload as Credential } from "@calcom/types/Credential";
 
@@ -129,9 +129,9 @@ function CategoryTab({ selectedCategory, categories, searchText }: CategoryTabPr
             }}
             className={classNames(
               selectedCategory === cat ? "bg-emphasis text-default" : "bg-muted text-emphasis",
-              "hover:bg-emphasis rounded-md px-4 py-2.5 text-sm font-medium transition hover:cursor-pointer"
+              "hover:bg-emphasis rounded-md px-4 py-2.5 text-sm font-medium capitalize transition hover:cursor-pointer"
             )}>
-            {cat[0].toUpperCase() + cat.slice(1)}
+            {cat === AppCategories.onehash ? "OneHash" : cat}
           </li>
         ))}
       </ul>

@@ -122,6 +122,37 @@ export async function getAllBookings({
         },
       ],
     },
+    attendees: {
+      AND: [
+        {
+          attendees: {
+            some: {
+              name: {
+                in: filters?.attendees,
+              },
+            },
+          },
+        },
+      ],
+    },
+    afterStartDate: {
+      AND: [
+        {
+          startTime: {
+            gte: new Date(filters.afterStartDate),
+          },
+        },
+      ],
+    },
+    beforeEndDate: {
+      AND: [
+        {
+          endTime: {
+            lte: new Date(filters.beforeEndDate),
+          },
+        },
+      ],
+    },
   };
 
   const filtersCombined: Prisma.BookingWhereInput[] = !filters
@@ -130,6 +161,7 @@ export async function getAllBookings({
         .map((key) => bookingWhereInputFilters[key])
         // On prisma 5.4.2 passing undefined to where "AND" causes an error
         .filter(Boolean);
+
   const bookingSelect = {
     id: true,
     title: true,

@@ -12,13 +12,7 @@ import type { PartialWorkflowReminder } from "../lib/getWorkflowReminders";
 import { select } from "../lib/getWorkflowReminders";
 import * as twilio from "../lib/reminders/providers/twilioProvider";
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const authHeader = req.headers.authorization;
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-
-  //delete all scheduled whatsapp reminders where scheduled date is past current date
+async function deletePastReminders() {
   await prisma.workflowReminder.deleteMany({
     where: {
       method: WorkflowMethods.WHATSAPP,
@@ -27,23 +21,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       },
     },
   });
+}
 
-  //find all unscheduled WHATSAPP reminders
-  const unscheduledReminders = (await prisma.workflowReminder.findMany({
+async function getUnscheduledReminders() {
+  return prisma.workflowReminder.findMany({
     where: {
       method: WorkflowMethods.WHATSAPP,
       scheduled: false,
       scheduledDate: {
         lte: dayjs().add(7, "day").toISOString(),
       },
+      OR: [{ cancelled: null }, { cancelled: false }],
     },
     select,
-  })) as PartialWorkflowReminder[];
-
-  if (!unscheduledReminders.length) {
-    res.json({ ok: true });
-    return;
-  }
+  });
+}
+async function scheduleReminders() {
+  const unscheduledReminders = (await getUnscheduledReminders()) as PartialWorkflowReminder[];
 
   for (const reminder of unscheduledReminders) {
     if (!reminder.workflowStep || !reminder.booking) {
@@ -113,7 +107,60 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
   }
 
-  res.status(200).json({ message: "WHATSAPP scheduled" });
+  return unscheduledReminders.length;
+}
+
+async function invokeCancelledReminders() {
+  const scheduledSendsToCancel = await prisma.workflowReminder.findMany({
+    where: {
+      method: WorkflowMethods.WHATSAPP,
+      scheduled: true,
+      cancelled: true,
+      scheduledDate: {
+        lte: dayjs().add(1, "hour").toISOString(),
+      },
+    },
+  });
+
+  const cancellationPromises = [];
+  for (const scheduledSendToCancel of scheduledSendsToCancel) {
+    if (scheduledSendToCancel.referenceId) {
+      // Twilio cancel request promise
+      const cancellationReqPromise = twilio.cancelSMS(scheduledSendToCancel.referenceId);
+
+      // Prisma update promise
+      const statusUpdatePromise = prisma.workflowReminder.update({
+        where: {
+          id: scheduledSendToCancel.id,
+        },
+        data: {
+          referenceId: null,
+          scheduled: false,
+        },
+      });
+
+      cancellationPromises.push(cancellationReqPromise, statusUpdatePromise);
+    }
+  }
+
+  await Promise.all(cancellationPromises);
+}
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const authHeader = req.headers.authorization;
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  //delete all scheduled whatsapp reminders where scheduled date is past current date
+  await deletePastReminders();
+
+  // Cancel Scheduled sends whose workflow reminders are marked as Cancelled
+  await invokeCancelledReminders();
+  //find all unscheduled WHATSAPP reminders
+  const remindersToScheduleNum = await scheduleReminders();
+
+  res.status(200).json({ message: `${remindersToScheduleNum} WHATSAPP scheduled` });
 }
 
 export default defaultHandler({

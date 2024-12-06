@@ -9,6 +9,7 @@ import { ZConnectedCalendarsInputSchema } from "./connectedCalendars.schema";
 import { ZDeleteCredentialInputSchema } from "./deleteCredential.schema";
 import { ZDeleteMeInputSchema } from "./deleteMe.schema";
 import { ZEventTypeOrderInputSchema } from "./eventTypeOrder.schema";
+import { ZGetAttendeesSchema } from "./getAttendees.schema";
 import { ZGetCalVideoRecordingsInputSchema } from "./getCalVideoRecordings.schema";
 import { ZGetDownloadLinkOfCalVideoRecordingsInputSchema } from "./getDownloadLinkOfCalVideoRecordings.schema";
 import { ZIntegrationsInputSchema } from "./integrations.schema";
@@ -66,6 +67,7 @@ type AppsRouterHandlerCache = {
   addNotificationsSubscription?: typeof import("./addNotificationsSubscription.handler").addNotificationsSubscriptionHandler;
   removeNotificationsSubscription?: typeof import("./removeNotificationsSubscription.handler").removeNotificationsSubscriptionHandler;
   markNoShow?: typeof import("./markNoShow.handler").markNoShow;
+  getAttendees?: typeof import("./getAttendees.handler").getAttendeesHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: AppsRouterHandlerCache = {};
@@ -551,5 +553,16 @@ export const loggedInViewerRouter = router({
       throw new Error("Failed to load handler");
     }
     return UNSTABLE_HANDLER_CACHE.markNoShow(opts);
+  }),
+  getAttendees: authedProcedure.input(ZGetAttendeesSchema).mutation(async (opts) => {
+    if (!UNSTABLE_HANDLER_CACHE.getAttendees) {
+      UNSTABLE_HANDLER_CACHE.getAttendees = (await import("./getAttendees.handler")).getAttendeesHandler;
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.getAttendees) {
+      throw new Error("Failed to load handler");
+    }
+    return UNSTABLE_HANDLER_CACHE.getAttendees(opts);
   }),
 });

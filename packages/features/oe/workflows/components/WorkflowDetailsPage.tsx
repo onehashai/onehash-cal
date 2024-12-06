@@ -89,6 +89,7 @@ export default function WorkflowDetailsPage(props: Props) {
       senderName: !isSMSAction(action) ? senderName || SENDER_NAME : SENDER_NAME,
       numberVerificationPending: false,
       includeCalendarEvent: false,
+      disableOnMarkNoShow: false,
     };
     steps?.push(step);
     form.setValue("steps", steps);

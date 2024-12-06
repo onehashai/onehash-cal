@@ -20,7 +20,7 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
   }
 };
 
-const globalRoutes = ["/", "/login", "/embed", "/video"];
+const globalRoutes = ["/", "/login", "/embed", "/video", "/auth"];
 
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;

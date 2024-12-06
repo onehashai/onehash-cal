@@ -122,6 +122,9 @@ const handleMarkNoShow = async ({
     if (error instanceof Error) {
       logger.error(error.message);
     }
+    if (error instanceof HttpError) {
+      throw error;
+    }
     throw new HttpError({ statusCode: 500, message: "Failed to update no-show status" });
   }
 };
@@ -167,10 +170,24 @@ const updateAttendees = async (
   const results = await Promise.allSettled(updatePromises);
   logFailedResults(results);
 
-  return results
-    .filter((x) => x.status === "fulfilled")
-    .map((x) => (x as PromiseFulfilledResult<{ noShow: boolean; email: string }>).value)
-    .map((x) => ({ email: x.email, noShow: x.noShow }));
+  const markedNoShowAttendeesIDs: number[] = [];
+  const unMarkedNoShowAttendeesIDs: number[] = [];
+  const result: { noShow: boolean; email: string }[] = [];
+
+  const fullfilledResults = results.filter((x) => x.status === "fulfilled");
+
+  fullfilledResults.forEach((x) => {
+    const { noShow, id, email } = (
+      x as PromiseFulfilledResult<{ noShow: boolean; id: number; email: string }>
+    ).value;
+    result.push({ noShow, email });
+
+    (noShow ? markedNoShowAttendeesIDs : unMarkedNoShowAttendeesIDs).push(id);
+  });
+
+  await handleScheduledWorkflows(bookingUid, markedNoShowAttendeesIDs, unMarkedNoShowAttendeesIDs);
+
+  return result;
 };
 
 const getWebhooksService = async (bookingUid: string) => {
@@ -211,5 +228,34 @@ const assertCanAccessBooking = async (bookingUid: string, userId?: number) => {
   if (!booking)
     throw new HttpError({ statusCode: 403, message: "You are not allowed to access this booking" });
 };
+
+async function handleScheduledWorkflows(
+  bookingUid: string,
+  markedNoShowAttendeesIDs: number[],
+  unMarkedNoShowAttendeesIDs: number[]
+) {
+  const [workflowRemindersToDisable, workflowRemindersToEnable] = await Promise.all([
+    prisma.workflowReminder.updateMany({
+      where: {
+        bookingUid: bookingUid,
+        OR: [{ cancelled: null }, { cancelled: false }],
+
+        attendeeId: { in: markedNoShowAttendeesIDs },
+      },
+      data: { cancelled: true },
+    }),
+    prisma.workflowReminder.updateMany({
+      where: {
+        bookingUid: bookingUid,
+        cancelled: true,
+        attendeeId: { in: unMarkedNoShowAttendeesIDs },
+      },
+      data: { cancelled: false },
+    }),
+  ]);
+
+  console.log("workflowRemindersToDisable", workflowRemindersToDisable);
+  console.log("workflowRemindersToEnable", workflowRemindersToEnable);
+}
 
 export default handleMarkNoShow;

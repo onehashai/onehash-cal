@@ -8,6 +8,7 @@ import { getBookingForReschedule, getBookingForSeatedEvent } from "@calcom/featu
 import type { GetBookingType } from "@calcom/features/bookings/lib/get-booking";
 import type { getPublicEvent } from "@calcom/features/eventtypes/lib/getPublicEvent";
 import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { getUsernameList } from "@calcom/lib/defaultEvents";
 import { UserRepository } from "@calcom/lib/server/repository/user";
 import slugify from "@calcom/lib/slugify";
@@ -251,6 +252,22 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
     }
   } else if (bookingUid) {
     await processSeatedEvent({ props, bookingUid });
+  }
+
+  //Checking if billing address is required for paid events integrated with stripe
+  if (eventData?.metadata?.apps?.stripe?.enabled) {
+    const credential = await prisma.credential.findUnique({
+      where: {
+        id: eventData.metadata?.apps?.stripe?.credentialId,
+      },
+    });
+    const isIndianStripeAccount = isPrismaObjOrUndefined(credential?.key)?.default_currency === "inr";
+
+    if (isIndianStripeAccount) {
+      props.eventData.metadata = Object.assign({}, props.eventData?.metadata, {
+        billingAddressRequired: true,
+      });
+    }
   }
 
   return {

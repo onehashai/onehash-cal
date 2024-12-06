@@ -18,13 +18,13 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const userInfoEndpoint = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`;
-  const keycloak_token = req.cookies["keycloak_token"];
+  const keycloak_token = session.keycloak_token;
   if (!keycloak_token) {
     return res.status(200).json({ message: "Access Token absent. Please log in again." });
   }
   const keycloak_session = await prisma.keycloakSessionInfo.findUnique({
     where: {
-      browserToken: req.cookies["keycloak_token"],
+      browserToken: keycloak_token,
     },
   });
   if (!keycloak_session) {
@@ -42,9 +42,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   if (userInfoRes.status !== 200) {
     await prisma.keycloakSessionInfo.delete({
       where: {
-        browserToken: req.cookies["keycloak_token"],
+        browserToken: keycloak_token,
       },
     });
+
     return res.status(200).json({ message: "Session expired. Please log in again." });
   } else {
     return res.status(200).json({ message: "Session is active" });

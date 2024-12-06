@@ -1,4 +1,4 @@
-import type { Booking, Payment, PaymentOption, Prisma } from "@prisma/client";
+import type { Booking, Payment, Prisma } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 
@@ -10,6 +10,7 @@ import { getErrorFromUnknown } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
+import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 import type { IAbstractPaymentService } from "@calcom/types/PaymentService";
 
@@ -43,24 +44,16 @@ export class PaymentService implements IAbstractPaymentService {
   async create({
     payment,
     bookingId,
-    userId,
-    username,
     bookerName,
-    paymentOption,
     bookingUid,
     bookerEmail,
-    bookerPhoneNumber,
     eventTitle,
     bookingTitle,
   }: {
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
     bookingId: Booking["id"];
-    userId: Booking["userId"];
-    username: string | null;
     bookerName: string;
-    paymentOption: PaymentOption;
     bookingUid: string;
-    bookerPhoneNumber: string;
     bookerEmail: string;
     eventTitle?: string;
     bookingTitle?: string;
@@ -71,7 +64,6 @@ export class PaymentService implements IAbstractPaymentService {
       }
 
       const uid = uuidv4();
-
       const paymentLinkRes = await this.razorpay.createPaymentLink({
         bookingUid,
         reference_id: uid,
