@@ -237,17 +237,15 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
           const { username, email, timeZone, name, avatarUrl, profile } = row.original;
           return (
             <div className="max-w-64 flex flex-shrink-0 items-center gap-2 overflow-hidden">
-              {avatarUrl && profile && (
-                <UserAvatar
-                  size="sm"
-                  user={{
-                    username,
-                    name,
-                    avatarUrl,
-                    profile,
-                  }}
-                />
-              )}
+              <UserAvatar
+                size="sm"
+                user={{
+                  username,
+                  name,
+                  avatarUrl,
+                  profile,
+                }}
+              />
               <div className="">
                 <div className="text-emphasis max-w-64 truncate text-sm font-medium" title={email}>
                   {username || "No username"}
