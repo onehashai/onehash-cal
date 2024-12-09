@@ -1873,8 +1873,8 @@ async function handler(
         bookerEmail,
         bookerPhone: bookerPhoneNumber,
         bookingUid: booking.uid,
+        ...(originalRescheduledBooking?.uid && { originalBookingUid: originalRescheduledBooking?.uid }),
       },
-      isRescheduleEvent: !!rescheduleUid,
     });
   }
 
@@ -1916,7 +1916,6 @@ function getVideoCallDetails({
 async function handleOHChatSync({
   userId,
   booking,
-  isRescheduleEvent = false,
 }: {
   userId: number;
   booking: {
@@ -1928,40 +1927,32 @@ async function handleOHChatSync({
     bookingUid: string;
     bookerEmail?: string;
     bookerPhone?: string;
+    originalBookingUid?: string;
   };
-  isRescheduleEvent: boolean;
 }) {
-  let data;
-  if (isRescheduleEvent) {
-    const { bookerPhone, bookerEmail, ...restBooking } = booking;
-    data = {
-      booking: restBooking,
-    };
-  } else {
-    const credentials = await prisma.credential.findMany({
-      where: {
-        appId: "onehast-chat",
-        userId,
-      },
-    });
+  const credentials = await prisma.credential.findMany({
+    where: {
+      appId: "onehash-chat",
+      userId,
+    },
+  });
 
-    if (credentials.length == 0) return Promise.resolve();
+  if (credentials.length == 0) return Promise.resolve();
 
-    const account_user_ids: number[] = credentials.reduce<number[]>((acc, cred) => {
-      const accountUserId = isPrismaObjOrUndefined(cred.key)?.account_user_id as number | undefined;
-      if (accountUserId !== undefined) {
-        acc.push(accountUserId);
-      }
-      return acc;
-    }, []);
-    data = {
-      account_user_ids,
-      booking,
-    };
-  }
+  const account_user_ids: number[] = credentials.reduce<number[]>((acc, cred) => {
+    const accountUserId = isPrismaObjOrUndefined(cred.key)?.account_user_id as number | undefined;
+    if (accountUserId !== undefined) {
+      acc.push(accountUserId);
+    }
+    return acc;
+  }, []);
+  const data = {
+    account_user_ids,
+    booking,
+  };
 
   await fetch(`${ONEHASH_CHAT_SYNC_BASE_URL}/cal_booking`, {
-    method: isRescheduleEvent ? "PATCH" : "POST",
+    method: booking.originalBookingUid ? "PATCH" : "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${ONEHASH_API_KEY}`,

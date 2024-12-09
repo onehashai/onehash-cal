@@ -520,7 +520,7 @@ const handleOHChatSync = async ({
   if (!updatedValues.slug && !updatedValues.title) return Promise.resolve();
   const credentials = await prismaClient.credential.findMany({
     where: {
-      appId: "onehast-chat",
+      appId: "onehash-chat",
       userId,
     },
   });
@@ -534,6 +534,8 @@ const handleOHChatSync = async ({
     }
     return acc;
   }, []);
+
+  if (account_user_ids.length === 0) return Promise.resolve();
 
   const updatedData = {
     account_user_ids,

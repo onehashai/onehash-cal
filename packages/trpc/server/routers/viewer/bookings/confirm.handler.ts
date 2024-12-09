@@ -478,7 +478,7 @@ async function handleOHChatSync({
 }) {
   const credentials = await prisma.credential.findMany({
     where: {
-      appId: "onehast-chat",
+      appId: "onehash-chat",
       userId,
     },
   });
