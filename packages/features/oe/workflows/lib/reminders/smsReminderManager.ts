@@ -25,6 +25,7 @@ export enum timeUnitLowerCase {
 const log = logger.getSubLogger({ prefix: ["[smsReminderManager]"] });
 
 export type AttendeeInBookingInfo = {
+  id?: number;
   name: string;
   firstName?: string;
   lastName?: string;
@@ -222,6 +223,7 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
                 scheduled: true,
                 referenceId: scheduledSMS.sid,
                 seatReferenceId: seatReferenceUid,
+                ...(evt.attendees[0].id && { attendeeId: evt.attendees[0].id }),
               },
             });
           }
@@ -238,6 +240,7 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
             scheduledDate: scheduledDate.toDate(),
             scheduled: false,
             seatReferenceId: seatReferenceUid,
+            ...(evt.attendees[0].id && { attendeeId: evt.attendees[0].id }),
           },
         });
       }

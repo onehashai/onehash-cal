@@ -701,7 +701,8 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                   )}
                 </div>
               )}
-              {form.watch("trigger") === WorkflowTriggerEvents.AFTER_EVENT &&
+              {/* //TODO:NOSHOW DYNAMIC */}
+              {/* {form.watch("trigger") === WorkflowTriggerEvents.AFTER_EVENT &&
                 isAttendeeAction(form.getValues(`steps.${step.stepNumber - 1}.action`)) && (
                   <div className="mt-2">
                     <Controller
@@ -724,7 +725,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                       )}
                     />
                   </div>
-                )}
+                )} */}
               {canRequirePhoneNumber(form.getValues(`steps.${step.stepNumber - 1}.action`)) && (
                 <div className="mt-2">
                   <Controller

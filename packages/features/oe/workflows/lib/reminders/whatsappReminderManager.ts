@@ -183,6 +183,7 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
                 scheduled: true,
                 referenceId: scheduledWHATSAPP.sid,
                 seatReferenceId: seatReferenceUid,
+                ...(evt.attendees[0].id && { attendeeId: evt.attendees[0].id }),
               },
             });
           }
@@ -199,6 +200,7 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
             scheduledDate: scheduledDate.toDate(),
             scheduled: false,
             seatReferenceId: seatReferenceUid,
+            ...(evt.attendees[0].id && { attendeeId: evt.attendees[0].id }),
           },
         });
       }

@@ -115,8 +115,10 @@ const processWorkflowStep = async (
     //Need to configure separate workflowReminders for each attendee(invitee and guest) in case if "disableOnMarkNoShow" is enabled
     if (
       workflow.trigger == WorkflowTriggerEvents.AFTER_EVENT &&
-      step.action === WorkflowActions.EMAIL_ATTENDEE &&
-      step.disableOnMarkNoShow
+      step.action === WorkflowActions.EMAIL_ATTENDEE
+      //TODO:NOSHOW DYNAMIC
+      // &&
+      // step.disableOnMarkNoShow
     ) {
       const reminderPromises = evt.attendees.map((attendee) => {
         const { email: sentTo, id: attendeeId } = attendee;
