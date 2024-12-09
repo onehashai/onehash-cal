@@ -1095,7 +1095,7 @@ const Attendee = (attendeeProps: AttendeeProps & NoShowProps) => {
         {phoneNumber && (
           <DropdownMenuItem className="focus:outline-none">
             <DropdownItem
-              StartIcon={isCopied ? "clipboard-check" : "clipboard"}
+              StartIcon={isCopied ? "clipboard-check" : "phone"}
               onClick={(e) => {
                 e.preventDefault();
                 copyToClipboard(phoneNumber);
