@@ -27,6 +27,7 @@ const handlePayment = async (
     startTime: { toISOString: () => string };
     uid: string;
     metadata: Prisma.JsonValue;
+    responses?: Prisma.JsonValue;
   },
   bookerName: string,
   bookerEmail: string,
@@ -76,6 +77,9 @@ const handlePayment = async (
         bookerEmail: bookerEmail,
         eventTitle: selectedEventType.title,
         bookingTitle: evt.title,
+        ...(booking.responses && {
+          responses: booking.responses,
+        }),
       });
     }
 
@@ -91,7 +95,7 @@ const handlePayment = async (
     return paymentData;
   } catch (e) {
     if (e instanceof Error && e.message === ErrorCode.PaymentCreationFailure) {
-      const _metadata = isPrismaObjOrUndefined(booking.metadata) ? booking.metadata : {};
+      const _metadata = isPrismaObjOrUndefined(booking.metadata) ? (booking.metadata as object) : {};
       await prisma.booking.update({
         where: {
           id: booking.id,

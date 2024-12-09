@@ -35,6 +35,7 @@ export const findBookingQuery = async (bookingId: number) => {
           price: true,
         },
       },
+      attendees: true,
     },
   });
 

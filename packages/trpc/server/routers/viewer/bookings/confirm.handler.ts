@@ -10,6 +10,7 @@ import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhoo
 import { workflowSelect } from "@calcom/features/oe/workflows/lib/getAllWorkflows";
 import type { EventPayloadType, EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
+import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL } from "@calcom/lib/constants";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import getOrgIdFromMemberOrTeamId from "@calcom/lib/getOrgIdFromMemberOrTeamId";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
@@ -151,6 +152,22 @@ export const confirmHandler = async ({ ctx, input }: ConfirmOptions) => {
       },
     });
 
+    if (isPrismaObjOrUndefined(user.metadata)?.connectedChatAccounts) {
+      await handleOHChatSync({
+        userId: user.id,
+        booking: {
+          hostName: user.name ?? "Cal User",
+          bookingLocation: booking.location ?? "N/A",
+          bookingEventType: booking.eventType?.title ?? "N/A",
+          bookingStartTime: booking.startTime.toISOString(),
+          bookingEndTime: booking.endTime.toISOString(),
+          bookerEmail: booking.attendees[0].email,
+          bookerPhone: booking.attendees[0]?.phoneNumber ?? undefined,
+          bookingUid: booking.uid,
+        },
+      });
+    }
+
     return { message: "Booking confirmed", status: BookingStatus.ACCEPTED };
   }
 
@@ -283,6 +300,23 @@ export const confirmHandler = async ({ ctx, input }: ConfirmOptions) => {
       bookingId,
       booking,
     });
+
+    if (isPrismaObjOrUndefined(user.metadata)?.connectedChatAccounts) {
+      await handleOHChatSync({
+        userId: user.id,
+        booking: {
+          hostName: user.name ?? "Cal User",
+          // bookingLocation: booking.location,
+          bookingLocation: evt.location ?? "N/A",
+          bookingEventType: booking.eventType?.title ?? "N/A",
+          bookingStartTime: evt.startTime,
+          bookingEndTime: evt.endTime,
+          bookerEmail: booking.attendees[0].email,
+          bookerPhone: booking.attendees[0]?.phoneNumber ?? undefined,
+          bookingUid: booking.uid,
+        },
+      });
+    }
   } else {
     evt.rejectionReason = rejectionReason;
     if (recurringEventId) {
@@ -425,3 +459,50 @@ export const confirmHandler = async ({ ctx, input }: ConfirmOptions) => {
 
   return { message, status };
 };
+
+async function handleOHChatSync({
+  userId,
+  booking,
+}: {
+  userId: number;
+  booking: {
+    hostName: string;
+    bookingLocation: string;
+    bookingEventType: string;
+    bookingStartTime: string;
+    bookingEndTime: string;
+    bookingUid: string;
+    bookerEmail: string;
+    bookerPhone?: string;
+  };
+}) {
+  const credentials = await prisma.credential.findMany({
+    where: {
+      appId: "onehash-chat",
+      userId,
+    },
+  });
+
+  if (credentials.length == 0) return Promise.resolve();
+
+  const account_user_ids: number[] = credentials.reduce<number[]>((acc, cred) => {
+    const accountUserId = isPrismaObjOrUndefined(cred.key)?.account_user_id as number | undefined;
+    if (accountUserId !== undefined) {
+      acc.push(accountUserId);
+    }
+    return acc;
+  }, []);
+  const data = {
+    account_user_ids,
+    booking,
+  };
+
+  await fetch(`${ONEHASH_CHAT_SYNC_BASE_URL}/cal_booking`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ONEHASH_API_KEY}`,
+    },
+    body: JSON.stringify(data),
+  });
+}

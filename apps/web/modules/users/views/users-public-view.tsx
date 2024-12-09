@@ -21,8 +21,8 @@ import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import useTheme from "@calcom/lib/hooks/useTheme";
 import { Button, HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
 
-import type { UserNotFoundProps, UserFoundProps } from "./users-public-view.getServerSideProps";
-import { type getServerSideProps } from "./users-public-view.getServerSideProps";
+import type { UserNotFoundProps, UserFoundProps } from "@server/lib/[user]/getServerSideProps";
+import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
 function UserFound(props: UserFoundProps) {
   const { users, profile, eventTypes, markdownStrippedBio, entity } = props;

@@ -1,10 +1,13 @@
+import { useEffect, Fragment, useRef } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 
 import dayjs from "@calcom/dayjs";
 import { DateOverrideInputDialog, DateOverrideList } from "@calcom/features/schedules";
 import Schedule from "@calcom/features/schedules/components/Schedule";
+import { formatTime } from "@calcom/lib/date-fns";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HttpError } from "@calcom/lib/http-error";
+import { isPrismaObjOrUndefined } from "@calcom/lib/isPrismaObj";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
@@ -106,7 +109,10 @@ type Data = RouterOutputs["viewer"]["availability"]["schedule"]["getScheduleByUs
 export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending: boolean }) {
   // This sheet will not be rendered without a selected user
   const userId = props.selectedUser?.id as number;
-  const { t } = useLocale();
+  const {
+    t,
+    i18n: { language },
+  } = useLocale();
   const utils = trpc.useUtils();
 
   const { data: hasEditPermission, isPending: loadingPermissions } =
@@ -139,6 +145,54 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
   });
 
   const watchTimezone = form.watch("timeZone");
+
+  const query = trpc.viewer.bookings.get.useInfiniteQuery(
+    {
+      limit: 10,
+      filters: {
+        status: "upcoming",
+      },
+      ...(props.selectedUser && {
+        teamMember: { id: props.selectedUser?.id, email: props.selectedUser?.email },
+      }),
+    },
+
+    {
+      // first render has status `undefined`
+      enabled: !!hasEditPermission,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    }
+  );
+
+  const bookingsDivRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const div = bookingsDivRef.current;
+    const handleScroll = () => {
+      const div = bookingsDivRef.current;
+      if (div) {
+        const isAtBottom = div.scrollHeight - div.scrollTop <= div.clientHeight + 1; // Tolerance for precision
+        if (isAtBottom) {
+          query.fetchNextPage();
+        }
+      }
+    };
+    if (hasEditPermission && div) {
+      div.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (div) {
+        div.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [hasEditPermission, query]);
+
+  useEffect(() => {
+    if (query.data) {
+      console.log("bookings", query.data.pages[0].bookings);
+    }
+  }, [query.data]);
 
   return (
     <Sheet open={props.open} onOpenChange={props.onOpenChange}>
@@ -173,7 +227,7 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
             </div>
           )}
 
-          <SheetBody className="mt-4 flex flex-col space-y-4">
+          <SheetBody className="mt-4 flex h-full flex-col overflow-hidden">
             <div>
               <Label className="text-emphasis">
                 <>{t("timezone")}</>
@@ -188,9 +242,9 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
                 }}
               />
             </div>
+
             <div className="mt-4">
               <Label className="text-emphasis">{t("members_default_schedule")}</Label>
-              {/* Remove padding from schedule without touching the component */}
               <div className="[&>*:first-child]:!p-0">
                 <Schedule
                   control={form.control}
@@ -200,6 +254,7 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
                 />
               </div>
             </div>
+
             <div className="mt-4">
               {data.workingHours && (
                 <DateOverride
@@ -208,7 +263,85 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
                 />
               )}
             </div>
+
+            {hasEditPermission && (
+              <Fragment>
+                <Label className="text-emphasis mt-4">{t("members_upcoming_bookings")}</Label>
+
+                <div className=" flex-1 overflow-y-auto overflow-x-clip" ref={bookingsDivRef}>
+                  <div>
+                    <div className=" h-full   py-2">
+                      {query.isFetching && !query.data ? (
+                        <div className="loader" />
+                      ) : query.data && query.data.pages[0]?.bookings?.length > 0 ? (
+                        <Fragment>
+                          {query?.data?.pages.map((page, i) => (
+                            <Fragment key={i}>
+                              {page.bookings.map((booking) => {
+                                const userTimeZone =
+                                  data.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+                                const date = dayjs(booking.startTime)
+                                  .tz(userTimeZone)
+                                  .locale(language)
+                                  .format("D MMM");
+                                const slotTime = `${formatTime(booking.startTime, 12, userTimeZone)} -
+                                ${formatTime(booking.endTime, 12, userTimeZone)}`;
+                                const joinLink = isPrismaObjOrUndefined(booking.metadata)?.videoCallUrl;
+                                return (
+                                  <div
+                                    className="flex w-full justify-between border-b border-b-gray-300   py-2"
+                                    key={booking.uid}>
+                                    <div
+                                      className="flex flex-col gap-1
+  ">
+                                      <p className="text-sm ">
+                                        <span className="font-medium">{t("event_name")} : </span>
+                                        {booking.eventType.title}{" "}
+                                      </p>
+                                      <p className="text-sm ">
+                                        <span className="font-medium">{t("at")} : </span>
+                                        {slotTime} , {date}
+                                      </p>
+                                      <p className="text-sm ">
+                                        <span className="font-medium">{t("attendees")} : </span>
+
+                                        {booking.attendees.map((attendee) => attendee.name).join(",")}
+                                      </p>
+                                    </div>
+                                    <div className="flex  flex-col items-center justify-center">
+                                      {joinLink ? (
+                                        <Button
+                                          color="minimal"
+                                          onClick={() => window.open(joinLink as string, "_blank")}>
+                                          {t("join_meeting")}
+                                        </Button>
+                                      ) : (
+                                        <p className="mr-2 capitalize">
+                                          {booking.location?.replace("integrations:", "")}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </Fragment>
+                          ))}
+                          {query.hasNextPage ? (
+                            <div className="loader" />
+                          ) : (
+                            <p className="text-emphasis mt-2 text-center text-sm">No More Bookings</p>
+                          )}
+                        </Fragment>
+                      ) : (
+                        <p className="text-emphasis">No Upcoming Bookings</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Fragment>
+            )}
           </SheetBody>
+
           <SheetFooter>
             <SheetClose asChild>
               <Button color="secondary" className="w-full justify-center">

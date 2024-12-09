@@ -47,6 +47,7 @@ import {
 } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import { isPrismaObj, isPrismaObjOrUndefined } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
+import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL } from "@calcom/lib/constants";
 import { getUTCOffsetByTimezone } from "@calcom/lib/date-fns";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";
 import { ErrorCode } from "@calcom/lib/errorCodes";
@@ -991,7 +992,7 @@ async function handler(
 
   // For seats, if the booking already exists then we want to add the new attendee to the existing booking
   if (eventType.seatsPerTimeSlot) {
-    const newBooking = await handleSeats({
+    const newSeat = await handleSeats({
       rescheduleUid,
       reqBookingUid: reqBody.bookingUid,
       eventType,
@@ -1026,12 +1027,12 @@ async function handler(
       rescheduledBy: reqBody.rescheduledBy,
     });
 
-    if (newBooking) {
+    if (newSeat) {
       req.statusCode = 201;
       const bookingResponse = {
-        ...newBooking,
+        ...newSeat,
         user: {
-          ...newBooking.user,
+          ...newSeat.user,
           email: null,
         },
         paymentRequired: false,
@@ -1124,6 +1125,23 @@ async function handler(
     );
     evt.uid = booking?.uid ?? null;
     evt.oneTimePassword = booking?.oneTimePassword ?? null;
+
+    //adding attendee ID to   evtWithMetadata.attendees
+    const attendeeMap = booking.attendees.reduce(
+      (
+        mapObj: {
+          [key: string]: number;
+        },
+        attendee
+      ) => {
+        mapObj[attendee.email] = attendee.id;
+        return mapObj;
+      },
+      {}
+    );
+    evt.attendees.forEach((attendee: { id?: number; email: string; name: string }) => {
+      attendee.id = attendeeMap[attendee.email];
+    });
 
     if (booking && booking.id && eventType.seatsPerTimeSlot) {
       const currentAttendee = booking.attendees.find(
@@ -1669,6 +1687,7 @@ async function handler(
     });
 
     req.statusCode = 201;
+
     // TODO: Refactor better so this booking object is not passed
     // all around and instead the individual fields are sent as args.
     const bookingResponse = {
@@ -1816,6 +1835,9 @@ async function handler(
       isFirstRecurringEvent: req.body.allRecurringDates ? req.body.isFirstRecurringSlot : undefined,
       hideBranding: !!eventType.owner?.hideBranding,
       seatReferenceUid: evt.attendeeSeatId,
+      //TODO:NOSHOW ,Don't need to specify the bookerID, as for SMS/Whatsapp we create the
+      // data from the booking booker present in workflowReminder.booking.attendees[0]
+      // bookerId: attendeeMap[bookerEmail],
     });
   } catch (error) {
     loggerWithEventDetails.error("Error while scheduling workflow reminders", JSON.stringify({ error }));
@@ -1834,6 +1856,27 @@ async function handler(
     },
     paymentRequired: false,
   };
+
+  if (
+    booking.status === BookingStatus.ACCEPTED &&
+    isPrismaObjOrUndefined(organizerUser.metadata)?.connectedChatAccounts
+  ) {
+    await handleOHChatSync({
+      userId: organizerUser.id,
+      booking: {
+        hostName: organizerUser.name ?? "Cal User",
+        bookingLocation,
+        // bookingLocation:evt.location,
+        bookingEventType: eventType.title,
+        bookingStartTime: evt.startTime,
+        bookingEndTime: evt.endTime,
+        bookerEmail,
+        bookerPhone: bookerPhoneNumber,
+        bookingUid: booking.uid,
+        ...(originalRescheduledBooking?.uid && { originalBookingUid: originalRescheduledBooking?.uid }),
+      },
+    });
+  }
 
   return {
     ...bookingResponse,
@@ -1868,4 +1911,52 @@ function getVideoCallDetails({
   const videoCallUrl = metadata.hangoutLink || updatedVideoEvent?.url;
 
   return { videoCallUrl, metadata, updatedVideoEvent };
+}
+
+async function handleOHChatSync({
+  userId,
+  booking,
+}: {
+  userId: number;
+  booking: {
+    hostName: string;
+    bookingLocation: string;
+    bookingEventType: string;
+    bookingStartTime: string;
+    bookingEndTime: string;
+    bookingUid: string;
+    bookerEmail?: string;
+    bookerPhone?: string;
+    originalBookingUid?: string;
+  };
+}) {
+  const credentials = await prisma.credential.findMany({
+    where: {
+      appId: "onehash-chat",
+      userId,
+    },
+  });
+
+  if (credentials.length == 0) return Promise.resolve();
+
+  const account_user_ids: number[] = credentials.reduce<number[]>((acc, cred) => {
+    const accountUserId = isPrismaObjOrUndefined(cred.key)?.account_user_id as number | undefined;
+    if (accountUserId !== undefined) {
+      acc.push(accountUserId);
+    }
+    return acc;
+  }, []);
+  const data = {
+    account_user_ids,
+    booking,
+  };
+
+  await fetch(`${ONEHASH_CHAT_SYNC_BASE_URL}/cal_booking`, {
+    method: booking.originalBookingUid ? "PATCH" : "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ONEHASH_API_KEY}`,
+    },
+    body: JSON.stringify(data),
+  });
 }

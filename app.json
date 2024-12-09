@@ -33,7 +33,7 @@
       "generator": "secret",
       "required": "true"
     },
-    "CRON_API_KEY": {
+    "CRON_SECRET": {
       "description": "ApiKey for cronjobs",
       "value": ""
     },

@@ -133,9 +133,9 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
 
   return (
     <Wrapper variant="dark">
-      <div tw="h-full flex flex-col justify-start">
+      <div tw="h-4/5 flex w-full flex-col justify-center items-center">
         <div tw="flex items-center justify-center" style={{ fontFamily: "cal", fontWeight: 300 }}>
-          <img src={OG_IMAGE} width="350" height="100" alt="Logo" />
+          <img src={OG_IMAGE} width="400" height="100" alt="Logo" />
           {avatars.length > 0 && (
             <div style={{ color: "#111827" }} tw="font-bold text-[92px] mx-8 bottom-2">
               /
@@ -144,7 +144,7 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
           <div tw="flex flex-row">
             {avatars.slice(0, 3).map((avatar) => (
               <img
-                tw="rounded-full mr-[-36px] border-[6px] border-[#CDCED2]"
+                tw="rounded-full  border-[6px] border-[#CDCED2]"
                 key={avatar}
                 src={avatar}
                 alt="Profile picture"
@@ -160,12 +160,12 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
         </div>
         <div style={{ color: "#111827" }} tw="relative flex text-[54px] w-full flex-col mt-auto">
           <div
-            tw="flex w-[1040px] overflow-hidden"
+            tw="flex w-full max-w-[1040px] overflow-hidden justify-center"
             style={{ whiteSpace: "nowrap", fontFamily: "cal", textOverflow: "ellipsis" }}>
             Meet {joinMultipleNames(names)}
           </div>
           <div
-            tw="flex mt-3 w-[1040px] overflow-hidden"
+            tw="flex mt-3 w-full max-w-[1040px] overflow-hidden justify-center"
             style={{ whiteSpace: "nowrap", fontFamily: "inter", textOverflow: "ellipsis" }}>
             {title}
           </div>

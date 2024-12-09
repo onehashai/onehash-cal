@@ -51,6 +51,7 @@ import { DYNAMIC_TEXT_VARIABLES } from "../lib/constants";
 import { getWorkflowTemplateOptions, getWorkflowTriggerOptions } from "../lib/getOptions";
 import emailRatingTemplate from "../lib/reminders/templates/emailRatingTemplate";
 import emailReminderTemplate from "../lib/reminders/templates/emailReminderTemplate";
+import emailThankYouTemplate from "../lib/reminders/templates/emailThankYouTemplate";
 import smsReminderTemplate from "../lib/reminders/templates/smsReminderTemplate";
 import { whatsappReminderTemplate } from "../lib/reminders/templates/whatsapp";
 import type { FormValues } from "../pages/workflow";
@@ -125,7 +126,6 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
   const { data: actionOptions } = trpc.viewer.workflows.getWorkflowActionOptions.useQuery();
   const triggerOptions = getWorkflowTriggerOptions(t);
   const templateOptions = getWorkflowTemplateOptions(t, step?.action);
-
   if (step && form.getValues(`steps.${step.stepNumber - 1}.template`) === WorkflowTemplates.REMINDER) {
     if (!form.getValues(`steps.${step.stepNumber - 1}.reminderBody`)) {
       const action = form.getValues(`steps.${step.stepNumber - 1}.action`);
@@ -289,7 +289,6 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
       showToast(message, "error");
     },
   }); */
-
   //trigger
   if (!step) {
     const trigger = form.getValues("trigger");
@@ -371,7 +370,6 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
       </>
     );
   }
-
   if (step && step.action) {
     const actionString = t(`${step.action.toLowerCase()}_action`);
 
@@ -382,7 +380,6 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
     };
 
     const selectedTemplate = { label: t(`${step.template.toLowerCase()}`), value: step.template };
-
     const canRequirePhoneNumber = (workflowStep: string) => {
       return (
         WorkflowActions.SMS_ATTENDEE === workflowStep || WorkflowActions.WHATSAPP_ATTENDEE === workflowStep
@@ -704,6 +701,31 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                   )}
                 </div>
               )}
+              {/* //TODO:NOSHOW DYNAMIC */}
+              {/* {form.watch("trigger") === WorkflowTriggerEvents.AFTER_EVENT &&
+                isAttendeeAction(form.getValues(`steps.${step.stepNumber - 1}.action`)) && (
+                  <div className="mt-2">
+                    <Controller
+                      name={`steps.${step.stepNumber - 1}.disableOnMarkNoShow`}
+                      control={form.control}
+                      render={() => (
+                        <CheckboxField
+                          disabled={props.readOnly}
+                          defaultChecked={
+                            form.getValues(`steps.${step.stepNumber - 1}.disableOnMarkNoShow`) || false
+                          }
+                          description={t("disable_on_mark_no_show")}
+                          onChange={(e) => {
+                            form.setValue(
+                              `steps.${step.stepNumber - 1}.disableOnMarkNoShow`,
+                              e.target.checked
+                            );
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
+                )} */}
               {canRequirePhoneNumber(form.getValues(`steps.${step.stepNumber - 1}.action`)) && (
                 <div className="mt-2">
                   <Controller
@@ -859,6 +881,15 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                               form.setValue(
                                 `steps.${step.stepNumber - 1}.emailSubject`,
                                 emailRatingTemplate({ isEditingMode: true, action, timeFormat }).emailSubject
+                              );
+                            } else if (val.value === WorkflowTemplates.THANKYOU) {
+                              form.setValue(
+                                `steps.${step.stepNumber - 1}.reminderBody`,
+                                emailThankYouTemplate({ isEditingMode: true, timeFormat }).emailBody
+                              );
+                              form.setValue(
+                                `steps.${step.stepNumber - 1}.emailSubject`,
+                                emailThankYouTemplate({ isEditingMode: true, timeFormat }).emailSubject
                               );
                             } else {
                               if (isWhatsappAction(action)) {

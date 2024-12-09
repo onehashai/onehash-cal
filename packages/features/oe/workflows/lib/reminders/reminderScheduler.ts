@@ -38,6 +38,11 @@ export interface ScheduleWorkflowRemindersArgs extends ProcessWorkflowStepParams
   isFirstRecurringEvent?: boolean;
 }
 
+//TODO:NEED FIX
+//CALCOM creates a separate booking field for events configured with "sms/whatsapp attendee" workflows
+// which is only available for "booking invitee" and not for "booking guest",
+// unlike in case of email attendee workflows where the workflow emails are
+// triggered for both invitee and guests
 const processWorkflowStep = async (
   workflow: Workflow,
   step: WorkflowStep,
@@ -107,24 +112,57 @@ const processWorkflowStep = async (
         break;
     }
 
-    await scheduleEmailReminder({
-      evt,
-      triggerEvent: workflow.trigger,
-      action: step.action,
-      timeSpan: {
-        time: workflow.time,
-        timeUnit: workflow.timeUnit,
-      },
-      sendTo,
-      emailSubject: step.emailSubject || "",
-      emailBody: step.reminderBody || "",
-      template: step.template,
-      sender: step.sender || SENDER_NAME,
-      workflowStepId: step.id,
-      hideBranding,
-      seatReferenceUid,
-      includeCalendarEvent: step.includeCalendarEvent,
-    });
+    //Need to configure separate workflowReminders for each attendee(invitee and guest) in case if "disableOnMarkNoShow" is enabled
+    if (
+      workflow.trigger == WorkflowTriggerEvents.AFTER_EVENT &&
+      step.action === WorkflowActions.EMAIL_ATTENDEE
+      //TODO:NOSHOW DYNAMIC
+      // &&
+      // step.disableOnMarkNoShow
+    ) {
+      const reminderPromises = evt.attendees.map((attendee) => {
+        const { email: sentTo, id: attendeeId } = attendee;
+        return scheduleEmailReminder({
+          evt,
+          triggerEvent: workflow.trigger,
+          action: WorkflowActions.EMAIL_ATTENDEE,
+          timeSpan: {
+            time: workflow.time,
+            timeUnit: workflow.timeUnit,
+          },
+          sendTo: [sentTo],
+          emailSubject: step.emailSubject || "",
+          emailBody: step.reminderBody || "",
+          template: step.template,
+          sender: step.sender || SENDER_NAME,
+          workflowStepId: step.id,
+          hideBranding,
+          seatReferenceUid,
+          includeCalendarEvent: step.includeCalendarEvent,
+          attendeeId: attendeeId,
+        });
+      });
+      await Promise.all(reminderPromises);
+    } else {
+      await scheduleEmailReminder({
+        evt,
+        triggerEvent: workflow.trigger,
+        action: step.action,
+        timeSpan: {
+          time: workflow.time,
+          timeUnit: workflow.timeUnit,
+        },
+        sendTo,
+        emailSubject: step.emailSubject || "",
+        emailBody: step.reminderBody || "",
+        template: step.template,
+        sender: step.sender || SENDER_NAME,
+        workflowStepId: step.id,
+        hideBranding,
+        seatReferenceUid,
+        includeCalendarEvent: step.includeCalendarEvent,
+      });
+    }
   } else if (isWhatsappAction(step.action)) {
     const sendTo = step.action === WorkflowActions.WHATSAPP_ATTENDEE ? smsReminderNumber : step.sendTo;
     await scheduleWhatsappReminder({

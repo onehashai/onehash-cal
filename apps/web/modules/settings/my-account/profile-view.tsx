@@ -11,6 +11,7 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
+import { logoutAndDeleteUser } from "@calcom/features/auth/lib/federatedLogout";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { isPrismaObj } from "@calcom/lib";
 import { APP_NAME, FULL_NAME_LENGTH_MAX_LIMIT } from "@calcom/lib/constants";
@@ -165,18 +166,18 @@ const ProfileView = () => {
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [hasDeleteErrors, setHasDeleteErrors] = useState(false);
   const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
+  const [redirectUrl, setRedirectUrl] = useState("");
   const form = useForm<DeleteAccountValues>();
 
   const onDeleteMeSuccessMutation = async () => {
     await utils.viewer.me.invalidate();
+    setIsAccountDeleting(false);
+
     showToast(t("Your account was deleted"), "success");
 
     setHasDeleteErrors(false); // dismiss any open errors
-    if (process.env.NEXT_PUBLIC_WEBAPP_URL === "https://app.cal.com") {
-      signOut({ callbackUrl: "/auth/logout?survey=true" });
-    } else {
-      signOut({ callbackUrl: "/auth/logout" });
-    }
+    await signOut({ redirect: false });
+    if (redirectUrl !== "") window.location.href = redirectUrl;
   };
 
   const confirmPasswordMutation = trpc.viewer.auth.verifyPassword.useMutation({
@@ -216,16 +217,23 @@ const ProfileView = () => {
     const password = passwordRef.current.value;
     confirmPasswordMutation.mutate({ passwordInput: password });
   };
+  const [isAccountDeleting, setIsAccountDeleting] = useState(false);
 
   const onConfirmButton = (e: Event | React.MouseEvent<HTMLElement, MouseEvent>) => {
     e.preventDefault();
-    if (isCALIdentityProvider) {
-      const totpCode = form.getValues("totpCode");
-      const password = passwordRef.current.value;
-      deleteMeMutation.mutate({ password, totpCode });
-    } else {
-      deleteMeWithoutPasswordMutation.mutate();
-    }
+    const deleteAccount = async (url: string) => {
+      setRedirectUrl(url);
+      if (isCALIdentityProvider) {
+        const totpCode = form.getValues("totpCode");
+        const password = passwordRef.current.value;
+        deleteMeMutation.mutate({ password, totpCode });
+      } else {
+        deleteMeWithoutPasswordMutation.mutate();
+      }
+    };
+    setIsAccountDeleting(true);
+
+    logoutAndDeleteUser(deleteAccount);
   };
 
   const onConfirm = ({ totpCode }: DeleteAccountValues, e: BaseSyntheticEvent | undefined) => {
@@ -376,6 +384,7 @@ const ProfileView = () => {
               <Button
                 color="primary"
                 data-testid="delete-account-confirm"
+                loading={isAccountDeleting}
                 onClick={(e) => onConfirmButton(e)}>
                 {t("delete_my_account")}
               </Button>

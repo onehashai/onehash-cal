@@ -363,6 +363,8 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
           sender: newStep.sender,
           numberVerificationPending: false,
           includeCalendarEvent: newStep.includeCalendarEvent,
+          //TODO:NOSHOW DYNAMIC
+          // disableOnMarkNoShow: newStep.disableOnMarkNoShow,
         },
       });
 

@@ -1,6 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
+import { isPrismaObjOrUndefined } from "@calcom/lib";
+import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import { getDefaultLocations } from "@calcom/lib/server";
 import { EventTypeRepository } from "@calcom/lib/server/repository/eventType";
 import type { PrismaClient } from "@calcom/prisma";
@@ -24,6 +26,8 @@ type User = {
     id: SessionUser["id"] | null;
   };
   metadata: SessionUser["metadata"];
+  email: SessionUser["email"];
+  username: SessionUser["username"];
 };
 
 type CreateOptions = {
@@ -104,6 +108,15 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
       ...data,
       profileId: profile.id,
     });
+    if (!teamId && isPrismaObjOrUndefined(ctx.user.metadata)?.connectedChatAccounts) {
+      await handleOHChatSync({
+        prismaClient: ctx.prisma,
+        userId: userId,
+        eventUid: eventType.id,
+        title: eventType.title,
+        url: `${WEBAPP_URL}/${ctx.user.username}/${eventType.slug}`,
+      });
+    }
     return { eventType };
   } catch (e) {
     console.warn(e);
@@ -114,4 +127,54 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
     }
     throw new TRPCError({ code: "BAD_REQUEST" });
   }
+};
+
+const handleOHChatSync = async ({
+  prismaClient,
+  eventUid,
+  title,
+  url,
+  userId,
+}: {
+  prismaClient: PrismaClient;
+  eventUid: number;
+  title: string;
+  url: string;
+  userId: number;
+}): Promise<void> => {
+  const credentials = await prismaClient.credential.findMany({
+    where: {
+      appId: "onehash-chat",
+      userId,
+    },
+  });
+
+  if (credentials.length == 0) return Promise.resolve();
+
+  const account_user_ids: number[] = credentials.reduce<number[]>((acc, cred) => {
+    const accountUserId = isPrismaObjOrUndefined(cred.key)?.account_user_id as number | undefined;
+    if (accountUserId !== undefined) {
+      acc.push(accountUserId);
+    }
+    return acc;
+  }, []);
+
+  const data = {
+    account_user_ids,
+    cal_events: [
+      {
+        uid: eventUid,
+        title,
+        url,
+      },
+    ],
+  };
+  await fetch(`${ONEHASH_CHAT_SYNC_BASE_URL}/cal_event`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ONEHASH_API_KEY}`,
+    },
+    body: JSON.stringify(data),
+  });
 };

@@ -28,14 +28,15 @@ export async function scheduleMandatoryReminder(
       );
     });
 
+    //Allowing scheduled emails for all email providers
     if (
       !hasExistingWorkflow &&
-      evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
+      // evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
       !requiresConfirmation
     ) {
       try {
-        const filteredAttendees =
-          evt.attendees?.filter((attendee) => attendee.email.includes("@gmail.com")) || [];
+        const filteredAttendees = evt.attendees;
+        // ?.filter((attendee) => attendee.email.includes("@gmail.com")) || [];
 
         await scheduleEmailReminder({
           evt,
@@ -53,22 +54,22 @@ export async function scheduleMandatoryReminder(
           isMandatoryReminder: true,
         });
 
-        //Thank You Email Reminder is scheduled for 5 mins after the event
-        await scheduleEmailReminder({
-          evt,
-          triggerEvent: WorkflowTriggerEvents.AFTER_EVENT,
-          action: WorkflowActions.EMAIL_ATTENDEE,
-          timeSpan: {
-            time: 5,
-            timeUnit: TimeUnit.MINUTE,
-          },
-          sendTo: filteredAttendees,
-          template: WorkflowTemplates.COMPLETED,
-          hideBranding,
-          seatReferenceUid,
-          includeCalendarEvent: false,
-          isMandatoryReminder: true,
-        });
+        // //Thank You Email Reminder is scheduled for 5 mins after the event
+        // await scheduleEmailReminder({
+        //   evt,
+        //   triggerEvent: WorkflowTriggerEvents.AFTER_EVENT,
+        //   action: WorkflowActions.EMAIL_ATTENDEE,
+        //   timeSpan: {
+        //     time: 5,
+        //     timeUnit: TimeUnit.MINUTE,
+        //   },
+        //   sendTo: filteredAttendees,
+        //   template: WorkflowTemplates.COMPLETED,
+        //   hideBranding,
+        //   seatReferenceUid,
+        //   includeCalendarEvent: false,
+        //   isMandatoryReminder: true,
+        // });
       } catch (error) {
         log.error("Error while scheduling mandatory reminders", JSON.stringify({ error }));
       }

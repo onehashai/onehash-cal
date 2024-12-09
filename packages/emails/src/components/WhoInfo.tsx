@@ -7,7 +7,7 @@ import { Info } from "./Info";
 
 const PersonInfo = ({ name = "", email = "", role = "", phoneNumber = "" }) => (
   <div style={{ color: "#101010", fontWeight: 400, lineHeight: "24px" }}>
-    {name} - {role} {phoneNumber}
+    {name} - {role} {phoneNumber}&nbsp;
     {!isSmsCalEmail(email) && (
       <span style={{ color: "#4B5563" }}>
         <a href={`mailto:${email}`} style={{ color: "#4B5563" }}>

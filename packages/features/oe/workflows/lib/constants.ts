@@ -27,6 +27,7 @@ export const WORKFLOW_TEMPLATES = [
   WorkflowTemplates.CANCELLED,
   WorkflowTemplates.COMPLETED,
   WorkflowTemplates.RESCHEDULED,
+  WorkflowTemplates.THANKYOU,
 ] as const;
 
 export const BASIC_WORKFLOW_TEMPLATES = [WorkflowTemplates.CUSTOM, WorkflowTemplates.REMINDER] as const;
@@ -35,6 +36,7 @@ export const ATTENDEE_WORKFLOW_TEMPLATES = [
   WorkflowTemplates.CUSTOM,
   WorkflowTemplates.REMINDER,
   WorkflowTemplates.RATING,
+  WorkflowTemplates.THANKYOU,
 ] as const;
 
 export const WHATSAPP_WORKFLOW_TEMPLATES = [

@@ -39,6 +39,7 @@ export const formSchema = z.object({
         .optional()
         .nullable(),
       senderName: z.string().optional().nullable(),
+      disableOnMarkNoShow: z.boolean().nullable(),
     })
     .array(),
   selectAll: z.boolean(),

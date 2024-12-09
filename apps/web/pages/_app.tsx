@@ -1,8 +1,7 @@
 import type { IncomingMessage } from "http";
 import { signOut } from "next-auth/react";
 import type { AppContextType, AppInitialProps } from "next/dist/shared/lib/utils";
-import { useRouter } from "next/navigation";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 
 import { trpc } from "@calcom/trpc/react";
 
@@ -12,37 +11,28 @@ import "../styles/globals.css";
 
 // Higher-level component where session state is managed
 function SessionManager({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const hasNavigated = useRef(false);
-
-  useEffect(() => {
-    fetch("/api/auth/keycloak/userinfo")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then(async (data) => {
-        if (
-          data.message === "Session expired. Please log in again." ||
-          data.message === "Access Token absent. Please log in again." ||
-          data.message === "Keycloak Session not found. Please log in again."
-        ) {
-          await router.push("/event-types");
-          hasNavigated.current = true;
-        }
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (hasNavigated.current) {
-      signOut();
+  const checkKeyCloakSession = async () => {
+    try {
+      const response = await fetch("/api/auth/keycloak/userinfo");
+      const data = await response.json();
+      //Will logout,if  any of these happen
+      //1. keycloak cookie cleared
+      //2. keycloak session deleted from DB
+      //3. Session expired on KEYCLOAK SSO
+      if (
+        data.message === "Session expired. Please log in again." ||
+        data.message === "Access Token absent. Please log in again." ||
+        data.message === "Keycloak Session not found. Please log in again."
+      ) {
+        await signOut();
+      }
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
     }
-  }, [hasNavigated.current]);
+  };
+  useEffect(() => {
+    checkKeyCloakSession();
+  }, []);
 
   return <>{children}</>;
 }
@@ -51,11 +41,11 @@ function SessionManager({ children }: { children: React.ReactNode }) {
 function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js");
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  //     navigator.serviceWorker.register("/service-worker.js");
+  //   }
+  // }, []);
 
   const content = Component.PageWrapper ? <Component.PageWrapper {...props} /> : <Component {...pageProps} />;
 

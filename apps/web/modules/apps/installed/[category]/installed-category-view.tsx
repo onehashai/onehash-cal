@@ -50,6 +50,7 @@ const IntegrationsContainer = ({
     video: "video", // deprecated
     messaging: "mail",
     crm: "contact",
+    onehash: "layout-dashboard",
   };
 
   return (
