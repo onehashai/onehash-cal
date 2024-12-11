@@ -6,10 +6,10 @@ import { z } from "zod";
 import dayjs from "@calcom/dayjs";
 import { useTimePreferences } from "@calcom/features/bookings/lib";
 import { FULL_NAME_LENGTH_MAX_LIMIT } from "@calcom/lib/constants";
+import { designationTypes, professionTypeAndEventTypes, customEvents } from "@calcom/lib/customEvents";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
-import type { TCreateInputSchema } from "@calcom/trpc/server/routers/viewer/eventTypes/create.schema";
 import { Button, TimezoneSelect, Icon, Input, Select, showToast } from "@calcom/ui";
 
 import * as fbq from "@lib/fpixel";
@@ -21,259 +21,6 @@ interface IUserSettingsProps {
   hideUsername?: boolean;
 }
 
-type TProfessionTypeAndEventTypes = {
-  [key: string]: TCreateInputSchema[];
-};
-const ProfessionTypeAndEventTypes: TProfessionTypeAndEventTypes = {
-  recruiter: [
-    {
-      title: "intitial_screening",
-      slug: "intitial_screening",
-      description: "intitial_screening_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "collaborative_evaluation",
-      slug: "collaborative_evaluation",
-      description: "collaborative_evaluation_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "offer_dicussion",
-      slug: "offer_dicussion",
-      description: "offer_dicussion_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "campus_relations",
-      slug: "campus_relations",
-      description: "campus_relations_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "staffing_and_consultants",
-      slug: "staffing_and_consultants",
-      description: "staffing_and_consultants_meeting_description",
-      length: [15, 30, 45],
-    },
-    {
-      title: "everything_else",
-      slug: "everything_else",
-      description: "everything_else_recruiter_meeting_description",
-      length: [15, 30],
-    },
-  ],
-  sales: [
-    {
-      title: "discovery_call",
-      slug: "discovery_call",
-      description: "discovery_call_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "product_demo",
-      slug: "product_demo",
-      description: "product_demo_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "proposal_review",
-      slug: "proposal_review",
-      description: "proposal_review_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "account_checkin",
-      slug: "account_checkin",
-      description: "account_checkin_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "everything_else",
-      slug: "everything_else",
-      description: "everything_else_sales_meeting_description",
-      length: [15, 30],
-    },
-  ],
-  founder: [
-    {
-      title: "interview",
-      slug: "interview",
-      description: "interview_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "partnership",
-      slug: "partnership",
-      length: [15, 30],
-      description: "partnership_meeting_description",
-    },
-    {
-      title: "raise_funding",
-      slug: "raise_funding",
-      description: "raise_funding_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "product_walkthrough",
-      slug: "product_walkthrough",
-      description: "product_walkthrough_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "connect_with_founder",
-      slug: "connect_with_founder",
-      description: "connect_with_founder_meeting_description",
-      length: [15, 30],
-    },
-  ],
-  freelancer: [
-    {
-      title: "project_briefing",
-      slug: "project_briefing",
-      description: "project_briefing_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "technical_consultation",
-      slug: "technical_consultation",
-      description: "technical_consultation_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "creative_collaration",
-      slug: "creative_collaration",
-      description: "creative_collaration_meeting_description",
-      length: [30, 60],
-    },
-    {
-      title: "portfolio_showcase",
-      slug: "portfolio_showcase",
-      description: "portfolio_showcase_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "skillset_expansion",
-      slug: "skillset_expansion",
-      description: "skillset_expansion_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "everything_else",
-      slug: "everything_else",
-      description: "everything_else_freelancer_meeting_description",
-      length: [30, 45],
-    },
-  ],
-  education: [
-    {
-      title: "introductory_call",
-      slug: "introductory_call",
-      description: "introductory_call_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "group_session",
-      slug: "group_session",
-      description: "group_session_meeting_description",
-      length: [30, 60],
-    },
-    {
-      title: "skills_workshop",
-      slug: "skills_workshop",
-      description: "skills_workshop_meeting_description",
-      length: [30, 45, 60],
-    },
-    {
-      title: "one_on_one_coaching",
-      slug: "one_on_one_coaching",
-      description: "one_on_one_coaching_meeting_description",
-      length: [30, 45, 60],
-    },
-    {
-      title: "mocktest_and_feedback",
-      slug: "mocktest_and_feedback",
-      description: "mocktest_and_feedback_meeting_description",
-      length: [45, 60],
-    },
-    {
-      title: "career_counselling",
-      slug: "career_counselling",
-      description: "career_counselling_meeting_description",
-      length: [45, 60],
-    },
-    {
-      title: "everything_else",
-      slug: "everything_else",
-      description: "everything_else_education_meeting_description",
-      length: [15, 30],
-    },
-  ],
-  health: [
-    {
-      title: "intial_consultation",
-      slug: "intial_consultation",
-      description: "intial_consultation_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "yoga_session",
-      slug: "yoga_session",
-      description: "yoga_session_meeting_description",
-      length: [30, 45, 60],
-    },
-    {
-      title: "fitness_coaching",
-      slug: "fitness_coaching",
-      description: "fitness_coaching_meeting_description",
-      length: [30, 45, 60],
-    },
-    {
-      title: "nutrition_planning",
-      slug: "nutrition_planning",
-      description: "nutrition_planning_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "mental_health_consultation",
-      slug: "mental_health_consultation",
-      description: "mental_health_consultation_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "followup_appointment",
-      slug: "followup_appointment",
-      description: "followup_appointment_meeting_description",
-      length: [15, 30],
-    },
-    {
-      title: "holistic_wellness",
-      slug: "holistic_wellness",
-      description: "holistic_wellness_meeting_description",
-      length: [30, 45],
-    },
-    {
-      title: "everything_else",
-      slug: "everything_else",
-      description: "everything_else_health_meeting_description",
-      length: [15, 30],
-    },
-  ],
-  others: [
-    { title: "15min_meeting", slug: "15min", length: [15] },
-    {
-      title: "30min_meeting",
-      slug: "30min",
-      length: [30],
-    },
-    {
-      title: "secret_meeting",
-      slug: "secret",
-      length: [15],
-      hidden: true,
-    },
-  ],
-};
 const UserSettings = (props: IUserSettingsProps) => {
   const { nextStep } = props;
   const [user] = trpc.viewer.me.useSuspenseQuery();
@@ -317,11 +64,11 @@ const UserSettings = (props: IUserSettingsProps) => {
   const onSuccess = async () => {
     if (eventTypes?.length === 0 && selectedBusiness !== null) {
       await Promise.all(
-        ProfessionTypeAndEventTypes[selectedBusiness].map(async (event): Promise<void> => {
+        professionTypeAndEventTypes[selectedBusiness].map(async (event): Promise<void> => {
           const eventType = {
             ...event,
-            title: t(event.title),
-            description: t(event.description as string),
+            title: customEvents[event.title],
+            description: customEvents[event.description as string],
             length: (event.length as number[])[0],
             metadata: {
               multipleDuration: event.length as number[],
@@ -349,18 +96,12 @@ const UserSettings = (props: IUserSettingsProps) => {
     });
   });
 
-  const designationTypeOptions: {
-    value: string;
-    label: string;
-  }[] = [
-    { value: "recruiter", label: t("recruiter") },
-    { value: "sales", label: t("sales") },
-    { value: "founder", label: t("founder") },
-    { value: "freelancer", label: t("freelancer") },
-    { value: "education", label: t("education") },
-    { value: "health", label: t("health") },
-    { value: "others", label: t("others") },
-  ];
+  const designationTypeOptions: { value: string; label: string }[] = Object.keys(designationTypes).map(
+    (key) => ({
+      value: key,
+      label: designationTypes[key],
+    })
+  );
 
   return (
     <form onSubmit={onSubmit}>
