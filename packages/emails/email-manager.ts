@@ -22,6 +22,7 @@ import EventRequestSMS from "../sms/attendee/event-request-sms";
 import EventRequestToRescheduleSMS from "../sms/attendee/event-request-to-reschedule-sms";
 import EventSuccessfullyReScheduledSMS from "../sms/attendee/event-rescheduled-sms";
 import EventSuccessfullyScheduledSMS from "../sms/attendee/event-scheduled-sms";
+import type { BookingExportEmailProps } from "./src/templates/BookingExportEmail";
 import type { CalendlyCampaignEmailProps } from "./src/templates/CalendlyCampaignEmail";
 import type { ImportDataEmailProps } from "./src/templates/ImportDataEmail";
 import type { MonthlyDigestEmailData } from "./src/templates/MonthlyDigestEmail";
@@ -47,6 +48,7 @@ import AttendeeVerifyEmail from "./templates/attendee-verify-email";
 import AttendeeWasRequestedToRescheduleEmail from "./templates/attendee-was-requested-to-reschedule-email";
 import BookingRedirectEmailNotification from "./templates/booking-redirect-notification";
 import type { IBookingRedirect } from "./templates/booking-redirect-notification";
+import BookingExportEmail from "./templates/bookings-export-email";
 import BrokenIntegrationEmail from "./templates/broken-integration-email";
 import CalendlyCampaignEmail from "./templates/calendly-campaign-email";
 import type { ChangeOfEmailVerifyLink } from "./templates/change-account-email-verify";
@@ -715,4 +717,8 @@ export const sendImportDataEmail = async (importData: ImportDataEmailProps) => {
 
 export const sendCampaigningEmail = async (campaigningEmailData: CalendlyCampaignEmailProps) => {
   await sendEmail(() => new CalendlyCampaignEmail(campaigningEmailData));
+};
+
+export const sendBookingsExportEmail = async (bookingExportEmailprops: BookingExportEmailProps) => {
+  await sendEmail(() => new BookingExportEmail(bookingExportEmailprops));
 };

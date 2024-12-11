@@ -12,10 +12,8 @@ import { FiltersContainer } from "@calcom/features/bookings/components/FiltersCo
 import type { filterQuerySchema } from "@calcom/features/bookings/lib/useFilterQuery";
 import { useFilterQuery } from "@calcom/features/bookings/lib/useFilterQuery";
 import Shell from "@calcom/features/shell/Shell";
-import { formatTime } from "@calcom/lib/date-fns";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
-import { BookingStatus } from "@calcom/prisma/client";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import type { HorizontalTabItemProps, VerticalTabItemProps } from "@calcom/ui";
@@ -118,127 +116,128 @@ export default function Bookings() {
   const { status: _status, ...filterQueryWithoutStatus } = filterQuery;
 
   // Define the mutation first
-  const { mutate: fetchAllBookingsMutation, isPending } = trpc.viewer.bookings.getAll.useMutation({
+  const { mutate: fetchAllBookingsMutation, isPending } = trpc.viewer.bookings.export.useMutation({
     async onSuccess(response) {
-      handleExportBookings(response);
+      showToast(response.message, "success");
     },
     onError() {
       showToast(t("unexpected_error_try_again"), "error");
     },
   });
 
-  const handleExportBookings = (allBookings: AllBookingOutput[]) => {
-    const getTypeAndStartDate = (booking) => {
-      const endTime = new Date(booking.endTime);
-      const isUpcoming = endTime >= new Date();
-      let type: BookingListingByStatusType | null;
-      let startDate: string;
+  // const handleExportBookings = (allBookings: AllBookingOutput[]) => {
+  //   const getTypeAndStartDate = (booking) => {
+  //     const endTime = new Date(booking.endTime);
+  //     const isUpcoming = endTime >= new Date();
+  //     let type: BookingListingByStatusType | null;
+  //     let startDate: string;
 
-      if (isUpcoming) {
-        type =
-          booking.status === BookingStatus.PENDING
-            ? "Unconfirmed"
-            : booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED
-            ? "Cancelled"
-            : booking.recurringEventId !== null
-            ? "Recurring"
-            : "Upcoming";
+  //     if (isUpcoming) {
+  //       type =
+  //         booking.status === BookingStatus.PENDING
+  //           ? "Unconfirmed"
+  //           : booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED
+  //           ? "Cancelled"
+  //           : booking.recurringEventId !== null
+  //           ? "Recurring"
+  //           : "Upcoming";
 
-        startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("ddd, D MMM");
-      } else {
-        type =
-          booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED
-            ? "Cancelled"
-            : "Past";
+  //       startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("ddd, D MMM");
+  //     } else {
+  //       type =
+  //         booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED
+  //           ? "Cancelled"
+  //           : "Past";
 
-        startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("D MMMM YYYY");
-      }
+  //       startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("D MMMM YYYY");
+  //     }
 
-      return { type, startDate };
-    };
+  //     return { type, startDate };
+  //   };
 
-    const allBookingsWithType: BookingExportType[] = allBookings.map((booking) => {
-      const { type, startDate } = getTypeAndStartDate(booking);
+  //   const allBookingsWithType: BookingExportType[] = allBookings.map((booking) => {
+  //     const { type, startDate } = getTypeAndStartDate(booking);
 
-      const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} to ${formatTime(
-        booking.endTime,
-        user?.timeFormat,
-        user?.timeZone
-      )}`;
+  //     const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} to ${formatTime(
+  //       booking.endTime,
+  //       user?.timeFormat,
+  //       user?.timeZone
+  //     )}`;
 
-      return {
-        ...booking,
-        type,
-        startDate: `"${startDate}"`,
-        interval,
-        description: `"${booking.description}"`,
-      };
-    });
+  //     return {
+  //       ...booking,
+  //       type,
+  //       startDate: `"${startDate}"`,
+  //       interval,
+  //       description: `"${booking.description}"`,
+  //     };
+  //   });
 
-    const header = [
-      "ID",
-      "Title",
-      "Description",
-      "Status",
-      "Event",
-      "Date",
-      "Interval",
-      "Location",
-      "Attendees",
-      "Paid",
-      "Currency",
-      "Amount",
-      "Payment Status",
-      "Rescheduled",
-      "Recurring Event ID",
-      "Is Recorded",
-    ];
+  //   const header = [
+  //     "ID",
+  //     "Title",
+  //     "Description",
+  //     "Status",
+  //     "Event",
+  //     "Date",
+  //     "Interval",
+  //     "Location",
+  //     "Attendees",
+  //     "Paid",
+  //     "Currency",
+  //     "Amount",
+  //     "Payment Status",
+  //     "Rescheduled",
+  //     "Recurring Event ID",
+  //     "Is Recorded",
+  //   ];
 
-    const formatLocation = (location: string | null) => {
-      if (location == null) return "N/A";
-      const cleanLocation = location.includes("integrations:")
-        ? location
-            .replace("integrations:", "")
-            .split(":")
-            .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-            .join(" ")
-            .trim()
-        : location;
+  //   const formatLocation = (location: string | null) => {
+  //     if (location == null) return "N/A";
+  //     const cleanLocation = location.includes("integrations:")
+  //       ? location
+  //           .replace("integrations:", "")
+  //           .split(":")
+  //           .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+  //           .join(" ")
+  //           .trim()
+  //       : location;
 
-      return cleanLocation.includes("\n") ? cleanLocation.replace("\n", " ").trim() : cleanLocation;
-    };
+  //     return cleanLocation.includes("\n") ? cleanLocation.replace("\n", " ").trim() : cleanLocation;
+  //   };
 
-    const csvData = allBookingsWithType.map((booking) => [
-      booking.id,
-      booking.title,
-      booking.description,
-      booking.type,
-      booking.eventType?.title ?? "",
-      booking.startDate,
-      booking.interval,
-      formatLocation(booking.location),
-      booking.attendees.map((attendee) => attendee.email).join(";"),
-      booking.paid.toString(),
-      booking.payment.map((pay) => pay.currency).join(";"),
-      booking.payment.map((pay) => pay.amount / 100).join(";"),
-      booking.payment.map((pay) => pay.success).join(";"),
-      booking.rescheduled?.toString() ?? "",
-      booking.recurringEventId ?? "",
-      booking.isRecorded.toString(),
-    ]);
+  //   const csvData = allBookingsWithType.map((booking) => [
+  //     booking.id,
+  //     booking.title,
+  //     booking.description,
+  //     booking.type,
+  //     booking.eventType?.title ?? "",
+  //     booking.startDate,
+  //     booking.interval,
+  //     formatLocation(booking.location),
+  //     booking.attendees.map((attendee) => attendee.email).join(";"),
+  //     booking.paid.toString(),
+  //     booking.payment.map((pay) => pay.currency).join(";"),
+  //     booking.payment.map((pay) => pay.amount / 100).join(";"),
+  //     booking.payment.map((pay) => pay.success).join(";"),
+  //     booking.rescheduled?.toString() ?? "",
+  //     booking.recurringEventId ?? "",
+  //     booking.isRecorded.toString(),
+  //   ]);
 
-    const csvContent = [header.join(","), ...csvData.map((row) => row.join(","))].join("\n");
+  //   const csvContent = [header.join(","), ...csvData.map((row) => row.join(","))].join("\n");
 
-    const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "all-bookings.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  //   const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`);
+  //   const link = document.createElement("a");
+  //   link.setAttribute("href", encodedUri);
+  //   link.setAttribute("download", "all-bookings.csv");
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
 
   // Define the export bookings function after the mutation
+
   const handleOnClickExportBookings = async () => {
     fetchAllBookingsMutation({
       filters: {
