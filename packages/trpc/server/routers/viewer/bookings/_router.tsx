@@ -5,6 +5,7 @@ import { ZAddGuestsInputSchema } from "./addGuests.schema";
 import { ZCancelScheduledWorkflowsInputSchema } from "./cancelWorkflows.schema";
 import { ZConfirmInputSchema } from "./confirm.schema";
 import { ZEditLocationInputSchema } from "./editLocation.schema";
+import { ZExportInputSchema } from "./export.schema";
 import { ZFindInputSchema } from "./find.schema";
 import { ZGetInputSchema } from "./get.schema";
 import { ZGetAllInputSchema } from "./getAll.schema";
@@ -26,6 +27,7 @@ type BookingsRouterHandlerCache = {
   getInstantBookingLocation?: typeof import("./getInstantBookingLocation.handler").getHandler;
   saveNotes?: typeof import("./saveNotes.handler").saveNoteHandler;
   cancelWorkflow?: typeof import("./cancelWorkflows.handler").cancelWorkflowHandler;
+  export?: typeof import("./export.handler").exportHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: BookingsRouterHandlerCache = {};
@@ -219,4 +221,20 @@ export const bookingsRouter = router({
         input,
       });
     }),
+
+  export: authedProcedure.input(ZExportInputSchema).mutation(async ({ input, ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.export) {
+      UNSTABLE_HANDLER_CACHE.export = await import("./export.handler").then((mod) => mod.exportHandler);
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.export) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.export({
+      ctx,
+      input,
+    });
+  }),
 });

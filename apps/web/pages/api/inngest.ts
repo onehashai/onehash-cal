@@ -3,6 +3,7 @@ import { Inngest } from "inngest";
 import { serve } from "inngest/next";
 
 import { INNGEST_ID } from "@calcom/lib/constants";
+import { handleBookingExportEvent } from "@calcom/trpc/server/routers/viewer/bookings/export.handler";
 
 export const inngestClient = new Inngest({ id: INNGEST_ID });
 
@@ -32,8 +33,22 @@ const handleCalendlyImportFn = inngestClient.createFunction(
   }
 );
 
+const handleBookingExportFn = inngestClient.createFunction(
+  { id: `export-bookings-${key}`, retries: 2 },
+  { event: `export-bookings-${key}` },
+  async ({ event, step, logger }) => {
+    await handleBookingExportEvent({
+      user: event.data.user,
+      filters: event.data.filters,
+      step,
+      logger,
+    });
+    return { message: `Export Booking mail sent for userID :${event.data.user.id}` };
+  }
+);
+
 // Create an API that serves zero functions
 export default serve({
   client: inngestClient,
-  functions: [handleCalendlyImportFn],
+  functions: [handleCalendlyImportFn, handleBookingExportFn],
 });

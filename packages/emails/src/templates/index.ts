@@ -42,3 +42,4 @@ export { OrganizationAdminNoSlotsEmail } from "./OrganizationAdminNoSlots";
 export { CalendlyCampaignEmail } from "./CalendlyCampaignEmail";
 export { OrganizerAddGuestsEmail } from "./OrganizerAddGuestsEmail";
 export { AttendeeAddGuestsEmail } from "./AttendeeAddGuestsEmail";
+export { BookingExportEmail } from "./BookingExportEmail";
