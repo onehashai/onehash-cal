@@ -176,8 +176,9 @@ const ProfileView = () => {
     showToast(t("Your account was deleted"), "success");
 
     setHasDeleteErrors(false); // dismiss any open errors
-    await signOut({ redirect: false });
-    if (redirectUrl !== "") window.location.href = redirectUrl;
+
+    await signOut({ callbackUrl: redirectUrl });
+    // if (redirectUrl !== "") window.location.href = redirectUrl;
   };
 
   const confirmPasswordMutation = trpc.viewer.auth.verifyPassword.useMutation({
