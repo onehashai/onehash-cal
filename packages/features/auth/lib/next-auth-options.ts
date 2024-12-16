@@ -999,7 +999,7 @@ export const getOptions = ({
     async signOut(_) {
       //Cleaning the keycloak cookie and session
       if (keycloak_token) {
-        await prisma.keycloakSessionInfo.delete({
+        await prisma.keycloakSessionInfo.deleteMany({
           where: {
             browserToken: keycloak_token,
           },
