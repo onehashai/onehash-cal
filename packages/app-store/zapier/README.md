@@ -13,8 +13,8 @@ If you run it on localhost, check out the [additional information](https://githu
 2. If not redirected to developer account, go to: [Zapier Developer Account](https://developer.zapier.com)
 3. Click **Start a Zapier Integration**
 4. Create Integration
-   - Name: OneHash
-   - Description: OneHash is a scheduling infrastructure for absolutely everyone.
+   - Name: Cal ID
+   - Description: Cal ID is a scheduling infrastructure for absolutely everyone.
    - Intended Audience: Private
    - Role: choose whatever is appropriate
    - Category: Calendar
