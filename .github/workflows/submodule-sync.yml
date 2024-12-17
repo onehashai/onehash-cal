@@ -3,7 +3,7 @@ on:
   schedule:
     # Runs "At minute 15 past every 4th hour." (see https://crontab.guru)
     - cron: "15 */4 * * *"
-  workflow_dispatch: ~
+  workflow_dispatch:
 jobs:
   submodule-sync:
     name: Submodule update
@@ -14,8 +14,10 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.GH_ACCESS_TOKEN }}
-      - name: Commit
+      - name: Commit and Push changes
         run: |
           git config user.email "actions@github.com"
           git config user.name "github-actions"
-          git commit -am "Auto updated submodule references" && git push || echo "No changes to commit"
+          git add .  # Ensure submodule references are staged
+          git commit -am "Auto updated submodule references" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.ref }}

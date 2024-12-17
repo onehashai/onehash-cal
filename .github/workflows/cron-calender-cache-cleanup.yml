@@ -1,0 +1,31 @@
+name: Cron - Calendar Cache Cleanup
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  cron-scheduleSMSReminders:
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}  
+    runs-on: ubuntu-latest
+    steps:
+      - name: cURL request to production
+        if: ${{ env.APP_URL && env.CRON_SECRET }}
+        run: |
+          curl ${{ env.APP_URL }}/api/cron/calendar-cache-cleanup \
+            -X GET \
+            -H 'content-type: application/json' \
+            -H 'Authorization: Bearer ${{ env.CRON_SECRET }}' \
+            -sSf
+
+      - name: cURL request to staging
+        if: ${{ env.APP_URL_STAG && env.CRON_SECRET }}
+        run: |
+          curl ${{ env.APP_URL }}/api/cron/calendar-cache-cleanup \
+            -X GET \
+            -H 'content-type: application/json' \
+            -H 'Authorization: Bearer ${{ env.CRON_SECRET }}' \
+            -sSf
