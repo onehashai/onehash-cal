@@ -1625,6 +1625,7 @@ async function handler(
     status: "ACCEPTED",
     smsReminderNumber: booking?.smsReminderNumber || undefined,
     rescheduledBy: reqBody.rescheduledBy,
+    cancellationReason: "N/A",
   };
 
   if (bookingRequiresPayment) {
