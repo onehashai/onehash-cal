@@ -118,10 +118,10 @@ export default function MakeSetup({ inviteLink }: InferGetServerSidePropsType<ty
                     <a href={inviteLink} className="ml-1 mr-1 text-orange-600 underline">
                       Make Invite Link
                     </a>
-                    and install the Cal.com app.
+                    and install the OneHash Cal app.
                   </li>
                   <li>Log into your Make account and create a new Scenario.</li>
-                  <li>Select Cal.com as your Trigger app. Also choose a Trigger event.</li>
+                  <li>Select OneHash Cal as your Trigger app. Also choose a Trigger event.</li>
                   <li>Choose your account and then enter your Unique API Key.</li>
                   <li>Test your Trigger.</li>
                   <li>You&apos;re set!</li>
