@@ -1,6 +1,6 @@
 import type { Prisma, PrismaPromise, User, Membership, Profile } from "@prisma/client";
 
-import { ensureOrganizationIsReviewed } from "@calcom/features/oe/organizations/lib/ensureOrganizationIsReviewed";
+import { ensureOrganizationIsReviewed } from "@calcom/features/ee/organizations/lib/ensureOrganizationIsReviewed";
 import { uploadAvatar } from "@calcom/lib/server/avatar";
 import { checkRegularUsername } from "@calcom/lib/server/checkRegularUsername";
 import { isOrganisationAdmin, isOrganisationOwner } from "@calcom/lib/server/queries/organisations";

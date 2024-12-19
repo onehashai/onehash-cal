@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import { HeadSeo } from "@calcom/ui";
 
@@ -47,6 +47,7 @@ function mockedUserPageComponentProps(props: Partial<React.ComponentProps<typeof
       ...(props.entity ?? null),
     },
     eventTypes: [],
+    isOrgSEOIndexable: false,
   } satisfies React.ComponentProps<typeof UserPage>;
 }
 

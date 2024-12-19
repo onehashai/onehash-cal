@@ -9,7 +9,7 @@ import googleMeetMeta from "@calcom/app-store/googlevideo/_metadata";
 import zoomMeta from "@calcom/app-store/zoomvideo/_metadata";
 import dayjs from "@calcom/dayjs";
 import { hashPassword } from "@calcom/features/auth/lib/hashPassword";
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { DEFAULT_SCHEDULE, getAvailabilityFromSchedule } from "@calcom/lib/availability";
 import { BookingStatus, MembershipRole, RedirectType, SchedulingType } from "@calcom/prisma/enums";
 import type { Ensure } from "@calcom/types/utils";
@@ -1096,51 +1096,34 @@ async function main() {
             },
           ],
         },
-        {
+        ...Array.from({ length: 10 }, (_, i) => ({
           memberData: {
-            email: "member1-acme@example.com",
+            email: `member${i}-acme@example.com`,
             password: {
               create: {
-                hash: "member1-acme",
+                hash: `member${i}-acme`,
               },
             },
-            username: "member1-acme",
-            name: "Member 1",
+            username: `member${i}-acme`,
+            name: `Member ${i}`,
           },
           orgMembership: {
-            role: "MEMBER",
+            role: MembershipRole.MEMBER,
             accepted: true,
           },
           orgProfile: {
-            username: "member1",
+            username: `member${i}`,
           },
-          inTeams: [
-            {
-              slug: "team1",
-              role: "ADMIN",
-            },
-          ],
-        },
-        {
-          memberData: {
-            email: "member2-acme@example.com",
-            password: {
-              create: {
-                hash: "member2-acme",
-              },
-            },
-            username: "member2-acme",
-            name: "Member 2",
-          },
-          orgMembership: {
-            role: "MEMBER",
-            accepted: true,
-          },
-          orgProfile: {
-            username: "member2",
-          },
-          inTeams: [],
-        },
+          inTeams:
+            i % 2 === 0
+              ? [
+                  {
+                    slug: "team1",
+                    role: MembershipRole.MEMBER,
+                  },
+                ]
+              : [],
+        })),
       ],
     },
     teams: [

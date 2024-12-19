@@ -12,6 +12,7 @@ import { FiltersContainer } from "@calcom/features/bookings/components/FiltersCo
 import type { filterQuerySchema } from "@calcom/features/bookings/lib/useFilterQuery";
 import { useFilterQuery } from "@calcom/features/bookings/lib/useFilterQuery";
 import Shell from "@calcom/features/shell/Shell";
+import { useInViewObserver } from "@calcom/lib/hooks/useInViewObserver";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
 import type { RouterOutputs } from "@calcom/trpc/react";
@@ -19,7 +20,6 @@ import { trpc } from "@calcom/trpc/react";
 import type { HorizontalTabItemProps, VerticalTabItemProps } from "@calcom/ui";
 import { Alert, Button, EmptyScreen, HorizontalTabs, showToast } from "@calcom/ui";
 
-import { useInViewObserver } from "@lib/hooks/useInViewObserver";
 import useMeQuery from "@lib/hooks/useMeQuery";
 
 import BookingListItem from "@components/booking/BookingListItem";
@@ -89,7 +89,6 @@ export default function Bookings() {
   } = useLocale();
   const user = useMeQuery().data;
   const [isFiltersVisible, setIsFiltersVisible] = useState<boolean>(false);
-
   const query = trpc.viewer.bookings.get.useInfiniteQuery(
     {
       limit: 10,
@@ -99,7 +98,6 @@ export default function Bookings() {
       },
     },
     {
-      // first render has status `undefined`
       enabled: true,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     }
@@ -296,8 +294,8 @@ export default function Bookings() {
       hideHeadingOnMobile
       heading={t("bookings")}
       subtitle={t("bookings_description")}
-      title="Bookings"
-      description="Create events to share for people to book on your calendar.">
+      title={t("bookings")}
+      description={t("bookings_description")}>
       <div className="flex flex-col">
         <div className="flex flex-row flex-wrap justify-between">
           <HorizontalTabs tabs={tabs} />

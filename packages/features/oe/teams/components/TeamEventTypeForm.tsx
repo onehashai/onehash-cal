@@ -1,7 +1,7 @@
 import type { EventType } from "@prisma/client";
 import type { ReactNode } from "react";
 
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import { classNames } from "@calcom/lib";
 import { useCreateEventType } from "@calcom/lib/hooks/useCreateEventType";
 import { useLocale } from "@calcom/lib/hooks/useLocale";

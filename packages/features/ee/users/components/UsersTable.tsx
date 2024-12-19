@@ -116,6 +116,7 @@ function UsersTableBare() {
           })),
         };
       });
+      utils.viewer.admin.listPaginated.invalidate();
     },
   });
 
@@ -178,7 +179,7 @@ function UsersTableBare() {
             {flatData.map((user) => (
               <Row key={user.email}>
                 <Cell widthClassNames="w-auto">
-                  <div className="min-h-10 flex ">
+                  <div className="flex min-h-10 ">
                     <Avatar
                       size="md"
                       alt={`Avatar of ${user.username || "Nameless"}`}
@@ -187,14 +188,16 @@ function UsersTableBare() {
                     />
 
                     <div className="text-subtle ml-4 font-medium">
-                      <span className="text-default">{user.name}</span>
-                      <span className="ml-3">/{user.username}</span>
-                      {user.locked && (
-                        <span className="ml-3">
-                          <Icon name="lock" />
-                        </span>
-                      )}
-                      <br />
+                      <div className="flex flex-row">
+                        <span className="text-default">{user.name}</span>
+                        <span className="ml-3">/{user.username}</span>
+                        {user.locked && (
+                          <span className="ml-3">
+                            <Icon name="lock" />
+                          </span>
+                        )}
+                        <br />
+                      </div>
                       <span className="break-all">{user.email}</span>
                     </div>
                   </div>

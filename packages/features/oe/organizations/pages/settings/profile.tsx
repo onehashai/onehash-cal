@@ -8,8 +8,8 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
-import { subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
-import OrgAppearanceViewWrapper from "@calcom/features/oe/organizations/pages/settings/appearance";
+import { subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
+import OrgAppearanceViewWrapper from "@calcom/features/ee/organizations/pages/settings/appearance";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -159,6 +159,7 @@ const OrgProfileView = ({ isAppDir }: { isAppDir?: boolean }) => {
                   <Label className="text-emphasis mt-5">{t("about")}</Label>
                   <div
                     className="  text-subtle break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
+                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: md.render(currentOrganisation.bio || "") }}
                   />
                 </>

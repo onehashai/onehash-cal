@@ -9,6 +9,10 @@
       "schedule": "* * * * *"
     },
     {
+      "path": "/api/calendar-cache/cron",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/tasks/cleanup",
       "schedule": "0 0 * * *"
     }
@@ -24,6 +28,12 @@
     },
     "pages/api/inngest.ts": {
       "maxDuration": 300
+    },
+    "pages/api/trpc/highPerf/[trpc].ts": {
+      "memory": 3008
+    },
+    "pages/api/trpc/appRoutingForms/[trpc].ts": {
+      "memory": 2048
     }
   }
 }

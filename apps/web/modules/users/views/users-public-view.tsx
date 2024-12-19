@@ -12,9 +12,9 @@ import {
   useEmbedStyles,
   useIsEmbed,
 } from "@calcom/embed-core/embed-iframe";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { EventTypeDescriptionLazy as EventTypeDescription } from "@calcom/features/eventtypes/components";
 import EmptyPage from "@calcom/features/eventtypes/components/EmptyPage";
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { SIGNUP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
@@ -25,8 +25,8 @@ import type { UserNotFoundProps, UserFoundProps } from "@server/lib/[user]/getSe
 import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
 function UserFound(props: UserFoundProps) {
-  const { users, profile, eventTypes, markdownStrippedBio, entity } = props;
-  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+  const { users, profile, eventTypes, markdownStrippedBio, entity, isOrgSEOIndexable } = props;
+  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
 
   const [user] = users; //To be used when we only have a single user, not dynamic group
   useTheme(profile.theme);
@@ -63,6 +63,13 @@ function UserFound(props: UserFoundProps) {
 
   const isEventListEmpty = eventTypes.length === 0;
   const isOrg = !!user?.profile?.organization;
+
+  const allowSEOIndexing = isOrg
+    ? isOrgSEOIndexable
+      ? profile.allowSEOIndexing
+      : false
+    : profile.allowSEOIndexing;
+
   return (
     <>
       <HeadSeo
@@ -75,8 +82,8 @@ function UserFound(props: UserFoundProps) {
           users: [{ username: `${user.username}`, name: `${user.name}` }],
         }}
         nextSeoProps={{
-          noindex: !profile.allowSEOIndexing,
-          nofollow: !profile.allowSEOIndexing,
+          noindex: !allowSEOIndexing,
+          nofollow: !allowSEOIndexing,
         }}
       />
 
@@ -116,6 +123,7 @@ function UserFound(props: UserFoundProps) {
               <>
                 <div
                   className="  text-subtle break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
+                  // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{ __html: props.safeBio }}
                 />
               </>
@@ -171,13 +179,13 @@ function UserFound(props: UserFoundProps) {
 function UserNotFound(props: UserNotFoundProps) {
   const { slug } = props;
   const { t } = useLocale();
-  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
 
   return (
     <>
       <HeadSeo
         origin={getOrgFullOrigin(null)}
-        title={"Oops no one's here"}
+        title="Oops no one's here"
         description="Register and claim this Cal ID username before it’s gone!"
         nextSeoProps={{
           noindex: true,
@@ -215,7 +223,9 @@ function UserNotFound(props: UserNotFoundProps) {
   );
 }
 
-function UserPage(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
+
+function UserPage(props: PageProps) {
   return props.userFound ? (
     <UserFound {...props.userFound} />
   ) : (

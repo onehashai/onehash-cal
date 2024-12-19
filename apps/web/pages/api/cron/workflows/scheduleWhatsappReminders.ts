@@ -1,1 +1,1 @@
-export { default } from "@calcom/features/oe/workflows/api/scheduleWhatsappReminders";
+export { default } from "@calcom/features/ee/workflows/api/scheduleWhatsappReminders";

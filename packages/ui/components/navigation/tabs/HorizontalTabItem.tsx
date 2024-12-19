@@ -4,8 +4,9 @@ import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useUrlMatchesCurrentUrl } from "@calcom/lib/hooks/useUrlMatchesCurrentUrl";
 
-import { Icon, type IconName } from "../../..";
 import { Avatar } from "../../avatar";
+import { Icon } from "../../icon";
+import type { IconName } from "../../icon";
 import { SkeletonText } from "../../skeleton";
 
 export type HorizontalTabItemProps = {
@@ -18,6 +19,8 @@ export type HorizontalTabItemProps = {
   linkScroll?: boolean;
   icon?: IconName;
   avatar?: string;
+  onClick?: (name: string) => void;
+  isActive?: boolean;
 };
 
 const HorizontalTabItem = function ({
@@ -30,10 +33,16 @@ const HorizontalTabItem = function ({
 }: HorizontalTabItemProps) {
   const { t, isLocaleReady } = useLocale();
 
-  const isCurrent = useUrlMatchesCurrentUrl(href);
+  const isCurrent = useUrlMatchesCurrentUrl(href) || props?.isActive;
 
   return (
     <Link
+      onClick={(e) => {
+        if (props.onClick) {
+          e.preventDefault();
+          props.onClick(name);
+        }
+      }}
       key={name}
       href={href}
       shallow={linkShallow}
@@ -52,7 +61,7 @@ const HorizontalTabItem = function ({
           name={props.icon}
           className={classNames(
             isCurrent ? "text-emphasis" : "group-hover:text-subtle text-muted",
-            "-ml-0.5 hidden h-4 w-4 ltr:mr-2 rtl:ml-2 sm:inline-block"
+            "-ml-0.5 hidden h-4 w-4 sm:inline-block ltr:mr-2 rtl:ml-2"
           )}
           aria-hidden="true"
         />

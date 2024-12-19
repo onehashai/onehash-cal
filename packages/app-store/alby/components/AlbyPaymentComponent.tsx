@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 import z from "zod";
 
-import type { PaymentPageProps } from "@calcom/features/oe/payments/pages/payment";
+import type { PaymentPageProps } from "@calcom/features/ee/payments/pages/payment";
 import { useBookingSuccessRedirect } from "@calcom/lib/bookingSuccessRedirect";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useCopy } from "@calcom/lib/hooks/useCopy";

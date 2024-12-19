@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import {
   getOrgDomainConfigFromHostname,
   subdomainSuffix,
-} from "@calcom/features/oe/organizations/lib/orgDomains";
+} from "@calcom/features/ee/organizations/lib/orgDomains";
 import { BLOGS_URL, DOCS_URL, IS_CALCOM, WEBSITE_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HeadSeo } from "@calcom/ui";
@@ -33,7 +33,7 @@ export default function Custom404() {
 
   const links = [
     {
-      title: "Enterprise",
+      title: t("enterprise"),
       description: "Learn more about organizations and subdomains in our enterprise plan.",
       icon: "shield" as const,
       href: `${WEBSITE_URL}/enterprise`,

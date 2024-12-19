@@ -1,6 +1,6 @@
 "use client";
 
-import { TeamsListing } from "@calcom/features/oe/teams/components";
+import { TeamsListing } from "@calcom/features/ee/teams/components";
 import Shell from "@calcom/features/shell/Shell";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -19,10 +19,10 @@ function Teams(props: PageProps) {
     <Shell
       withoutMain={false}
       heading={t("teams")}
-      title="Teams"
-      description="Create and manage teams to use collaborative features."
-      hideHeadingOnMobile
       subtitle={t("create_manage_teams_collaborative")}
+      title={t("teams")}
+      description={t("create_manage_teams_collaborative")}
+      hideHeadingOnMobile
       CTA={
         (!user.organizationId || user.organization.isOrgAdmin) && (
           <Button

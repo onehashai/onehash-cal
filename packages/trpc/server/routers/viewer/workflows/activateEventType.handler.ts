@@ -1,6 +1,6 @@
-import { scheduleEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
-import { scheduleSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/smsReminderManager";
-import { scheduleWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/whatsappReminderManager";
+import { scheduleEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+import { scheduleSMSReminder } from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
+import { scheduleWhatsappReminder } from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import { WorkflowRepository } from "@calcom/lib/server/repository/workflow";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
@@ -251,7 +251,7 @@ export const activateEventTypeHandler = async ({ ctx, input }: ActivateEventType
         title: booking.title,
         language: { locale: booking?.user?.locale || defaultLocale },
         eventType: {
-          slug: booking.eventType?.slug,
+          slug: booking.eventType?.slug || "",
           schedulingType: booking.eventType?.schedulingType,
           hosts: booking.eventType?.hosts,
         },

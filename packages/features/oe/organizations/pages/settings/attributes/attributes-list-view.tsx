@@ -192,7 +192,7 @@ function ListAttributeHeader() {
 
   return (
     <>
-      <div className="min-h-6 mb-6 mt-6 flex flex-grow items-center justify-between lg:mt-12">
+      <div className="mb-6 mt-6 flex min-h-6 flex-grow items-center justify-between lg:mt-12">
         <div className="flex items-center gap-4 ">
           <div className="flex flex-col space-y-1 ">
             <h1 className="text-emphasis font-cal text-xl font-semibold leading-none">

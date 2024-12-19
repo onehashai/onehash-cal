@@ -1,19 +1,21 @@
 import { useSession } from "next-auth/react";
 import type { Dispatch } from "react";
 
-import MemberInvitationModal from "@calcom/features/oe/teams/components/MemberInvitationModal";
+import MemberInvitationModal from "@calcom/features/ee/teams/components/MemberInvitationModal";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc";
 import { showToast } from "@calcom/ui";
+import usePlatformMe from "@calcom/web/components/settings/platform/hooks/usePlatformMe";
 
-import type { Action } from "./UserListTable";
+import type { UserTableAction } from "./types";
 
 interface Props {
-  dispatch: Dispatch<Action>;
+  dispatch: Dispatch<UserTableAction>;
 }
 
 export function InviteMemberModal(props: Props) {
   const { data: session } = useSession();
+  const { data: platformUser } = usePlatformMe();
   const utils = trpc.useUtils();
   const { t, i18n } = useLocale();
   const inviteMemberMutation = trpc.viewer.teams.inviteMember.useMutation({
@@ -45,9 +47,9 @@ export function InviteMemberModal(props: Props) {
     },
   });
 
-  if (!session?.user.org?.id) return null;
+  const orgId = session?.user.org?.id ?? platformUser?.organizationId;
 
-  const orgId = session.user.org.id;
+  if (!orgId) return null;
 
   return (
     <MemberInvitationModal
@@ -67,6 +69,7 @@ export function InviteMemberModal(props: Props) {
           language: i18n.language,
           role: values.role,
           usernameOrEmail: values.emailOrUsername,
+          isPlatform: platformUser?.organization.isPlatform,
         });
       }}
     />

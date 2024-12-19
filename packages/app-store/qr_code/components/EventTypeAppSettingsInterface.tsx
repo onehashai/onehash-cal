@@ -43,7 +43,7 @@ const EventTypeAppSettingsInterface: EventTypeAppSettingsComponent = ({ eventTyp
         />
       </div>
 
-      <div className="max-w-60 flex items-baseline gap-2">
+      <div className="flex max-w-60 items-baseline gap-2">
         <QRCode size={256} data={eventTypeURL} />
         <QRCode size={128} data={eventTypeURL} />
         <QRCode size={64} data={eventTypeURL} />

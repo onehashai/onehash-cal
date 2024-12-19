@@ -1,4 +1,4 @@
-import AdminAPIView from "@calcom/features/oe/organizations/pages/settings/admin-api";
+import AdminAPIView from "@calcom/features/ee/organizations/pages/settings/admin-api";
 import { getLayout } from "@calcom/features/settings/layouts/SettingsLayout";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Meta } from "@calcom/ui";

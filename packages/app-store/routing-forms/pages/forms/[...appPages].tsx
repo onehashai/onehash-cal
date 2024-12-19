@@ -1,14 +1,13 @@
 "use client";
 
-// TODO: i18n
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 
+import SkeletonLoaderTeamList from "@calcom/features/ee/teams/components/SkeletonloaderTeamList";
 import { FilterResults } from "@calcom/features/filters/components/FilterResults";
 import { TeamsFilter } from "@calcom/features/filters/components/TeamsFilter";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
-import SkeletonLoaderTeamList from "@calcom/features/oe/teams/components/SkeletonloaderTeamList";
 import Shell, { ShellMain } from "@calcom/features/shell/Shell";
 import { UpgradeTip } from "@calcom/features/tips";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -150,7 +149,7 @@ export default function RoutingForms({
   return (
     <>
       <ShellMain
-        heading="Routing Forms"
+        heading={t("routing_forms")}
         CTA={hasPaidPlan && forms?.length ? <NewFormButton /> : null}
         subtitle={t("routing_forms_description")}>
         <UpgradeTip
@@ -161,7 +160,7 @@ export default function RoutingForms({
           background="/tips/routing-forms"
           isParentLoading={<SkeletonLoaderTeamList />}
           buttons={
-            <div className="space-y-2 rtl:space-x-reverse sm:space-x-2">
+            <div className="space-y-2 sm:space-x-2 rtl:space-x-reverse">
               <ButtonGroup>
                 <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
                   {t("upgrade")}
@@ -344,16 +343,22 @@ export default function RoutingForms({
   );
 }
 
-RoutingForms.getLayout = (page: React.ReactElement) => {
+const ShellContainer = ({ page }: { page: React.ReactElement }) => {
+  const { t } = useLocale();
+
   return (
     <Shell
-      title="Routing Forms"
-      description="Create forms to direct attendees to the correct destinations."
+      title={t("routing_forms")}
+      description={t("routing_forms_description")}
       withoutMain={true}
       hideHeadingOnMobile>
       {page}
     </Shell>
   );
+};
+
+RoutingForms.getLayout = (page: React.ReactElement) => {
+  return <ShellContainer page={page} />;
 };
 
 export { getServerSideProps };

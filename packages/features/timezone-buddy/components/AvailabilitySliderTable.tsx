@@ -1,17 +1,21 @@
+"use client";
+
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
+import { getCoreRowModel, getFilteredRowModel, useReactTable } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import dayjs from "@calcom/dayjs";
+import { DataTable, DataTableToolbar } from "@calcom/features/data-table";
 import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
 import type { DateRange } from "@calcom/lib/date-ranges";
+import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc";
 import type { UserProfile } from "@calcom/types/UserProfile";
 import {
   Button,
   ButtonGroup,
-  DataTable,
   UserAvatar,
   Checkbox,
   Switch,
@@ -27,6 +31,7 @@ import { GroupMeetingDialog } from "../../../../apps/web/components/dialog/Group
 import { UpgradeTip } from "../../tips/UpgradeTip";
 import { createTimezoneBuddyStore, TBContext } from "../store";
 import { AvailabilityEditSheet } from "./AvailabilityEditSheet";
+import { CellHighlightContainer } from "./CellHighlightContainer";
 import { TimeDial } from "./TimeDial";
 
 export interface SliderUser {
@@ -54,7 +59,7 @@ function UpgradeTeamTip() {
       background="/tips/teams"
       features={[]}
       buttons={
-        <div className="space-y-2 rtl:space-x-reverse sm:space-x-2">
+        <div className="space-y-2 sm:space-x-2 rtl:space-x-reverse">
           <ButtonGroup>
             <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
               {t("create_team")}
@@ -115,6 +120,12 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
   const [browsingDate, setBrowsingDate] = useState(dayjs());
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SliderUser | null>(null);
+  const [searchString, setSearchString] = useState("");
+  const debouncedSearchString = useDebounce(searchString, 500);
+
+  const tbStore = createTimezoneBuddyStore({
+    browsingDate: browsingDate.toDate(),
+  });
 
   const { data, isPending, fetchNextPage, isFetching } = trpc.viewer.availability.listTeam.useInfiniteQuery(
     {
@@ -122,6 +133,7 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
       loggedInUsersTz: dayjs.tz.guess() || "Europe/London",
       startDate: browsingDate.startOf("day").toISOString(),
       endDate: browsingDate.endOf("day").toISOString(),
+      searchString: debouncedSearchString,
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -231,12 +243,13 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
     cols.push(
       {
         id: "member",
-        accessorFn: (data) => data.email,
+        accessorFn: (data) => data.username,
         header: "Member",
+        size: 200,
         cell: ({ row }) => {
           const { username, email, timeZone, name, avatarUrl, profile } = row.original;
           return (
-            <div className="max-w-64 flex flex-shrink-0 items-center gap-2 overflow-hidden">
+            <div className="flex max-w-64 flex-shrink-0 items-center gap-2 overflow-hidden">
               <UserAvatar
                 size="sm"
                 user={{
@@ -255,6 +268,9 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
             </div>
           );
         },
+        filterFn: (row, id, value) => {
+          return row.original.username?.toLowerCase().includes(value.toLowerCase()) || false;
+        },
       },
       {
         id: "memberships",
@@ -269,6 +285,7 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
         id: "timezone",
         accessorFn: (data) => data.timeZone,
         header: "Timezone",
+        size: 160,
         cell: ({ row }) => {
           const { timeZone } = row.original;
           const timeRaw = dayjs().tz(timeZone);
@@ -290,6 +307,9 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
       },
       {
         id: "slider",
+        meta: {
+          autoWidth: true,
+        },
         header: () => {
           return (
             <div className="flex items-center justify-center space-x-2">
@@ -340,8 +360,15 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
   }, [fetchMoreOnBottomReached]);
 
   const { t } = useLocale();
+  const table = useReactTable({
+    data: flatData,
+    columns: memorisedColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
   // This means they are not apart of any teams so we show the upgrade tip
-  if (!flatData.length) return <UpgradeTeamTip />;
+  if (!flatData.length && !data?.pages?.[0]?.meta?.isApartOfAnyTeam) return <UpgradeTeamTip />;
+
   return (
     <TBContext.Provider
       value={createTimezoneBuddyStore({
@@ -349,12 +376,11 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
       })}>
       <>
         <GroupMeetingDialog isOpenDialog={isOpenDialog} setIsOpenDialog={setIsOpenDialog} link={meetingUrl} />
-        <div className="relative -mx-2 w-[calc(100%+16px)] overflow-x-scroll px-2 lg:-mx-6 lg:w-[calc(100%+48px)] lg:px-6">
+
+        <CellHighlightContainer>
           <DataTable
-            variant="compact"
-            searchKey="member"
+            table={table}
             tableContainerRef={tableContainerRef}
-            columns={memorisedColumns}
             onRowMouseclick={(row) => {
               if (isMemberSelectEnabled) {
                 const { username } = row.original;
@@ -362,31 +388,56 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
                 row.toggleSelected();
                 return;
               }
+              // if (props.isOrg) {
+              //   setEditSheetOpen(true);
+              //   setSelectedUser(row.original);
+              // }
               setEditSheetOpen(true);
               setSelectedUser(row.original);
             }}
-            tableCTA={
-              <div className="flex gap-2">
-                <div className="flex items-center  gap-2">
-                  <label htmlFor="MemberSelect">{t("book_members")}</label>
-                  <Switch
-                    name="MemberSelect"
-                    id="MemberSelect"
-                    checked={isMemberSelectEnabled}
-                    onCheckedChange={(value) => {
-                      setIsMemberSelectEnabled(value);
-                    }}
-                  />
-                </div>
-                {isMemberSelectEnabled && <Button onClick={handleBookMembers}>Book</Button>}
-              </div>
-            }
+            // tableCTA={
+            //   <div className="flex gap-2">
+            //     <div className="flex items-center  gap-2">
+            //       <label htmlFor="MemberSelect">{t("book_members")}</label>
+            //       <Switch
+            //         name="MemberSelect"
+            //         id="MemberSelect"
+            //         checked={isMemberSelectEnabled}
+            //         onCheckedChange={(value) => {
+            //           setIsMemberSelectEnabled(value);
+            //         }}
+            //       />
+            //     </div>
+            //     {isMemberSelectEnabled && <Button onClick={handleBookMembers}>Book</Button>}
+            //   </div>
+            // }
             data={flatData}
             isPending={isPending}
-            // tableOverlay={<HoverOverview />}
-            onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}
-          />
-        </div>
+            onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}>
+            <DataTableToolbar.Root>
+              <DataTableToolbar.SearchBar
+                table={table}
+                onSearch={(value) => setSearchString(value)}
+                tableCTA={
+                  <div className="flex gap-2">
+                    <div className="flex items-center  gap-2">
+                      <label htmlFor="MemberSelect">{t("book_members")}</label>
+                      <Switch
+                        name="MemberSelect"
+                        id="MemberSelect"
+                        checked={isMemberSelectEnabled}
+                        onCheckedChange={(value) => {
+                          setIsMemberSelectEnabled(value);
+                        }}
+                      />
+                    </div>
+                    {isMemberSelectEnabled && <Button onClick={handleBookMembers}>Book</Button>}
+                  </div>
+                }
+              />
+            </DataTableToolbar.Root>
+          </DataTable>
+        </CellHighlightContainer>
         {selectedUser && editSheetOpen ? (
           <AvailabilityEditSheet
             open={editSheetOpen}

@@ -1,4 +1,6 @@
+import { calendar_v3 } from "@googleapis/calendar";
 import type { Membership, Team, UserPermissionRole } from "@prisma/client";
+import { OAuth2Client } from "googleapis-common";
 import type { NextApiResponse } from "next";
 import type { AuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
@@ -9,13 +11,15 @@ import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
 import KeyCloakProvider from "next-auth/providers/keycloak";
 
+import { updateProfilePhotoGoogle } from "@calcom/app-store/_utils/oauth/updateProfilePhotoGoogle";
+import GoogleCalendarService from "@calcom/app-store/googlecalendar/lib/CalendarService";
 import { LicenseKeySingleton } from "@calcom/ee/common/server/LicenseKeyService";
 import createUsersAndConnectToOrg from "@calcom/features/ee/dsync/lib/users/createUsersAndConnectToOrg";
 import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/ImpersonationProvider";
+import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { clientSecretVerifier, hostedCal, isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
-import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
+import { GOOGLE_CALENDAR_SCOPES, GOOGLE_OAUTH_SCOPES, HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { ENABLE_PROFILE_SWITCHER, IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
 import { defaultCookies } from "@calcom/lib/default-cookies";
@@ -23,6 +27,7 @@ import { isENVDev } from "@calcom/lib/env";
 import logger from "@calcom/lib/logger";
 import { randomString } from "@calcom/lib/random";
 import { safeStringify } from "@calcom/lib/safeStringify";
+import { CredentialRepository } from "@calcom/lib/server/repository/credential";
 import { ProfileRepository } from "@calcom/lib/server/repository/profile";
 import { UserRepository } from "@calcom/lib/server/repository/user";
 import slugify from "@calcom/lib/slugify";
@@ -255,6 +260,13 @@ if (IS_GOOGLE_LOGIN_ENABLED) {
       clientId: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true,
+      authorization: {
+        params: {
+          scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
     })
   );
 }
@@ -590,7 +602,7 @@ export const getOptions = ({
       if (account.type === "credentials") {
         // return token if credentials,saml-idp
         if (account.provider === "saml-idp") {
-          return token;
+          return { ...token, upId: user.profile?.upId ?? token.upId ?? null } as JWT;
         }
         // any other credentials, add user info
         return {
@@ -640,6 +652,64 @@ export const getOptions = ({
         if (!existingUser) {
           return await autoMergeIdentities();
         }
+
+        const grantedScopes = account.scope?.split(" ") ?? [];
+        if (
+          account.provider === "google" &&
+          !(await CredentialRepository.findFirstByAppIdAndUserId({
+            userId: user.id as number,
+            appId: "google-calendar",
+          })) &&
+          GOOGLE_CALENDAR_SCOPES.every((scope) => grantedScopes.includes(scope))
+        ) {
+          // Installing Google Calendar by default
+          const credentialkey = {
+            access_token: account.access_token,
+            refresh_token: account.refresh_token,
+            id_token: account.id_token,
+            token_type: account.token_type,
+            expires_at: account.expires_at,
+          };
+          const gcalCredential = await CredentialRepository.create({
+            userId: user.id as number,
+            key: credentialkey,
+            appId: "google-calendar",
+            type: "google_calendar",
+          });
+          const gCalService = new GoogleCalendarService({
+            ...gcalCredential,
+            user: null,
+          });
+
+          if (
+            !(await CredentialRepository.findFirstByUserIdAndType({
+              userId: user.id as number,
+              type: "google_video",
+            }))
+          ) {
+            await CredentialRepository.create({
+              type: "google_video",
+              key: {},
+              userId: user.id as number,
+              appId: "google-meet",
+            });
+          }
+
+          const oAuth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+          oAuth2Client.setCredentials(credentialkey);
+          const calendar = new calendar_v3.Calendar({
+            auth: oAuth2Client,
+          });
+          const primaryCal = await gCalService.getPrimaryCalendar(calendar);
+          if (primaryCal?.id) {
+            await gCalService.createSelectedCalendar({
+              externalId: primaryCal.id,
+              userId: user.id as number,
+            });
+          }
+          await updateProfilePhotoGoogle(oAuth2Client, user.id as number);
+        }
+
         return {
           ...token,
           id: existingUser.id,

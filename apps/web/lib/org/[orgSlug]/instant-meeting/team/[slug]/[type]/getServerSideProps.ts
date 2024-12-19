@@ -2,8 +2,8 @@ import type { GetServerSidePropsContext } from "next";
 import { z } from "zod";
 
 import { getMultipleDurationValue } from "@calcom/features/bookings/lib/get-booking";
-import { getSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
-import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import slugify from "@calcom/lib/slugify";
 import prisma from "@calcom/prisma";
 
@@ -56,6 +56,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   return {
     props: {
       entity: eventData.entity,
+      eventTypeId: eventData.id,
       duration: getMultipleDurationValue(
         eventData.metadata?.multipleDuration,
         queryDuration,

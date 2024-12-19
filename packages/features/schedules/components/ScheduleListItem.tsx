@@ -43,7 +43,7 @@ export function ScheduleListItem({
 
   return (
     <li key={schedule.id}>
-      <div className="hover:bg-muted flex items-center justify-between py-5 transition ltr:pl-4 rtl:pr-4 sm:ltr:pl-0 sm:rtl:pr-0">
+      <div className="hover:bg-muted flex items-center justify-between py-5 transition ltr:pl-4 sm:ltr:pl-0 rtl:pr-4 sm:rtl:pr-0">
         <div className="group flex w-full items-center justify-between sm:px-6">
           <Link
             href={`/availability/${schedule.id}`}
@@ -96,7 +96,7 @@ export function ScheduleListItem({
           </DropdownMenuTrigger>
           {!isPending && data && (
             <DropdownMenuContent>
-              <DropdownMenuItem className="min-w-40 focus:ring-muted">
+              <DropdownMenuItem className="focus:ring-muted min-w-40">
                 {!schedule.isDefault && (
                   <DropdownItem
                     type="button"
@@ -124,7 +124,7 @@ export function ScheduleListItem({
                   {t("duplicate")}
                 </DropdownItem>
               </DropdownMenuItem>
-              <DropdownMenuItem className="min-w-40 focus:ring-muted">
+              <DropdownMenuItem className="focus:ring-muted min-w-40">
                 <DropdownItem
                   type="button"
                   color="destructive"

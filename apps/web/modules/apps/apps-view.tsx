@@ -3,7 +3,6 @@
 import type { ChangeEventHandler } from "react";
 import { useState } from "react";
 
-import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { inferSSRProps } from "@calcom/types/inferSSRProps";
@@ -68,7 +67,7 @@ export default function Apps({ categories, appStore, userAdminTeams }: PageProps
       subtitle={t("app_store_description")}
       actions={(className) => (
         <div className="flex w-full flex-col pt-4 md:flex-row md:justify-between md:pt-0 lg:w-auto">
-          <div className="ltr:mr-2 rtl:ml-2 lg:hidden">
+          <div className="lg:hidden ltr:mr-2 rtl:ml-2">
             <HorizontalTabs tabs={tabs} />
           </div>
           <div>
@@ -96,15 +95,3 @@ export default function Apps({ categories, appStore, userAdminTeams }: PageProps
     </AppsLayout>
   );
 }
-
-export const LayoutWrapper = (page: React.ReactElement) => {
-  return (
-    <Shell
-      title="Apps Store"
-      description="Create forms to direct attendees to the correct destinations."
-      withoutMain={true}
-      hideHeadingOnMobile>
-      {page}
-    </Shell>
-  );
-};

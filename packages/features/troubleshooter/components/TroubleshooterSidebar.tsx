@@ -14,7 +14,7 @@ const BackButtonInSidebar = ({ name }: { name: string }) => {
       className="hover:bg-subtle group-hover:text-default text-emphasis group flex h-6 max-h-6 w-full flex-row items-center rounded-md px-3 py-2 transition">
       <Icon
         name="arrow-left"
-        className="h-4 w-4 stroke-[2px] ltr:mr-[10px] rtl:ml-[10px] rtl:rotate-180 md:mt-0"
+        className="h-4 w-4 stroke-[2px] md:mt-0 ltr:mr-[10px] rtl:ml-[10px] rtl:rotate-180"
       />
       <Skeleton
         title={name}

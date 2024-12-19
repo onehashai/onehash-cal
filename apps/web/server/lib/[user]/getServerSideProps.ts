@@ -3,7 +3,7 @@ import type { GetServerSideProps } from "next";
 import { encode } from "querystring";
 import type { z } from "zod";
 
-import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { DEFAULT_DARK_BRAND_COLOR, DEFAULT_LIGHT_BRAND_COLOR } from "@calcom/lib/constants";
 import { getUsernameList } from "@calcom/lib/defaultEvents";
 import { getEventTypesPublic } from "@calcom/lib/event-types/getEventTypesPublic";
@@ -69,6 +69,7 @@ export type UserFoundProps = {
     | "currency"
     | "recurringEvent"
   >)[];
+  isOrgSEOIndexable: boolean | undefined;
 } & EmbedProps;
 
 export type UserNotFoundProps = {
@@ -221,6 +222,7 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
         themeBasis: user.username,
         trpcState: ssr.dehydrate(),
         markdownStrippedBio,
+        isOrgSEOIndexable: org?.organizationSettings?.allowSEOIndexing ?? false,
       },
     },
   };

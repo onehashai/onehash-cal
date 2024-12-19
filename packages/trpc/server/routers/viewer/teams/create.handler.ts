@@ -1,9 +1,8 @@
-import { generateTeamCheckoutSession } from "@calcom/features/oe/teams/lib/payments";
+import { generateTeamCheckoutSession } from "@calcom/features/ee/teams/lib/payments";
 import { IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { uploadLogo } from "@calcom/lib/server/avatar";
 import { ProfileRepository } from "@calcom/lib/server/repository/profile";
 import { resizeBase64Image } from "@calcom/lib/server/resizeBase64Image";
-import { closeComUpsertTeamUser } from "@calcom/lib/sync/SyncServiceManager";
 import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
 
@@ -124,8 +123,6 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
       },
     });
   }
-  // Sync Services: Close.com
-  closeComUpsertTeamUser(createdTeam, ctx.user, MembershipRole.OWNER);
 
   return {
     url: `${WEBAPP_URL}/settings/teams/${createdTeam.id}/onboard-members`,

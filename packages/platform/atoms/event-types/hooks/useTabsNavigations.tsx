@@ -1,7 +1,6 @@
 "use client";
 
 // eslint-disable-next-line @calcom/eslint/deprecated-imports-next-router
-// eslint-disable-next-line @calcom/eslint/deprecated-imports-next-router
 import type { TFunction } from "next-i18next";
 import { useMemo } from "react";
 import type { UseFormReturn } from "react-hook-form";
@@ -114,34 +113,32 @@ export const useTabsNavigations = ({
         }`,
       });
     }
-    const showWebhooks = !(isManagedEventType || isChildrenManagedEventType);
-    if (showWebhooks) {
+    const showInstant = !(isManagedEventType || isChildrenManagedEventType);
+    if (showInstant) {
       if (team) {
-        //TODO:INSTANT BOOKING
-        // navigation.push({
-        //   name: "instant_tab_title",
-        //   href: `/event-types/${eventType.id}?tabName=instant`,
-        //   icon: "phone-call",
-        //   info: `instant_event_tab_description`,
-        // });
+        navigation.push({
+          name: "instant_tab_title",
+          href: `/event-types/${eventType.id}?tabName=instant`,
+          icon: "phone-call",
+          info: `instant_event_tab_description`,
+        });
       }
+    }
+    navigation.push({
+      name: "webhooks",
+      href: `/event-types/${formMethods.getValues("id")}?tabName=webhooks`,
+      icon: "webhook",
+      info: `${activeWebhooksNumber} ${t("active")}`,
+    });
+    const hidden = true; // hidden while in alpha trial. you can access it with tabName=ai
+    if (team && hidden) {
       navigation.push({
-        name: "webhooks",
-        href: `/event-types/${formMethods.getValues("id")}?tabName=webhooks`,
-        icon: "webhook",
-        info: `${activeWebhooksNumber} ${t("active")}`,
+        name: "Cal.ai",
+        href: `/event-types/${eventType.id}?tabName=ai`,
+        icon: "sparkles",
+        info: "cal_ai_event_tab_description", // todo `cal_ai_event_tab_description`,
       });
     }
-    //TODO:AICALL (Need to configure Retell AI service check - packages/features/ee/cal-ai-phone/  /)
-    // const hidden = true; // hidden while in alpha trial. you can access it with tabName=ai
-    // if (team && hidden) {
-    //   navigation.push({
-    //     name: "Cal.ai",
-    //     href: `/event-types/${eventType.id}?tabName=ai`,
-    //     icon: "sparkles",
-    //     info: "cal_ai_event_tab_description", // todo `cal_ai_event_tab_description`,
-    //   });
-    // }
     return navigation;
   }, [
     t,

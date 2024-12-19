@@ -1,7 +1,7 @@
 import type { Attendee, Prisma } from "@prisma/client";
 import type z from "zod";
 
-import type { Workflow } from "@calcom/features/oe/workflows/lib/types";
+import type { Workflow } from "@calcom/features/ee/workflows/lib/types";
 import type { AppsStatus, CalendarEvent } from "@calcom/types/Calendar";
 
 import type { Booking, NewBookingEventType, OriginalRescheduledBooking } from "../handleNewBooking/types";
@@ -27,7 +27,7 @@ export type NewSeatedBookingObject = {
   rescheduleReason: RescheduleReason;
   reqBodyUser: string | string[] | undefined;
   noEmail: NoEmail;
-  isConfirmedByDefault: IsConfirmedByDefault;
+  isConfirmedByDefault: boolean;
   additionalNotes: AdditionalNotes;
   reqAppsStatus: ReqAppsStatus;
   attendeeLanguage: string | null;

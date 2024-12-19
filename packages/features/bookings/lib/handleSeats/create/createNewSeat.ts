@@ -8,7 +8,7 @@ import { refreshCredentials } from "@calcom/features/bookings/lib/getAllCredenti
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
-} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
+} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { HttpError } from "@calcom/lib/http-error";
 import { handlePayment } from "@calcom/lib/payment/handlePayment";
@@ -21,7 +21,8 @@ import type { SeatedBooking, NewSeatedBookingObject, HandleSeatsResultBooking } 
 
 const createNewSeat = async (
   rescheduleSeatedBookingObject: NewSeatedBookingObject,
-  seatedBooking: SeatedBooking
+  seatedBooking: SeatedBooking,
+  metadata?: Record<string, string>
 ) => {
   const {
     tAttendees,
@@ -89,6 +90,7 @@ const createNewSeat = async (
                 description: additionalNotes,
                 responses,
               },
+              metadata,
               booking: {
                 connect: {
                   id: seatedBooking.id,
