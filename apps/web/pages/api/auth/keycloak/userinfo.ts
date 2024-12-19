@@ -40,7 +40,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     },
   });
   if (userInfoRes.status !== 200) {
-    await prisma.keycloakSessionInfo.delete({
+    await prisma.keycloakSessionInfo.deleteMany({
       where: {
         browserToken: keycloak_token,
       },

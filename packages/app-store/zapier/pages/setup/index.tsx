@@ -72,7 +72,7 @@ export default function ZapierSetup(props: IZapierSetupProps) {
             <div className="invisible md:visible">
               <img className="h-11" src="/api/app-store/zapier/icon.svg" alt="Zapier Logo" />
             </div>
-            <div className="ml-2 md:ml-5 ltr:mr-2 rtl:ml-2">
+            <div className="ml-2 ltr:mr-2 rtl:ml-2 md:ml-5">
               <div className="text-default">{t("setting_up_zapier")}</div>
 
               <>
@@ -122,8 +122,15 @@ export default function ZapierSetup(props: IZapierSetupProps) {
                   </li>
                 )}
                 <Trans i18nKey="zapier_setup_instructions">
-                  <li>Log into your Zapier account and create a new Zap.</li>
-                  <li>Select OneHash as your Trigger app. Also choose a Trigger event.</li>
+                  <li>
+                    Go to
+                    <a href={props.inviteLink} className="ml-1 mr-1 text-orange-600 underline">
+                      Zapier Invite Link
+                    </a>
+                    and install the OneHash Cal app.
+                  </li>
+                  <li>Proceed to create a new Zap.</li>
+                  <li>Select OneHash Cal as your Trigger app. Also choose a Trigger event.</li>
                   <li>Choose your account and then enter your Unique API Key.</li>
                   <li>Test your Trigger.</li>
                   <li>You&apos;re set!</li>

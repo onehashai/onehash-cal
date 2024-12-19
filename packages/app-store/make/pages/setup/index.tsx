@@ -71,7 +71,7 @@ export default function MakeSetup({ inviteLink }: InferGetServerSidePropsType<ty
             <div className="invisible md:visible">
               <img className="h-11" src="/api/app-store/make/icon.svg" alt="Make Logo" />
             </div>
-            <div className="ml-2 md:ml-5 ltr:mr-2 rtl:ml-2">
+            <div className="ml-2 ltr:mr-2 rtl:ml-2 md:ml-5">
               <div className="text-default">{t("setting_up_make")}</div>
 
               <>
@@ -118,10 +118,10 @@ export default function MakeSetup({ inviteLink }: InferGetServerSidePropsType<ty
                     <a href={inviteLink} className="ml-1 mr-1 text-orange-600 underline">
                       Make Invite Link
                     </a>
-                    and install the Cal.com app.
+                    and install the OneHash Cal app.
                   </li>
-                  <li>Log into your Make account and create a new Scenario.</li>
-                  <li>Select Cal.com as your Trigger app. Also choose a Trigger event.</li>
+                  <li>Proceed to create a new Scenario.</li>
+                  <li>Select OneHash Cal as your Trigger app. Also choose a Trigger event.</li>
                   <li>Choose your account and then enter your Unique API Key.</li>
                   <li>Test your Trigger.</li>
                   <li>You&apos;re set!</li>
