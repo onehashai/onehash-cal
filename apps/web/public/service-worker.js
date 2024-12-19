@@ -11,15 +11,15 @@ self.addEventListener("push", async (event) => {
     return;
   }
 
-  const title = notificationData.title || "You have a new notification from Cal.com";
-  const image = "https://cal.com/api/logo?type=icon";
+  const title = notificationData.title || "You have a new notification from OneHash Cal";
+  const image = "https://cal.id/api/logo?type=icon";
   const newNotificationOptions = {
     requireInteraction: true,
     ...notificationData,
     icon: image,
     badge: image,
     data: {
-      url: notificationData.data?.url || "https://app.cal.com",
+      url: notificationData.data?.url || "https://app.cal.id",
     },
     silent: false,
     vibrate: [300, 100, 400],
