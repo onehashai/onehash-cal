@@ -204,12 +204,15 @@ async function scheduleReminders() {
         } else if (reminder.workflowStep.template === WorkflowTemplates.REMINDER) {
           emailContent = emailReminderTemplate(
             false,
+            reminder.booking.user?.locale || "en",
             reminder.workflowStep.action,
             getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
             reminder.booking.startTime.toISOString() || "",
             reminder.booking.endTime.toISOString() || "",
             reminder.booking.eventType?.title || "",
             timeZone || "",
+            reminder.booking.location || "",
+            bookingMetadataSchema.parse(reminder.booking.metadata || {})?.videoCallUrl || "",
             attendeeName || "",
             name || "",
             !!reminder.booking.user?.hideBranding
@@ -227,6 +230,7 @@ async function scheduleReminders() {
           );
           emailContent = emailRatingTemplate({
             isEditingMode: true,
+            locale: reminder.booking.user?.locale || "en",
             action: reminder.workflowStep.action || WorkflowActions.EMAIL_ADDRESS,
             timeFormat: getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
             startTime: reminder.booking.startTime.toISOString() || "",
@@ -307,12 +311,15 @@ async function scheduleReminders() {
 
         emailContent = emailReminderTemplate(
           false,
+          reminder.booking.user?.locale || "en",
           WorkflowActions.EMAIL_ATTENDEE,
           getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
           reminder.booking.startTime.toISOString() || "",
           reminder.booking.endTime.toISOString() || "",
           reminder.booking.eventType?.title || "",
           timeZone || "",
+          reminder.booking.location || "",
+          bookingMetadataSchema.parse(reminder.booking.metadata || {})?.videoCallUrl || "",
           attendeeName || "",
           name || "",
           !!reminder.booking.user?.hideBranding
