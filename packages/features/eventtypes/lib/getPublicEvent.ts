@@ -6,7 +6,7 @@ import { privacyFilteredLocations } from "@calcom/app-store/locations";
 import { getAppFromSlug } from "@calcom/app-store/utils";
 import dayjs from "@calcom/dayjs";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
-import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { isRecurringEvent, parseRecurringEvent } from "@calcom/lib";
 import { getOrgOrTeamAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";

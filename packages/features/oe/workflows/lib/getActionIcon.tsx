@@ -1,8 +1,8 @@
-import { isSMSOrWhatsappAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
+import { isSMSOrWhatsappAction } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
 import { classNames } from "@calcom/lib";
 import { Icon } from "@calcom/ui";
 
-import type { WorkflowStep } from "../lib/types";
+import type { WorkflowStep } from "./types";
 
 export function getActionIcon(steps: WorkflowStep[], className?: string): JSX.Element {
   if (steps.length === 0) {

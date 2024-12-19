@@ -110,7 +110,7 @@ export const LockEventTypeSwitch = ({ currentOrg, isAdminOrOwner }: GeneralViewP
                     onValueChange={(val: CurrentEventTypeOptions) => {
                       formMethods.setValue("currentEventTypeOptions", val);
                     }}
-                    className={classNames("mt-1 flex min-h-24 flex-col gap-4")}>
+                    className={classNames("min-h-24 mt-1 flex flex-col gap-4")}>
                     <RadioArea.Item
                       checked={currentLockedOption === CurrentEventTypeOptions.HIDE}
                       value={CurrentEventTypeOptions.HIDE}

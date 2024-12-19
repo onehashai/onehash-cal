@@ -1,9 +1,9 @@
 import { Prisma } from "@prisma/client";
 import type { z } from "zod";
 
-import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/ee/organizations/lib/orgDomains";
 import { TeamBilling } from "@calcom/features/ee/billing/teams";
-import removeMember from "@calcom/features/ee/teams/lib/removeMember";
+import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
+import removeMember from "@calcom/features/oe/teams/lib/removeMember";
 import { deleteDomain } from "@calcom/lib/domainManager/organization";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
@@ -284,7 +284,7 @@ export class TeamRepository {
     for (const memberId of memberIds) {
       for (const teamId of teamIds) {
         deleteMembershipPromises.push(
-          // This removeMember function is from @calcom/features/ee/teams/lib/removeMember.ts we should probably move it to this repository.
+          // This removeMember function is from @calcom/features/oe/teams/lib/removeMember.ts we should probably move it to this repository.
           removeMember({
             teamId,
             memberId,

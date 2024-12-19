@@ -4,10 +4,10 @@ import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 
-import SkeletonLoaderTeamList from "@calcom/features/ee/teams/components/SkeletonloaderTeamList";
 import { FilterResults } from "@calcom/features/filters/components/FilterResults";
 import { TeamsFilter } from "@calcom/features/filters/components/TeamsFilter";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
+import SkeletonLoaderTeamList from "@calcom/features/oe/teams/components/SkeletonloaderTeamList";
 import Shell, { ShellMain } from "@calcom/features/shell/Shell";
 import { UpgradeTip } from "@calcom/features/tips";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -160,7 +160,7 @@ export default function RoutingForms({
           background="/tips/routing-forms"
           isParentLoading={<SkeletonLoaderTeamList />}
           buttons={
-            <div className="space-y-2 sm:space-x-2 rtl:space-x-reverse">
+            <div className="space-y-2 rtl:space-x-reverse sm:space-x-2">
               <ButtonGroup>
                 <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
                   {t("upgrade")}

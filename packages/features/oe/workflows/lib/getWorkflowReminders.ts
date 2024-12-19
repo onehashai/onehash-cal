@@ -34,9 +34,11 @@ type PartialBooking =
       | "attendees"
       | "userPrimaryEmail"
       | "smsReminderNumber"
+      | "title"
     > & {
       eventType:
         | (Partial<EventType> & {
+            slug: string;
             team: { parentId?: number };
             hosts: { user: { email: string; destinationCalendar?: { primaryEmail: string } } }[] | undefined;
           })
@@ -213,7 +215,7 @@ export async function getAllUnscheduledReminders(): Promise<PartialWorkflowRemin
     method: WorkflowMethods.EMAIL,
     scheduled: false,
     scheduledDate: {
-      lte: dayjs().add(72, "hour").toISOString(),
+      lte: dayjs().add(2, "hour").toISOString(),
     },
     OR: [{ cancelled: null }, { cancelled: false }],
   };

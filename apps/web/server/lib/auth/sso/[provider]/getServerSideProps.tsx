@@ -2,10 +2,10 @@ import type { GetServerSidePropsContext } from "next";
 
 import { getPremiumMonthlyPlanPriceId } from "@calcom/app-store/stripepayment/lib/utils";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import stripe from "@calcom/features/ee/payments/server/stripe";
 import { hostedCal, isSAMLLoginEnabled, samlProductID, samlTenantID } from "@calcom/features/ee/sso/lib/saml";
 import { ssoTenantProduct } from "@calcom/features/ee/sso/lib/sso";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { IS_PREMIUM_USERNAME_ENABLED } from "@calcom/lib/constants";
 import { checkUsername } from "@calcom/lib/server/checkUsername";
 import prisma from "@calcom/prisma";

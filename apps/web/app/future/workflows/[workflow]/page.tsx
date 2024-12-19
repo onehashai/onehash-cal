@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 
 import { getServerSessionForAppDir } from "@calcom/feature-auth/lib/get-server-session-for-app-dir";
-import LegacyPage from "@calcom/features/ee/workflows/pages/workflow";
+import LegacyPage from "@calcom/features/oe/workflows/pages/workflow";
 import { WorkflowRepository } from "@calcom/lib/server/repository/workflow";
 
 const querySchema = z.object({

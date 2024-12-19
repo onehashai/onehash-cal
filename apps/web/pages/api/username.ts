@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
-import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { checkUsername } from "@calcom/lib/server/checkUsername";
 
 type Response = {

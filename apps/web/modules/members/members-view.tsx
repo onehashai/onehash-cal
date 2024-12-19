@@ -1,6 +1,6 @@
 "use client";
 
-import MembersView from "@calcom/features/ee/organizations/pages/members";
+import MembersView from "@calcom/features/oe/organizations/pages/members";
 import Shell from "@calcom/features/shell/Shell";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HeadSeo } from "@calcom/ui";

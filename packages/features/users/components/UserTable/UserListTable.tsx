@@ -17,7 +17,7 @@ import {
   textFilter,
   isTextFilterValue,
 } from "@calcom/features/data-table";
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import classNames from "@calcom/lib/classNames";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import {
@@ -502,7 +502,7 @@ export function UserListTable() {
               <DataTableToolbar.SearchBar
                 table={table}
                 onSearch={(value) => setDebouncedSearchTerm(value)}
-                className="max-w-full sm:max-w-64"
+                className="sm:max-w-64 max-w-full"
               />
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2">

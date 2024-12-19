@@ -8,10 +8,6 @@ import { getEventName } from "@calcom/core/event";
 import getLocationsOptionsForSelect from "@calcom/features/bookings/lib/getLocationOptionsForSelect";
 import DestinationCalendarSelector from "@calcom/features/calendars/DestinationCalendarSelector";
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
 import { MultiplePrivateLinksController } from "@calcom/features/eventtypes/components";
 import type {
   FormValues,
@@ -24,6 +20,10 @@ import type {
 import { FormBuilder } from "@calcom/features/form-builder/FormBuilder";
 import type { fieldSchema } from "@calcom/features/form-builder/schema";
 import type { EditableSchema } from "@calcom/features/form-builder/schema";
+import {
+  allowDisablingAttendeeConfirmationEmails,
+  allowDisablingHostConfirmationEmails,
+} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import { BookerLayoutSelector } from "@calcom/features/settings/BookerLayoutSelector";
 import { classNames } from "@calcom/lib";
 import cx from "@calcom/lib/classNames";

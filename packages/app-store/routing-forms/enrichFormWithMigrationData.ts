@@ -1,4 +1,4 @@
-import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { CAL_URL } from "@calcom/lib/constants";
 import { teamMetadataSchema, userMetadata } from "@calcom/prisma/zod-utils";
 

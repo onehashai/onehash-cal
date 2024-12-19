@@ -3,8 +3,8 @@ import { _generateMetadata } from "app/_utils";
 import { WithLayout } from "app/layoutHOC";
 
 import { getServerSessionForAppDir } from "@calcom/feature-auth/lib/get-server-session-for-app-dir";
-import LegacyPage from "@calcom/features/ee/workflows/pages/index";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
+import LegacyPage from "@calcom/features/oe/workflows/pages/index";
 import { WorkflowRepository } from "@calcom/lib/server/repository/workflow";
 
 export const generateMetadata = async () =>

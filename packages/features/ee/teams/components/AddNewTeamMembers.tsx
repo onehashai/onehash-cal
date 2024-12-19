@@ -3,9 +3,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
-import InviteLinkSettingsModal from "@calcom/features/ee/teams/components/InviteLinkSettingsModal";
-import { MemberInvitationModalWithoutMembers } from "@calcom/features/ee/teams/components/MemberInvitationModal";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import InviteLinkSettingsModal from "@calcom/features/oe/teams/components/InviteLinkSettingsModal";
+import { MemberInvitationModalWithoutMembers } from "@calcom/features/oe/teams/components/MemberInvitationModal";
 import { classNames } from "@calcom/lib";
 import { APP_NAME } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";

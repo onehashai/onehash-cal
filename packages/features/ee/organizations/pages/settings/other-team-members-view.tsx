@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-import MemberInvitationModal from "@calcom/ee/teams/components/MemberInvitationModal";
+import MemberInvitationModal from "@calcom/features/oe/teams/components/MemberInvitationModal";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
 import { MembershipRole } from "@calcom/prisma/enums";

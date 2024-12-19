@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 
 import { hashPassword } from "@calcom/features/auth/lib/hashPassword";
-import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { getTranslation } from "@calcom/lib/server/i18n";

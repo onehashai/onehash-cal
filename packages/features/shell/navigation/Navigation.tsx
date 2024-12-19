@@ -5,11 +5,11 @@ import AllProducts from "shell/AllProducts";
 
 import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookingBadge";
+import { KBarTrigger } from "@calcom/features/kbar/Kbar";
 import {
   useOrgBranding,
   type OrganizationBranding,
-} from "@calcom/features/ee/organizations/context/provider";
-import { KBarTrigger } from "@calcom/features/kbar/Kbar";
+} from "@calcom/features/oe/organizations/context/provider";
 import { classNames, isPrismaObjOrUndefined } from "@calcom/lib";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";

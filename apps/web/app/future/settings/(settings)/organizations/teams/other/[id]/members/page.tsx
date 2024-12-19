@@ -1,7 +1,7 @@
 import { _generateMetadata, getFixedT } from "app/_utils";
 
 import { getServerSessionForAppDir } from "@calcom/features/auth/lib/get-server-session-for-app-dir";
-import LegacyPage from "@calcom/features/ee/organizations/pages/settings/other-team-members-view";
+import LegacyPage from "@calcom/features/oe/organizations/pages/settings/other-team-members-view";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
 export const generateMetadata = async () =>

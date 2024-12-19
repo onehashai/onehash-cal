@@ -8,7 +8,6 @@ import type { FC } from "react";
 import { memo, useEffect, useState } from "react";
 import { z } from "zod";
 
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import useIntercom from "@calcom/features/ee/support/lib/intercom/useIntercom";
 import { EventTypeEmbedButton, EventTypeEmbedDialog } from "@calcom/features/embed/EventTypeEmbed";
 import { EventTypeDescription } from "@calcom/features/eventtypes/components";
@@ -16,6 +15,7 @@ import CreateEventTypeDialog from "@calcom/features/eventtypes/components/Create
 import { DuplicateDialog } from "@calcom/features/eventtypes/components/DuplicateDialog";
 import { InfiniteSkeletonLoader } from "@calcom/features/eventtypes/components/SkeletonLoader";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import OneHashChatProvider from "@calcom/features/support/onehashchat/OneHashChatProvider";
 import { classNames, parseEventTypeColor } from "@calcom/lib";
@@ -126,7 +126,7 @@ const InfiniteTeamsTab: FC<InfiniteTeamsTabProps> = (props) => {
   return (
     <div>
       <TextField
-        className="bg-subtle !border-muted mb-4 mr-auto max-w-64 rounded-md !pl-0 focus:!ring-offset-0"
+        className="bg-subtle !border-muted max-w-64 mb-4 mr-auto rounded-md !pl-0 focus:!ring-offset-0"
         addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
         addOnClassname="!border-muted"
         containerClassName="max-w-64 focus:!ring-offset-0 mb-4"
@@ -675,7 +675,7 @@ export const InfiniteEventTypeList = ({
                       </div>
                     </div>
                   </div>
-                  <div className="mx-5 flex min-w-9 sm:hidden">
+                  <div className="min-w-9 mx-5 flex sm:hidden">
                     <Dropdown>
                       <DropdownMenuTrigger asChild data-testid={`event-type-options-${type.id}`}>
                         <Button type="button" variant="icon" color="secondary" StartIcon="ellipsis" />
