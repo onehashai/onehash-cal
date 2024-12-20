@@ -122,7 +122,14 @@ export default function ZapierSetup(props: IZapierSetupProps) {
                   </li>
                 )}
                 <Trans i18nKey="zapier_setup_instructions">
-                  <li>Log into your Zapier account and create a new Zap.</li>
+                  <li>
+                    Go to
+                    <a href={props.inviteLink} className="ml-1 mr-1 text-orange-600 underline">
+                      Zapier Invite Link
+                    </a>
+                    and install the OneHash Cal app.
+                  </li>
+                  <li>Proceed to create a new Zap.</li>
                   <li>Select OneHash Cal as your Trigger app. Also choose a Trigger event.</li>
                   <li>Choose your account and then enter your Unique API Key.</li>
                   <li>Test your Trigger.</li>
