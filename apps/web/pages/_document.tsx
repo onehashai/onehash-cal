@@ -152,7 +152,7 @@ class MyDocument extends Document<Props> {
                   j.async=true;
                   j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
                   f.parentNode.insertBefore(j,f);
-                })(window,document,'script','dataLayer','GTM-W9HWLSJ');
+                })(window,document,'script','dataLayer','GTM-KNB8Q7R4');
               `,
             }}
           />
