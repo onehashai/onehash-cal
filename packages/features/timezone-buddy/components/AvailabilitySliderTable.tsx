@@ -59,7 +59,7 @@ function UpgradeTeamTip() {
       background="/tips/teams"
       features={[]}
       buttons={
-        <div className="space-y-2 sm:space-x-2 rtl:space-x-reverse">
+        <div className="space-y-2 rtl:space-x-reverse sm:space-x-2">
           <ButtonGroup>
             <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
               {t("create_team")}
@@ -249,13 +249,13 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
         cell: ({ row }) => {
           const { username, email, timeZone, name, avatarUrl, profile } = row.original;
           return (
-            <div className="flex max-w-64 flex-shrink-0 items-center gap-2 overflow-hidden">
+            <div className="max-w-64 flex flex-shrink-0 items-center gap-2 overflow-hidden">
               <UserAvatar
                 size="sm"
                 user={{
                   username,
                   name,
-                  avatarUrl,
+                  avatarUrl: avatarUrl ?? null,
                   profile,
                 }}
               />
@@ -414,7 +414,23 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
             data={flatData}
             isPending={isPending}
             onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}>
-            <DataTableToolbar.Root>
+            <DataTableToolbar.CTA>
+              <div className="flex gap-2">
+                <div className="flex items-center  gap-2">
+                  <label htmlFor="MemberSelect">{t("book_members")}</label>
+                  <Switch
+                    name="MemberSelect"
+                    id="MemberSelect"
+                    checked={isMemberSelectEnabled}
+                    onCheckedChange={(value) => {
+                      setIsMemberSelectEnabled(value);
+                    }}
+                  />
+                </div>
+                {isMemberSelectEnabled && <Button onClick={handleBookMembers}>Book</Button>}
+              </div>
+            </DataTableToolbar.CTA>
+            {/* <DataTableToolbar.Root>
               <DataTableToolbar.SearchBar
                 table={table}
                 onSearch={(value) => setSearchString(value)}
@@ -435,7 +451,7 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
                   </div>
                 }
               />
-            </DataTableToolbar.Root>
+            </DataTableToolbar.Root> */}
           </DataTable>
         </CellHighlightContainer>
         {selectedUser && editSheetOpen ? (
