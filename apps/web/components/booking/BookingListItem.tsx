@@ -111,6 +111,8 @@ const isBookingReroutable = (booking: ParsedBooking): booking is ReroutableBooki
 };
 
 function BookingListItem(booking: BookingItemProps) {
+  const parsedBooking = buildParsedBooking(booking);
+
   const { userId, userTimeZone, userTimeFormat, userEmail } = booking.loggedInUser;
   //TODO:INSTANT MEETING
   let isOrganizer = false;
@@ -617,7 +619,7 @@ function BookingListItem(booking: BookingItemProps) {
           setExpanded(!expanded);
         }}
         className="hover:bg-muted group flex cursor-pointer flex-col sm:flex-row">
-        <td className="hidden align-top sm:table-cell sm:min-w-[12rem] ltr:pl-6 rtl:pr-6">
+        <td className="hidden align-top ltr:pl-6 rtl:pr-6 sm:table-cell sm:min-w-[12rem]">
           <div className="cursor-pointer py-4">
             <div className="text-emphasis text-sm leading-6">{startTime}</div>
             <div className="text-subtle text-sm">
@@ -727,7 +729,7 @@ function BookingListItem(booking: BookingItemProps) {
                 </div>
                 {booking.description && (
                   <div
-                    className="max-w-10/12 text-default truncate text-sm sm:max-w-32 md:max-w-52 xl:max-w-80"
+                    className="max-w-10/12 text-default sm:max-w-32 md:max-w-52 xl:max-w-80 truncate text-sm"
                     title={booking.description}>
                     &quot;{booking.description}&quot;
                   </div>
@@ -748,7 +750,7 @@ function BookingListItem(booking: BookingItemProps) {
               <div
                 title={title}
                 className={classNames(
-                  "max-w-10/12 text-emphasis text-sm font-medium leading-6 sm:max-w-56 md:max-w-full",
+                  "max-w-10/12 text-emphasis sm:max-w-56 text-sm font-medium leading-6 md:max-w-full",
                   isCancelled ? "line-through" : ""
                 )}>
                 {title}
@@ -762,7 +764,7 @@ function BookingListItem(booking: BookingItemProps) {
               </div>
               {booking.description && (
                 <div
-                  className="max-w-10/12 text-default truncate text-sm sm:max-w-32 md:max-w-52 xl:max-w-80"
+                  className="max-w-10/12 text-default sm:max-w-32 md:max-w-52 xl:max-w-80 truncate text-sm"
                   title={booking.description}>
                   &quot;{booking.description}&quot;
                 </div>
@@ -784,7 +786,7 @@ function BookingListItem(booking: BookingItemProps) {
             </div>
           </div>
         </td>
-        <td className="flex w-full flex-col flex-wrap items-end justify-end space-x-2 space-y-2 py-4 pl-4 text-right text-sm font-medium sm:flex-row sm:flex-nowrap sm:space-y-0 sm:pl-0 md:items-center ltr:pr-4 rtl:pl-4">
+        <td className="flex w-full flex-col flex-wrap items-end justify-end space-x-2 space-y-2 py-4 pl-4 text-right text-sm font-medium ltr:pr-4 rtl:pl-4 sm:flex-row sm:flex-nowrap sm:space-y-0 sm:pl-0 md:items-center">
           {isUpcoming && !isCancelled ? (
             <>
               {isPending && (userId === booking.user?.id || booking.isUserTeamAdminOrOwner) && (

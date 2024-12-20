@@ -1,4 +1,3 @@
-import federatedLogout from "auth/lib/federatedLogout";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -21,6 +20,7 @@ import {
 // TODO (Platform): we shouldnt be importing from web here
 import { useGetUserAttributes } from "@calcom/web/components/settings/platform/hooks/useGetUserAttributes";
 
+import federatedLogout from "../../auth/lib/federatedLogout";
 import usePostHog from "../../ee/event-tracking/lib/posthog/userPostHog";
 import FreshChatProvider from "../../ee/support/lib/freshchat/FreshChatProvider";
 

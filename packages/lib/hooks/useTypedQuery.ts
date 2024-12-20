@@ -113,7 +113,7 @@ export function useTypedQuery<T extends z.AnyZodObject>(schema: T) {
     }
   }
 
-  function setDateRange(startDate: string, endDate: string) {
+  function setDateRange(startDate: string, endDate?: string) {
     const existingStartDate = parsedQuery.afterStartDate;
     const existingEndDate = parsedQuery.beforeEndDate;
 
@@ -123,7 +123,7 @@ export function useTypedQuery<T extends z.AnyZodObject>(schema: T) {
       search.set("afterStartDate", startDate);
     }
 
-    if (existingEndDate !== endDate) {
+    if (endDate && existingEndDate !== endDate) {
       search.set("beforeEndDate", endDate);
     }
     router.replace(`${pathname}?${search.toString()}`);

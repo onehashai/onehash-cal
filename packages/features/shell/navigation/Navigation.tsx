@@ -1,7 +1,6 @@
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { useEffect, useState } from "react";
-import AllProducts from "shell/AllProducts";
 
 import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookingBadge";
@@ -15,6 +14,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import { showToast, Tooltip, Icon, Button } from "@calcom/ui";
 
+import AllProducts from "../AllProducts";
 import { TeamInviteBadge } from "../TeamInviteBadge";
 import type { NavigationItemType } from "./NavigationItem";
 import { NavigationItem, MobileNavigationItem, MobileNavigationMoreItem } from "./NavigationItem";

@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 // eslint-disable-next-line no-restricted-imports
-import { pick } from "lodash";
+import { get, pick } from "lodash";
 import { signOut, useSession } from "next-auth/react";
 import type { BaseSyntheticEvent } from "react";
 import React, { useRef, useState } from "react";
@@ -287,9 +287,7 @@ const ProfileView = () => {
       })),
     ],
     metadata: {
-      phoneNumber: isPrismaObjOrUndefined(user.metadata)?.phoneNumber
-        ? (user.metadata?.phoneNumber as string)
-        : "",
+      phoneNumber: (isPrismaObjOrUndefined(user.metadata)?.phoneNumber as string) ?? "",
     },
   };
 

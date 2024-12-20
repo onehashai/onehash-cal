@@ -1,6 +1,5 @@
 import type { User as UserAuth } from "next-auth";
 import { useSession } from "next-auth/react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -35,9 +34,9 @@ import { ProfileDropdown } from "./user-dropdown/ProfileDropdown";
 import { UserDropdown } from "./user-dropdown/UserDropdown";
 
 // need to import without ssr to prevent hydration errors
-const Tips = dynamic(() => import("@calcom/features/tips").then((mod) => mod.Tips), {
-  ssr: false,
-});
+// const Tips = dynamic(() => import("@calcom/features/tips").then((mod) => mod.Tips), {
+//   ssr: false,
+// });
 
 export type SideBarContainerProps = {
   bannersHeight: number;
@@ -199,7 +198,7 @@ export function SideBar({ bannersHeight, user }: SideBarProps) {
 
         {!isPlatformPages && (
           <div>
-            <Tips />
+            {/* <Tips /> */}
             {bottomNavItems.map((item, index) => (
               <Tooltip side="right" content={t(item.name)} className="lg:hidden" key={item.name}>
                 <ButtonOrLink
@@ -280,11 +279,11 @@ export function ShellMain(props: LayoutProps) {
               className={classNames(props.large && "py-8", "flex w-full max-w-full items-center truncate")}>
               {props.HeadingLeftIcon && <div className="ltr:mr-4">{props.HeadingLeftIcon}</div>}
               <div
-                className={classNames("w-full truncate md:block ltr:mr-4 rtl:ml-4", props.headerClassName)}>
+                className={classNames("w-full truncate ltr:mr-4 rtl:ml-4 md:block", props.headerClassName)}>
                 {props.heading && (
                   <h3
                     className={classNames(
-                      "font-cal text-emphasis inline max-w-28 truncate text-lg font-semibold tracking-wide sm:max-w-72 sm:text-xl md:block md:max-w-80 xl:max-w-full",
+                      "font-cal text-emphasis max-w-28 sm:max-w-72 md:max-w-80 inline truncate text-lg font-semibold tracking-wide sm:text-xl md:block xl:max-w-full",
                       props.smallHeading ? "text-base" : "text-xl",
                       props.hideHeadingOnMobile && "hidden"
                     )}>
@@ -303,7 +302,7 @@ export function ShellMain(props: LayoutProps) {
                   className={classNames(
                     props.backPath
                       ? "relative"
-                      : "pwa:bottom-[max(7rem,_calc(5rem_+_env(safe-area-inset-bottom)))] fixed bottom-20 z-40 md:z-auto ltr:right-4 md:ltr:right-0 rtl:left-4 md:rtl:left-0",
+                      : "pwa:bottom-[max(7rem,_calc(5rem_+_env(safe-area-inset-bottom)))] fixed bottom-20 z-40 ltr:right-4 rtl:left-4 md:z-auto md:ltr:right-0 md:rtl:left-0",
                     "flex-shrink-0 [-webkit-app-region:no-drag] md:relative md:bottom-auto md:right-auto"
                   )}>
                   {isLocaleReady && props.CTA}

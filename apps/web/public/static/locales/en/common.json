@@ -4,6 +4,7 @@
   "calendly_integration":"Calendly",
   "import_data":"Import",
   "import_data_instructions":"Import configuration from third-party services",
+  "import_data_instructions_app":"Import configuration from {{appName}}",
   "export_bookings":"Export All",
   "export_bookings_desc":"Export your bookings to a CSV file",
   "show_booking_details_desc":"Expand to view booking details",

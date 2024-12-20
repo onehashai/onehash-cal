@@ -5,169 +5,151 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { Suspense, useEffect, useState, useMemo } from "react";
 
 import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
-import type { OrganizationBranding } from "@calcom/features/oe/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
-import { HOSTED_CAL_FEATURES, IS_CALCOM, WEBAPP_URL } from "@calcom/lib/constants";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import type { OrganizationRepository } from "@calcom/lib/server/repository/organization";
 import { IdentityProvider, MembershipRole, UserPermissionRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import type { VerticalTabItemProps } from "@calcom/ui";
-import { Badge, Button, ErrorBoundary, Icon, Skeleton, VerticalTabItem } from "@calcom/ui";
+import { Badge, Button, ErrorBoundary, Icon, Skeleton, useMeta, VerticalTabItem } from "@calcom/ui";
 
-const getTabs = (orgBranding: OrganizationBranding | null) => {
-  const tabs: VerticalTabItemProps[] = [
-    {
-      name: "my_account",
-      href: "/settings/my-account",
-      icon: "user",
-      children: [
-        { name: "profile", href: "/settings/my-account/profile" },
-        { name: "general", href: "/settings/my-account/general" },
-        { name: "calendars", href: "/settings/my-account/calendars" },
-        { name: "conferencing", href: "/settings/my-account/conferencing" },
-        { name: "appearance", href: "/settings/my-account/appearance" },
-        { name: "out_of_office", href: "/settings/my-account/out-of-office" },
-        // TODO
-        // { name: "referrals", href: "/settings/my-account/referrals" },
-      ],
-    },
-    {
-      name: "security",
-      href: "/settings/security",
-      icon: "key",
-      children: [
-        { name: "password", href: "/settings/security/password" },
-        { name: "impersonation", href: "/settings/security/impersonation" },
-        // { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
-      ],
-    },
-    // {
-    //   name: "billing",
-    //   href: "/settings/billing",
-    //   icon: "credit-card",
-    //   children: [{ name: "manage_billing", href: "/settings/billing" }],
-    // },
-    {
-      name: "import",
-      href: "/settings/import",
-      icon: "calendar-plus",
-      children: [{ name: "calendly_integration", href: "/settings/import/calendly" }],
-    },
-    {
-      name: "developer",
-      href: "/settings/developer",
-      icon: "terminal",
-      children: [
-        //
-        { name: "webhooks", href: "/settings/developer/webhooks" },
-        { name: "api_keys", href: "/settings/developer/api-keys" },
-        { name: "admin_api", href: "/settings/organizations/admin-api" },
-        // TODO: Add profile level for embeds
-        // { name: "embeds", href: "/v2/settings/developer/embeds" },
-      ],
-    },
-    {
-      name: "organization",
-      href: "/settings/organizations",
-      children: [
-        {
-          name: "profile",
-          href: "/settings/organizations/profile",
-        },
-        {
-          name: "general",
-          href: "/settings/organizations/general",
-        },
-        ...(orgBranding
-          ? [
-              {
-                name: "members",
-                href: `/settings/organizations/${orgBranding.slug}/members`,
-              },
-            ]
-          : []),
-        {
-          name: "privacy",
-          href: "/settings/organizations/privacy",
-        },
-        {
-          name: "billing",
-          href: "/settings/organizations/billing",
-        },
-        { name: "OAuth Clients", href: "/settings/organizations/platform/oauth-clients" },
-        {
-          name: "SSO",
-          href: "/settings/organizations/sso",
-        },
-        {
-          name: "directory_sync",
-          href: "/settings/organizations/dsync",
-        },
-        {
-          name: "admin_api",
-          href: "https://cal.com/docs/enterprise-features/api/api-reference/bookings#admin-access",
-        },
-        // {
-        //   name: "domain_wide_delegation",
-        //   href: "/settings/organizations/domain-wide-delegation",
-        // },
-      ],
-    },
-    {
-      name: "teams",
-      href: "/teams",
-      icon: "users",
-      children: [],
-    },
-    {
-      name: "other_teams",
-      href: "/settings/organizations/teams/other",
-      icon: "users",
-      children: [],
-    },
-    {
-      name: "admin",
-      href: "/settings/admin",
-      icon: "lock",
-      children: [
-        //
-        { name: "features", href: "/settings/admin/flags" },
-        { name: "license", href: "/auth/setup?step=1" },
-        { name: "impersonation", href: "/settings/admin/impersonation" },
-        { name: "apps", href: "/settings/admin/apps/calendar" },
-        { name: "users", href: "/settings/admin/users" },
-        { name: "organizations", href: "/settings/admin/organizations" },
-        { name: "lockedSMS", href: "/settings/admin/lockedSMS" },
-        { name: "oAuth", href: "/settings/admin/oAuth" },
-        { name: "Workspace Platforms", href: "/settings/admin/workspace-platforms" },
-      ],
-    },
-  ];
+const tabs: VerticalTabItemProps[] = [
+  {
+    name: "my_account",
+    href: "/settings/my-account",
+    icon: "user",
+    children: [
+      { name: "profile", href: "/settings/my-account/profile" },
+      { name: "general", href: "/settings/my-account/general" },
+      { name: "calendars", href: "/settings/my-account/calendars" },
+      { name: "conferencing", href: "/settings/my-account/conferencing" },
+      { name: "appearance", href: "/settings/my-account/appearance" },
+      { name: "out_of_office", href: "/settings/my-account/out-of-office" },
+      // TODO
+      // { name: "referrals", href: "/settings/my-account/referrals" },
+    ],
+  },
+  {
+    name: "security",
+    href: "/settings/security",
+    icon: "key",
+    children: [
+      { name: "password", href: "/settings/security/password" },
+      { name: "impersonation", href: "/settings/security/impersonation" },
+      // { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
+    ],
+  },
+  // {
+  //   name: "billing",
+  //   href: "/settings/billing",
+  //   icon: "credit-card",
+  //   children: [{ name: "manage_billing", href: "/settings/billing" }],
+  // },
+  {
+    name: "import",
+    href: "/settings/import",
+    icon: "calendar-plus",
+    children: [{ name: "calendly_integration", href: "/settings/import/calendly" }],
+  },
+  {
+    name: "developer",
+    href: "/settings/developer",
+    icon: "terminal",
+    children: [
+      //
+      { name: "webhooks", href: "/settings/developer/webhooks" },
+      { name: "api_keys", href: "/settings/developer/api-keys" },
+      { name: "admin_api", href: "/settings/organizations/admin-api" },
+      // TODO: Add profile level for embeds
+      // { name: "embeds", href: "/v2/settings/developer/embeds" },
+    ],
+  },
+  {
+    name: "organization",
+    href: "/settings/organizations",
+    children: [
+      {
+        name: "profile",
+        href: "/settings/organizations/profile",
+      },
+      {
+        name: "general",
+        href: "/settings/organizations/general",
+      },
+      {
+        name: "members",
+        href: "/settings/organizations/members",
+      },
+      {
+        name: "privacy",
+        href: "/settings/organizations/privacy",
+      },
+      // {
+      //   name: "billing",
+      //   href: "/settings/organizations/billing",
+      // },
+      { name: "OAuth Clients", href: "/settings/organizations/platform/oauth-clients" },
+      // {
+      //   name: "SSO",
+      //   href: "/settings/organizations/sso",
+      // },
+      // {
+      //   name: "directory_sync",
+      //   href: "/settings/organizations/dsync",
+      // },
+      // {
+      //   name: "admin_api",
+      //   href: "https://cal.com/docs/enterprise-features/api/api-reference/bookings#admin-access",
+      // },
+    ],
+  },
+  {
+    name: "teams",
+    href: "/teams",
+    icon: "users",
+    children: [],
+  },
+  {
+    name: "other_teams",
+    href: "/settings/organizations/teams/other",
+    icon: "users",
+    children: [],
+  },
+  {
+    name: "admin",
+    href: "/settings/admin",
+    icon: "lock",
+    children: [
+      //
+      { name: "features", href: "/settings/admin/flags" },
+      { name: "license", href: "/auth/setup?step=1" },
+      { name: "impersonation", href: "/settings/admin/impersonation" },
+      { name: "apps", href: "/settings/admin/apps/calendar" },
+      { name: "users", href: "/settings/admin/users" },
+      { name: "organizations", href: "/settings/admin/organizations" },
+      { name: "lockedSMS", href: "/settings/admin/lockedSMS" },
+      { name: "oAuth", href: "/settings/admin/oAuth" },
+    ],
+  },
+];
 
-  tabs.find((tab) => {
-    if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
-      // tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
-      // TODO: Enable dsync for self hosters
-      // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
-    }
-    if (tab.name === "admin" && IS_CALCOM) {
-      tab.children?.push({ name: "create_your_org", href: "/settings/organizations/new" });
-    }
-    if (tab.name === "admin" && IS_CALCOM) {
-      tab.children?.push({ name: "create_license_key", href: "/settings/license-key/new" });
-    }
-  });
-
-  return tabs;
-};
+// tabs.find((tab) => {
+//   if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
+//     tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
+//     // TODO: Enable dsync for self hosters
+//     // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
+//   }
+//   if (tab.name === "admin" && IS_CALCOM) {
+//     tab.children?.push({ name: "create_license_key", href: "/settings/license-key/new" });
+//   }
+// });
 
 // The following keys are assigned to admin only
 const adminRequiredKeys = ["admin"];
@@ -183,7 +165,7 @@ const useTabs = () => {
     orgBranding?.role === MembershipRole.ADMIN || orgBranding?.role === MembershipRole.OWNER;
 
   const processTabsMemod = useMemo(() => {
-    const processedTabs = getTabs(orgBranding).map((tab) => {
+    const processedTabs = tabs.map((tab) => {
       if (tab.href === "/settings/my-account") {
         return {
           ...tab,
@@ -217,10 +199,11 @@ const useTabs = () => {
         !user?.twoFactorEnabled &&
         !user?.passwordAdded
       ) {
-        const filtered = tab?.children?.filter(
-          (childTab) => childTab.href !== "/settings/security/two-factor-auth"
-        );
-        return { ...tab, children: filtered };
+        return { ...tab };
+        // const filtered = tab?.children?.filter(
+        //   (childTab) => childTab.href !== "/settings/security/two-factor-auth"
+        // );
+        // return { ...tab, children: filtered };
       } else if (tab.href === "/settings/developer") {
         const filtered = tab?.children?.filter(
           (childTab) => isOrgAdminOrOwner || childTab.name !== "admin_api"
@@ -264,8 +247,6 @@ interface SettingsSidebarContainerProps {
   className?: string;
   navigationIsOpenedOnMobile?: boolean;
   bannersHeight?: number;
-  currentOrg: SettingsLayoutProps["currentOrg"];
-  otherTeams: SettingsLayoutProps["otherTeams"];
 }
 
 const TeamListCollapsible = () => {
@@ -419,8 +400,6 @@ const SettingsSidebarContainer = ({
   className = "",
   navigationIsOpenedOnMobile,
   bannersHeight,
-  currentOrg: currentOrgProp,
-  otherTeams: otherTeamsProp,
 }: SettingsSidebarContainerProps) => {
   const searchParams = useCompatSearchParams();
   const { t } = useLocale();
@@ -432,15 +411,14 @@ const SettingsSidebarContainer = ({
     }[]
   >();
   const session = useSession();
-  const { data: _currentOrg } = trpc.viewer.organizations.listCurrent.useQuery(undefined, {
-    enabled: !!session.data?.user?.org && !currentOrgProp,
+  const { data: currentOrg } = trpc.viewer.organizations.listCurrent.useQuery(undefined, {
+    enabled: !!session.data?.user?.org,
   });
 
-  const { data: _otherTeams } = trpc.viewer.organizations.listOtherTeams.useQuery(undefined, {
-    enabled: !!session.data?.user?.org && !otherTeamsProp,
+  const { data: otherTeams } = trpc.viewer.organizations.listOtherTeams.useQuery(undefined, {
+    enabled: !!session.data?.user?.org,
   });
-  const currentOrg = currentOrgProp ?? _currentOrg;
-  const otherTeams = otherTeamsProp ?? _otherTeams;
+
   // Same as above but for otherTeams
   useEffect(() => {
     if (otherTeams) {
@@ -690,19 +668,13 @@ const MobileSettingsContainer = (props: { onSideContainerOpen?: () => void }) =>
 
 export type SettingsLayoutProps = {
   children: React.ReactNode;
-  currentOrg: Awaited<ReturnType<typeof OrganizationRepository.findCurrentOrg>> | null;
-  otherTeams: Awaited<ReturnType<typeof OrganizationRepository.findTeamsInOrgIamNotPartOf>> | null;
-  containerClassName?: string;
+  hideHeader?: boolean;
 } & ComponentProps<typeof Shell>;
 
-export default function SettingsLayoutAppDirClient({
-  children,
-  currentOrg,
-  otherTeams,
-  ...rest
-}: SettingsLayoutProps) {
+export default function SettingsLayout({ children, hideHeader, ...rest }: SettingsLayoutProps) {
   const pathname = usePathname();
   const state = useState(false);
+  const { t } = useLocale();
   const [sideContainerOpen, setSideContainerOpen] = state;
 
   useEffect(() => {
@@ -732,8 +704,6 @@ export default function SettingsLayoutAppDirClient({
       {...rest}
       SidebarContainer={
         <SidebarContainerElement
-          currentOrg={currentOrg}
-          otherTeams={otherTeams}
           sideContainerOpen={sideContainerOpen}
           setSideContainerOpen={setSideContainerOpen}
         />
@@ -744,9 +714,11 @@ export default function SettingsLayoutAppDirClient({
         <MobileSettingsContainer onSideContainerOpen={() => setSideContainerOpen(!sideContainerOpen)} />
       }>
       <div className="flex flex-1 [&>*]:flex-1">
-        <div
-          className={classNames("mx-auto max-w-full justify-center lg:max-w-3xl", rest.containerClassName)}>
-          <ErrorBoundary>{children}</ErrorBoundary>
+        <div className="mx-auto max-w-full justify-center lg:max-w-3xl">
+          {!hideHeader && <ShellHeader />}
+          <ErrorBoundary>
+            <Suspense fallback={<Icon name="loader" />}>{children}</Suspense>
+          </ErrorBoundary>
         </div>
       </div>
     </Shell>
@@ -757,8 +729,6 @@ const SidebarContainerElement = ({
   sideContainerOpen,
   bannersHeight,
   setSideContainerOpen,
-  currentOrg,
-  otherTeams,
 }: SidebarContainerElementProps) => {
   const { t } = useLocale();
   return (
@@ -774,8 +744,6 @@ const SidebarContainerElement = ({
       <SettingsSidebarContainer
         navigationIsOpenedOnMobile={sideContainerOpen}
         bannersHeight={bannersHeight}
-        currentOrg={currentOrg}
-        otherTeams={otherTeams}
       />
     </>
   );
@@ -785,6 +753,44 @@ type SidebarContainerElementProps = {
   sideContainerOpen: boolean;
   bannersHeight?: number;
   setSideContainerOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  currentOrg: SettingsLayoutProps["currentOrg"];
-  otherTeams: SettingsLayoutProps["otherTeams"];
 };
+
+export const getLayout = (page: React.ReactElement) => <SettingsLayout>{page}</SettingsLayout>;
+
+export function ShellHeader() {
+  const { meta } = useMeta();
+  const { t, isLocaleReady } = useLocale();
+  return (
+    <>
+      <header
+        className={classNames(
+          "border-subtle mx-auto block justify-between sm:flex",
+          meta.borderInShellHeader && "rounded-t-lg border px-4 py-6 sm:px-6",
+          meta.borderInShellHeader === undefined && "mb-8 border-b pb-8"
+        )}>
+        <div className="flex w-full items-center">
+          {meta.backButton && (
+            <a href="javascript:history.back()">
+              <Icon name="arrow-left" className="mr-7" />
+            </a>
+          )}
+          <div>
+            {meta.title && isLocaleReady ? (
+              <h1 className="font-cal text-emphasis mb-1 text-xl font-semibold leading-5 tracking-wide">
+                {t(meta.title)}
+              </h1>
+            ) : (
+              <div className="bg-emphasis mb-1 h-5 w-24 animate-pulse rounded-lg" />
+            )}
+            {meta.description && isLocaleReady ? (
+              <p className="text-default text-sm ltr:mr-4 rtl:ml-4">{t(meta.description)}</p>
+            ) : (
+              <div className="bg-emphasis h-5 w-32 animate-pulse rounded-lg" />
+            )}
+          </div>
+          <div className="ms-auto flex-shrink-0">{meta.CTA}</div>
+        </div>
+      </header>
+    </>
+  );
+}
