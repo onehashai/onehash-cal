@@ -245,8 +245,7 @@ function BookingListItem(booking: BookingItemProps) {
 
   const editBookingActions: ActionType[] = [
     ...(isBookingInPast
-      ? []
-      : [
+      ? [
           {
             id: "reschedule",
             icon: "clock" as const,
@@ -264,7 +263,8 @@ function BookingListItem(booking: BookingItemProps) {
               setIsOpenRescheduleDialog(true);
             },
           },
-        ]),
+        ]
+      : []),
     ...(isBookingReroutable(parsedBooking)
       ? [
           {
@@ -811,13 +811,13 @@ function BookingListItem(booking: BookingItemProps) {
               <TableActions actions={chargeCardActions} />
             </div>
           )}
-          <BookingItemBadges
+          {/* <BookingItemBadges
             booking={booking}
             isPending={isPending}
             recurringDates={recurringDates}
             userTimeFormat={userTimeFormat}
             userTimeZone={userTimeZone}
-          />
+          /> */}
           {isOrganizer ? (
             <div className="text-md flex items-center pl-3">
               <p className="mt-px">{t("details")}</p>
@@ -1009,11 +1009,11 @@ const BookingItemBadges = ({
           {t("unconfirmed")}
         </Badge>
       )}
-      {booking.eventType?.team && (
+      {/* {booking.eventType?.team && (
         <Badge className="ltr:mr-2 rtl:ml-2" variant="gray">
           {booking.eventType.team.name}
         </Badge>
-      )}
+      )} */}
       {booking?.assignmentReason.length > 0 && (
         <AssignmentReasonTooltip assignmentReason={booking.assignmentReason[0]} />
       )}
