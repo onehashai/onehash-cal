@@ -18,13 +18,13 @@ import {
   ButtonGroup,
   UserAvatar,
   Checkbox,
-  Switch,
   showToast,
   Dropdown,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownItem,
+  Switch,
 } from "@calcom/ui";
 
 import { GroupMeetingDialog } from "../../../../apps/web/components/dialog/GroupMeetingDialog";
@@ -388,53 +388,16 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
                 row.toggleSelected();
                 return;
               }
-              // if (props.isOrg) {
-              //   setEditSheetOpen(true);
-              //   setSelectedUser(row.original);
-              // }
               setEditSheetOpen(true);
               setSelectedUser(row.original);
             }}
-            // tableCTA={
-            //   <div className="flex gap-2">
-            //     <div className="flex items-center  gap-2">
-            //       <label htmlFor="MemberSelect">{t("book_members")}</label>
-            //       <Switch
-            //         name="MemberSelect"
-            //         id="MemberSelect"
-            //         checked={isMemberSelectEnabled}
-            //         onCheckedChange={(value) => {
-            //           setIsMemberSelectEnabled(value);
-            //         }}
-            //       />
-            //     </div>
-            //     {isMemberSelectEnabled && <Button onClick={handleBookMembers}>Book</Button>}
-            //   </div>
-            // }
-            data={flatData}
             isPending={isPending}
             onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}>
-            <DataTableToolbar.CTA>
-              <div className="flex gap-2">
-                <div className="flex items-center  gap-2">
-                  <label htmlFor="MemberSelect">{t("book_members")}</label>
-                  <Switch
-                    name="MemberSelect"
-                    id="MemberSelect"
-                    checked={isMemberSelectEnabled}
-                    onCheckedChange={(value) => {
-                      setIsMemberSelectEnabled(value);
-                    }}
-                  />
-                </div>
-                {isMemberSelectEnabled && <Button onClick={handleBookMembers}>Book</Button>}
-              </div>
-            </DataTableToolbar.CTA>
-            {/* <DataTableToolbar.Root>
-              <DataTableToolbar.SearchBar
-                table={table}
-                onSearch={(value) => setSearchString(value)}
-                tableCTA={
+            <DataTableToolbar.Root>
+              <div className="flex">
+                <DataTableToolbar.SearchBar table={table} onSearch={(value) => setSearchString(value)} />
+                <DataTableToolbar.CTA type="button" color="minimal">
+                  {" "}
                   <div className="flex gap-2">
                     <div className="flex items-center  gap-2">
                       <label htmlFor="MemberSelect">{t("book_members")}</label>
@@ -449,9 +412,9 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
                     </div>
                     {isMemberSelectEnabled && <Button onClick={handleBookMembers}>Book</Button>}
                   </div>
-                }
-              />
-            </DataTableToolbar.Root> */}
+                </DataTableToolbar.CTA>
+              </div>
+            </DataTableToolbar.Root>
           </DataTable>
         </CellHighlightContainer>
         {selectedUser && editSheetOpen ? (
