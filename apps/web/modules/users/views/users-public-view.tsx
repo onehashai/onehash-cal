@@ -26,7 +26,7 @@ import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
 function UserFound(props: UserFoundProps) {
   const { users, profile, eventTypes, markdownStrippedBio, entity, isOrgSEOIndexable } = props;
-  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   const [user] = users; //To be used when we only have a single user, not dynamic group
   useTheme(profile.theme);
@@ -179,7 +179,7 @@ function UserFound(props: UserFoundProps) {
 function UserNotFound(props: UserNotFoundProps) {
   const { slug } = props;
   const { t } = useLocale();
-  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   return (
     <>

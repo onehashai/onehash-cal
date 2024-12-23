@@ -1,7 +1,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
+import HelpMenuItem from "@calcom/features/oe/support/components/HelpMenuItem";
 import { classNames } from "@calcom/lib";
 import { JOIN_COMMUNITY, ROADMAP } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";

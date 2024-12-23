@@ -31,7 +31,7 @@ import { useBookerStore } from "./store";
 import type { BookerProps, WrappedBookerProps } from "./types";
 
 const loadFramerFeatures = () => import("./framer-features").then((res) => res.default);
-const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
+const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 const UnpublishedEntity = dynamic(() =>
   import("@calcom/ui/components/unpublished-entity/UnpublishedEntity").then((mod) => mod.UnpublishedEntity)
 );
@@ -281,7 +281,7 @@ const BookerComponent = ({
           data-testid="booker-container"
           className={classNames(
             ...getBookerSizeClassNames(layout, bookerState, hideEventTypeDetails),
-            `bg-default dark:bg-muted grid max-w-full items-start sm:transition-[width] sm:duration-300 sm:motion-reduce:transition-none md:flex-row dark:[color-scheme:dark]`,
+            `bg-default dark:bg-muted grid max-w-full items-start dark:[color-scheme:dark] sm:transition-[width] sm:duration-300 sm:motion-reduce:transition-none md:flex-row`,
             // We remove border only when the content covers entire viewport. Because in embed, it can almost never be the case that it covers entire viewport, we show the border there
             (layout === BookerLayouts.MONTH_VIEW || isEmbed) && "border-subtle rounded-md",
             !isEmbed && "sm:transition-[width] sm:duration-300",
@@ -340,7 +340,7 @@ const BookerComponent = ({
                 {!hideEventTypeDetails && orgBannerUrl && (
                   <img
                     loading="eager"
-                    className="-mb-9 h-16 object-cover object-top sm:h-auto ltr:rounded-tl-md rtl:rounded-tr-md"
+                    className="-mb-9 h-16 object-cover object-top ltr:rounded-tl-md rtl:rounded-tr-md sm:h-auto"
                     alt="org banner"
                     src={orgBannerUrl}
                   />
@@ -418,7 +418,7 @@ const BookerComponent = ({
                 layout === BookerLayouts.COLUMN_VIEW
               }
               className={classNames(
-                "border-subtle rtl:border-default flex h-full w-full flex-col overflow-x-auto px-5 py-3 pb-0 ltr:md:border-l rtl:border-r",
+                "border-subtle rtl:border-default flex h-full w-full flex-col overflow-x-auto px-5 py-3 pb-0 rtl:border-r ltr:md:border-l",
                 layout === BookerLayouts.MONTH_VIEW &&
                   "h-full overflow-hidden md:w-[var(--booker-timeslots-width)]",
                 layout !== BookerLayouts.MONTH_VIEW && "sticky top-0"

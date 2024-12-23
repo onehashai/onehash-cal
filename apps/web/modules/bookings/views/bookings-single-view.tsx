@@ -236,7 +236,7 @@ export default function Success(props: PageProps) {
   const sendFeedback = async (rating: string, comment: string) => {
     mutation.mutate({ bookingUid: bookingInfo.uid, rating: rateValue, comment: comment });
   };
-  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   function setIsCancellationMode(value: boolean) {
     const _searchParams = new URLSearchParams(searchParams?.toString() ?? undefined);

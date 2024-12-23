@@ -53,7 +53,7 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
     brandColor: profile.brandColor,
     darkBrandColor: profile.darkBrandColor,
   });
-  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   const [response, setResponse] = usePrefilledResponse(form);
 
