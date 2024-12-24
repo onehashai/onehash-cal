@@ -33,6 +33,8 @@ import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhoo
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
 import AssignmentReasonRecorder from "@calcom/features/ee/round-robin/assignmentReason/AssignmentReasonRecorder";
 import { getFullName } from "@calcom/features/form-builder/utils";
+import { subscriptionSchema } from "@calcom/features/instant-meeting/schema";
+import { sendNotification } from "@calcom/features/notifications/sendNotification";
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
@@ -49,7 +51,7 @@ import {
 import { isPrismaObj, isPrismaObjOrUndefined } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { isRerouting, shouldIgnoreContactOwner } from "@calcom/lib/bookings/routing/utils";
-import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL } from "@calcom/lib/constants";
+import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
@@ -1695,6 +1697,64 @@ async function handler(
     if (!isDryRun) {
       await sendOrganizerRequestEmail({ ...evt, additionalNotes }, eventType.metadata);
       await sendAttendeeRequestEmailAndSMS({ ...evt, additionalNotes }, attendeesList[0], eventType.metadata);
+      const triggerBrowserNotifications = async () => {
+        const subscribers = [];
+        console.log("in_here_1700");
+        const subscriber = await prisma.user.findFirst({
+          where: {
+            id: organizerUser.id,
+          },
+
+          select: {
+            id: true,
+            NotificationsSubscriptions: {
+              select: {
+                id: true,
+                subscription: true,
+              },
+            },
+          },
+        });
+        console.log("in_here_subscriber", subscriber);
+        subscribers.push(subscriber);
+
+        const promises = subscribers.map((sub) => {
+          const subscription = sub?.NotificationsSubscriptions?.[0]?.subscription;
+          if (!subscription) return Promise.resolve();
+
+          const parsedSubscription = subscriptionSchema.safeParse(JSON.parse(subscription));
+
+          if (!parsedSubscription.success) {
+            logger.error("Invalid subscription", parsedSubscription.error, JSON.stringify(sub));
+            return Promise.resolve();
+          }
+
+          return sendNotification({
+            subscription: {
+              endpoint: parsedSubscription.data.endpoint,
+              keys: {
+                auth: parsedSubscription.data.keys.auth,
+                p256dh: parsedSubscription.data.keys.p256dh,
+              },
+            },
+            title: evt.title,
+            body: "Booking request raised: Action Required",
+            url: `${WEBAPP_URL}/bookings/unconfirmed`,
+            // actions: [
+            //   {
+            //     action: "booking-confirmation",
+            //     title: "Booking Request: Action Required",
+            //     type: "button",
+            //     image: "https://cal.id/api/logo?type=icon",
+            //   },
+            // ],
+          });
+        });
+
+        await Promise.allSettled(promises);
+      };
+
+      await triggerBrowserNotifications();
     }
   }
 
