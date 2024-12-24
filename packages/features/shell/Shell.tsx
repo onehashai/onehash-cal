@@ -13,6 +13,7 @@ import classNames from "@calcom/lib/classNames";
 import { APP_NAME } from "@calcom/lib/constants";
 import { useFormbricks } from "@calcom/lib/formbricks-client";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { ButtonState, useNotifications } from "@calcom/lib/hooks/useNotifications";
 import { Button, ErrorBoundary, HeadSeo, SkeletonText } from "@calcom/ui";
 
 import usePostHog from "../ee/event-tracking/lib/posthog/userPostHog";
@@ -145,7 +146,7 @@ export function ShellMain(props: LayoutProps) {
   const { isLocaleReady, t } = useLocale();
 
   // TODO:NOTIFICATIONS
-  // const { buttonToShow, isLoading, enableNotifications, disableNotifications } = useNotifications();
+  const { buttonToShow, isLoading, enableNotifications, disableNotifications } = useNotifications();
 
   return (
     <>
@@ -205,7 +206,8 @@ export function ShellMain(props: LayoutProps) {
                 </div>
               )}
               {props.actions && props.actions}
-              {/* TODO: temporary hide push notifications {props.heading === "Bookings" && buttonToShow && (
+              {/* TODO: temporary hide push notifications  */}
+              {props.heading === "Bookings" && buttonToShow && (
                 <Button
                   color="primary"
                   onClick={buttonToShow === ButtonState.ALLOW ? enableNotifications : disableNotifications}
@@ -221,7 +223,7 @@ export function ShellMain(props: LayoutProps) {
                       : "allow_browser_notifications"
                   )}
                 </Button>
-              )} */}
+              )}
             </header>
           )}
         </div>

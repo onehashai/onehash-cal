@@ -105,7 +105,8 @@ export default function InstantEventController({
   return (
     <>
       <div className="block items-start sm:flex">
-        {!isOrg || !isTeamEvent ? (
+        {/* {!isOrg || !isTeamEvent ? ( */}
+        {!isTeamEvent ? (
           <EmptyScreen
             headline={t("instant_tab_title")}
             Icon="phone-call"

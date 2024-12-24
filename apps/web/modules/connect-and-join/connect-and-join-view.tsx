@@ -21,7 +21,8 @@ function ConnectAndJoin() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const session = useSession();
-  const isUserPartOfOrg = session.status === "authenticated" && !!session.data.user?.org;
+  // const isUserPartOfOrg = session.status === "authenticated" && !!session.data.user?.org;
+  const isUserPartOfOrg = session.status === "authenticated";
 
   const mutation = trpc.viewer.connectAndJoin.useMutation({
     onSuccess: (res) => {
@@ -51,7 +52,7 @@ function ConnectAndJoin() {
         <EmptyScreen
           headline={t("instant_tab_title")}
           Icon="phone-call"
-          description={t("uprade_to_create_instant_bookings")}
+          // description={t("uprade_to_create_instant_bookings")}
           buttonRaw={
             <div className="flex flex-col items-center justify-center	gap-4">
               {meetingUrl ? (

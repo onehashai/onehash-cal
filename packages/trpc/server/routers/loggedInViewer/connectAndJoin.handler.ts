@@ -23,11 +23,11 @@ type Options = {
 export const Handler = async ({ ctx, input }: Options) => {
   const { token } = input;
   const { user } = ctx;
-  const isLoggedInUserPartOfOrg = !!user.organization.id;
+  // const isLoggedInUserPartOfOrg = !!user.organization.id;
 
-  if (!isLoggedInUserPartOfOrg) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Logged in user is not member of Organization" });
-  }
+  // if (!isLoggedInUserPartOfOrg) {
+  //   throw new TRPCError({ code: "UNAUTHORIZED", message: "Logged in user is not member of Organization" });
+  // }
 
   const tOrganizer = await getTranslation(user?.locale ?? "en", "common");
 

@@ -71,7 +71,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       },
     });
 
-    return res.json({ message: `${status ? "Successfully integrated" : "Rejected "}` });
+    return res.json({ message: `${status ? "Integration Successful " : "Rejected "}` });
   } catch (e) {
     console.error("Error", e);
     throw e;

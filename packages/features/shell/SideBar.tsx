@@ -11,7 +11,7 @@ import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getBookerBaseUrlSync } from "@calcom/lib/getBookerUrl/client";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { useNotifications } from "@calcom/lib/hooks/useNotifications";
+import { ButtonState, useNotifications } from "@calcom/lib/hooks/useNotifications";
 import {
   Avatar,
   Button,
@@ -309,23 +309,22 @@ export function ShellMain(props: LayoutProps) {
                 </div>
               )}
               {props.actions && props.actions}
-              {/* TODO: temporary hide push notifications {props.heading === "Bookings" && buttonToShow && (
-                <Button
-                  color="primary"
-                  onClick={buttonToShow === ButtonState.ALLOW ? enableNotifications : disableNotifications}
-                  loading={isLoading}
-                  disabled={buttonToShow === ButtonState.DENIED}
-                  tooltipSide="bottom"
-                  tooltip={
-                    buttonToShow === ButtonState.DENIED ? t("you_have_denied_notifications") : undefined
-                  }>
-                  {t(
-                    buttonToShow === ButtonState.DISABLE
-                      ? "disable_browser_notifications"
-                      : "allow_browser_notifications"
-                  )}
-                </Button>
-              )} */}
+              {/* TODO: temporary hide push notifications {props.heading === "Bookings" && buttonToShow && ( */}
+              <Button
+                color="primary"
+                onClick={buttonToShow === ButtonState.ALLOW ? enableNotifications : disableNotifications}
+                loading={isLoading}
+                disabled={buttonToShow === ButtonState.DENIED}
+                tooltipSide="bottom"
+                tooltip={
+                  buttonToShow === ButtonState.DENIED ? t("you_have_denied_notifications") : undefined
+                }>
+                {t(
+                  buttonToShow === ButtonState.DISABLE
+                    ? "disable_browser_notifications"
+                    : "allow_browser_notifications"
+                )}
+              </Button>
             </header>
           )}
         </div>
