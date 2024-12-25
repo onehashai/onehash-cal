@@ -685,6 +685,8 @@ if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
       sourcemaps: {
         disable: process.env.SENTRY_DISABLE_SERVER_SOURCE_MAPS === "1",
       },
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
     })
   );
 }
