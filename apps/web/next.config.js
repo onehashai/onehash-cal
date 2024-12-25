@@ -687,6 +687,7 @@ if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
       },
       authToken: process.env.SENTRY_AUTH_TOKEN,
       telemetry: false,
+      project: process.env.SENTRY_PROJECT,
     })
   );
 }
