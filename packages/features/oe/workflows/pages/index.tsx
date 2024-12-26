@@ -107,6 +107,7 @@ function WorkflowsPage({ filteredList }: PageProps) {
               noResultsScreen={<EmptyScreen isFilteredView={true} />}
               SkeletonLoader={SkeletonLoader}>
               <WorkflowList workflows={filteredWorkflows?.filtered} />
+              <EmptyScreen isFilteredView={false} onlyExample={true} />
             </FilterResults>
           </>
         </ShellMain>
