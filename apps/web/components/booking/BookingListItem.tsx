@@ -971,7 +971,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("whatsapp_chat")}
                 </Button>
               )}
-              {isBookingInPast && !(isImported === "yes") && (
+              {(isBookingInPast || isOngoing) && !(isImported === "yes") && (
                 <Button
                   className="flex w-full justify-center "
                   color="secondary"
