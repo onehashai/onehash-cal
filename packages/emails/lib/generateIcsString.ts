@@ -38,11 +38,13 @@ const generateIcsString = ({
   status,
   partstat = "ACCEPTED",
   t,
+  isOrganizer = true,
 }: {
   event: ICSCalendarEvent;
   status: EventStatus;
   partstat?: ParticipationStatus;
   t?: TFunction;
+  isOrganizer?: boolean;
 }) => {
   const location = getVideoCallUrlFromCalEvent(event) || event.location;
 
@@ -65,7 +67,7 @@ const generateIcsString = ({
     startInputType: "utc",
     productId: "calcom/ics",
     title: event.title,
-    description: getRichDescription(event, t),
+    description: getRichDescription(event, t, false, true, isOrganizer),
     duration: { minutes: dayjs(event.endTime).diff(dayjs(event.startTime), "minute") },
     organizer: { name: event.organizer.name, email: event.organizer.email },
     ...{ recurrenceRule },

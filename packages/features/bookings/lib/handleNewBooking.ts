@@ -1699,7 +1699,6 @@ async function handler(
       await sendAttendeeRequestEmailAndSMS({ ...evt, additionalNotes }, attendeesList[0], eventType.metadata);
       const triggerBrowserNotifications = async () => {
         const subscribers = [];
-        console.log("in_here_1700");
         const subscriber = await prisma.user.findFirst({
           where: {
             id: organizerUser.id,
@@ -1715,7 +1714,6 @@ async function handler(
             },
           },
         });
-        console.log("in_here_subscriber", subscriber);
         subscribers.push(subscriber);
 
         const promises = subscribers.map((sub) => {

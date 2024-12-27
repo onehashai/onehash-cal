@@ -6,7 +6,6 @@ import type { z } from "zod";
 import type { EventNameObjectType } from "@calcom/core/event";
 import { getEventName } from "@calcom/core/event";
 import type BaseEmail from "@calcom/emails/templates/_base-email";
-import { IS_DEV } from "@calcom/lib/constants";
 import { formatCalEvent } from "@calcom/lib/formatCalendarEvent";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -88,7 +87,7 @@ import WelcomeUserEmail from "./templates/welcome-user-email";
 type EventTypeMetadata = z.infer<typeof EventTypeMetaDataSchema>;
 
 const sendEmail = (prepare: () => BaseEmail) => {
-  if (IS_DEV) return Promise.resolve();
+  // if (IS_DEV) return Promise.resolve();
 
   return new Promise((resolve, reject) => {
     try {

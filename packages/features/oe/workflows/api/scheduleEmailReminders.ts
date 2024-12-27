@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { v4 as uuidv4 } from "uuid";
 
 import dayjs from "@calcom/dayjs";
+import generateIcsString from "@calcom/emails/lib/generateIcsString";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import logger from "@calcom/lib/logger";
@@ -14,7 +15,6 @@ import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 
 import type { PartialWorkflowReminder } from "../lib/getWorkflowReminders";
 import { getAllRemindersToCancel, getAllUnscheduledReminders } from "../lib/getWorkflowReminders";
-import { getiCalEventAsString } from "../lib/getiCalEventAsString";
 import {
   cancelScheduledEmail,
   getBatchId,
@@ -269,7 +269,9 @@ async function scheduleReminders() {
                 attachments: reminder.workflowStep.includeCalendarEvent
                   ? [
                       {
-                        content: Buffer.from(getiCalEventAsString(reminder.booking) || "").toString("base64"),
+                        content: Buffer.from(
+                          generateIcsString({ event, status: "CONFIRMED", isOrganizer: false }) || ""
+                        ).toString("base64"),
                         filename: "event.ics",
                         type: "text/calendar; method=REQUEST",
                         disposition: "attachment",

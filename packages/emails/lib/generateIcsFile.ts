@@ -35,6 +35,7 @@ export default function generateIcsFile({
       event: calEvent,
       status,
       t,
+      isOrganizer: role === GenerateIcsRole.ORGANIZER,
     }),
     method: "REQUEST",
   };
