@@ -30,7 +30,7 @@ function WorkflowExample(props: WorkflowExampleType) {
   );
 }
 
-export default function EmptyScreen(props: { isFilteredView: boolean }) {
+export default function EmptyScreen(props: { isFilteredView: boolean; onlyExample?: boolean }) {
   const { t } = useLocale();
   const { isFilteredView, onlyExample = false } = props;
   const router = useRouter();
@@ -69,9 +69,9 @@ export default function EmptyScreen(props: { isFilteredView: boolean }) {
   if (onlyExample) {
     return (
       <>
-        <div className="min-h-24 flex w-full flex-col items-center justify-center rounded-md ">
+        <div className="min-h-12 flex w-full flex-col items-center justify-center rounded-md ">
           <div className=" text-center">
-            <p className="text-default  line-clamp-2 text-sm font-normal leading-6 dark:text-gray-300">
+            <p className="text-default  text-md line-clamp-2 font-bold leading-6 dark:text-gray-300">
               {t("workflow_example_desc")}
             </p>
           </div>

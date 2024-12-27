@@ -86,8 +86,13 @@ function WorkflowsPage({ filteredList }: PageProps) {
             ) : null
           }>
           <>
-            {filteredWorkflows?.totalCount ? (
-              <div className="flex">
+            <FilterResults
+              queryRes={{ isPending, data: filteredWorkflows }}
+              emptyScreen={<EmptyScreen isFilteredView={false} />}
+              noResultsScreen={<EmptyScreen isFilteredView={true} />}
+              SkeletonLoader={SkeletonLoader}>
+              <EmptyScreen isFilteredView={false} onlyExample={true} />
+              <div className="mt-4 flex">
                 <TeamsFilter />
                 <div className="mb-4 ml-auto">
                   <CreateButtonWithTeamsList
@@ -100,14 +105,8 @@ function WorkflowsPage({ filteredList }: PageProps) {
                   />
                 </div>
               </div>
-            ) : null}
-            <FilterResults
-              queryRes={{ isPending, data: filteredWorkflows }}
-              emptyScreen={<EmptyScreen isFilteredView={false} />}
-              noResultsScreen={<EmptyScreen isFilteredView={true} />}
-              SkeletonLoader={SkeletonLoader}>
+
               <WorkflowList workflows={filteredWorkflows?.filtered} />
-              <EmptyScreen isFilteredView={false} onlyExample={true} />
             </FilterResults>
           </>
         </ShellMain>
