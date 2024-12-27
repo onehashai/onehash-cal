@@ -260,7 +260,7 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
         subject: emailContent.emailSubject,
         html: emailContent.emailBody,
         batchId,
-        replyTo: evt.organizer.email,
+        replyTo: data.replyTo,
         attachments: includeCalendarEvent
           ? [
               {
@@ -283,6 +283,11 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
     );
   }
 
+  const isArray = Array.isArray(sendTo);
+  const isOrganizer = isArray ? sendTo[0] === evt.organizer.email : sendTo === evt.organizer.email;
+
+  const replyTo = isOrganizer ? evt.attendees[0].email : evt.organizer.email;
+
   if (
     triggerEvent === WorkflowTriggerEvents.NEW_EVENT ||
     triggerEvent === WorkflowTriggerEvents.EVENT_CANCELLED ||
@@ -291,7 +296,7 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
     try {
       if (!sendTo) throw new Error("No email addresses provided");
       const addressees = Array.isArray(sendTo) ? sendTo : [sendTo];
-      const promises = addressees.map((email) => sendEmail({ to: email }, triggerEvent));
+      const promises = addressees.map((email) => sendEmail({ to: email, replyTo }, triggerEvent));
       // TODO: Maybe don't await for this?
       await Promise.all(promises);
     } catch (error) {
@@ -315,6 +320,7 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
           {
             to: sendTo,
             sendAt: scheduledDate.unix(),
+            replyTo,
           },
           triggerEvent
         );

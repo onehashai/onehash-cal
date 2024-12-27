@@ -7,7 +7,7 @@ import generateIcsString from "@calcom/emails/lib/generateIcsString";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import logger from "@calcom/lib/logger";
-import { defaultHandler } from "@calcom/lib/server";
+import { defaultHandler, getTranslation } from "@calcom/lib/server";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import prisma from "@calcom/prisma";
 import { SchedulingType, WorkflowActions, WorkflowMethods, WorkflowTemplates } from "@calcom/prisma/enums";
@@ -256,6 +256,37 @@ async function scheduleReminders() {
         }
         if (emailContent.emailSubject.length > 0 && !emailBodyEmpty && sendTo) {
           const batchId = await getBatchId();
+          const booking = reminder.booking;
+          const t = await getTranslation(booking.user?.locale ?? "en", "common");
+          const attendeePromises = [];
+
+          for (const attendee of booking.attendees) {
+            attendeePromises.push(
+              getTranslation(attendee.locale ?? "en", "common").then((tAttendee) => ({
+                ...attendee,
+                language: { locale: attendee.locale ?? "en", translate: tAttendee },
+              }))
+            );
+          }
+
+          const attendees = await Promise.all(attendeePromises);
+          const event = {
+            ...booking,
+            startTime: dayjs(booking.startTime).utc().format(),
+            endTime: dayjs(booking.endTime).utc().format(),
+            type: booking.eventType?.slug ?? "",
+            organizer: {
+              name: booking.user?.name ?? "",
+              email: booking.user?.email ?? "",
+              timeZone: booking.user?.timeZone ?? "",
+              language: { translate: t, locale: booking.user?.locale ?? "en" },
+            },
+            attendees,
+          };
+          const isArray = Array.isArray(sendTo);
+          const isOrganizer = isArray ? sendTo[0] === booking.user?.email : sendTo === booking.user?.email;
+
+          const replyTo = isOrganizer ? booking.attendees[0].email : booking.user?.email;
 
           sendEmailPromises.push(
             sendSendgridMail(
@@ -265,7 +296,7 @@ async function scheduleReminders() {
                 html: emailContent.emailBody,
                 batchId: batchId,
                 sendAt: dayjs(reminder.scheduledDate).unix(),
-                replyTo: reminder.booking?.userPrimaryEmail ?? reminder.booking.user?.email,
+                replyTo: replyTo,
                 attachments: reminder.workflowStep.includeCalendarEvent
                   ? [
                       {
