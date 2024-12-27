@@ -48,6 +48,7 @@ export type BookingInfo = {
     username?: string;
   };
   eventType: {
+    title: string;
     slug?: string;
     recurringEvent?: RecurringEvent | null;
   };
