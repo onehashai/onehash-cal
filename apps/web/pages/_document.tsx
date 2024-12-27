@@ -172,6 +172,14 @@ class MyDocument extends Document<Props> {
                 }
               : {}
           }>
+          <noscript>
+            <iframe
+              src="https://www.googletagmanager.com/ns.html?id=GTM-KNB8Q7R4"
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
           <Main />
           <NextScript nonce={nonce} />
         </body>
