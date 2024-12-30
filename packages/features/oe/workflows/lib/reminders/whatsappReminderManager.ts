@@ -79,9 +79,9 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
           action,
           evt.organizer.timeFormat,
           evt.startTime,
-          evt.title,
+          evt.eventType.title,
           timeZone,
-          attendeeName,
+          attendeeName.split(" ")[0],
           name
         ) || message;
       break;
@@ -92,9 +92,9 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
           action,
           evt.organizer.timeFormat,
           evt.startTime,
-          evt.title,
+          evt.eventType.title,
           timeZone,
-          attendeeName,
+          attendeeName.split(" ")[0],
           name
         ) || message;
       break;
@@ -105,9 +105,9 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
           action,
           evt.organizer.timeFormat,
           evt.startTime,
-          evt.title,
+          evt.eventType.title,
           timeZone,
-          attendeeName,
+          attendeeName.split(" ")[0],
           name
         ) || message;
       break;
@@ -118,9 +118,9 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
           action,
           evt.organizer.timeFormat,
           evt.startTime,
-          evt.title,
+          evt.eventType.title,
           timeZone,
-          attendeeName,
+          attendeeName.split(" ")[0],
           name
         ) || message;
       break;
