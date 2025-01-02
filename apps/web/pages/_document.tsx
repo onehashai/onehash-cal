@@ -3,7 +3,6 @@ import { dir } from "i18next";
 import type { NextPageContext } from "next";
 import type { DocumentContext, DocumentProps } from "next/document";
 import Document, { Head, Html, Main, NextScript } from "next/document";
-import Script from "next/script";
 import { z } from "zod";
 
 import { IS_PRODUCTION } from "@calcom/lib/constants";
@@ -72,7 +71,7 @@ class MyDocument extends Document<Props> {
             }}
           />
           {/* Microsoft Clarity Script */}
-          <script
+          {/* <script
             id="microsoft-clarity-init"
             dangerouslySetInnerHTML={{
               __html: `
@@ -83,9 +82,9 @@ class MyDocument extends Document<Props> {
                 })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_MICROSOFT_CLARITY}");
                 `,
             }}
-          />
+          /> */}
           {/* Facebook Pixel Script */}
-          <script
+          {/* <script
             id="pixel"
             dangerouslySetInnerHTML={{
               __html: `
@@ -101,7 +100,7 @@ class MyDocument extends Document<Props> {
                   fbq('track', 'PageView');
                 `,
             }}
-          />
+          /> */}
           <link rel="apple-touch-icon" sizes="180x180" href="/api/logo?type=apple-touch-icon" />
           <link rel="icon" type="image/png" sizes="32x32" href="/api/logo?type=favicon-32" />
           <link rel="icon" type="image/png" sizes="16x16" href="/api/logo?type=favicon-16" />
@@ -119,7 +118,7 @@ class MyDocument extends Document<Props> {
           )}
 
           {/* Google Ads Global site tag */}
-          <Script
+          {/* <Script
             strategy="afterInteractive"
             src="https://www.googletagmanager.com/gtag/js?id=AW-613079827"
             async
@@ -135,10 +134,10 @@ class MyDocument extends Document<Props> {
                 gtag('config', 'AW-613079827');
               `,
             }}
-          />
+          /> */}
 
           {/* Google Tag Manager */}
-          <Script
+          {/* <Script
             id="gtm"
             strategy="afterInteractive"
             dangerouslySetInnerHTML={{
@@ -155,7 +154,7 @@ class MyDocument extends Document<Props> {
                 })(window,document,'script','dataLayer','GTM-KNB8Q7R4');
               `,
             }}
-          />
+          /> */}
         </Head>
 
         <body
