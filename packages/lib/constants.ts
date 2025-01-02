@@ -16,11 +16,11 @@ export const WEBAPP_URL =
   RAILWAY_STATIC_URL ||
   HEROKU_URL ||
   RENDER_URL ||
-  "http://localhost:3000";
+  "http://localhost:3001";
 
 // OAuth needs to have HTTPS(which is not generally setup locally) and a valid tld(*.local isn't a valid tld)
 // So for development purpose, we would stick to localhost only
-export const WEBAPP_URL_FOR_OAUTH = IS_PRODUCTION || IS_DEV ? WEBAPP_URL : "http://localhost:3000";
+export const WEBAPP_URL_FOR_OAUTH = IS_PRODUCTION || IS_DEV ? WEBAPP_URL : "http://localhost:3001";
 
 /** @deprecated use `WEBAPP_URL` */
 export const BASE_URL = WEBAPP_URL;
@@ -65,7 +65,7 @@ export const TRIAL_LIMIT_DAYS = 14;
 
 export const HOSTED_CAL_FEATURES = process.env.NEXT_PUBLIC_HOSTED_CAL_FEATURES || !IS_SELF_HOSTED;
 
-export const IS_EUROPE = dayjs.tz.guess().indexOf("Europe") !== -1;
+export const IS_EUROPE = dayjs.tz.guess()?.indexOf("Europe") !== -1;
 
 /** @deprecated use `WEBAPP_URL` */
 export const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_WEBAPP_URL || `https://${process.env.VERCEL_URL}`;
@@ -86,13 +86,13 @@ export const DOCS_URL = "https://help.onehash.ai/en/";
 export const BLOGS_URL = "https://www.onehash.ai/blog";
 export const DEVELOPER_DOCS = "https://help.onehash.ai/en/";
 export const SEO_IMG_DEFAULT = `${WEBSITE_URL}/og-image.png`;
+export const JOIN_COMMUNITY = "https://onehash.ai";
+
 // The Dynamic OG Image is passed through Next's Image API to further optimize it.
 // This results in a 80% smaller image 🤯. It is however important that for the query
 // parameters you pass to the /api/social/og/image endpoint, you wrap them in encodeURIComponent
 // as well, otherwise the URL won't be valid.
-export const SEO_IMG_OGIMG = `${CAL_URL}/_next/image?w=1200&q=100&url=${encodeURIComponent(
-  `/api/social/og/image`
-)}`;
+export const SEO_IMG_OGIMG = `${CAL_URL}/_next/image?w=1200&q=100&url=`;
 export const SEO_IMG_OGIMG_VIDEO = `${CAL_URL}/video-og-image.png`;
 export const IS_STRIPE_ENABLED = !!(
   process.env.STRIPE_CLIENT_ID &&
@@ -180,6 +180,7 @@ export const CALCOM_PRIVATE_API_ROUTE = process.env.CALCOM_PRIVATE_API_ROUTE || 
 export const WEBSITE_PRIVACY_POLICY_URL =
   process.env.NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL || "https://cal.com/privacy";
 export const WEBSITE_TERMS_URL = process.env.NEXT_PUBLIC_WEBSITE_TERMS_URL || "https://cal.com/terms";
+export const REPLEXICA_API_KEY = process.env.REPLEXICA_API_KEY;
 
 /**
  * The maximum number of days we should check for if we don't find all required bookable days
@@ -218,6 +219,15 @@ export const RECORDING_IN_PROGRESS_ICON = IS_PRODUCTION
 export const ACCOUNT_DELETE_SURVEY = process.env.ACCOUNT_DELETE_SURVEY;
 
 export const ONEHASH_CHAT_ORIGIN = process.env.NEXT_PUBLIC_ONEHASH_CHAT_ORIGIN;
+
+export const SCOPE_USERINFO_PROFILE = "https://www.googleapis.com/auth/userinfo.profile";
+export const SCOPE_USERINFO_EMAIL = "https://www.googleapis.com/auth/userinfo.email";
+export const GOOGLE_OAUTH_SCOPES = [SCOPE_USERINFO_PROFILE, SCOPE_USERINFO_EMAIL];
+export const GOOGLE_CALENDAR_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.readonly",
+];
+export const DIRECTORY_IDS_TO_LOG = process.env.DIRECTORY_IDS_TO_LOG?.split(",") || [];
 
 export const ONEHASH_CHAT_INTEGRATION_PAGE = `${ONEHASH_CHAT_ORIGIN}/app?to=cal_integration`;
 export const ONEHASH_CHAT_SYNC_BASE_URL = `${ONEHASH_CHAT_ORIGIN}/api/oh/integrations`;

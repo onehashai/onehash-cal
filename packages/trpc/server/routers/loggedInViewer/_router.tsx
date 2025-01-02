@@ -17,6 +17,7 @@ import { ZLocationOptionsInputSchema } from "./locationOptions.schema";
 import { ZNoShowInputSchema } from "./markNoShow.schema";
 import { ZOutOfOfficeInputSchema, ZOutOfOfficeDelete } from "./outOfOffice.schema";
 import { me } from "./procedures/me";
+import { myStats } from "./procedures/myStats";
 import { platformMe } from "./procedures/platformMe";
 import { teamsAndUserProfilesQuery } from "./procedures/teamsAndUserProfilesQuery";
 import { ZRemoveNotificationsSubscriptionInputSchema } from "./removeNotificationsSubscription.schema";
@@ -33,6 +34,7 @@ const namespaced = (s: string) => `${NAMESPACE}.${s}`;
 
 type AppsRouterHandlerCache = {
   me?: typeof import("./me.handler").meHandler;
+  myStats?: typeof import("./myStats.handler").myStatsHandler;
   platformMe?: typeof import("./platformMe.handler").platformMeHandler;
   shouldVerifyEmail?: typeof import("./shouldVerifyEmail.handler").shouldVerifyEmailHandler;
   deleteMe?: typeof import("./deleteMe.handler").deleteMeHandler;
@@ -74,6 +76,7 @@ const UNSTABLE_HANDLER_CACHE: AppsRouterHandlerCache = {};
 
 export const loggedInViewerRouter = router({
   me,
+  myStats,
   platformMe,
   deleteMe: authedProcedure.input(ZDeleteMeInputSchema).mutation(async ({ ctx, input }) => {
     if (!UNSTABLE_HANDLER_CACHE.deleteMe) {

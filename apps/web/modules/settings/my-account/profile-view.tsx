@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 // eslint-disable-next-line no-restricted-imports
-import { pick } from "lodash";
+import { get, pick } from "lodash";
 import { signOut, useSession } from "next-auth/react";
 import type { BaseSyntheticEvent } from "react";
 import React, { useRef, useState } from "react";
@@ -13,8 +13,10 @@ import { z } from "zod";
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { logoutAndDeleteUser } from "@calcom/features/auth/lib/federatedLogout";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
-import { isPrismaObj } from "@calcom/lib";
+import { DisplayInfo } from "@calcom/features/users/components/UserTable/EditSheet/DisplayInfo";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { APP_NAME, FULL_NAME_LENGTH_MAX_LIMIT } from "@calcom/lib/constants";
+import { emailSchema } from "@calcom/lib/emailSchema";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { md } from "@calcom/lib/markdownIt";
@@ -285,10 +287,7 @@ const ProfileView = () => {
       })),
     ],
     metadata: {
-      phoneNumber:
-        isPrismaObj(user.metadata) && user.metadata?.phoneNumber
-          ? (user.metadata?.phoneNumber as string)
-          : "",
+      phoneNumber: (isPrismaObjOrUndefined(user.metadata)?.phoneNumber as string) ?? "",
     },
   };
 
@@ -359,7 +358,7 @@ const ProfileView = () => {
           Icon="triangle-alert">
           <>
             <div className="mb-10">
-              <p className="text-default mb-4">{t("delete_account_confirmation_message")}</p>
+              <p className="text-subtle mb-4 text-sm">{t("delete_account_confirmation_message")}</p>
               {isCALIdentityProvider && (
                 <PasswordField
                   data-testid="password"
@@ -549,12 +548,12 @@ const ProfileForm = ({
       .max(FULL_NAME_LENGTH_MAX_LIMIT, {
         message: t("max_limit_allowed_hint", { limit: FULL_NAME_LENGTH_MAX_LIMIT }),
       }),
-    email: z.string().email(),
+    email: emailSchema,
     bio: z.string(),
     secondaryEmails: z.array(
       z.object({
         id: z.number(),
-        email: z.string().email(),
+        email: emailSchema,
         emailVerified: z.union([z.string(), z.null()]).optional(),
         emailPrimary: z.boolean().optional(),
       })
@@ -693,6 +692,11 @@ const ProfileForm = ({
     handleAccountDisconnect(getUpdatedFormValues(formMethods.getValues()));
   };
 
+  const { data: usersAttributes, isPending: usersAttributesPending } =
+    trpc.viewer.attributes.getByUserId.useQuery({
+      userId: user.id,
+    });
+
   const {
     formState: { isSubmitting, isDirty, errors },
   } = formMethods;
@@ -721,7 +725,7 @@ const ProfileForm = ({
                           onChange(newAvatar);
                         }}
                         imageSrc={getUserAvatarUrl({ avatarUrl: value })}
-                        triggerButtonColor={showRemoveAvatarButton ? "secondary" : "primary"}
+                        triggerButtonColor={showRemoveAvatarButton ? "secondary" : "secondary"}
                       />
 
                       {showRemoveAvatarButton && (
@@ -746,35 +750,36 @@ const ProfileForm = ({
         </div>
         <div className="mt-6">
           <Label>{t("email")}</Label>
-          {secondaryEmailFields.map((field, index) => (
-            <CustomEmailTextField
-              key={field.itemId}
-              formMethods={formMethods}
-              formMethodFieldName={`secondaryEmails.${index}.email` as keyof FormValues}
-              errorMessage={errors.secondaryEmails?.[index]?.email?.message || ""}
-              emailVerified={Boolean(field.emailVerified)}
-              emailPrimary={field.emailPrimary}
-              dataTestId={`profile-form-email-${index}`}
-              handleChangePrimary={() => {
-                const fields = secondaryEmailFields.map((secondaryField, cIndex) => ({
-                  ...secondaryField,
-                  emailPrimary: cIndex === index,
-                }));
-                updateAllSecondaryEmailFields(fields);
-              }}
-              handleVerifyEmail={() => handleResendVerifyEmail(field.email)}
-              handleItemDelete={() => deleteSecondaryEmail(index)}
-            />
-          ))}
-          <div className="text-default mt-2 flex items-center text-sm">{t("change_email_hint")}</div>
-          <Button
-            color="minimal"
-            StartIcon="plus"
-            className="mt-2"
-            onClick={() => handleAddSecondaryEmail()}
-            data-testid="add-secondary-email">
-            {t("add_email")}
-          </Button>
+          <div className="-mt-2 flex gap-2">
+            {secondaryEmailFields.map((field, index) => (
+              <CustomEmailTextField
+                key={field.itemId}
+                formMethods={formMethods}
+                formMethodFieldName={`secondaryEmails.${index}.email` as keyof FormValues}
+                errorMessage={get(formMethods.formState.errors, `secondaryEmails.${index}.email.message`)}
+                emailVerified={Boolean(field.emailVerified)}
+                emailPrimary={field.emailPrimary}
+                dataTestId={`profile-form-email-${index}`}
+                handleChangePrimary={() => {
+                  const fields = secondaryEmailFields.map((secondaryField, cIndex) => ({
+                    ...secondaryField,
+                    emailPrimary: cIndex === index,
+                  }));
+                  updateAllSecondaryEmailFields(fields);
+                }}
+                handleVerifyEmail={() => handleResendVerifyEmail(field.email)}
+                handleItemDelete={() => deleteSecondaryEmail(index)}
+              />
+            ))}
+            <Button
+              color="secondary"
+              StartIcon="plus"
+              className="mt-2 h-full"
+              onClick={() => handleAddSecondaryEmail()}
+              data-testid="add-secondary-email">
+              {t("add_email")}
+            </Button>
+          </div>
         </div>
         <div className="mt-3 w-full">
           <Label className="flex">
@@ -872,6 +877,28 @@ const ProfileForm = ({
             setFirstRender={setFirstRender}
           />
         </div>
+        {usersAttributes && usersAttributes?.length > 0 && (
+          <div className="mt-6 flex flex-col">
+            <Label>{t("attributes")}</Label>
+            <div className="flex flex-col space-y-4">
+              {usersAttributes.map((attribute, index) => (
+                <>
+                  <DisplayInfo
+                    key={index}
+                    label={attribute.name}
+                    labelClassname="font-normal text-sm text-subtle"
+                    valueClassname="text-emphasis inline-flex items-center gap-1 font-normal text-sm leading-5"
+                    value={
+                      ["TEXT", "NUMBER", "SINGLE_SELECT"].includes(attribute.type)
+                        ? attribute.options[0].value
+                        : attribute.options.map((option) => option.value)
+                    }
+                  />
+                </>
+              ))}
+            </div>
+          </div>
+        )}
         {/* // For Non-Cal indentities, we merge the values from DB and the user logging in,
         so essentially there is no point in allowing them to disconnect, since when they log in they will get logged into the same account */}
         {/* {!isCALIdentityProvider && user.email !== user.identityProviderEmail && (

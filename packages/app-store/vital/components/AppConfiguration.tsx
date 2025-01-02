@@ -102,7 +102,7 @@ const AppConfiguration = (props: IAppConfigurationProps) => {
 
       <div className="w-100 mt-2">
         <div className="block sm:flex">
-          <div className="min-w-24 mb-4 mt-5 sm:mb-0">
+          <div className="mb-4 mt-5 min-w-24 sm:mb-0">
             <label htmlFor="description" className="text-sm font-bold">
               Parameter
             </label>
@@ -121,7 +121,7 @@ const AppConfiguration = (props: IAppConfigurationProps) => {
       </div>
 
       <div className="w-full">
-        <div className="min-w-24 mb-4 mt-3">
+        <div className="mb-4 mt-3 min-w-24">
           <label htmlFor="value" className="text-sm font-bold">
             Trigger at below or equal than
           </label>

@@ -63,6 +63,7 @@ export const useEventTypeForm = ({
       destinationCalendar: eventType.destinationCalendar,
       recurringEvent: eventType.recurringEvent || null,
       isInstantEvent: eventType.isInstantEvent,
+      instantMeetingParameters: eventType.instantMeetingParameters || [],
       instantMeetingExpiryTimeOffsetInSeconds: eventType.instantMeetingExpiryTimeOffsetInSeconds,
       description: eventType.description ?? undefined,
       schedule: eventType.schedule || undefined,
@@ -72,7 +73,7 @@ export const useEventTypeForm = ({
       durationLimits: eventType.durationLimits || undefined,
       length: eventType.length,
       hidden: eventType.hidden,
-      hashedLink: eventType.hashedLink?.link || undefined,
+      multiplePrivateLinks: eventType.hashedLink.map((link) => link.link),
       eventTypeColor: eventType.eventTypeColor || null,
       periodDates: {
         startDate: periodDates.startDate,
@@ -109,8 +110,11 @@ export const useEventTypeForm = ({
         },
       })),
       seatsPerTimeSlotEnabled: eventType.seatsPerTimeSlot,
+      autoTranslateDescriptionEnabled: eventType.autoTranslateDescriptionEnabled,
       rescheduleWithSameRoundRobinHost: eventType.rescheduleWithSameRoundRobinHost,
       assignAllTeamMembers: eventType.assignAllTeamMembers,
+      assignRRMembersUsingSegment: eventType.assignRRMembersUsingSegment,
+      rrSegmentQueryValue: eventType.rrSegmentQueryValue,
       aiPhoneCallConfig: {
         generalPrompt: eventType.aiPhoneCallConfig?.generalPrompt ?? DEFAULT_PROMPT_VALUE,
         enabled: eventType.aiPhoneCallConfig?.enabled,
@@ -124,6 +128,7 @@ export const useEventTypeForm = ({
         schedulerName: eventType.aiPhoneCallConfig?.schedulerName,
       },
       isRRWeightsEnabled: eventType.isRRWeightsEnabled,
+      maxLeadThreshold: eventType.maxLeadThreshold,
     };
   }, [eventType, periodDates]);
 
@@ -348,6 +353,7 @@ export const useEventTypeForm = ({
       customInputs,
       children,
       assignAllTeamMembers,
+      multiplePrivateLinks: values.multiplePrivateLinks,
       aiPhoneCallConfig: rest.aiPhoneCallConfig
         ? { ...rest.aiPhoneCallConfig, templateType: rest.aiPhoneCallConfig.templateType as TemplateType }
         : undefined,

@@ -30,8 +30,9 @@ function WorkflowExample(props: WorkflowExampleType) {
   );
 }
 
-export default function EmptyScreen(props: { isFilteredView: boolean }) {
+export default function EmptyScreen(props: { isFilteredView: boolean; onlyExample?: boolean }) {
   const { t } = useLocale();
+  const { isFilteredView, onlyExample = false } = props;
   const router = useRouter();
 
   const createMutation = trpc.viewer.workflows.create.useMutation({
@@ -61,8 +62,29 @@ export default function EmptyScreen(props: { isFilteredView: boolean }) {
   ] as const;
   // new workflow example when 'after meetings ends' trigger is implemented: Send custom thank you email to attendee after event (Smile icon),
 
-  if (props.isFilteredView) {
+  if (isFilteredView) {
     return <ClassicEmptyScreen Icon="zap" headline={t("no_workflows")} description={t("change_filter")} />;
+  }
+
+  if (onlyExample) {
+    return (
+      <>
+        <div className="min-h-12 flex w-full flex-col items-center justify-center rounded-md ">
+          <div className=" text-center">
+            <p className="text-default  text-md line-clamp-2 font-bold leading-6 dark:text-gray-300">
+              {t("workflow_example_desc")}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-row items-center justify-center">
+          <div className="grid-cols-none items-center lg:grid lg:grid-cols-3 xl:mx-20">
+            {workflowsExamples.map((example, index) => (
+              <WorkflowExample key={index} Icon={example.icon} text={example.text} />
+            ))}
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (

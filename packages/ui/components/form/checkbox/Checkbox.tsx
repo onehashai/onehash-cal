@@ -4,7 +4,9 @@ import type { InputHTMLAttributes } from "react";
 import React, { forwardRef } from "react";
 
 import classNames from "@calcom/lib/classNames";
-import { Icon } from "@calcom/ui";
+import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
+
+import { Icon } from "../../icon";
 
 type Props = InputHTMLAttributes<HTMLInputElement> & {
   label?: React.ReactNode;
@@ -45,7 +47,7 @@ const CheckboxField = forwardRef<HTMLInputElement, Props>(
     return (
       <div className="block items-center sm:flex">
         {label && (
-          <div className="min-w-48 mb-4 sm:mb-0">
+          <div className="mb-4 min-w-48 sm:mb-0">
             {React.createElement(
               descriptionAsLabel ? "div" : "label",
               {
@@ -93,8 +95,9 @@ const CheckboxField = forwardRef<HTMLInputElement, Props>(
                 {descriptionAsSafeHtml ? (
                   <span
                     className={classNames("text-sm", rest.descriptionClassName)}
+                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{
-                      __html: descriptionAsSafeHtml,
+                      __html: markdownToSafeHTML(descriptionAsSafeHtml),
                     }}
                   />
                 ) : (

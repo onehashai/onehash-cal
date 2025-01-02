@@ -8,7 +8,7 @@ import {
   whatsappEventCompletedTemplate,
   whatsappEventRescheduledTemplate,
   whatsappReminderTemplate,
-} from "../lib/reminders/templates/whatsapp";
+} from "./reminders/templates/whatsapp";
 
 export function shouldScheduleEmailReminder(action: WorkflowActions) {
   return action === WorkflowActions.EMAIL_ATTENDEE || action === WorkflowActions.EMAIL_HOST;
@@ -80,9 +80,10 @@ export function getWhatsappTemplateFunction(template?: WorkflowTemplates): typeo
 
 export function getWhatsappTemplateForAction(
   action: WorkflowActions,
+  locale: string,
   template: WorkflowTemplates,
   timeFormat: TimeFormat
 ): string | null {
   const templateFunction = getWhatsappTemplateFunction(template);
-  return templateFunction(true, action, timeFormat);
+  return templateFunction(true, locale, action, timeFormat);
 }

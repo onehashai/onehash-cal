@@ -68,8 +68,8 @@ function WorkflowsPage({ filteredList }: PageProps) {
         <ShellMain
           heading={t("workflows")}
           subtitle={t("workflows_to_automate_notifications")}
-          title="Workflows"
-          description="Create workflows to automate notifications and reminders."
+          title={t("workflows")}
+          description={t("workflows_to_automate_notifications")}
           hideHeadingOnMobile
           CTA={
             session.data?.hasValidLicense ? (
@@ -86,8 +86,13 @@ function WorkflowsPage({ filteredList }: PageProps) {
             ) : null
           }>
           <>
-            {filteredWorkflows?.totalCount ? (
-              <div className="flex">
+            <FilterResults
+              queryRes={{ isPending, data: filteredWorkflows }}
+              emptyScreen={<EmptyScreen isFilteredView={false} />}
+              noResultsScreen={<EmptyScreen isFilteredView={true} />}
+              SkeletonLoader={SkeletonLoader}>
+              <EmptyScreen isFilteredView={false} onlyExample={true} />
+              <div className="mt-4 flex">
                 <TeamsFilter />
                 <div className="mb-4 ml-auto">
                   <CreateButtonWithTeamsList
@@ -100,12 +105,7 @@ function WorkflowsPage({ filteredList }: PageProps) {
                   />
                 </div>
               </div>
-            ) : null}
-            <FilterResults
-              queryRes={{ isPending, data: filteredWorkflows }}
-              emptyScreen={<EmptyScreen isFilteredView={false} />}
-              noResultsScreen={<EmptyScreen isFilteredView={true} />}
-              SkeletonLoader={SkeletonLoader}>
+
               <WorkflowList workflows={filteredWorkflows?.filtered} />
             </FilterResults>
           </>

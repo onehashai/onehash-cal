@@ -330,7 +330,9 @@ type RichDescriptionCalEvent = Parameters<typeof getCancellationReason>[0] &
 export const getRichDescription = (
   calEvent: RichDescriptionCalEvent,
   t_?: TFunction /*, attendee?: Person*/,
-  includeAppStatus = false
+  includeAppStatus = false,
+  forMail = false,
+  isOrganizer = true
 ) => {
   const t = t_ ?? calEvent.organizer.language.translate;
 
@@ -358,19 +360,72 @@ ${calEvent.paymentInfo.link}
 `
     : ""
 }
-${getRunningLateSection(calEvent, t)}
+${getRunningLateSection(calEvent, t, isOrganizer, forMail)}
   `.trim();
 };
 
-export const getRunningLateSection = (calEvent: CalendarEvent, t: TFunction) => {
-  return calEvent.attendees.map((attendee) => {
-    if (!attendee.phoneNumber) return "";
-    return `${t("running_late")}:
-      <a href="${getRunningLateLink(attendee.phoneNumber)}" > ${t("connect_with_attendee", {
-      name: attendee.name,
-    })} </a>`;
-  });
+export const getRunningLateSection = (
+  calEvent: Pick<CalendarEvent, "attendees" | "organizer">,
+  t: TFunction,
+  isOrganizer: boolean,
+  forMail: boolean
+) => {
+  if (forMail) {
+    if (isOrganizer) {
+      return calEvent.attendees
+        .map((attendee) => {
+          if (!attendee.phoneNumber) return "";
+          return `${t("running_late")}:
+          <a href="${getRunningLateLink(attendee.phoneNumber)}" > ${t("connect_with_attendee", {
+            name: attendee.name,
+          })} </a>`;
+        })
+        .join("\n");
+    } else {
+      if (!calEvent.organizer.phoneNumber) return "";
+      return `${t("running_late")}:
+        <a href="${getRunningLateLink(calEvent.organizer.phoneNumber)}" > ${t(
+        "connect_with_organizer"
+      )} </a>`;
+    }
+  } else {
+    // For non-email case, ensure "Running Late" appears only once if there are any links
+    const links = [];
+
+    // Add the organizer link if available
+    if (calEvent.organizer.phoneNumber) {
+      links.push(
+        `<a href="${getRunningLateLink(calEvent.organizer.phoneNumber)}">${t("connect_with_organizer")}</a>`
+      );
+    }
+
+    // Add attendee links if available
+    const attendeesLinks = calEvent.attendees
+      .map((attendee) => {
+        if (!attendee.phoneNumber) return "";
+        return `<a href="${getRunningLateLink(attendee.phoneNumber)}">${t("connect_with_attendee", {
+          name: attendee.name,
+        })}</a>`;
+      })
+      .filter(Boolean) // Ensure we filter out any empty strings
+      .join("\n"); // Join without extra spaces
+
+    // If attendees links exist, add them to the main links array
+    if (attendeesLinks) {
+      links.push(attendeesLinks);
+    }
+
+    // If any links exist, add the "Running Late" title
+    if (links.length > 0) {
+      // Add "Running Late" only if there are valid links
+      links.unshift(`${t("running_late")}:`);
+    }
+
+    // Combine all parts and return without extra newlines
+    return links.join("\n").trim(); // Trim to avoid leading/trailing spaces
+  }
 };
+
 export const getCancellationReason = (calEvent: Pick<CalendarEvent, "cancellationReason">, t: TFunction) => {
   if (!calEvent.cancellationReason) return "";
   return `
@@ -389,7 +444,7 @@ export const getPublicVideoCallUrl = (calEvent: Pick<CalendarEvent, "uid">): str
 
 export const getVideoCallUrlFromCalEvent = (
   calEvent: Parameters<typeof getPublicVideoCallUrl>[0] &
-    Pick<CalendarEvent, "videoCallData" | "additionalInformation">
+    Pick<CalendarEvent, "videoCallData" | "additionalInformation" | "location">
 ): string => {
   if (calEvent.videoCallData) {
     if (isDailyVideoCall(calEvent)) {
@@ -399,6 +454,9 @@ export const getVideoCallUrlFromCalEvent = (
   }
   if (calEvent.additionalInformation?.hangoutLink) {
     return calEvent.additionalInformation.hangoutLink;
+  }
+  if (calEvent.location?.startsWith("http")) {
+    return calEvent.location;
   }
   return "";
 };

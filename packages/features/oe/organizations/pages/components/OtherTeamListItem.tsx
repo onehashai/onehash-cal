@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@calcom/ui";
 
-import { useOrgBranding } from "../../../organizations/context/provider";
+import { useOrgBranding } from "../../context/provider";
 
 interface Props {
   team: RouterOutputs["viewer"]["organizations"]["listOtherTeams"][number];

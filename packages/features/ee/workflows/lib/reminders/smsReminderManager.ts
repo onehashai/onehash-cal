@@ -11,7 +11,7 @@ import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 import type { CalEventResponses, RecurringEvent } from "@calcom/types/Calendar";
 
 import { getSenderId } from "../alphanumericSenderIdSupport";
-import type { ScheduleReminderArgs } from "./managers/emailReminderManager";
+import type { ScheduleReminderArgs } from "./emailReminderManager";
 import * as twilio from "./providers/twilioProvider";
 import type { VariablesType } from "./templates/customTemplate";
 import customTemplate from "./templates/customTemplate";
@@ -46,8 +46,8 @@ export type BookingInfo = {
     timeFormat?: TimeFormat;
     username?: string;
   };
-  eventType: {
-    slug?: string;
+  eventType?: {
+    slug: string;
     recurringEvent?: RecurringEvent | null;
   };
   startTime: string;
@@ -160,6 +160,9 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
       meetingUrl: bookingMetadataSchema.parse(evt.metadata || {})?.videoCallUrl,
       cancelLink: `${evt.bookerUrl ?? WEBSITE_URL}/booking/${evt.uid}?cancel=true`,
       rescheduleLink: `${evt.bookerUrl ?? WEBSITE_URL}/reschedule/${evt.uid}`,
+      attendeeTimezone: evt.attendees[0].timeZone,
+      eventTimeInAttendeeTimezone: dayjs(evt.startTime).tz(evt.attendees[0].timeZone),
+      eventEndTimeInAttendeeTimezone: dayjs(evt.endTime).tz(evt.attendees[0].timeZone),
     };
     const customMessage = customTemplate(smsMessage, variables, locale, evt.organizer.timeFormat);
     smsMessage = customMessage.text;
@@ -167,6 +170,7 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
     smsMessage =
       smsReminderTemplate(
         false,
+        evt.organizer.language.locale,
         action,
         evt.organizer.timeFormat,
         evt.startTime,

@@ -2,6 +2,7 @@ import type { GetServerSidePropsContext } from "next";
 import { z } from "zod";
 
 import { handleRazorpayPaymentRedirect } from "@calcom/app-store/razorpay/lib";
+import prisma from "@calcom/prisma";
 
 import { type inferSSRProps } from "@lib/types/inferSSRProps";
 
@@ -40,6 +41,26 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   }
 
   if (paymentStatus === "success") {
+    //Get booking custom redirection url from db
+
+    const data = await prisma.booking.findUnique({
+      where: { uid },
+      select: {
+        eventType: {
+          select: { successRedirectUrl: true },
+        },
+      },
+    });
+
+    if (data?.eventType?.successRedirectUrl) {
+      return {
+        redirect: {
+          destination: data.eventType.successRedirectUrl,
+          permanent: false,
+        },
+      };
+    }
+
     return {
       redirect: {
         destination: `/booking/${uid}`,

@@ -1,3 +1,4 @@
+import type { AssignmentReason } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -26,6 +27,7 @@ import { BookingStatus, SchedulingType } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 import type { RouterInputs, RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
+import type { Ensure } from "@calcom/types/utils";
 import type { ActionType } from "@calcom/ui";
 import {
   Badge,
@@ -49,12 +51,15 @@ import {
   DropdownMenuSeparator,
 } from "@calcom/ui";
 
+import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
+
 import { AddGuestsDialog } from "@components/dialog/AddGuestsDialog";
 import { ChargeCardDialog } from "@components/dialog/ChargeCardDialog";
 import { EditLocationDialog } from "@components/dialog/EditLocationDialog";
 import { MarkNoShowDialog } from "@components/dialog/MarkNoShowDialog";
 import { MeetingNotesDialog } from "@components/dialog/MeetingNotesDialog";
 import { ReassignDialog } from "@components/dialog/ReassignDialog";
+import { RerouteDialog } from "@components/dialog/RerouteDialog";
 import { RescheduleDialog } from "@components/dialog/RescheduleDialog";
 
 type BookingListingStatus = RouterInputs["viewer"]["bookings"]["get"]["filters"]["status"];
@@ -72,7 +77,42 @@ type BookingItemProps = BookingItem & {
   };
 };
 
+type ParsedBooking = ReturnType<typeof buildParsedBooking>;
+type TeamEvent = Ensure<NonNullable<ParsedBooking["eventType"]>, "team">;
+type TeamEventBooking = Omit<ParsedBooking, "eventType"> & {
+  eventType: TeamEvent;
+};
+type ReroutableBooking = Ensure<TeamEventBooking, "routedFromRoutingFormReponse">;
+
+function buildParsedBooking(booking: BookingItemProps) {
+  // The way we fetch bookings there could be eventType object even without an eventType, but id confirms its existence
+  const bookingEventType = booking.eventType.id
+    ? (booking.eventType as Ensure<
+        typeof booking.eventType,
+        // It would only ensure that the props are present, if they are optional in the original type. So, it is safe to assert here.
+        "id" | "length" | "title" | "slug" | "schedulingType" | "team"
+      >)
+    : null;
+
+  const bookingMetadata = bookingMetadataSchema.parse(booking.metadata ?? null);
+  return {
+    ...booking,
+    eventType: bookingEventType,
+    metadata: bookingMetadata,
+  };
+}
+
+const isBookingReroutable = (booking: ParsedBooking): booking is ReroutableBooking => {
+  // We support only team bookings for now for rerouting
+  // Though `routedFromRoutingFormReponse` could be there for a non-team booking, we don't want to support it for now.
+  // Let's not support re-routing for a booking without an event-type for now.
+  // Such a booking has its event-type deleted and there might not be something to reroute to.
+  return !!booking.routedFromRoutingFormReponse && !!booking.eventType?.team;
+};
+
 function BookingListItem(booking: BookingItemProps) {
+  const parsedBooking = buildParsedBooking(booking);
+
   const { userId, userTimeZone, userTimeFormat, userEmail } = booking.loggedInUser;
   //TODO:INSTANT MEETING
   let isOrganizer = false;
@@ -80,7 +120,6 @@ function BookingListItem(booking: BookingItemProps) {
   if (booking.user) {
     isOrganizer = booking.user.id === userId || !!booking.eventType.team;
   }
-
   const {
     t,
     i18n: { language },
@@ -92,6 +131,7 @@ function BookingListItem(booking: BookingItemProps) {
   const [viewRecordingsDialogIsOpen, setViewRecordingsDialogIsOpen] = useState<boolean>(false);
   const [markNoShowDialogIsOpen, setMarkNoShowDialogIsOpen] = useState<boolean>(false);
 
+  const [isNoShowDialogOpen, setIsNoShowDialogOpen] = useState<boolean>(false);
   const cardCharged = booking?.payment[0]?.success;
   const mutation = trpc.viewer.bookings.confirm.useMutation({
     onSuccess: (data) => {
@@ -110,6 +150,7 @@ function BookingListItem(booking: BookingItemProps) {
   });
 
   const isUpcoming = new Date(booking.endTime) >= new Date();
+  const isOngoing = isUpcoming && new Date() >= new Date(booking.startTime);
   const isBookingInPast = new Date(booking.endTime) < new Date();
   const isCancelled = booking.status === BookingStatus.CANCELLED;
   const isConfirmed = booking.status === BookingStatus.ACCEPTED;
@@ -203,23 +244,39 @@ function BookingListItem(booking: BookingItemProps) {
   ];
 
   const editBookingActions: ActionType[] = [
-    {
-      id: "reschedule",
-      icon: "clock" as const,
-      label: t("reschedule_booking"),
-      href: `/reschedule/${booking.uid}${
-        booking.seatsReferences.length ? `?seatReferenceUid=${getSeatReferenceUid()}` : ""
-      }`,
-    },
-    {
-      id: "reschedule_request",
-      icon: "send" as const,
-      iconClassName: "rotate-45 w-[16px] -translate-x-0.5 ",
-      label: t("send_reschedule_request"),
-      onClick: () => {
-        setIsOpenRescheduleDialog(true);
-      },
-    },
+    ...(isBookingInPast
+      ? [
+          {
+            id: "reschedule",
+            icon: "clock" as const,
+            label: t("reschedule_booking"),
+            href: `/reschedule/${booking.uid}${
+              booking.seatsReferences.length ? `?seatReferenceUid=${getSeatReferenceUid()}` : ""
+            }`,
+          },
+          {
+            id: "reschedule_request",
+            icon: "send" as const,
+            iconClassName: "rotate-45 w-[16px] -translate-x-0.5 ",
+            label: t("send_reschedule_request"),
+            onClick: () => {
+              setIsOpenRescheduleDialog(true);
+            },
+          },
+        ]
+      : []),
+    ...(isBookingReroutable(parsedBooking)
+      ? [
+          {
+            id: "reroute",
+            label: t("reroute"),
+            onClick: () => {
+              setRerouteDialogIsOpen(true);
+            },
+            icon: "waypoints" as const,
+          },
+        ]
+      : []),
     {
       id: "change_location",
       label: t("edit_location"),
@@ -248,6 +305,17 @@ function BookingListItem(booking: BookingItemProps) {
       icon: "users" as const,
     });
   }
+
+  // if (isBookingInPast || isOngoing) {
+  //   editBookingActions.push({
+  //     id: "no_show",
+  //     label: t("mark_as_no_show"),
+  //     onClick: () => {
+  //       setIsNoShowDialogOpen(true);
+  //     },
+  //     icon: "eye-off" as const,
+  //   });
+  // }
 
   let bookedActions: ActionType[] = [
     {
@@ -304,6 +372,7 @@ function BookingListItem(booking: BookingItemProps) {
   const [isOpenReassignDialog, setIsOpenReassignDialog] = useState(false);
   const [isOpenSetLocationDialog, setIsOpenLocationDialog] = useState(false);
   const [isOpenAddGuestsDialog, setIsOpenAddGuestsDialog] = useState(false);
+  const [rerouteDialogIsOpen, setRerouteDialogIsOpen] = useState(false);
   const setLocationMutation = trpc.viewer.bookings.editLocation.useMutation({
     onSuccess: () => {
       showToast(t("location_updated"), "success");
@@ -455,12 +524,14 @@ function BookingListItem(booking: BookingItemProps) {
         setIsOpenDialog={setIsOpenRescheduleDialog}
         bookingUId={booking.uid}
       />
-      <ReassignDialog
-        isOpenDialog={isOpenReassignDialog}
-        setIsOpenDialog={setIsOpenReassignDialog}
-        bookingId={booking.id}
-        teamId={booking.eventType?.team?.id || 0}
-      />
+      {isOpenReassignDialog && (
+        <ReassignDialog
+          isOpenDialog={isOpenReassignDialog}
+          setIsOpenDialog={setIsOpenReassignDialog}
+          bookingId={booking.id}
+          teamId={booking.eventType?.team?.id || 0}
+        />
+      )}
       <EditLocationDialog
         booking={booking}
         saveLocation={saveLocation}
@@ -504,6 +575,14 @@ function BookingListItem(booking: BookingItemProps) {
         handleMeetingNoteSave={handleMeetingNoteSave}
       />
       {/* NOTE: Should refactor this dialog component as is being rendered multiple times */}
+      {isNoShowDialogOpen && (
+        <NoShowAttendeesDialog
+          bookingUid={booking.uid}
+          attendees={attendeeList}
+          setIsOpen={setIsNoShowDialogOpen}
+          isOpen={isNoShowDialogOpen}
+        />
+      )}
       <Dialog open={rejectionDialogIsOpen} onOpenChange={setRejectionDialogIsOpen}>
         <DialogContent title={t("rejection_reason_title")} description={t("rejection_reason_description")}>
           <div>
@@ -648,33 +727,23 @@ function BookingListItem(booking: BookingItemProps) {
                     attendees={booking.attendees}
                   />
                 </div>
-              </div>
-
-              {isPending && (
-                <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="orange">
-                  {t("unconfirmed")}
-                </Badge>
-              )}
-              {booking.eventType?.team && (
-                <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="gray">
-                  {booking.eventType.team.name}
-                </Badge>
-              )}
-              {showPendingPayment && (
-                <Badge className="ltr:mr-2 rtl:ml-2 sm:hidden" variant="orange">
-                  {t("pending_payment")}
-                </Badge>
-              )}
-              {recurringDates !== undefined && (
-                <div className="text-muted text-sm sm:hidden">
-                  <RecurringBookingsTooltip
-                    userTimeFormat={userTimeFormat}
-                    userTimeZone={userTimeZone}
-                    booking={booking}
-                    recurringDates={recurringDates}
+                {booking.description && (
+                  <div
+                    className="max-w-10/12 text-default sm:max-w-32 md:max-w-52 xl:max-w-80 truncate text-sm"
+                    title={booking.description}>
+                    &quot;{booking.description}&quot;
+                  </div>
+                )}
+                {booking.attendees.length !== 0 && (
+                  <DisplayAttendees
+                    attendees={attendeeList}
+                    user={booking.user}
+                    currentEmail={userEmail}
+                    bookingUid={booking.uid}
+                    isBookingInPast={isBookingInPast}
                   />
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="cursor-pointer py-4">
@@ -742,6 +811,13 @@ function BookingListItem(booking: BookingItemProps) {
               <TableActions actions={chargeCardActions} />
             </div>
           )}
+          {/* <BookingItemBadges
+            booking={booking}
+            isPending={isPending}
+            recurringDates={recurringDates}
+            userTimeFormat={userTimeFormat}
+            userTimeZone={userTimeZone}
+          /> */}
           {isOrganizer ? (
             <div className="text-md flex items-center pl-3">
               <p className="mt-px">{t("details")}</p>
@@ -758,6 +834,13 @@ function BookingListItem(booking: BookingItemProps) {
           )}
         </td>
       </tr>
+      {isBookingReroutable(parsedBooking) && (
+        <RerouteDialog
+          isOpenDialog={rerouteDialogIsOpen}
+          setIsOpenDialog={setRerouteDialogIsOpen}
+          booking={{ ...parsedBooking, eventType: parsedBooking.eventType }}
+        />
+      )}
       {expanded && (
         <div className="px-3 pb-3 md:px-6">
           <hr className="mb-3 h-px border-0 bg-gray-200 dark:bg-gray-700" />
@@ -888,7 +971,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("whatsapp_chat")}
                 </Button>
               )}
-              {isBookingInPast && !(isImported === "yes") && (
+              {(isBookingInPast || isOngoing) && !(isImported === "yes") && (
                 <Button
                   className="flex w-full justify-center "
                   color="secondary"
@@ -903,6 +986,59 @@ function BookingListItem(booking: BookingItemProps) {
     </>
   );
 }
+
+const BookingItemBadges = ({
+  booking,
+  isPending,
+  recurringDates,
+  userTimeFormat,
+  userTimeZone,
+}: {
+  booking: BookingItemProps;
+  isPending: boolean;
+  recurringDates: Date[] | undefined;
+  userTimeFormat: number | null | undefined;
+  userTimeZone: string | undefined;
+}) => {
+  const { t } = useLocale();
+
+  return (
+    <div className="hidden h-9 flex-row pb-4 pl-6 sm:flex">
+      {isPending && (
+        <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
+          {t("unconfirmed")}
+        </Badge>
+      )}
+      {/* {booking.eventType?.team && (
+        <Badge className="ltr:mr-2 rtl:ml-2" variant="gray">
+          {booking.eventType.team.name}
+        </Badge>
+      )} */}
+      {booking?.assignmentReason.length > 0 && (
+        <AssignmentReasonTooltip assignmentReason={booking.assignmentReason[0]} />
+      )}
+      {booking.paid && !booking.payment[0] ? (
+        <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
+          {t("error_collecting_card")}
+        </Badge>
+      ) : booking.paid ? (
+        <Badge className="ltr:mr-2 rtl:ml-2" variant="green" data-testid="paid_badge">
+          {booking.payment[0].paymentOption === "HOLD" ? t("card_held") : t("paid")}
+        </Badge>
+      ) : null}
+      {recurringDates !== undefined && (
+        <div className="text-muted mt-2 text-sm">
+          <RecurringBookingsTooltip
+            userTimeFormat={userTimeFormat}
+            userTimeZone={userTimeZone}
+            booking={booking}
+            recurringDates={recurringDates}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface RecurringBookingsTooltipProps {
   booking: BookingItemProps;
@@ -1002,7 +1138,7 @@ const FirstAttendee = ({
       className=" hover:text-blue-500"
       href={`mailto:${user.email}`}
       onClick={(e) => e.stopPropagation()}>
-      {user.name}
+      {user.name || user.email}
     </a>
   );
 };
@@ -1192,6 +1328,75 @@ const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
     </Dropdown>
   );
 };
+
+const NoShowAttendeesDialog = ({
+  attendees,
+  isOpen,
+  setIsOpen,
+  bookingUid,
+}: {
+  attendees: AttendeeProps[];
+  isOpen: boolean;
+  setIsOpen: (value: boolean) => void;
+  bookingUid: string;
+}) => {
+  const { t } = useLocale();
+  const [noShowAttendees, setNoShowAttendees] = useState(
+    attendees.map((attendee) => ({
+      id: attendee.id,
+      email: attendee.email,
+      name: attendee.name,
+      noShow: attendee.noShow || false,
+    }))
+  );
+
+  const noShowMutation = trpc.viewer.markNoShow.useMutation({
+    onSuccess: async (data) => {
+      const newValue = data.attendees[0];
+      setNoShowAttendees((old) =>
+        old.map((attendee) =>
+          attendee.email === newValue.email ? { ...attendee, noShow: newValue.noShow } : attendee
+        )
+      );
+      showToast(t(data.message), "success");
+    },
+    onError: (err) => {
+      showToast(err.message, "error");
+    },
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={() => setIsOpen(false)}>
+      <DialogContent title={t("mark_as_no_show_title")} description={t("no_show_description")}>
+        {noShowAttendees.map((attendee) => (
+          <form
+            key={attendee.id}
+            onSubmit={(e) => {
+              e.preventDefault();
+              noShowMutation.mutate({
+                bookingUid,
+                attendees: [{ email: attendee.email, noShow: !attendee.noShow }],
+              });
+            }}>
+            <div className="bg-muted flex items-center justify-between rounded-md px-4 py-2">
+              <span className="text-emphasis flex flex-col text-sm">
+                {attendee.name}
+                {attendee.email && <span className="text-muted">({attendee.email})</span>}
+              </span>
+              <Button color="minimal" type="submit" StartIcon={attendee.noShow ? "eye-off" : "eye"}>
+                {attendee.noShow ? t("unmark_as_no_show") : t("mark_as_no_show")}
+              </Button>
+            </div>
+          </form>
+        ))}
+        <DialogFooter>
+          <DialogClose>{t("done")}</DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const GroupedGuests = ({ guests }: { guests: AttendeeProps[] }) => {
   const [openDropdown, setOpenDropdown] = useState(false);
   const { t } = useLocale();
@@ -1228,7 +1433,7 @@ const GroupedGuests = ({ guests }: { guests: AttendeeProps[] }) => {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <div className=" flex justify-end space-x-2 p-2">
+        <div className="flex justify-end space-x-2 p-2 ">
           <Link href={`mailto:${selectedEmail}`}>
             <Button
               color="secondary"
@@ -1324,5 +1529,18 @@ const DisplayLocation = ({
   ) : (
     <p className={className}>{locationToDisplay}</p>
   );
+const AssignmentReasonTooltip = ({ assignmentReason }: { assignmentReason: AssignmentReason }) => {
+  const { t } = useLocale();
+  const badgeTitle = assignmentReasonBadgeTitleMap(assignmentReason.reasonEnum);
+  return (
+    <Tooltip content={<p>{assignmentReason.reasonString}</p>}>
+      <div className="-mt-1">
+        <Badge className="ltr:mr-2 rtl:ml-2" variant="gray">
+          {t(badgeTitle)}
+        </Badge>
+      </div>
+    </Tooltip>
+  );
+};
 
 export default BookingListItem;

@@ -16,8 +16,10 @@ export async function scheduleMandatoryReminder(
   workflows: Workflow[],
   requiresConfirmation: boolean,
   hideBranding: boolean,
-  seatReferenceUid: string | undefined
+  seatReferenceUid: string | undefined,
+  isPlatformNoEmail = false
 ) {
+  if (isPlatformNoEmail) return;
   try {
     const hasExistingWorkflow = workflows.some((workflow) => {
       return (
@@ -27,8 +29,8 @@ export async function scheduleMandatoryReminder(
         workflow.steps.some((step) => step?.action === WorkflowActions.EMAIL_ATTENDEE)
       );
     });
-
     //Allowing scheduled emails for all email providers
+
     if (
       !hasExistingWorkflow &&
       // evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
@@ -53,23 +55,6 @@ export async function scheduleMandatoryReminder(
           includeCalendarEvent: false,
           isMandatoryReminder: true,
         });
-
-        // //Thank You Email Reminder is scheduled for 5 mins after the event
-        // await scheduleEmailReminder({
-        //   evt,
-        //   triggerEvent: WorkflowTriggerEvents.AFTER_EVENT,
-        //   action: WorkflowActions.EMAIL_ATTENDEE,
-        //   timeSpan: {
-        //     time: 5,
-        //     timeUnit: TimeUnit.MINUTE,
-        //   },
-        //   sendTo: filteredAttendees,
-        //   template: WorkflowTemplates.COMPLETED,
-        //   hideBranding,
-        //   seatReferenceUid,
-        //   includeCalendarEvent: false,
-        //   isMandatoryReminder: true,
-        // });
       } catch (error) {
         log.error("Error while scheduling mandatory reminders", JSON.stringify({ error }));
       }

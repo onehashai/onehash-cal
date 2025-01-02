@@ -1,6 +1,5 @@
 "use client";
 
-// TODO: i18n
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
@@ -150,7 +149,7 @@ export default function RoutingForms({
   return (
     <>
       <ShellMain
-        heading="Routing Forms"
+        heading={t("routing_forms")}
         CTA={hasPaidPlan && forms?.length ? <NewFormButton /> : null}
         subtitle={t("routing_forms_description")}>
         <UpgradeTip
@@ -344,16 +343,22 @@ export default function RoutingForms({
   );
 }
 
-RoutingForms.getLayout = (page: React.ReactElement) => {
+const ShellContainer = ({ page }: { page: React.ReactElement }) => {
+  const { t } = useLocale();
+
   return (
     <Shell
-      title="Routing Forms"
-      description="Create forms to direct attendees to the correct destinations."
+      title={t("routing_forms")}
+      description={t("routing_forms_description")}
       withoutMain={true}
       hideHeadingOnMobile>
       {page}
     </Shell>
   );
+};
+
+RoutingForms.getLayout = (page: React.ReactElement) => {
+  return <ShellContainer page={page} />;
 };
 
 export { getServerSideProps };

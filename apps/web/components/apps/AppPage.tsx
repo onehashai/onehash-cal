@@ -235,7 +235,7 @@ export const AppPage = ({
           <header>
             <div className="mb-4 flex items-center">
               <Image
-                className={classNames(logo.includes("-dark") && "dark:invert", "min-h-16 min-w-16 h-16 w-16")}
+                className={classNames(logo.includes("-dark") && "dark:invert", "h-16 min-h-16 w-16 min-w-16")}
                 src={logo}
                 alt={name}
                 width={64}

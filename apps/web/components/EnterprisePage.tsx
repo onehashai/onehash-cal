@@ -42,7 +42,7 @@ export default function EnterprisePage() {
   ];
   return (
     <div>
-      <ShellMain heading="Enterprise" subtitle={t("enterprise_description")}>
+      <ShellMain heading={t("enterprise")} subtitle={t("enterprise_description")}>
         <UpgradeTip
           plan="enterprise"
           title={t("create_your_org")}
@@ -50,7 +50,7 @@ export default function EnterprisePage() {
           features={features}
           background="/tips/enterprise"
           buttons={
-            <div className="space-y-2 rtl:space-x-reverse sm:space-x-2">
+            <div className="space-y-2 sm:space-x-2 rtl:space-x-reverse">
               <ButtonGroup>
                 <Button color="primary" href="https://cal.id/team/sales" target="_blank">
                   {t("contact_sales")}

@@ -115,7 +115,6 @@ export class PaymentService implements IAbstractPaymentService {
       const params: Stripe.PaymentIntentCreateParams = {
         amount: payment.amount,
         currency: payment.currency,
-        payment_method_types: ["card"],
         customer: customer.id,
         description: bookingTitle,
         metadata: {

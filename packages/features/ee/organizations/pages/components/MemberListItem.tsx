@@ -1,6 +1,6 @@
 import classNames from "classnames";
 
-import TeamPill, { TeamRole } from "@calcom/ee/teams/components/TeamPill";
+import TeamPill, { TeamRole } from "@calcom/features/oe/teams/components/TeamPill";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import {
@@ -37,7 +37,7 @@ export default function MemberListItem(props: Props) {
             <UserAvatar noOrganizationIndicator size="sm" user={user} className="h-10 w-10 rounded-full" />
 
             <div className="ms-3 inline-block overflow-hidden">
-              <div className="mb-1 flex">
+              <div className="mb-1 flex items-center">
                 <span className="text-default mr-1 text-sm font-bold leading-4">{name}</span>
 
                 {!props.member.accepted && <TeamPill color="orange" text={t("pending")} />}

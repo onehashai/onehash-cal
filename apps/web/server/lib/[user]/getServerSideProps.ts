@@ -69,6 +69,7 @@ export type UserFoundProps = {
     | "currency"
     | "recurringEvent"
   >)[];
+  isOrgSEOIndexable: boolean | undefined;
 } & EmbedProps;
 
 export type UserNotFoundProps = {
@@ -221,6 +222,7 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
         themeBasis: user.username,
         trpcState: ssr.dehydrate(),
         markdownStrippedBio,
+        isOrgSEOIndexable: org?.organizationSettings?.allowSEOIndexing ?? false,
       },
     },
   };

@@ -1,8 +1,6 @@
 import { createAProfileForAnExistingUser } from "@calcom/lib/createAProfileForAnExistingUser";
-import { updateNewTeamMemberEventTypes, updateEventTypesOnMemberDepart } from "@calcom/lib/server/queries";
-import { closeComUpsertTeamUser } from "@calcom/lib/sync/SyncServiceManager";
+import { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
 import { prisma } from "@calcom/prisma";
-import { MembershipRole } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
 import type { TAcceptOrLeaveInputSchema } from "./acceptOrLeave.schema";
@@ -57,20 +55,9 @@ export const acceptOrLeaveHandler = async ({ ctx, input }: AcceptOrLeaveOptions)
         organizationId: idOfOrganizationInContext,
       });
     }
-    try {
-      await updateNewTeamMemberEventTypes(ctx.user.id, input.teamId);
-    } catch (e) {
-      console.error("error", e);
-    }
-    closeComUpsertTeamUser(team, ctx.user, teamMembership.role);
+    await updateNewTeamMemberEventTypes(ctx.user.id, input.teamId);
   } else {
     try {
-      //get team owner so we can alter their subscription seat count
-      const ownerMembership = await prisma.membership.findFirst({
-        where: { teamId: input.teamId, role: MembershipRole.OWNER },
-        include: { team: true },
-      });
-
       const membership = await prisma.membership.delete({
         where: {
           userId_teamId: { userId: ctx.user.id, teamId: input.teamId },
@@ -87,9 +74,6 @@ export const acceptOrLeaveHandler = async ({ ctx, input }: AcceptOrLeaveOptions)
           },
         });
       }
-      await updateEventTypesOnMemberDepart(ctx.user.id, input.teamId);
-      // Sync Services: Close.com
-      if (ownerMembership) closeComUpsertTeamUser(ownerMembership.team, ctx.user, membership.role);
     } catch (e) {
       console.log("Team leave error ", e);
     }

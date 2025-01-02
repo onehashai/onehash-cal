@@ -29,11 +29,7 @@ import prisma, { bookingMinimalSelect } from "@calcom/prisma";
 import type { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
-import {
-  bookingMetadataSchema,
-  EventTypeMetaDataSchema,
-  schemaBookingCancelParams,
-} from "@calcom/prisma/zod-utils";
+import { bookingMetadataSchema, EventTypeMetaDataSchema, bookingCancelInput } from "@calcom/prisma/zod-utils";
 import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import { getAllWorkflowsFromEventType } from "@calcom/trpc/server/routers/viewer/workflows/util";
 import type { CalendarEvent } from "@calcom/types/Calendar";
@@ -45,7 +41,7 @@ import cancelAttendeeSeat from "./handleSeats/cancel/cancelAttendeeSeat";
 const log = logger.getSubLogger({ prefix: ["handleCancelBooking"] });
 
 async function getBookingToDelete(id: number | undefined, uid: string | undefined) {
-  return await prisma.booking.findUnique({
+  return await prisma.booking.findUniqueOrThrow({
     where: {
       id,
       uid,
@@ -161,8 +157,16 @@ export type HandleCancelBookingResponse = {
 };
 
 async function handler(req: CustomRequest) {
-  const { id, uid, allRemainingBookings, cancellationReason, seatReferenceUid, cancelledBy, autoRefund } =
-    schemaBookingCancelParams.parse(req.body);
+  const {
+    id,
+    uid,
+    allRemainingBookings,
+    cancellationReason,
+    seatReferenceUid,
+    cancelledBy,
+    cancelSubsequentBookings,
+    autoRefund,
+  } = bookingCancelInput.parse(req.body);
   req.bookingToDelete = await getBookingToDelete(id, uid);
   const {
     bookingToDelete,
@@ -174,11 +178,7 @@ async function handler(req: CustomRequest) {
     arePlatformEmailsEnabled,
   } = req;
 
-  if (!bookingToDelete || !bookingToDelete.user) {
-    throw new HttpError({ statusCode: 400, message: "Booking not found" });
-  }
-
-  if (!bookingToDelete.userId) {
+  if (!bookingToDelete.userId || !bookingToDelete.user) {
     throw new HttpError({ statusCode: 400, message: "User not found" });
   }
 
@@ -367,17 +367,20 @@ async function handler(req: CustomRequest) {
   await Promise.all(promises);
 
   const workflows = await getAllWorkflowsFromEventType(bookingToDelete.eventType, bookingToDelete.userId);
+  const parsedMetadata = bookingMetadataSchema.safeParse(bookingToDelete.metadata || {});
 
   await sendCancelledReminders({
     workflows,
     smsReminderNumber: bookingToDelete.smsReminderNumber,
     evt: {
       ...evt,
-      metadata: { videoCallUrl: bookingMetadataSchema.parse(bookingToDelete.metadata || {})?.videoCallUrl },
+      ...(parsedMetadata.success && parsedMetadata.data?.videoCallUrl
+        ? { metadata: { videoCallUrl: parsedMetadata.data.videoCallUrl } }
+        : {}),
       bookerUrl,
       ...{
         eventType: {
-          slug: bookingToDelete.eventType?.slug,
+          slug: bookingToDelete.eventType?.slug as string,
           schedulingType: bookingToDelete.eventType?.schedulingType,
           hosts: bookingToDelete.eventType?.hosts,
         },
@@ -428,14 +431,19 @@ async function handler(req: CustomRequest) {
 
   // by cancelling first, and blocking whilst doing so; we can ensure a cancel
   // action always succeeds even if subsequent integrations fail cancellation.
-  if (bookingToDelete.eventType?.recurringEvent && bookingToDelete.recurringEventId && allRemainingBookings) {
+  if (
+    bookingToDelete.eventType?.recurringEvent &&
+    bookingToDelete.recurringEventId &&
+    (allRemainingBookings || cancelSubsequentBookings)
+  ) {
     const recurringEventId = bookingToDelete.recurringEventId;
+    const gte = cancelSubsequentBookings ? bookingToDelete.startTime : new Date();
     // Proceed to mark as cancelled all remaining recurring events instances (greater than or equal to right now)
     await prisma.booking.updateMany({
       where: {
         recurringEventId,
         startTime: {
-          gte: new Date(),
+          gte,
         },
       },
       data: {

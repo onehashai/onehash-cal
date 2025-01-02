@@ -4,12 +4,12 @@ import type { NextApiRequest } from "next";
 import short from "short-uuid";
 import { v5 as uuidv5 } from "uuid";
 
-import { createInstantMeetingWithCalVideo } from "@calcom/core/videoClient";
+import { createInstantMeetingWithJitsiVideo } from "@calcom/core/videoClient";
 import dayjs from "@calcom/dayjs";
 import getBookingDataSchema from "@calcom/features/bookings/lib/getBookingDataSchema";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
-import { getCustomInputsResponses } from "@calcom/features/bookings/lib/handleNewBooking";
 import { getBookingData } from "@calcom/features/bookings/lib/handleNewBooking/getBookingData";
+import { getCustomInputsResponses } from "@calcom/features/bookings/lib/handleNewBooking/getCustomInputsResponses";
 import { getEventTypesFromDB } from "@calcom/features/bookings/lib/handleNewBooking/getEventTypesFromDB";
 import { getFullName } from "@calcom/features/form-builder/utils";
 import { sendNotification } from "@calcom/features/notifications/sendNotification";
@@ -220,19 +220,36 @@ async function handler(req: NextApiRequest) {
   }, [] as typeof invitee);
 
   const attendeesList = [...invitee, ...guests];
-  const calVideoMeeting = await createInstantMeetingWithCalVideo(dayjs.utc(reqBody.end).toISOString());
+  // const calVideoMeeting = await createInstantMeetingWithCalVideo(dayjs.utc(reqBody.end).toISOString());
 
-  if (!calVideoMeeting) {
-    throw new Error("Cal Video Meeting Creation Failed");
+  // if (!calVideoMeeting) {
+  //   throw new Error("Cal Video Meeting Creation Failed");
+  // }
+
+  // const bookingReferenceToCreate = [
+  //   {
+  //     type: calVideoMeeting.type,
+  //     uid: calVideoMeeting.id,
+  //     meetingId: calVideoMeeting.id,
+  //     meetingPassword: calVideoMeeting.password,
+  //     meetingUrl: calVideoMeeting.url,
+  //   },
+  // ];
+
+  const instantMeetingTitle = tAttendees("instant_meeting_with_title", { name: invitee[0].name });
+  const instantVideoMeeting = await createInstantMeetingWithJitsiVideo(instantMeetingTitle);
+
+  if (!instantVideoMeeting) {
+    throw new Error("Instant Video Meeting Creation Failed");
   }
 
   const bookingReferenceToCreate = [
     {
-      type: calVideoMeeting.type,
-      uid: calVideoMeeting.id,
-      meetingId: calVideoMeeting.id,
-      meetingPassword: calVideoMeeting.password,
-      meetingUrl: calVideoMeeting.url,
+      type: instantVideoMeeting.type,
+      uid: instantVideoMeeting.id,
+      meetingId: instantVideoMeeting.id,
+      meetingPassword: instantVideoMeeting.password,
+      meetingUrl: instantVideoMeeting.url,
     },
   ];
 
@@ -240,7 +257,7 @@ async function handler(req: NextApiRequest) {
   const newBookingData: Prisma.BookingCreateInput = {
     uid,
     responses: reqBody.responses === null ? Prisma.JsonNull : reqBody.responses,
-    title: tAttendees("instant_meeting_with_title", { name: invitee[0].name }),
+    title: instantMeetingTitle,
     startTime: dayjs.utc(reqBody.start).toDate(),
     endTime: dayjs.utc(reqBody.end).toDate(),
     description: reqBody.notes,
@@ -249,13 +266,13 @@ async function handler(req: NextApiRequest) {
     references: {
       create: bookingReferenceToCreate,
     },
-    location: "integrations:daily",
+    location: "integrations:jitsi",
     eventType: {
       connect: {
         id: reqBody.eventTypeId,
       },
     },
-    metadata: { ...reqBody.metadata, videoCallUrl: `${WEBAPP_URL}/video/${uid}` },
+    metadata: { ...reqBody.metadata, videoCallUrl: instantVideoMeeting.url },
     attendees: {
       createMany: {
         data: attendeesList,

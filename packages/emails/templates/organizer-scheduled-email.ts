@@ -12,19 +12,27 @@ import generateIcsFile from "../lib/generateIcsFile";
 import { GenerateIcsRole } from "../lib/generateIcsFile";
 import BaseEmail from "./_base-email";
 
+export type Reassigned = { name: string | null; email: string; reason?: string; byUser?: string };
 export default class OrganizerScheduledEmail extends BaseEmail {
   calEvent: CalendarEvent;
   t: TFunction;
   newSeat?: boolean;
   teamMember?: Person;
+  reassigned?: Reassigned;
 
-  constructor(input: { calEvent: CalendarEvent; newSeat?: boolean; teamMember?: Person }) {
+  constructor(input: {
+    calEvent: CalendarEvent;
+    newSeat?: boolean;
+    teamMember?: Person;
+    reassigned?: Reassigned;
+  }) {
     super();
     this.name = "SEND_BOOKING_CONFIRMATION";
     this.calEvent = input.calEvent;
     this.t = this.calEvent.organizer.language.translate;
     this.newSeat = input.newSeat;
     this.teamMember = input.teamMember;
+    this.reassigned = input.reassigned;
   }
 
   protected async getNodeMailerPayload(): Promise<Record<string, unknown>> {
@@ -34,25 +42,38 @@ export default class OrganizerScheduledEmail extends BaseEmail {
     return {
       icalEvent: generateIcsFile({
         calEvent: this.calEvent,
-        title: this.calEvent.recurringEvent?.count
-          ? this.t("new_event_scheduled_recurring")
-          : this.t("new_event_scheduled"),
-        subtitle: this.t("emailed_you_and_any_other_attendees"),
         role: GenerateIcsRole.ORGANIZER,
         status: "CONFIRMED",
       }),
       from: `${EMAIL_FROM_NAME} <${this.getMailerOptions().from}>`,
       to: toAddresses.join(","),
-      replyTo: [this.calEvent.organizer.email, ...this.calEvent.attendees.map(({ email }) => email)],
+      replyTo: [...this.calEvent.attendees.map(({ email }) => email)],
       subject: `${this.newSeat ? `${this.t("new_attendee")}: ` : ""}${this.calEvent.title}`,
-      html: await renderEmail("OrganizerScheduledEmail", {
-        calEvent: clonedCalEvent,
-        attendee: this.calEvent.organizer,
-        teamMember: this.teamMember,
-        newSeat: this.newSeat,
-      }),
+      html: await this.getHtml(
+        clonedCalEvent,
+        this.calEvent.organizer,
+        this.teamMember,
+        this.newSeat,
+        this.reassigned
+      ),
       text: this.getTextBody(),
     };
+  }
+
+  async getHtml(
+    calEvent: CalendarEvent,
+    attendee: Person,
+    teamMember?: Person,
+    newSeat?: boolean,
+    reassigned?: Reassigned
+  ) {
+    return await renderEmail("OrganizerScheduledEmail", {
+      calEvent,
+      attendee,
+      teamMember,
+      newSeat,
+      reassigned,
+    });
   }
 
   protected getTextBody(
@@ -71,7 +92,7 @@ ${this.t(
 )}
 ${this.t(subtitle)}
 ${extraInfo}
-${getRichDescription(this.calEvent, this.t, true)}
+${getRichDescription(this.calEvent, this.t, true, true, true)}
 ${callToAction}
 `.trim();
   }

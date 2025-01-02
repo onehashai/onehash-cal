@@ -13,6 +13,7 @@ import { z } from "zod";
 import type { ChildrenEventType } from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
 import { EventType as EventTypeComponent } from "@calcom/features/eventtypes/components/EventType";
 import type { EventTypeSetupProps } from "@calcom/features/eventtypes/lib/types";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { WEBSITE_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";
@@ -45,11 +46,7 @@ const EventAvailabilityTab = dynamic(() =>
   import("./EventAvailabilityTabWebWrapper").then((mod) => mod)
 );
 
-const EventTeamAssignmentTab = dynamic(() =>
-  import("@calcom/features/eventtypes/components/tabs/assignment/EventTeamAssignmentTab").then(
-    (mod) => mod.EventTeamAssignmentTab
-  )
-);
+const EventTeamAssignmentTab = dynamic(() => import("./EventTeamAssignmentTabWebWrapper").then((mod) => mod));
 
 const EventLimitsTab = dynamic(() =>
   // import web wrapper when it's ready
@@ -160,7 +157,7 @@ const EventTypeWeb = ({
   const { t } = useLocale();
   const utils = trpc.useUtils();
 
-  const { data: loggedInUser, isPending: isLoggedInUserPending } = useMeQuery();
+  const { data: user, isPending: isLoggedInUserPending } = useMeQuery();
   const isTeamEventTypeDeleted = useRef(false);
   const leaveWithoutAssigningHosts = useRef(false);
   const telemetry = useTelemetry();
@@ -228,10 +225,12 @@ const EventTypeWeb = ({
     },
   });
 
-  const permalink = `${WEBSITE_URL}/${team ? `team/${team.slug}` : eventType.users[0].username}/${
+  const orgBranding = useOrgBranding();
+
+  const bookerUrl = orgBranding ? orgBranding?.fullDomain : WEBSITE_URL;
+  const permalink = `${bookerUrl}/${team ? `team/${team.slug}` : eventType.users[0].username}/${
     eventType.slug
   }`;
-  // Optional prerender all tabs after 300 ms on mount
   const tabMap = {
     setup: (
       <EventSetupTab
@@ -243,16 +242,29 @@ const EventTypeWeb = ({
       />
     ),
     availability: (
-      <EventAvailabilityTab eventType={eventType} isTeamEvent={!!team} loggedInUser={loggedInUser} />
+      <EventAvailabilityTab
+        eventType={eventType}
+        isTeamEvent={!!team}
+        user={user}
+        teamMembers={teamMembers}
+      />
     ),
-    team: <EventTeamAssignmentTab teamMembers={teamMembers} team={team} eventType={eventType} />,
+    team: (
+      <EventTeamAssignmentTab
+        orgId={orgBranding?.id ?? null}
+        teamMembers={teamMembers}
+        team={team}
+        eventType={eventType}
+      />
+    ),
     limits: <EventLimitsTab eventType={eventType} />,
     advanced: (
       <EventAdvancedTab
         eventType={eventType}
         team={team}
-        loggedInUser={loggedInUser}
-        isLoggedInUserPending={isLoggedInUserPending}
+        user={user}
+        isUserLoading={isLoggedInUserPending}
+        showToast={showToast}
       />
     ),
     instant: <EventInstantTab eventType={eventType} isTeamEvent={!!team} />,

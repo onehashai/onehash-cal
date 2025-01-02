@@ -7,7 +7,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Badge, ConfirmationDialogContent, Dialog, DropdownActions, showToast, Table } from "@calcom/ui";
 
-import { subdomainSuffix } from "../../../../organizations/lib/orgDomains";
+import { subdomainSuffix } from "../../../lib/orgDomains";
 
 const { Body, Cell, ColumnTitle, Header, Row } = Table;
 

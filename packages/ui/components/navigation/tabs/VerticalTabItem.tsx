@@ -5,7 +5,8 @@ import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useUrlMatchesCurrentUrl } from "@calcom/lib/hooks/useUrlMatchesCurrentUrl";
 
-import { Icon, type IconName } from "../../..";
+import { Icon } from "../../icon";
+import type { IconName } from "../../icon";
 import { Skeleton } from "../../skeleton";
 
 export type VerticalTabItemProps = {
@@ -26,6 +27,7 @@ export type VerticalTabItemProps = {
   avatar?: string;
   iconClassName?: string;
   onClick?: (name: string) => void;
+  isActive?: boolean;
 };
 
 const VerticalTabItem = ({
@@ -39,7 +41,7 @@ const VerticalTabItem = ({
   ...props
 }: VerticalTabItemProps) => {
   const { t } = useLocale();
-  const isCurrent = useUrlMatchesCurrentUrl(href);
+  const isCurrent = useUrlMatchesCurrentUrl(href) || props?.isActive;
 
   return (
     <Fragment key={name}>
@@ -59,7 +61,7 @@ const VerticalTabItem = ({
             target={props.isExternalLink ? "_blank" : "_self"}
             className={classNames(
               props.textClassNames || "text-default text-sm font-medium leading-none",
-              "min-h-7 hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default group flex w-64 flex-row items-center rounded-md px-3 py-2 transition",
+              "hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default group flex min-h-7 w-64 flex-row items-center rounded-md px-3 py-2 transition",
               props.disabled && "pointer-events-none !opacity-30",
               (isChild || !props.icon) && "ml-7 w-auto ltr:mr-5 rtl:ml-5",
               !info ? "h-6" : "h-auto",
@@ -71,7 +73,7 @@ const VerticalTabItem = ({
               <Icon
                 name={props.icon}
                 className={classNames(
-                  "mr-2 h-[16px] w-[16px] stroke-[2px] ltr:mr-2 rtl:ml-2 md:mt-0",
+                  "mr-2 h-[16px] w-[16px] stroke-[2px] md:mt-0 ltr:mr-2 rtl:ml-2",
                   props.iconClassName
                 )}
                 data-testid="icon-component"
@@ -79,7 +81,7 @@ const VerticalTabItem = ({
             )}
             <div className="h-fit">
               <span className="flex items-center space-x-2 rtl:space-x-reverse">
-                <Skeleton title={t(name)} as="p" className="max-w-36 min-h-4 truncate">
+                <Skeleton title={t(name)} as="p" className="min-h-4 max-w-36 truncate">
                   {t(name)}
                 </Skeleton>
                 {props.isExternalLink ? <Icon name="external-link" data-testid="external-link" /> : null}
@@ -89,7 +91,7 @@ const VerticalTabItem = ({
                   data-testid="apps-info"
                   as="p"
                   title={t(info)}
-                  className="max-w-44 mt-1 truncate text-xs font-normal">
+                  className="mt-1 max-w-44 truncate text-xs font-normal">
                   {t(info)}
                 </Skeleton>
               )}

@@ -7,13 +7,16 @@ import { useFormContext } from "react-hook-form";
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 
-import { Alert, Icon, Input, InputField, Tooltip } from "../../..";
+import { Alert } from "../../alert";
+import { Icon } from "../../icon";
+import { Tooltip } from "../../tooltip";
+import { Input, InputField } from "../inputs/TextField";
 import { Label } from "./Label";
 import type { InputFieldProps } from "./types";
 
 export function InputLeading(props: JSX.IntrinsicElements["div"]) {
   return (
-    <span className="bg-muted border-default text-subtle inline-flex flex-shrink-0 items-center rounded-l-sm border px-3 ltr:border-r-0 rtl:border-l-0 sm:text-sm sm:leading-4">
+    <span className="bg-muted border-default text-subtle inline-flex flex-shrink-0 items-center rounded-l-sm border px-3 sm:text-sm sm:leading-4 ltr:border-r-0 rtl:border-l-0">
       {props.children}
     </span>
   );

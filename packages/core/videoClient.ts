@@ -262,6 +262,27 @@ export const createInstantMeetingWithCalVideo = async (endTime: string) => {
   return videoAdapter?.createInstantCalVideoRoom?.(endTime);
 };
 
+export const createInstantMeetingWithJitsiVideo = async (title: string) => {
+  let jitsiAppKeys: Awaited<ReturnType<typeof getJitsiAppKeys>>;
+  try {
+    jitsiAppKeys = await getJitsiAppKeys();
+  } catch (e) {
+    return;
+  }
+  const [videoAdapter] = await getVideoAdapters([
+    {
+      id: 0,
+      appId: "jitsi",
+      type: "jitsi_video",
+      userId: null,
+      user: { email: "" },
+      teamId: null,
+      key: jitsiAppKeys,
+      invalid: false,
+    },
+  ]);
+  return videoAdapter?.createInstantJitsiVideoRoom?.(title);
+};
 const getRecordingsOfCalVideoByRoomName = async (
   roomName: string
 ): Promise<GetRecordingsResponseSchema | undefined> => {
