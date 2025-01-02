@@ -30,8 +30,8 @@ export const whatsappEventRescheduledTemplate = (
     startTime = dayjs(startTime).tz(timeZone).locale(locale).format(currentTimeFormat);
   }
 
-  const templateOne = `Hi${
-    name ? ` ${name}` : ``
+  const templateOne = `Hi ${
+    name ? `${name}` : `user`
   }, your meeting (*${eventName}*) with ${attendee} on ${eventDate} at ${startTime} ${timeZone} has been rescheduled.`;
 
   //Twilio supports up to 1024 characters for whatsapp template messages

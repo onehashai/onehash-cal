@@ -47,8 +47,9 @@ export type BookingInfo = {
     timeFormat?: TimeFormat;
     username?: string;
   };
-  eventType?: {
-    slug: string;
+  eventType: {
+    title: string;
+    slug?: string;
     recurringEvent?: RecurringEvent | null;
   };
   startTime: string;
