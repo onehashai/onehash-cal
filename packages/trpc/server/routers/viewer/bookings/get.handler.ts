@@ -5,7 +5,7 @@ import getAllUserBookings from "@calcom/lib/bookings/getAllUserBookings";
 import type { PrismaClient } from "@calcom/prisma";
 import { bookingMinimalSelect } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
-import { type BookingStatus } from "@calcom/prisma/enums";
+import { MembershipRole, type BookingStatus } from "@calcom/prisma/enums";
 import { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 
 import type { TrpcSessionUser } from "../../../trpc";
@@ -307,7 +307,6 @@ export async function getBookings({
       },
     },
     cancellationReason: true,
-    responses: true,
     assignmentReason: {
       orderBy: { createdAt: PrismaClientType.SortOrder.desc },
       take: 1,
@@ -519,6 +518,10 @@ export async function getBookings({
         booking.attendees = booking.attendees.filter((attendee) => attendee.email === user.email);
       }
 
+      const membership = booking.eventType?.team?.members.find((membership) => membership.userId === user.id);
+      const isUserTeamAdminOrOwner =
+        membership?.role === MembershipRole.OWNER || membership?.role === MembershipRole.ADMIN;
+
       return {
         ...booking,
         eventType: {
@@ -531,6 +534,7 @@ export async function getBookings({
         },
         startTime: booking.startTime.toISOString(),
         endTime: booking.endTime.toISOString(),
+        isUserTeamAdminOrOwner,
       };
     })
   );

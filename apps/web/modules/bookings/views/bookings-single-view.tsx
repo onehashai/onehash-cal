@@ -1114,7 +1114,7 @@ export default function Success(props: PageProps) {
             </div>
           </div>
         </div>
-        <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+        <div key="logo" className={classNames("flex w-full justify-center [&_img]:h-[32px]")}>
           <PoweredBy logoOnly />
         </div>
       </main>

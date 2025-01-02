@@ -110,7 +110,7 @@ export const weightDescription = (
     <Link
       className="underline underline-offset-2"
       target="_blank"
-      href="https://cal.com/docs/enterprise-features/teams/round-robin-scheduling#weights">
+      href="https://chat.onehash.ai/hc/onehash-help-center/articles/1702026750-round_robin-scheduling">
       Learn more
     </Link>
   </Trans>

@@ -306,16 +306,16 @@ function BookingListItem(booking: BookingItemProps) {
     });
   }
 
-  if (isBookingInPast || isOngoing) {
-    editBookingActions.push({
-      id: "no_show",
-      label: t("mark_as_no_show"),
-      onClick: () => {
-        setIsNoShowDialogOpen(true);
-      },
-      icon: "eye-off" as const,
-    });
-  }
+  // if (isBookingInPast || isOngoing) {
+  //   editBookingActions.push({
+  //     id: "no_show",
+  //     label: t("mark_as_no_show"),
+  //     onClick: () => {
+  //       setIsNoShowDialogOpen(true);
+  //     },
+  //     icon: "eye-off" as const,
+  //   });
+  // }
 
   let bookedActions: ActionType[] = [
     {
