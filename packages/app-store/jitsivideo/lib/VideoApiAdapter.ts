@@ -47,6 +47,26 @@ const JitsiVideoApiAdapter = (): VideoApiAdapter => {
         url: bookingRef.meetingUrl as string,
       });
     },
+
+    createInstantJitsiVideoRoom: async (title: string): Promise<VideoCallData> => {
+      const appKeys = await getAppKeysFromSlug(metadata.slug);
+
+      const meetingPattern = (appKeys.jitsiPathPattern as string) || "{uuid}";
+      const hostUrl = (appKeys.jitsiHost as string) || "https://meet.jit.si/cal";
+
+      //Allows "/{Type}-with-{Attendees}" slug
+      const meetingID = meetingPattern
+        .replaceAll("{uuid}", uuidv4())
+        .replaceAll("{Title}", title)
+        .replaceAll(" ", "-"); //Last Rule! - Replace all blanks (%20) with dashes;
+
+      return Promise.resolve({
+        type: metadata.type,
+        id: meetingID,
+        password: "",
+        url: `${hostUrl}/${encodeURIComponent(meetingID)}`,
+      });
+    },
   };
 };
 
