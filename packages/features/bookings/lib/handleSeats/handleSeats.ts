@@ -134,6 +134,7 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
               slug: eventType.slug,
               schedulingType: eventType.schedulingType,
               hosts: eventType.hosts,
+              title: eventType.title,
             },
           },
         },

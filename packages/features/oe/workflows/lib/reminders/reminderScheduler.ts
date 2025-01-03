@@ -20,6 +20,7 @@ export type ExtendedCalendarEvent = Omit<CalendarEvent, "bookerUrl"> & {
     slug: string;
     schedulingType?: SchedulingType | null;
     hosts?: { user: { email: string; destinationCalendar?: { primaryEmail: string | null } | null } }[];
+    title?: string;
   };
   bookerUrl: string;
 };

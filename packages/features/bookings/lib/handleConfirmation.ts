@@ -329,6 +329,7 @@ export async function handleConfirmation(args: {
           slug: eventTypeSlug,
           schedulingType: updatedBookings[index].eventType?.schedulingType,
           hosts: updatedBookings[index].eventType?.hosts,
+          title: eventType?.title,
         },
         bookerUrl,
       };
