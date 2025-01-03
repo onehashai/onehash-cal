@@ -35,9 +35,6 @@ class RoutingEventsInsights {
   }: RoutingFormInsightsTeamFilter) {
     // Get team IDs based on organization if applicable
     let teamIds: number[] = [];
-    console.log("in_here_team_id", teamId);
-    //log call
-    console.log("in_here_stack", new Error().stack);
 
     if (isAll && organizationId) {
       const teamsFromOrg = await prisma.team.findMany({
