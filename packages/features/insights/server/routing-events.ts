@@ -35,6 +35,7 @@ class RoutingEventsInsights {
   }: RoutingFormInsightsTeamFilter) {
     // Get team IDs based on organization if applicable
     let teamIds: number[] = [];
+
     if (isAll && organizationId) {
       const teamsFromOrg = await prisma.team.findMany({
         where: {
@@ -61,12 +62,12 @@ class RoutingEventsInsights {
       }),
     };
 
-    if (teamIds.length === 0 && !routingFormId) {
-      if (!organizationId) {
-        throw new Error("Organization ID is required");
-      }
-      formsWhereCondition.teamId = organizationId;
-    }
+    // if (teamIds.length === 0 && !routingFormId) {
+    //   if (!organizationId) {
+    //     throw new Error("Organization ID is required");
+    //   }
+    //   formsWhereCondition.teamId = organizationId;
+    // }
 
     return formsWhereCondition;
   }
