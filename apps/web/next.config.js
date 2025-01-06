@@ -674,22 +674,22 @@ const nextConfig = {
   },
 };
 
-if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
-  plugins.push((nextConfig) =>
-    withSentryConfig(nextConfig, {
-      autoInstrumentServerFunctions: false,
-      hideSourceMaps: true,
-      // disable source map generation for the server code
-      disableServerWebpackPlugin: !!process.env.SENTRY_DISABLE_SERVER_WEBPACK_PLUGIN,
-      silent: false,
-      sourcemaps: {
-        disable: process.env.SENTRY_DISABLE_SERVER_SOURCE_MAPS === "1",
-      },
-      authToken: process.env.SENTRY_AUTH_TOKEN,
-      telemetry: false,
-      project: process.env.SENTRY_PROJECT,
-    })
-  );
-}
+// if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+//   plugins.push((nextConfig) =>
+//     withSentryConfig(nextConfig, {
+//       autoInstrumentServerFunctions: false,
+//       hideSourceMaps: true,
+//       // disable source map generation for the server code
+//       disableServerWebpackPlugin: !!process.env.SENTRY_DISABLE_SERVER_WEBPACK_PLUGIN,
+//       silent: false,
+//       sourcemaps: {
+//         disable: process.env.SENTRY_DISABLE_SERVER_SOURCE_MAPS === "1",
+//       },
+//       authToken: process.env.SENTRY_AUTH_TOKEN,
+//       telemetry: false,
+//       project: process.env.SENTRY_PROJECT,
+//     })
+//   );
+// }
 
 module.exports = () => plugins.reduce((acc, next) => next(acc), nextConfig);
