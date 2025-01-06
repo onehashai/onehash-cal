@@ -4322,7 +4322,7 @@ __metadata:
     "@sendgrid/client": ^7.7.0
     "@vercel/og": ^0.6.3
     bcryptjs: ^2.4.3
-    city-timezones: ^1.3.0
+    city-timezones: ^1.2.1
     i18next: ^23.2.3
     ical.js: ^1.4.0
     ics: ^2.37.0
@@ -21682,15 +21682,6 @@ __metadata:
   linkType: hard
 
 "city-timezones@npm:^1.2.1":
-  version: 1.2.1
-  resolution: "city-timezones@npm:1.2.1"
-  dependencies:
-    lodash: ^4.17.21
-  checksum: e73f773022cfe108e8bbd191e1bff7d98fd1c59dbb92e2ade71c15e95922af97a44b86254ca30aba92a797d48d45a4be60911f2f918f6ea37c6d67f560ce07b9
-  languageName: node
-  linkType: hard
-
-"city-timezones@npm:^1.3.0":
   version: 1.3.0
   resolution: "city-timezones@npm:1.3.0"
   dependencies:

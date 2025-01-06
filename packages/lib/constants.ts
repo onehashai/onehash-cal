@@ -1,4 +1,5 @@
 import dayjs from "@calcom/dayjs";
+import { version as calVersion } from "@calcom/web/package.json";
 
 const VERCEL_URL = process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "";
 const RAILWAY_STATIC_URL = process.env.RAILWAY_STATIC_URL ? `https://${process.env.RAILWAY_STATIC_URL}` : "";
@@ -119,7 +120,7 @@ export const ORGANIZATION_MIN_SEATS = 30;
 
 // Needed for emails in E2E
 export const IS_MAILHOG_ENABLED = process.env.E2E_TEST_MAILHOG_ENABLED === "1";
-export const CALCOM_VERSION = process.env.NEXT_PUBLIC_CALCOM_VERSION as string;
+export const CALCOM_VERSION = calVersion;
 
 export const APP_CREDENTIAL_SHARING_ENABLED =
   !!process.env.CALCOM_CREDENTIAL_SYNC_SECRET && !!process.env.CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY;
