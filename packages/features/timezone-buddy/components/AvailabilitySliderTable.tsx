@@ -91,7 +91,7 @@ const MoreOptions: React.FC<{
           e.stopPropagation();
         }}>
         <Dropdown
-          onToggle={setOpened}
+          // onToggle={setOpened}
           open={opened}
           onOpenChange={(_) => {
             setOpened(!opened);

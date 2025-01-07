@@ -23,13 +23,17 @@ type Props = {
       NonNullable<Awaited<ReturnType<typeof getPublicEvent>>>,
       "id" | "length" | "metadata" | "entity" | "profile" | "title" | "users" | "hidden"
     >,
-    "profile"
+    "profile" | "users"
   > & {
     profile: {
-      image: string | undefined;
+      image: string | null;
       name: string | null;
       username: string | null;
     };
+    users: {
+      username: string;
+      name: string;
+    }[];
   };
 
   booking?: GetBookingType;
@@ -100,11 +104,7 @@ async function getDynamicGroupPageProps(context: GetServerSidePropsContext) {
   const { rescheduleUid, bookingUid } = context.query;
 
   const { ssrInit } = await import("@server/lib/ssr");
-  const ssr = await ssrInit(context, {
-    noI18nPreload: false,
-    noQueryPrefetch: true,
-    prefetchUserSchedule: true,
-  });
+  const ssr = await ssrInit(context);
   const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(context.req, context.params?.orgSlug);
   const org = isValidOrgDomain ? currentOrgDomain : null;
   if (!org) {
@@ -155,15 +155,15 @@ async function getDynamicGroupPageProps(context: GetServerSidePropsContext) {
       length: eventData.length,
       metadata: {
         ...eventData.metadata,
-        multipleDuration: [15, 30, 60],
+        multipleDuration: [15, 30, 45, 60, 90],
       },
       profile: {
-        image: eventData.profile.image,
+        image: eventData.profile.image ?? null,
         name: eventData.profile.name ?? null,
         username: eventData.profile.username ?? null,
       },
       title: eventData.title,
-      users: eventData.users,
+      users: eventData.users.map((user) => ({ username: user.username ?? "", name: user.name ?? "" })),
       hidden: eventData.hidden,
     },
     user: usernames.join("+"),
@@ -213,10 +213,7 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
   }
 
   const { ssrInit } = await import("@server/lib/ssr");
-  const ssr = await ssrInit(context, {
-    noI18nPreload: false,
-    noQueryPrefetch: true,
-  });
+  const ssr = await ssrInit(context);
   const [user] = await UserRepository.findUsersByUsername({
     usernameList: [username],
     orgSlug: isValidOrgDomain ? currentOrgDomain : null,
@@ -257,12 +254,12 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
       length: eventData.length,
       metadata: eventData.metadata,
       profile: {
-        image: eventData.profile.image,
+        image: eventData.profile.image ?? null,
         name: eventData.profile.name ?? null,
         username: eventData.profile.username ?? null,
       },
       title: eventData.title,
-      users: eventData.users,
+      users: eventData.users.map((user) => ({ username: user.username ?? "", name: user.name ?? "" })),
       hidden: eventData.hidden,
     },
     user: username,
@@ -285,7 +282,6 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
   } else if (bookingUid) {
     await processSeatedEvent({ props, bookingUid });
   }
-
   //Checking if billing address is required for paid events integrated with stripe
   if (eventData?.metadata?.apps?.stripe?.enabled) {
     const credential = await prisma.credential.findUnique({
@@ -301,7 +297,6 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
       });
     }
   }
-
   return {
     props,
   };
@@ -336,7 +331,6 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       };
     }
   }
-
   const { user } = paramsSchema.parse(context.params);
   const isDynamicGroup = user.length > 1;
 
