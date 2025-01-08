@@ -192,7 +192,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
       },
     });
 
-    if (!cal_user) return res.status(401).json({ message: `Cal user with slug ${cal_user_slug} not found` });
+    if (!cal_user) return res.json({ message: "Integration request raised if user exist" });
     const existingMetadata = isPrismaObjOrUndefined(cal_user?.metadata) ?? {};
     const chat_integration_requests =
       (existingMetadata?.chat_integration_requests as Array<PostWithoutSlug>) ?? [];
@@ -224,7 +224,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
         metadata: updatedMetadata,
       },
     });
-    return res.json({ message: "Integration Request raised" });
+    return res.json({ message: "Integration request raised if user exist" });
   } catch (error) {
     throw error;
   }
