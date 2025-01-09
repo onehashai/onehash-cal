@@ -71,7 +71,7 @@ class MyDocument extends Document<Props> {
       "/getting-started",
       // "/reschedule",
       "/settings",
-      "/team",
+      // "/team",
       "/teams",
       "/workflows",
     ];
