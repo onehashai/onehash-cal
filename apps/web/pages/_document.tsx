@@ -125,6 +125,7 @@ class MyDocument extends Document<Props> {
             `,
             }}
           />
+
           {/* Microsoft Clarity Script */}
           {/* <script
             id="microsoft-clarity-init"
@@ -171,58 +172,48 @@ class MyDocument extends Document<Props> {
               src="https://snippet.meticulous.ai/v1/stagingMeticulousSnippet.js"
             />
           )}
-          {/* Render scripts only if allowScript is true */}
+
           {allowScript && (
-            <>
-              {/* AMPLITUDE */}
-              <Script
-                src="https://cdn.amplitude.com/script/ca8f70a47b97a98998c9b476e4977212.js"
-                strategy="beforeInteractive"
-              />
-              <Script
-                src="https://cdn.amplitude.com/script/ca8f70a47b97a98998c9b476e4977212.js"
-                strategy="afterInteractive"
-                onLoad={() => {
-                  if (window.amplitude && window.amplitude.init) {
-                    const plugin = window.sessionReplay?.plugin({ sampleRate: 1 });
-                    if (plugin) {
-                      window.amplitude.add(plugin);
-                    }
-                    window.amplitude.init("ca8f70a47b97a98998c9b476e4977212", {
-                      fetchRemoteConfig: true,
-                      autocapture: true,
-                    });
-                  } else {
-                    console.error("Amplitude failed to initialize.");
+            <Script
+              src="https://cdn.amplitude.com/script/ca8f70a47b97a98998c9b476e4977212.js"
+              strategy="beforeInteractive"
+            />
+          )}
+          {allowScript && (
+            <Script
+              src="https://cdn.amplitude.com/script/ca8f70a47b97a98998c9b476e4977212.js"
+              strategy="afterInteractive"
+              onLoad={() => {
+                if (window.amplitude && window.amplitude.init) {
+                  const plugin = window.sessionReplay?.plugin({ sampleRate: 1 });
+                  if (plugin) {
+                    window.amplitude.add(plugin);
                   }
-                }}
-              />
+                  window.amplitude.init("ca8f70a47b97a98998c9b476e4977212", {
+                    fetchRemoteConfig: true,
+                    autocapture: true,
+                  });
+                  console.log("Amplitude plugin loaded");
+                } else {
+                  console.error("Amplitude failed to initialize.");
+                }
+              }}
+            />
+          )}
+          {allowScript && (
+            <Script
+              strategy="afterInteractive"
+              src="https://www.googletagmanager.com/gtag/js?id=AW-613079827"
+              async
+            />
+          )}
 
-              {/* Google Ads Global site tag */}
-              <Script
-                strategy="afterInteractive"
-                src="https://www.googletagmanager.com/gtag/js?id=AW-613079827"
-                async
-              />
-              <Script
-                id="gtag"
-                strategy="afterInteractive"
-                dangerouslySetInnerHTML={{
-                  __html: `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'AW-613079827');
-        `,
-                }}
-              />
-
-              {/* Google Tag Manager */}
-              <Script
-                id="gtm"
-                strategy="afterInteractive"
-                dangerouslySetInnerHTML={{
-                  __html: `
+          {allowScript && (
+            <Script
+              id="gtm"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
           (function(w,d,s,l,i){
             w[l]=w[l]||[];
             w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
@@ -234,9 +225,8 @@ class MyDocument extends Document<Props> {
             f.parentNode.insertBefore(j,f);
           })(window,document,'script','dataLayer','GTM-KNB8Q7R4');
         `,
-                }}
-              />
-            </>
+              }}
+            />
           )}
         </Head>
 
@@ -254,14 +244,16 @@ class MyDocument extends Document<Props> {
                 }
               : {}
           }>
-          <noscript>
-            <iframe
-              src="https://www.googletagmanager.com/ns.html?id=GTM-KNB8Q7R4"
-              height="0"
-              width="0"
-              style={{ display: "none", visibility: "hidden" }}
-            />
-          </noscript>
+          {allowScript && (
+            <noscript>
+              <iframe
+                src="https://www.googletagmanager.com/ns.html?id=GTM-KNB8Q7R4"
+                height="0"
+                width="0"
+                style={{ display: "none", visibility: "hidden" }}
+              />
+            </noscript>
+          )}
           <Main />
           <NextScript nonce={nonce} />
         </body>
