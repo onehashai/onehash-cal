@@ -1,4 +1,4 @@
-import { useEffect, Fragment, useRef } from "react";
+import { useEffect, Fragment, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 
 import dayjs from "@calcom/dayjs";
@@ -145,12 +145,13 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
   });
 
   const watchTimezone = form.watch("timeZone");
+  const [status, setStatus] = useState<"past" | "upcoming">("upcoming"); // State for the dropdown selection
 
   const query = trpc.viewer.bookings.get.useInfiniteQuery(
     {
       limit: 10,
       filters: {
-        status: "upcoming",
+        status,
       },
       ...(props.selectedUser && {
         teamMember: { id: props.selectedUser?.id, email: props.selectedUser?.email },
@@ -266,8 +267,11 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
 
             {hasEditPermission && (
               <Fragment>
-                <Label className="text-emphasis mt-4">{t("members_upcoming_bookings")}</Label>
-
+                <Label className="text-emphasis mt-4">{t("members_bookings")}</Label>
+                <select value={status} onChange={(e) => setStatus(e.target.value as "past" | "upcoming")}>
+                  <option value="past">Past</option>
+                  <option value="upcoming">Upcoming</option>
+                </select>
                 <div className=" flex-1 overflow-y-auto overflow-x-clip" ref={bookingsDivRef}>
                   <div>
                     <div className=" h-full   py-2">
@@ -309,7 +313,7 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
                                       </p>
                                     </div>
                                     <div className="flex  flex-col items-center justify-center">
-                                      {joinLink ? (
+                                      {status == "upcoming" && joinLink ? (
                                         <Button
                                           color="minimal"
                                           onClick={() => window.open(joinLink as string, "_blank")}>
@@ -333,7 +337,7 @@ export function AvailabilityEditSheetForm(props: Props & { data: Data; isPending
                           )}
                         </Fragment>
                       ) : (
-                        <p className="text-emphasis">No Upcoming Bookings</p>
+                        <p className="text-emphasis">No Bookings</p>
                       )}
                     </div>
                   </div>

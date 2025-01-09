@@ -3,6 +3,7 @@
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { getCoreRowModel, getFilteredRowModel, useReactTable } from "@tanstack/react-table";
+import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import dayjs from "@calcom/dayjs";
@@ -24,7 +25,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownItem,
-  Switch,
+  Icon,
+  Tooltip,
 } from "@calcom/ui";
 
 import { GroupMeetingDialog } from "../../../../apps/web/components/dialog/GroupMeetingDialog";
@@ -75,42 +77,64 @@ function UpgradeTeamTip() {
   );
 }
 
-const ReadOnlyDropdown: React.FC<{
-  teamName: string[];
-}> = ({ teamName }) => {
+const MoreOptions: React.FC<{
+  user: SliderUser;
+  setEditSheetOpen: Dispatch<SetStateAction<boolean>>;
+  setSelectedUser: Dispatch<SetStateAction<SliderUser | null>>;
+}> = ({ user, setEditSheetOpen, setSelectedUser }) => {
   const [opened, setOpened] = useState<boolean>(false);
   const { t } = useLocale();
   return (
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-      }}>
-      <Dropdown
-        modal={false}
-        open={opened}
-        onOpenChange={(_) => {
-          setOpened(!opened);
+    <div className="flex gap-2">
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
         }}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="icon"
-            color="secondary"
-            className="ltr:radix-state-open:rounded-r-md rtl:radix-state-open:rounded-l-md">
-            {t("view_membership")}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-[200px]">
-          {teamName.map((item, index) => {
-            const _teamName = item.charAt(0).toUpperCase() + item.slice(1);
-            return (
-              <DropdownMenuItem key={index}>
-                <DropdownItem type="button">{_teamName}</DropdownItem>
-              </DropdownMenuItem>
-            );
-          })}
-        </DropdownMenuContent>
-      </Dropdown>
+        <Dropdown
+          // onToggle={setOpened}
+          open={opened}
+          onOpenChange={(_) => {
+            setOpened(!opened);
+          }}>
+          <DropdownMenuTrigger asChild>
+            <div className="flex gap-2">
+              <Tooltip content={t("view_membership")}>
+                <Button
+                  type="button"
+                  variant="icon"
+                  color="secondary"
+                  className="ltr:radix-state-open:rounded-r-md rtl:radix-state-open:rounded-l-md">
+                  <Icon name="users" className=" h-6 w-6 dark:text-white" aria-hidden="true" />
+                </Button>
+              </Tooltip>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="min-w-[200px]">
+            {user.teamName.map((item, index) => {
+              const _teamName = item.charAt(0).toUpperCase() + item.slice(1);
+              return (
+                <DropdownMenuItem key={index}>
+                  <DropdownItem type="button">{_teamName}</DropdownItem>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </Dropdown>
+      </div>
+      <Tooltip content={t("view_schedule")}>
+        <Button
+          type="button"
+          variant="icon"
+          color="secondary"
+          onClick={(e) => {
+            setEditSheetOpen(true);
+            setSelectedUser(user);
+            e.stopPropagation();
+          }}
+          className="ltr:radix-state-open:rounded-r-md rtl:radix-state-open:rounded-l-md">
+          <Icon name="calendar" className=" h-6 w-6 dark:text-white" aria-hidden="true" />
+        </Button>
+      </Tooltip>
     </div>
   );
 };
@@ -165,7 +189,7 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
   const totalDBRowCount = data?.pages?.[0]?.meta?.totalRowCount ?? 0;
 
   //TEAM MEMBER MEETING SCHEDULING LOGIC
-  const [isMemberSelectEnabled, setIsMemberSelectEnabled] = useState<boolean>(false);
+  // const [isMemberSelectEnabled, setIsMemberSelectEnabled] = useState<boolean>(false);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const handleSelectAll = useCallback(
     (selected: boolean) => {
@@ -216,11 +240,13 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
   const memorisedColumns = useMemo(() => {
     const cols: ColumnDef<SliderUser>[] = [];
 
-    if (isMemberSelectEnabled) {
-      cols.push({
-        id: "select",
-        header: ({ table }) => {
-          return (
+    // if (isMemberSelectEnabled) {
+    cols.push({
+      id: "select",
+      size: 40,
+      header: ({ table }) => {
+        return (
+          <div className="max-w-32">
             <Checkbox
               checked={table.getIsAllPageRowsSelected()}
               onCheckedChange={(value) => {
@@ -230,15 +256,18 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
               aria-label="Select all"
               className="translate-y-[2px]"
             />
-          );
-        },
-        cell: ({ row }) => {
-          return (
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        return (
+          <div className="max-w-32">
             <Checkbox checked={row.getIsSelected()} aria-label="Select row" className="translate-y-[2px]" />
-          );
-        },
-      });
-    }
+          </div>
+        );
+      },
+    });
+    // }
 
     cols.push(
       {
@@ -275,10 +304,16 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
       {
         id: "memberships",
         accessorFn: (data) => data.teamName,
-        header: "Memberships",
+        header: "More",
         cell: ({ row }) => {
-          const { teamName } = row.original;
-          return <ReadOnlyDropdown teamName={teamName} />;
+          // const { teamName } = row.original;
+          return (
+            <MoreOptions
+              user={row.original}
+              setEditSheetOpen={setEditSheetOpen}
+              setSelectedUser={setSelectedUser}
+            />
+          );
         },
       },
       {
@@ -339,7 +374,7 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
     );
 
     return cols;
-  }, [browsingDate, handleSelectAll, isMemberSelectEnabled]);
+  }, [browsingDate, handleSelectAll]);
 
   //called on scroll and possibly on mount to fetch more data as the user scrolls and reaches bottom of table
   const fetchMoreOnBottomReached = useCallback(
@@ -382,36 +417,18 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
             table={table}
             tableContainerRef={tableContainerRef}
             onRowMouseclick={(row) => {
-              if (isMemberSelectEnabled) {
-                const { username } = row.original;
-                handleSelectMember(username);
-                row.toggleSelected();
-                return;
-              }
-              setEditSheetOpen(true);
-              setSelectedUser(row.original);
+              const { username } = row.original;
+              handleSelectMember(username);
+              row.toggleSelected();
             }}
             isPending={isPending}
             onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}>
             <DataTableToolbar.Root>
-              <div className="flex">
+              <div className=" flex">
                 <DataTableToolbar.SearchBar table={table} onSearch={(value) => setSearchString(value)} />
                 <DataTableToolbar.CTA type="button" color="minimal">
                   {" "}
-                  <div className="flex gap-2">
-                    <div className="flex items-center  gap-2">
-                      <label htmlFor="MemberSelect">{t("book_members")}</label>
-                      <Switch
-                        name="MemberSelect"
-                        id="MemberSelect"
-                        checked={isMemberSelectEnabled}
-                        onCheckedChange={(value) => {
-                          setIsMemberSelectEnabled(value);
-                        }}
-                      />
-                    </div>
-                    {isMemberSelectEnabled && <Button onClick={handleBookMembers}>Book</Button>}
-                  </div>
+                  <Button onClick={handleBookMembers}>Book</Button>
                 </DataTableToolbar.CTA>
               </div>
             </DataTableToolbar.Root>

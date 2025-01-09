@@ -4,13 +4,14 @@ import { dir } from "i18next";
 import type { NextPageContext } from "next";
 import type { DocumentContext, DocumentProps } from "next/document";
 import Document, { Head, Html, Main, NextScript } from "next/document";
+import Script from "next/script";
 import { z } from "zod";
 
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 
 import { csp } from "@lib/csp";
 
-type Props = Record<string, unknown> & DocumentProps & { newLocale: string };
+type Props = Record<string, unknown> & DocumentProps & { newLocale: string; currentPath: string };
 function setHeader(ctx: NextPageContext, name: string, value: string) {
   try {
     ctx.res?.setHeader(name, value);
@@ -57,6 +58,26 @@ class MyDocument extends Document<Props> {
 
     const nonceParsed = z.string().safeParse(this.props.nonce);
     const nonce = nonceParsed.success ? nonceParsed.data : "";
+    const currentPath = this.props.__NEXT_DATA__.props.pageProps.currentPath;
+
+    //allowed analytics paths
+    const allowedAnalyticsPaths = [
+      "/apps",
+      "/auth",
+      "/availability",
+      // "/booking",
+      "/bookings",
+      "/event-types",
+      "/getting-started",
+      // "/reschedule",
+      "/settings",
+      // "/team",
+      "/teams",
+      "/workflows",
+    ];
+
+    const allowScript =
+      currentPath === "/" || allowedAnalyticsPaths.some((path) => currentPath.startsWith(path));
 
     return (
       <Html
@@ -104,6 +125,7 @@ class MyDocument extends Document<Props> {
             `,
             }}
           />
+
           {/* Microsoft Clarity Script */}
           {/* <script
             id="microsoft-clarity-init"
@@ -151,44 +173,61 @@ class MyDocument extends Document<Props> {
             />
           )}
 
-          {/* Google Ads Global site tag */}
-          {/* <Script
-            strategy="afterInteractive"
-            src="https://www.googletagmanager.com/gtag/js?id=AW-613079827"
-            async
-          />
-          <Script
-            id="gtag"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', 'AW-613079827');
-              `,
-            }}
-          /> */}
+          {allowScript && (
+            <Script
+              src="https://cdn.amplitude.com/script/ca8f70a47b97a98998c9b476e4977212.js"
+              strategy="beforeInteractive"
+            />
+          )}
+          {allowScript && (
+            <Script
+              src="https://cdn.amplitude.com/script/ca8f70a47b97a98998c9b476e4977212.js"
+              strategy="afterInteractive"
+              onLoad={() => {
+                if (window.amplitude && window.amplitude.init) {
+                  const plugin = window.sessionReplay?.plugin({ sampleRate: 1 });
+                  if (plugin) {
+                    window.amplitude.add(plugin);
+                  }
+                  window.amplitude.init("ca8f70a47b97a98998c9b476e4977212", {
+                    fetchRemoteConfig: true,
+                    autocapture: true,
+                  });
+                  console.log("Amplitude plugin loaded");
+                } else {
+                  console.error("Amplitude failed to initialize.");
+                }
+              }}
+            />
+          )}
+          {allowScript && (
+            <Script
+              strategy="afterInteractive"
+              src="https://www.googletagmanager.com/gtag/js?id=AW-613079827"
+              async
+            />
+          )}
 
-          {/* Google Tag Manager */}
-          {/* <Script
-            id="gtm"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function(w,d,s,l,i){
-                  w[l]=w[l]||[];
-                  w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
-                  var f=d.getElementsByTagName(s)[0],
-                  j=d.createElement(s),
-                  dl=l!='dataLayer'?'&l='+l:'';
-                  j.async=true;
-                  j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
-                  f.parentNode.insertBefore(j,f);
-                })(window,document,'script','dataLayer','GTM-KNB8Q7R4');
-              `,
-            }}
-          /> */}
+          {allowScript && (
+            <Script
+              id="gtm"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+          (function(w,d,s,l,i){
+            w[l]=w[l]||[];
+            w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+            var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),
+            dl=l!='dataLayer'?'&l='+l:'';
+            j.async=true;
+            j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+            f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','GTM-KNB8Q7R4');
+        `,
+              }}
+            />
+          )}
         </Head>
 
         <body
@@ -205,14 +244,16 @@ class MyDocument extends Document<Props> {
                 }
               : {}
           }>
-          <noscript>
-            <iframe
-              src="https://www.googletagmanager.com/ns.html?id=GTM-KNB8Q7R4"
-              height="0"
-              width="0"
-              style={{ display: "none", visibility: "hidden" }}
-            />
-          </noscript>
+          {allowScript && (
+            <noscript>
+              <iframe
+                src="https://www.googletagmanager.com/ns.html?id=GTM-KNB8Q7R4"
+                height="0"
+                width="0"
+                style={{ display: "none", visibility: "hidden" }}
+              />
+            </noscript>
+          )}
           <Main />
           <NextScript nonce={nonce} />
         </body>

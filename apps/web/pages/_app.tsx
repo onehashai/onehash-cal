@@ -83,6 +83,7 @@ AppWithSessionManager.getInitialProps = async (ctx: AppContextType): Promise<App
   return {
     pageProps: {
       newLocale,
+      currentPath: ctx.router.asPath, // Pass the current route
     },
   };
 };

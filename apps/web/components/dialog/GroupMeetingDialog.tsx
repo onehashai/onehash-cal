@@ -39,7 +39,7 @@ export const GroupMeetingDialog = ({ isOpenDialog, setIsOpenDialog, link }: IGro
             <div className="loader" />
           </div>
         )}
-        <iframe src={link} className="h-[850px] border-none" title="Embedded Content" onLoad={handleLoad} />
+        <iframe src={link} className="h-[850px] pb-8" title="Embedded Content" onLoad={handleLoad} />
       </DialogContent>
     </Dialog>
   );
