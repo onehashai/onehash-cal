@@ -1,8 +1,6 @@
 "use client";
 
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-// eslint-disable-next-line no-restricted-imports
-import { difference } from "lodash";
 import { Trans } from "next-i18next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,7 +23,6 @@ import { APP_NAME, WEBSITE_URL } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useDebounce } from "@calcom/lib/hooks/useDebounce";
-import { useTeamInvites } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useInViewObserver } from "@calcom/lib/hooks/useInViewObserver";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
@@ -126,25 +123,6 @@ const InfiniteTeamsTab: FC<InfiniteTeamsTabProps> = (props) => {
     }
   }, null);
 
-  const [showInviteeBadge, setShowInviteeBadge] = useState(false);
-
-  const { isPending, listInvites } = useTeamInvites();
-  useEffect(() => {
-    if (isPending || listInvites?.length == 0) return;
-
-    const disabledBagdes = localStorage.getItem("disabledTeamNotifications");
-    if (
-      disabledBagdes == null ||
-      difference(
-        listInvites?.map((lI) => lI.id),
-        JSON.parse(disabledBagdes)
-      ).length
-    ) {
-      setShowInviteeBadge(true);
-    }
-  }, [listInvites, isPending]);
-  const router = useRouter();
-
   return (
     <div>
       <div className="flex gap-1">
@@ -161,21 +139,6 @@ const InfiniteTeamsTab: FC<InfiniteTeamsTabProps> = (props) => {
           }}
           placeholder={t("search")}
         />
-        {showInviteeBadge && (
-          <Badge variant="default" className="h-[2.2rem]" onClick={() => router.push(`/teams`)}>
-            {t("pending_invites")}
-            <Icon
-              name="x"
-              onClick={(e) => {
-                e.stopPropagation();
-                const list = listInvites?.map((lI) => lI.id);
-                localStorage.setItem("disabledTeamNotifications", JSON.stringify(list));
-                setShowInviteeBadge(false);
-              }}
-              className="text-subtle h-4 w-4 transition-all duration-200 hover:scale-150 hover:cursor-pointer hover:text-red-500 ltr:mr-2 rtl:ml-2"
-            />
-          </Badge>
-        )}
       </div>
 
       {/* {teamInvites.length > 0 && (

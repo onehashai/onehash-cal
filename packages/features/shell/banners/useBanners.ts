@@ -18,6 +18,7 @@ const _useBanners = () => {
   const userSessionBanners = {
     adminPasswordBanner: isUserInactiveAdmin ? userSession : null,
     impersonationBanner: userImpersonatedByUID ? userSession : null,
+    teamInviteBanner: null,
   };
 
   const allBanners: AllBannerProps = Object.assign({}, getUserTopBanners, userSessionBanners);
