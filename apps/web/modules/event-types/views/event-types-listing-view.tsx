@@ -1,6 +1,8 @@
 "use client";
 
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+// eslint-disable-next-line no-restricted-imports
+import { difference } from "lodash";
 import { Trans } from "next-i18next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,6 +25,7 @@ import { APP_NAME, WEBSITE_URL } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useDebounce } from "@calcom/lib/hooks/useDebounce";
+import { useTeamInvites } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useInViewObserver } from "@calcom/lib/hooks/useInViewObserver";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
@@ -123,21 +126,65 @@ const InfiniteTeamsTab: FC<InfiniteTeamsTabProps> = (props) => {
     }
   }, null);
 
+  const [showInviteeBadge, setShowInviteeBadge] = useState(false);
+
+  const { isPending, listInvites } = useTeamInvites();
+  useEffect(() => {
+    if (isPending || listInvites?.length == 0) return;
+
+    const disabledBagdes = localStorage.getItem("disabledTeamNotifications");
+    if (
+      disabledBagdes == null ||
+      difference(
+        listInvites?.map((lI) => lI.id),
+        JSON.parse(disabledBagdes)
+      ).length
+    ) {
+      setShowInviteeBadge(true);
+    }
+  }, [listInvites, isPending]);
+  const router = useRouter();
+
   return (
     <div>
-      <TextField
-        className="bg-subtle !border-muted max-w-64 mb-4 mr-auto rounded-md !pl-0 focus:!ring-offset-0"
-        addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
-        addOnClassname="!border-muted"
-        containerClassName="max-w-64 focus:!ring-offset-0 mb-4"
-        type="search"
-        value={searchTerm}
-        autoComplete="false"
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-        }}
-        placeholder={t("search")}
-      />
+      <div className="flex gap-1">
+        <TextField
+          className="bg-subtle !border-muted max-w-64 mb-4 mr-auto rounded-md !pl-0 focus:!ring-offset-0"
+          addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
+          addOnClassname="!border-muted"
+          containerClassName="max-w-64 focus:!ring-offset-0 mb-4"
+          type="search"
+          value={searchTerm}
+          autoComplete="false"
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+          }}
+          placeholder={t("search")}
+        />
+        {showInviteeBadge && (
+          <Badge variant="default" className="h-[2.2rem]" onClick={() => router.push(`/teams`)}>
+            {t("pending_invites")}
+            <Icon
+              name="x"
+              onClick={(e) => {
+                e.stopPropagation();
+                const list = listInvites?.map((lI) => lI.id);
+                localStorage.setItem("disabledTeamNotifications", JSON.stringify(list));
+                setShowInviteeBadge(false);
+              }}
+              className="text-subtle h-4 w-4 transition-all duration-200 hover:scale-150 hover:cursor-pointer hover:text-red-500 ltr:mr-2 rtl:ml-2"
+            />
+          </Badge>
+        )}
+      </div>
+
+      {/* {teamInvites.length > 0 && (
+        <div className="bg-subtle mb-6 rounded-md p-5">
+          <Label className="text-emphasis pb-2  font-semibold">{t("pending_invites")}</Label>
+          <TeamList teams={teamInvites} pending />
+        </div>
+      )} */}
+
       {!!activeEventTypeGroup && (
         <InfiniteEventTypeList
           pages={query?.data?.pages}
@@ -937,6 +984,7 @@ const InfiniteScrollMain = ({
       {eventTypeGroups.length >= 1 && (
         <>
           <HorizontalTabs tabs={tabs} />
+
           <InfiniteTeamsTab activeEventTypeGroup={activeEventTypeGroup[0]} />
         </>
       )}
