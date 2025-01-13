@@ -74,6 +74,7 @@ class MyDocument extends Document<Props> {
       // "/team",
       "/teams",
       "/workflows",
+      "/insights",
     ];
 
     const allowScript =
