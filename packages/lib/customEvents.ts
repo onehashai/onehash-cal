@@ -13,6 +13,7 @@ export const designationTypes: {
   freelancer: "Freelancer",
   education: "Education",
   health: "Health",
+  mentor: "Mentor",
   others: "Others",
 };
 export const professionTypeAndEventTypes: TProfessionTypeAndEventTypes = {
@@ -250,6 +251,20 @@ export const professionTypeAndEventTypes: TProfessionTypeAndEventTypes = {
       length: [15, 30],
     },
   ],
+  mentor: [
+    {
+      title: "introductory_call",
+      slug: "introductory_call",
+      description: "mentor_introductory_call_meeting_description",
+      length: [30],
+    },
+    {
+      title: "deep_dive_call",
+      slug: "deep_dive_call",
+      description: "deep_dive_call_mentor_meeting_description",
+      length: [60],
+    },
+  ],
   others: [
     { title: "15min_meeting", slug: "15min", length: [15] },
     {
@@ -375,4 +390,9 @@ export const customEvents: {
     "✨ Explore holistic healing practices to complement your wellness journey. From meditation to natural remedies, discover how integrative techniques can enhance your health and overall well-being.",
   everything_else_health_meeting_description:
     "🌿 Have a unique health or wellness question, interested in a collaboration, or just looking to chat about your journey? Book this time for anything else on your mind. Let’s cultivate health together!",
+  mentor_introductory_call_meeting_description:
+    "📘 Start your mentoring journey with an introductory call. We'll discuss your goals, explore your potential, and set the stage for a fruitful mentoring relationship. Let's begin your path to growth!",
+  deep_dive_call: "Deep Dive Call",
+  deep_dive_call_meeting_description:
+    "🔍 Dive deeper into your development with a focused deep dive call. Together, we'll tackle complex challenges, refine your skills, and chart a clear path forward for your growth. Let’s unlock your full potential!",
 };
