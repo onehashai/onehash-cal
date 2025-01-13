@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTeamInvites } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { Button, showToast, TopBanner } from "@calcom/ui";
+import { Button, showToast, TopBanner, Icon } from "@calcom/ui";
 
 // export type TeamInviteBannerProps = { data: boolean };
 
@@ -80,8 +80,8 @@ function TeamInviteBanner() {
                   onClick={() => handleAcceptOrLeave(false, invite.teamId)}>
                   Decline
                 </Button>
-                <Button color="minimal" className="border" onClick={() => handleHideInvite(invite.teamId)}>
-                  Hide
+                <Button color="minimal" onClick={() => handleHideInvite(invite.teamId)}>
+                  <Icon name="x" />
                 </Button>
               </div>
             }
