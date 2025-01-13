@@ -51,6 +51,8 @@
   "workflow_example_desc":"Here are a few examples of how you can automate tasks using workflows.",
   "identity_provider": "Identity provider",
   "view_schedule": "View schedule",
+  "pending_invites_team": "Pending Invite from {{teamName}}",
+
   "trial_days_left": "You have $t(day, {\"count\": {{days}} }) left on your PRO trial",
   "day_one": "{{count}} day",
   "day_other": "{{count}} days",

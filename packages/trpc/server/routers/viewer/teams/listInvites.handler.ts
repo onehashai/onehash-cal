@@ -16,6 +16,13 @@ export const listInvitesHandler = async ({ ctx }: ListInvitesOptions) => {
       },
       accepted: false,
     },
+    include: {
+      team: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
 };
 

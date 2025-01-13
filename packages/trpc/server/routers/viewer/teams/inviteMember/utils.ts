@@ -4,7 +4,7 @@ import type { TFunction } from "next-i18next";
 import { sendTeamInviteEmail } from "@calcom/emails";
 import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { DEFAULT_SCHEDULE, getAvailabilityFromSchedule } from "@calcom/lib/availability";
-import { ENABLE_PROFILE_SWITCHER, WEBAPP_URL } from "@calcom/lib/constants";
+import { ENABLE_PROFILE_SWITCHER, SIGNUP_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import { createAProfileForAnExistingUser } from "@calcom/lib/createAProfileForAnExistingUser";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -473,12 +473,14 @@ export async function sendSignupToOrganizationEmail({
     },
   });
 
+  // const state = encodeURIComponent("teamInvite=true");
+  const joinLink = `${SIGNUP_URL}&state=teamInvite%3Dtrue`;
   await sendTeamInviteEmail({
     language: translation,
     from: inviterName || `${team.name}'s admin`,
     to: usernameOrEmail,
     teamName: team.name,
-    joinLink: `${WEBAPP_URL}/auth/login?callbackUrl=/teams` as string,
+    joinLink: joinLink,
     isCalcomMember: false,
     isOrg: isOrg,
     parentTeamName: team?.parent?.name,

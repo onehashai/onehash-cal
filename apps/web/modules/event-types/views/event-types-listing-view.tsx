@@ -125,19 +125,29 @@ const InfiniteTeamsTab: FC<InfiniteTeamsTabProps> = (props) => {
 
   return (
     <div>
-      <TextField
-        className="bg-subtle !border-muted max-w-64 mb-4 mr-auto rounded-md !pl-0 focus:!ring-offset-0"
-        addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
-        addOnClassname="!border-muted"
-        containerClassName="max-w-64 focus:!ring-offset-0 mb-4"
-        type="search"
-        value={searchTerm}
-        autoComplete="false"
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-        }}
-        placeholder={t("search")}
-      />
+      <div className="flex gap-1">
+        <TextField
+          className="bg-subtle !border-muted max-w-64 mb-4 mr-auto rounded-md !pl-0 focus:!ring-offset-0"
+          addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
+          addOnClassname="!border-muted"
+          containerClassName="max-w-64 focus:!ring-offset-0 mb-4"
+          type="search"
+          value={searchTerm}
+          autoComplete="false"
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+          }}
+          placeholder={t("search")}
+        />
+      </div>
+
+      {/* {teamInvites.length > 0 && (
+        <div className="bg-subtle mb-6 rounded-md p-5">
+          <Label className="text-emphasis pb-2  font-semibold">{t("pending_invites")}</Label>
+          <TeamList teams={teamInvites} pending />
+        </div>
+      )} */}
+
       {!!activeEventTypeGroup && (
         <InfiniteEventTypeList
           pages={query?.data?.pages}
@@ -937,6 +947,7 @@ const InfiniteScrollMain = ({
       {eventTypeGroups.length >= 1 && (
         <>
           <HorizontalTabs tabs={tabs} />
+
           <InfiniteTeamsTab activeEventTypeGroup={activeEventTypeGroup[0]} />
         </>
       )}

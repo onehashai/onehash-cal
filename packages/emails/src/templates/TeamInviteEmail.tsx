@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-restricted-imports
+import { startCase, lowerCase } from "lodash";
 import type { TFunction } from "next-i18next";
 import { Trans } from "next-i18next";
 
@@ -26,7 +28,7 @@ export const TeamInviteEmail = (
 ) => {
   const typeOfInvite = getTypeOfInvite(props);
 
-  const heading = getHeading();
+  const heading = getHeading(props.teamName);
   const content = getContent();
   return (
     <V2BaseEmailHtml subject={getSubject(props)}>
@@ -108,10 +110,10 @@ export const TeamInviteEmail = (
     </V2BaseEmailHtml>
   );
 
-  function getHeading() {
+  function getHeading(teamName: string) {
     const autoJoinType = props.isAutoJoin ? "added" : "invited";
     const variables = {
-      appName: APP_NAME,
+      appName: startCase(lowerCase(teamName)),
       parentTeamName: props.parentTeamName,
     };
 
