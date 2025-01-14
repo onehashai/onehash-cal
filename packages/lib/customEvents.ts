@@ -261,7 +261,7 @@ export const professionTypeAndEventTypes: TProfessionTypeAndEventTypes = {
     {
       title: "deep_dive_call",
       slug: "deep_dive_call",
-      description: "deep_dive_call_mentor_meeting_description",
+      description: "deep_dive_call_meeting_description",
       length: [60],
     },
   ],
