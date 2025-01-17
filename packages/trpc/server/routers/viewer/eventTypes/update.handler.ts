@@ -9,7 +9,7 @@ import {
 } from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import tasker from "@calcom/features/tasker";
 import { isPrismaObjOrUndefined, validateIntervalLimitOrder } from "@calcom/lib";
-import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
+import { IS_DEV, ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server";
 import { validateBookerLayouts } from "@calcom/lib/validateBookerLayouts";
@@ -595,6 +595,8 @@ const handleOHChatSync = async ({
   userId: number;
   updatedValues: Record<string, any>;
 }): Promise<void> => {
+  if (IS_DEV) return Promise.resolve();
+
   if (!updatedValues.slug && !updatedValues.title) return Promise.resolve();
   const credentials = await prismaClient.credential.findMany({
     where: {

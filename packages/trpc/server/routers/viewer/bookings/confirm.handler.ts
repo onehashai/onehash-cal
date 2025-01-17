@@ -11,7 +11,7 @@ import { workflowSelect } from "@calcom/features/oe/workflows/lib/getAllWorkflow
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import type { EventPayloadType, EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
-import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL } from "@calcom/lib/constants";
+import { IS_DEV, ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL } from "@calcom/lib/constants";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import getOrgIdFromMemberOrTeamId from "@calcom/lib/getOrgIdFromMemberOrTeamId";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
@@ -477,6 +477,8 @@ async function handleOHChatSync({
     bookerPhone?: string;
   };
 }) {
+  if (IS_DEV) return Promise.resolve();
+
   const credentials = await prisma.credential.findMany({
     where: {
       appId: "onehash-chat",

@@ -34,7 +34,7 @@ import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import { getAllWorkflowsFromEventType } from "@calcom/trpc/server/routers/viewer/workflows/util";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
-import { ONEHASH_CHAT_SYNC_BASE_URL, ONEHASH_API_KEY } from "./../../../lib/constants";
+import { ONEHASH_CHAT_SYNC_BASE_URL, ONEHASH_API_KEY, IS_DEV } from "./../../../lib/constants";
 import { getAllCredentials } from "./getAllCredentialsForUsersOnEvent/getAllCredentials";
 import cancelAttendeeSeat from "./handleSeats/cancel/cancelAttendeeSeat";
 
@@ -596,6 +596,7 @@ async function handler(req: CustomRequest) {
 }
 
 async function handleOHChatSync(bookingUids: string[]) {
+  if (IS_DEV) return Promise.resolve();
   if (bookingUids.length === 0) return Promise.resolve();
 
   const queryParams = new URLSearchParams({ bookingUids: bookingUids.join(",") });
