@@ -1,4 +1,5 @@
 import { GetMeOutput } from "@/ee/me/outputs/get-me.output";
+import { GetTeamOutput } from "@/ee/me/outputs/get-team.output";
 import { UpdateMeOutput } from "@/ee/me/outputs/update-me.output";
 import { SchedulesService_2024_04_15 } from "@/ee/schedules/schedules_2024_04_15/services/schedules.service";
 import { API_VERSIONS_VALUES } from "@/lib/api-versions";
@@ -48,6 +49,17 @@ export class MeController {
     return {
       status: SUCCESS_STATUS,
       data: me,
+    };
+  }
+
+  @Get("/memberships")
+  @Permissions([PROFILE_READ])
+  @ApiOperation({ summary: "Get current user team memberships" })
+  async getTeam(@GetUser() user: UserWithProfile): Promise<GetTeamOutput> {
+    const membershipData = await this.usersRepository.getUserTeamMemberships(user.id);
+    return {
+      status: SUCCESS_STATUS,
+      data: membershipData,
     };
   }
 

@@ -223,4 +223,30 @@ export class UsersRepository {
     });
     return profiles.map((profile) => profile.user);
   }
+
+  async getUserTeamMemberships(userId: number) {
+    const membershipQueryData = await this.dbRead.prisma.membership.findMany({
+      where: {
+        userId,
+        accepted: true,
+      },
+      select: {
+        teamId: true,
+        role: true,
+        team: {
+          select: {
+            slug: true,
+            name: true,
+          },
+        },
+      },
+    });
+    const result = membershipQueryData.map((membership) => ({
+      teamId: membership.teamId,
+      role: membership.role,
+      teamName: membership.team.name,
+      teamSlug: membership.team.slug ?? undefined,
+    }));
+    return result;
+  }
 }
