@@ -3,7 +3,7 @@ import { Type } from "class-transformer";
 import { IsEnum, IsInt, IsNotEmptyObject, IsOptional, IsString, ValidateNested } from "class-validator";
 
 import { SUCCESS_STATUS, ERROR_STATUS } from "@calcom/platform-constants";
-import { MembershipRole } from "@calcom/platform-libraries";
+import { MembershipRole } from "@calcom/prisma/client";
 
 export class TeamOutput {
   @IsInt()
