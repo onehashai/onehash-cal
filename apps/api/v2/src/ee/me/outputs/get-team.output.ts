@@ -10,6 +10,8 @@ const MembershipRole = {
   OWNER: "OWNER",
 } as const;
 
+type MembershipRoleType = (typeof MembershipRole)[keyof typeof MembershipRole];
+
 export class TeamOutput {
   @IsInt()
   teamId!: number;
@@ -22,8 +24,8 @@ export class TeamOutput {
   teamSlug?: string;
 
   @IsString()
-  @ApiProperty({ enum: ["MEMBER", "OWNER", "ADMIN"] })
-  role!: typeof MembershipRole;
+  @ApiProperty({ enum: Object.values(MembershipRole) })
+  role!: MembershipRoleType;
 }
 
 export class GetTeamOutput {
