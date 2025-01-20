@@ -3,7 +3,12 @@ import { Type } from "class-transformer";
 import { IsEnum, IsInt, IsNotEmptyObject, IsOptional, IsString, ValidateNested } from "class-validator";
 
 import { SUCCESS_STATUS, ERROR_STATUS } from "@calcom/platform-constants";
-import { MembershipRole } from "@calcom/prisma/enums";
+
+const MembershipRole = {
+  MEMBER: "MEMBER",
+  ADMIN: "ADMIN",
+  OWNER: "OWNER",
+} as const;
 
 export class TeamOutput {
   @IsInt()
@@ -18,7 +23,7 @@ export class TeamOutput {
 
   @IsString()
   @ApiProperty({ enum: ["MEMBER", "OWNER", "ADMIN"] })
-  role!: MembershipRole;
+  role!: typeof MembershipRole;
 }
 
 export class GetTeamOutput {
