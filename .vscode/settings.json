@@ -7,5 +7,10 @@
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "spellright.language": ["en"],
   "spellright.documentTypes": ["markdown", "typescript", "typescriptreact"],
-  "tailwindCSS.experimental.classRegex": [["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]]
+  "tailwindCSS.experimental.classRegex": [["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]],
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#1D3222",
+    "titleBar.activeBackground": "#284630",
+    "titleBar.activeForeground": "#F7FBF8"
+  }
 }
