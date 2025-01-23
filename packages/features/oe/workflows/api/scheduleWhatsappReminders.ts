@@ -3,11 +3,9 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import dayjs from "@calcom/dayjs";
 import { defaultHandler } from "@calcom/lib/server";
-import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import prisma from "@calcom/prisma";
 import { WorkflowActions, WorkflowMethods } from "@calcom/prisma/enums";
 
-import { getWhatsappTemplateFunction } from "../lib/actionHelperFunctions";
 import type { PartialWorkflowReminder } from "../lib/getWorkflowReminders";
 import { select } from "../lib/getWorkflowReminders";
 import * as twilio from "../lib/reminders/providers/twilioProvider";
@@ -52,42 +50,52 @@ async function scheduleReminders() {
           ? reminder.workflowStep.sendTo
           : reminder.booking?.smsReminderNumber;
 
-      const userName =
-        reminder.workflowStep.action === WorkflowActions.WHATSAPP_ATTENDEE
-          ? reminder.booking?.attendees[0].name
-          : "";
+      const userName = reminder.booking?.user?.name;
 
-      const attendeeName =
-        reminder.workflowStep.action === WorkflowActions.WHATSAPP_ATTENDEE
-          ? reminder.booking?.user?.name
-          : reminder.booking?.attendees[0].name;
+      const attendeeName = reminder.booking?.attendees[0].name;
 
       const timeZone =
         reminder.workflowStep.action === WorkflowActions.WHATSAPP_ATTENDEE
           ? reminder.booking?.attendees[0].timeZone
           : reminder.booking?.user?.timeZone;
 
-      const templateFunction = getWhatsappTemplateFunction(reminder.workflowStep.template);
-      const message = templateFunction(
-        false,
-        reminder.workflowStep.action,
-        getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
-        reminder.booking?.startTime.toISOString() || "",
-        reminder.booking?.eventType?.title || "",
-        timeZone || "",
+      // const templateFunction = getWhatsappTemplateFunction(reminder.workflowStep.template);
+      // const message = templateFunction(
+      //   false,
+      //   reminder.workflowStep.action,
+      //   getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
+      //   reminder.booking?.startTime.toISOString() || "",
+      //   reminder.booking?.eventType?.title || "",
+      //   timeZone || "",
+      //   attendeeName || "",
+      //   userName
+      // );
+
+      const contentVars = twilio.generateContentVars(
+        {
+          workflowStep: {
+            action: reminder.workflowStep.action,
+            template: reminder.workflowStep.template,
+          },
+          booking: reminder.booking,
+        },
         attendeeName || "",
-        userName
+        userName || "",
+        timeZone || ""
       );
 
-      if (message?.length && message?.length > 0 && sendTo) {
+      // if (message?.length && message?.length > 0 && sendTo) {
+      if (sendTo) {
         const scheduledSMS = await twilio.scheduleSMS(
           sendTo,
-          message,
+          "",
           reminder.scheduledDate,
           "",
           userId,
           teamId,
-          true
+          true,
+          reminder.workflowStep.template,
+          JSON.stringify(contentVars)
         );
 
         if (scheduledSMS) {
