@@ -218,6 +218,8 @@ export interface CalendarEvent {
   platformBookingUrl?: string | null;
   oneTimePassword?: string | null;
   domainWideDelegationCredentialId?: string | null;
+  hideBranding?: boolean;
+  bannerUrl?: string | null;
 }
 
 export interface EntryPoint {

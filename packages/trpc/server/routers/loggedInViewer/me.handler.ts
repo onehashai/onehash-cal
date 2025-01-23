@@ -132,5 +132,7 @@ export const meHandler = async ({ ctx, input }: MeOptions) => {
     secondaryEmails,
     isPremium: userMetadataPrased?.isPremium,
     ...(passwordAdded ? { passwordAdded } : {}),
+    bannerUrl: user.bannerUrl,
+    faviconUrl: user.faviconUrl,
   };
 };

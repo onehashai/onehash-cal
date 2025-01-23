@@ -71,6 +71,8 @@ const userSelect = Prisma.validator<Prisma.UserSelect>()({
   movedToProfileId: true,
   metadata: true,
   isPlatformManaged: true,
+  bannerUrl: true,
+  faviconUrl: true,
 });
 
 export class UserRepository {

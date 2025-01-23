@@ -267,6 +267,8 @@ export const roundRobinManualReassignment = async ({
     }),
     location: bookingLocation,
     ...(platformClientParams ? platformClientParams : {}),
+    hideBranding: eventType.owner?.hideBranding ?? eventType.team?.hideBranding ?? false,
+    bannerUrl: eventType.owner?.bannerUrl ?? eventType.team?.bannerUrl ?? null,
   };
 
   const credentials = await prisma.credential.findMany({

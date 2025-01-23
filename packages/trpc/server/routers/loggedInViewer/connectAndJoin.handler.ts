@@ -132,6 +132,8 @@ export const Handler = async ({ ctx, input }: Options) => {
             select: {
               id: true,
               name: true,
+              bannerUrl: true,
+              hideBranding: true,
             },
           },
         },
@@ -215,6 +217,9 @@ export const Handler = async ({ ctx, input }: Options) => {
           members: [],
         }
       : undefined,
+    hideBranding:
+      updatedBooking.eventType?.owner?.hideBranding ?? updatedBooking.eventType?.team?.hideBranding ?? false,
+    bannerUrl: updatedBooking.eventType?.team?.bannerUrl ?? updatedBooking.eventType?.owner?.bannerUrl,
   };
 
   const eventTypeMetadata = EventTypeMetaDataSchema.parse(updatedBooking?.eventType?.metadata);

@@ -63,6 +63,14 @@ export async function getBooking(bookingId: number) {
               id: true,
               name: true,
               parentId: true,
+              hideBranding: true,
+              bannerUrl: true,
+            },
+          },
+          owner: {
+            select: {
+              hideBranding: true,
+              bannerUrl: true,
             },
           },
         },
@@ -166,6 +174,8 @@ export async function getBooking(bookingId: number) {
     uid: booking.uid,
     destinationCalendar: selectedDestinationCalendar ? [selectedDestinationCalendar] : [],
     recurringEvent: parseRecurringEvent(eventType?.recurringEvent),
+    hideBranding: booking.eventType?.owner?.hideBranding ?? booking.eventType?.team?.hideBranding ?? false,
+    bannerUrl: booking.eventType?.owner?.bannerUrl ?? booking.eventType?.team?.bannerUrl ?? null,
   };
 
   return {

@@ -91,6 +91,8 @@ export const confirmHandler = async ({ ctx, input }: ConfirmOptions) => {
               id: true,
               name: true,
               parentId: true,
+              hideBranding: true,
+              bannerUrl: true,
             },
           },
           workflows: {
@@ -240,6 +242,8 @@ export const confirmHandler = async ({ ctx, input }: ConfirmOptions) => {
         }
       : undefined,
     ...(platformClientParams ? platformClientParams : {}),
+    hideBranding: booking?.eventType?.owner?.hideBranding ?? booking?.eventType?.team?.hideBranding ?? false,
+    bannerUrl: booking?.eventType?.owner?.bannerUrl ?? booking?.eventType?.team?.bannerUrl ?? null,
   };
 
   const recurringEvent = parseRecurringEvent(booking.eventType?.recurringEvent);

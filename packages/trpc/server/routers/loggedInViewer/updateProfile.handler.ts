@@ -11,7 +11,7 @@ import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server";
-import { uploadAvatar } from "@calcom/lib/server/avatar";
+import { uploadLogo } from "@calcom/lib/server/avatar";
 import { checkUsername } from "@calcom/lib/server/checkUsername";
 import { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
 import { resizeBase64Image } from "@calcom/lib/server/resizeBase64Image";
@@ -152,9 +152,31 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
 
   // if defined AND a base 64 string, upload and update the avatar URL
   if (input.avatarUrl && input.avatarUrl.startsWith("data:image/png;base64,")) {
-    data.avatarUrl = await uploadAvatar({
-      avatar: await resizeBase64Image(input.avatarUrl),
+    data.avatarUrl = await uploadLogo({
+      logo: await resizeBase64Image(input.avatarUrl),
       userId: user.id,
+    });
+  }
+
+  if (
+    input.bannerUrl &&
+    (input.bannerUrl.startsWith("data:image/png;base64,") || input.bannerUrl == "delete")
+  ) {
+    data.bannerUrl = await uploadLogo({
+      logo: input.bannerUrl == "delete" ? "delete" : await resizeBase64Image(input.bannerUrl),
+      userId: user.id,
+      isBanner: true,
+    });
+  }
+
+  if (
+    input.faviconUrl &&
+    (input.faviconUrl.startsWith("data:image/png;base64,") || input.faviconUrl == "delete")
+  ) {
+    data.faviconUrl = await uploadLogo({
+      logo: input.faviconUrl == "delete" ? "delete" : await resizeBase64Image(input.faviconUrl),
+      userId: user.id,
+      isFavicon: true,
     });
   }
 

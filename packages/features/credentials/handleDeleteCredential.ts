@@ -277,9 +277,17 @@ const handleDeleteCredential = async ({
                     select: {
                       id: true,
                       name: true,
+                      hideBranding: true,
+                      bannerUrl: true,
                     },
                   },
                   metadata: true,
+                  owner: {
+                    select: {
+                      hideBranding: true,
+                      bannerUrl: true,
+                    },
+                  },
                 },
               },
               uid: true,
@@ -375,6 +383,10 @@ const handleDeleteCredential = async ({
                       members: [],
                     }
                   : undefined,
+                hideBranding:
+                  booking?.eventType?.owner?.hideBranding ?? booking?.eventType?.team?.hideBranding ?? false,
+                bannerUrl:
+                  booking?.eventType?.owner?.bannerUrl ?? booking?.eventType?.team?.bannerUrl ?? null,
               },
               {
                 eventName: booking?.eventType?.eventName,

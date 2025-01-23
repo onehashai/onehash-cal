@@ -2,7 +2,7 @@ import type { NextApiRequest } from "next";
 
 import { HttpError } from "@calcom/lib/http-error";
 import { defaultResponder } from "@calcom/lib/server";
-import { uploadAvatar } from "@calcom/lib/server/avatar";
+import { uploadLogo } from "@calcom/lib/server/avatar";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 
@@ -124,9 +124,9 @@ export async function patchHandler(req: NextApiRequest) {
   }
 
   if (avatar) {
-    body.avatarUrl = await uploadAvatar({
+    body.avatarUrl = await uploadLogo({
       userId: query.userId,
-      avatar: await (await import("@calcom/lib/server/resizeBase64Image")).resizeBase64Image(avatar),
+      logo: await (await import("@calcom/lib/server/resizeBase64Image")).resizeBase64Image(avatar),
     });
   }
 

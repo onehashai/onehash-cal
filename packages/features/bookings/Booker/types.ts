@@ -93,6 +93,7 @@ export interface BookerProps {
   crmAppSlug?: string | null;
   areInstantMeetingParametersSet?: boolean | null;
   userLocale?: string | null;
+  bannerUrl?: string | null;
 }
 
 export type WrappedBookerPropsMain = {

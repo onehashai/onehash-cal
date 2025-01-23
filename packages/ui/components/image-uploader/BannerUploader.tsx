@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import Cropper from "react-easy-crop";
 
 import checkIfItFallbackImage from "@calcom/lib/checkIfItFallbackImage";
@@ -118,19 +118,19 @@ export default function BannerUploader({
     [result, height, width, handleAvatarChange]
   );
 
-  useEffect(() => {
-    const checkDimensions = async () => {
-      const image = await createImage(
-        result as string /* result is always string when using readAsDataUrl */
-      );
-      if (image.naturalWidth !== width || image.naturalHeight !== height) {
-        showToast(t("org_banner_instructions", { height, width }), "warning");
-      }
-    };
-    if (result) {
-      checkDimensions();
-    }
-  }, [result]);
+  // useEffect(() => {
+  //   const checkDimensions = async () => {
+  //     const image = await createImage(
+  //       result as string /* result is always string when using readAsDataUrl */
+  //     );
+  //     if (image.naturalWidth !== width || image.naturalHeight !== height) {
+  //       showToast(t("org_banner_instructions", { height, width }), "warning");
+  //     }
+  //   };
+  //   if (result) {
+  //     checkDimensions();
+  //   }
+  // }, [result]);
 
   return (
     <Dialog

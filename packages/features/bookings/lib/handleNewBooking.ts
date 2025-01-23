@@ -991,6 +991,8 @@ async function handler(
     platformCancelUrl,
     platformBookingUrl,
     oneTimePassword: isConfirmedByDefault ? null : undefined,
+    hideBranding: eventType.owner?.hideBranding ?? eventType.team?.hideBranding ?? false,
+    bannerUrl: eventType.owner?.bannerUrl ?? eventType.team?.bannerUrl ?? null,
   };
 
   if (req.body.thirdPartyRecurringEventId) {

@@ -46,6 +46,8 @@ type Props = {
   isSEOIndexable: boolean | null;
   themeBasis: null | string;
   orgBannerUrl: null;
+  bannerUrl?: string | null;
+  faviconUrl?: string | null;
 };
 
 async function processReschedule({
@@ -271,6 +273,8 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
     bookingUid: bookingUid ? `${bookingUid}` : null,
     rescheduleUid: null,
     orgBannerUrl: eventData?.owner?.profile?.organization?.bannerUrl ?? null,
+    bannerUrl: user?.bannerUrl,
+    faviconUrl: user?.faviconUrl,
   };
 
   if (rescheduleUid) {

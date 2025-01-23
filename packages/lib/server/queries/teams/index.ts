@@ -343,6 +343,8 @@ export async function getTeamWithoutMembers(args: {
           identifier: true,
         },
       },
+      bannerUrl: true,
+      faviconUrl: true,
     },
   } as const;
 
@@ -440,7 +442,7 @@ export async function updateNewTeamMemberEventTypes(userId: number, teamId: numb
   eventTypesToAdd.length > 0 &&
     (await prisma.$transaction(
       eventTypesToAdd.map((eventType) => {
-        if (typeof eventType.bookingFields != "array") {
+        if (!Array.isArray(eventType.bookingFields)) {
           eventType.bookingFields = [];
         }
         if (eventType.schedulingType === "MANAGED") {
