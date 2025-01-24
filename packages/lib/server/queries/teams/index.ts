@@ -173,6 +173,7 @@ export async function getTeamWithMembers(args: {
         },
       },
       faviconUrl: true,
+      bannerUrl: true,
     },
   } as const;
 

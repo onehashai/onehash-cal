@@ -95,6 +95,7 @@ function UserFound(props: UserFoundProps) {
           title: markdownStrippedBio,
           profile: { name: `${profile.name}`, image: user.avatarUrl || null },
           users: [{ username: `${user.username}`, name: `${user.name}` }],
+          bannerUrl: props.bannerUrl,
         }}
         nextSeoProps={{
           noindex: !allowSEOIndexing,
