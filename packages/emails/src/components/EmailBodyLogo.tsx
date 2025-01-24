@@ -58,6 +58,7 @@ const EmailBodyLogo = ({ disableLogo = false, bannerUrl = "" }) => {
                             outline: "none",
                             textDecoration: "none",
                             marginTop: "2rem",
+                            marginBottom: "2rem",
                             width: "100%",
                             fontSize: "13px",
                           }}
