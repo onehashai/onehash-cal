@@ -7,6 +7,7 @@
 // 1. org/[orgSlug]/team/[slug]
 // 2. org/[orgSlug]/[user]/[type]
 import classNames from "classnames";
+import Head from "next/head";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
@@ -56,6 +57,14 @@ function TeamPage({
       collectPageParameters("/team/[slug]", { isTeamBooking: true })
     );
   }, [telemetry, pathname]);
+
+  const faviconUrl = team.faviconUrl;
+  useEffect(() => {
+    if (faviconUrl) {
+      const defaultFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+      defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
+    }
+  }, [faviconUrl]);
 
   if (considerUnpublished) {
     const teamSlug = team.slug || metadata?.requestedSlug;
@@ -165,6 +174,11 @@ function TeamPage({
 
   return (
     <>
+      {faviconUrl && (
+        <Head>
+          <link rel="icon" href={faviconUrl} type="image/x-icon" />
+        </Head>
+      )}
       <HeadSeo
         origin={getOrgFullOrigin(currentOrgDomain)}
         title={teamName}

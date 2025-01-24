@@ -172,6 +172,7 @@ export async function getTeamWithMembers(args: {
           orgAutoAcceptEmail: true,
         },
       },
+      faviconUrl: true,
     },
   } as const;
 
