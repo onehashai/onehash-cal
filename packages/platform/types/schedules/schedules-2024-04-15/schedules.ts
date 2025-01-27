@@ -100,16 +100,13 @@ export class UpdateScheduleInput_2024_04_15 {
   @ApiProperty({
     type: [DateOverride],
     example: [
-      [],
-      [{ start: "2022-01-01T00:00:00.000Z", end: "2022-01-02T00:00:00.000Z" }],
-      [],
-      [],
-      [],
-      [],
-      [],
+      { start: "2022-01-01T00:00:00.000Z", end: "2022-01-02T00:00:00.000Z" },
+      { start: "2022-01-02T09:00:00.000Z", end: "2022-01-02T15:00:00.000Z" },
     ],
     isArray: true,
     required: false,
+    description:
+      "An array of date overrides specifying custom availability. If the start and end times are '00:00:00.000', the date is marked as unavailable.",
   })
   dateOverrides?: DateOverride[];
 }
