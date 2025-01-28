@@ -144,7 +144,6 @@ export const BookEventForm = ({
     HIGH: RECAPTCHA__KEY_HIGH,
   };
   const recaptchaKey = reCaptchaMap[eventType.captchaType as keyof typeof reCaptchaMap];
-
   const handleFormSubmit = async () => {
     if (recaptchaRef.current) {
       const val = await recaptchaRef.current.executeAsync();
