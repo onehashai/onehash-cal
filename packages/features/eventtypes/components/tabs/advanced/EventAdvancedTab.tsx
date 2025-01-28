@@ -429,7 +429,7 @@ export const EventAdvancedTab = ({
                   </label>
                   <select
                     id="captchaTypeDropdown"
-                    className={classNames("w-full rounded-lg border p-2")}
+                    className={classNames("w-full rounded-lg border p-2 text-sm")}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     data-testid="captcha-strength-dropdown">
