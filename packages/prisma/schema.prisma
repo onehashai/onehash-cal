@@ -42,6 +42,13 @@ enum PeriodType {
   RANGE          @map("range")
 }
 
+enum CaptchaType {
+  OFF    @map("off")
+  LOW    @map("low")
+  MEDIUM @map("medium")
+  HIGH   @map("high")
+}
+
 model Host {
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           Int
@@ -164,6 +171,7 @@ model EventType {
 
   secondaryEmailId Int?
   secondaryEmail   SecondaryEmail? @relation(fields: [secondaryEmailId], references: [id], onDelete: Cascade)
+  captchaType      CaptchaType     @default(OFF)
 
   @@unique([userId, slug])
   @@unique([teamId, slug])

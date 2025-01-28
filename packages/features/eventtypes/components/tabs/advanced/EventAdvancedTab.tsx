@@ -32,7 +32,7 @@ import { generateHashedLink } from "@calcom/lib/generateHashedLink";
 import { checkWCAGContrastColor } from "@calcom/lib/getBrandColours";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { Prisma } from "@calcom/prisma/client";
-import { SchedulingType } from "@calcom/prisma/enums";
+import { CaptchaType, SchedulingType } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import {
   Alert,
@@ -406,6 +406,44 @@ export const EventAdvancedTab = ({
         onRequiresConfirmation={setRequiresConfirmation}
         customClassNames={customClassNames?.requiresConfirmation}
       />
+      <Controller
+        name="captchaType"
+        render={({ field: { value, onChange } }) => (
+          <>
+            <SettingsToggle
+              labelClassName={classNames("text-sm")}
+              toggleSwitchAtTheEnd={true}
+              switchContainerClassName={classNames("border-subtle rounded-lg border py-6 px-4 sm:px-6")}
+              childrenClassName={classNames("lg:ml-0")}
+              title={t("enable_captcha")}
+              data-testid="enable-captcha"
+              description={t("enable_captcha_description")}
+              checked={formMethods.getValues("captchaType") !== CaptchaType.OFF}
+              onCheckedChange={(e) => {
+                onChange(e ? CaptchaType.MEDIUM : CaptchaType.OFF);
+              }}>
+              <div className={classNames("border-subtle rounded-b-lg border border-t-0 p-6")}>
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="captchaTypeDropdown" className={classNames("text-sm font-medium")}>
+                    {t("select_captcha_strength")}
+                  </label>
+                  <select
+                    id="captchaTypeDropdown"
+                    className={classNames("w-full rounded-lg border p-2")}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    data-testid="captcha-strength-dropdown">
+                    <option value={CaptchaType.LOW}>Low</option>
+                    <option value={CaptchaType.MEDIUM}>Medium</option>
+                    <option value={CaptchaType.HIGH}>High</option>
+                  </select>
+                </div>
+              </div>
+            </SettingsToggle>
+          </>
+        )}
+      />
+
       <Controller
         name="requiresBookerEmailVerification"
         render={({ field: { value, onChange } }) => (

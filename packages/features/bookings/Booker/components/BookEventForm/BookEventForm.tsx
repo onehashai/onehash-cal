@@ -1,11 +1,18 @@
 import type { TFunction } from "next-i18next";
 import { Trans } from "next-i18next";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import type { FieldError } from "react-hook-form";
 
 import type { BookerEvent } from "@calcom/features/bookings/types";
-import { WEBSITE_PRIVACY_POLICY_URL, WEBSITE_TERMS_URL } from "@calcom/lib/constants";
+import {
+  RECAPTCHA__KEY_HIGH,
+  RECAPTCHA__KEY_LOW,
+  RECAPTCHA__KEY_MEDIUM,
+  WEBSITE_PRIVACY_POLICY_URL,
+  WEBSITE_TERMS_URL,
+} from "@calcom/lib/constants";
 import getPaymentAppData from "@calcom/lib/getPaymentAppData";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Alert, Button, EmptyScreen, Form } from "@calcom/ui";
@@ -50,7 +57,10 @@ export const BookEventForm = ({
   eventQuery: {
     isError: boolean;
     isPending: boolean;
-    data?: Pick<BookerEvent, "price" | "currency" | "metadata" | "bookingFields" | "locations"> | null;
+    data?: Pick<
+      BookerEvent,
+      "price" | "currency" | "metadata" | "bookingFields" | "locations" | "captchaType"
+    > | null;
   };
   rescheduleUid: string | null;
 }) => {
@@ -69,6 +79,8 @@ export const BookEventForm = ({
     const paymentAppData = getPaymentAppData(eventType);
     return eventType?.price > 0 && !Number.isNaN(paymentAppData.price) && paymentAppData.price > 0;
   }, [eventType]);
+
+  const recaptchaRef = useRef<ReCAPTCHA | null>(null);
 
   useEffect(() => {
     if (eventType && billingAddressRequired) {
@@ -126,6 +138,24 @@ export const BookEventForm = ({
     return <Alert severity="warning" message={t("error_booking_event")} />;
   }
 
+  const reCaptchaMap = {
+    LOW: RECAPTCHA__KEY_LOW,
+    MEDIUM: RECAPTCHA__KEY_MEDIUM,
+    HIGH: RECAPTCHA__KEY_HIGH,
+  };
+  const recaptchaKey = reCaptchaMap[eventType.captchaType as keyof typeof reCaptchaMap];
+
+  const handleFormSubmit = async () => {
+    if (recaptchaRef.current) {
+      const val = await recaptchaRef.current.executeAsync();
+      if (val) {
+        recaptchaRef.current.reset();
+        onSubmit();
+      }
+    } else {
+      onSubmit();
+    }
+  };
   return (
     <div className="flex h-full flex-col">
       <Form
@@ -138,7 +168,7 @@ export const BookEventForm = ({
           setFormValues(values);
         }}
         form={bookingForm}
-        handleSubmit={onSubmit}
+        handleSubmit={handleFormSubmit}
         noValidate>
         <BookingFields
           isDynamicGroupBooking={!!(username && username.indexOf("+") > -1)}
@@ -215,6 +245,7 @@ export const BookEventForm = ({
             </>
           )}
         </div>
+        {recaptchaKey && <ReCAPTCHA ref={recaptchaRef} sitekey={recaptchaKey} size="invisible" />}
       </Form>
       {children}
     </div>
