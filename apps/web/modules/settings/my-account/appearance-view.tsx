@@ -495,7 +495,7 @@ const AppearanceView = ({
                             imageSrc={getBrandLogoUrl({ bannerUrl: value })}
                             size="lg"
                           />
-                          <div className="ms-4">
+                          <div className="ms-4 flex items-center">
                             <div className="flex  gap-2">
                               <BannerUploader
                                 height={100}
@@ -506,7 +506,6 @@ const AppearanceView = ({
                                 buttonMsg={t("upload_logo")}
                                 handleAvatarChange={onChange}
                                 imageSrc={getBrandLogoUrl({ bannerUrl: value })}
-                                triggerButtonColor={showRemoveAvatarButton ? "secondary" : "primary"}
                               />
 
                               {showRemoveAvatarButton && (
@@ -576,10 +575,10 @@ const AppearanceView = ({
                         <div className="flex">
                           <Avatar
                             alt={user.name || "User Favicon"}
-                            imageSrc={getBrandLogoUrl({ faviconUrl: value })}
+                            imageSrc={getBrandLogoUrl({ faviconUrl: value }, true)}
                             size="lg"
                           />
-                          <div className="ms-4">
+                          <div className="ms-4 flex items-center">
                             <div className="flex  gap-2">
                               <ImageUploader
                                 target="avatar"
@@ -588,8 +587,7 @@ const AppearanceView = ({
                                 handleAvatarChange={(newAvatar) => {
                                   onChange(newAvatar);
                                 }}
-                                imageSrc={getBrandLogoUrl({ bannerUrl: value })}
-                                triggerButtonColor={showRemoveFaviconButton ? "secondary" : "secondary"}
+                                imageSrc={getBrandLogoUrl({ bannerUrl: value }, true)}
                               />
 
                               {showRemoveFaviconButton && (
