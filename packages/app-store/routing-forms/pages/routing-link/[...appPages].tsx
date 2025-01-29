@@ -56,6 +56,16 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
   const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   const [response, setResponse] = usePrefilledResponse(form);
+  const faviconUrl = form.user?.faviconUrl ?? form.team?.faviconUrl;
+  const bannerUrl = form.user?.bannerUrl ?? form.team?.bannerUrl;
+  const hideBranding = form.user?.hideBranding ?? form.team?.hideBranding;
+
+  useEffect(() => {
+    if (faviconUrl) {
+      const defaultFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+      defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
+    }
+  }, [faviconUrl]);
 
   // TODO: We might want to prevent spam from a single user by having same formFillerId across pageviews
   // But technically, a user can fill form multiple times due to any number of reasons and we currently can't differentiate b/w that.
@@ -159,6 +169,11 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
 
   return (
     <div>
+      {faviconUrl && (
+        <Head>
+          <link rel="icon" href={faviconUrl} type="image/x-icon" />
+        </Head>
+      )}
       <div>
         {!customPageMessage ? (
           <>
@@ -192,7 +207,7 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
                   </form>
                 </div>
                 <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-                  <PoweredBy logoOnly />
+                  <PoweredBy logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
                 </div>
               </div>
             </div>

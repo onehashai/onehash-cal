@@ -1,11 +1,19 @@
 import TwilioClient from "twilio";
 import { v4 as uuidv4 } from "uuid";
 
+import dayjs from "@calcom/dayjs";
 import { checkSMSRateLimit } from "@calcom/lib/checkRateLimitAndThrowError";
+import {
+  WHATSAPP_CANCELLED_SID,
+  WHATSAPP_COMPLETED_SID,
+  WHATSAPP_REMINDER_SID,
+  WHATSAPP_RESCHEDULED_SID,
+} from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { setTestSMS } from "@calcom/lib/testSMS";
+import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import prisma from "@calcom/prisma";
-import { SMSLockState } from "@calcom/prisma/enums";
+import { SMSLockState, WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
 
 const log = logger.getSubLogger({ prefix: ["[twilioProvider]"] });
 
@@ -36,14 +44,16 @@ export const sendSMS = async (
   sender: string,
   userId?: number | null,
   teamId?: number | null,
-  whatsapp = false
+  whatsapp = false,
+  template?: WorkflowTemplates,
+  contentVariables?: string
 ) => {
   log.silly("sendSMS", JSON.stringify({ phoneNumber, body, sender, userId, teamId }));
 
   const isSMSSendingLocked = await isLockedForSMSSending(userId, teamId);
 
   if (isSMSSendingLocked) {
-    log.debug(`${teamId ? `Team id ${teamId} ` : `User id ${userId} `} is locked for SMS sending `);
+    log.debug(`${teamId ? `Team id ${teamId} ` : `User id ${userId} `} is locked for SMS sending`);
     return;
   }
 
@@ -56,7 +66,6 @@ export const sendSMS = async (
     console.log(
       "Skipped sending SMS because process.env.NEXT_PUBLIC_IS_E2E or process.env.INTEGRATION_TEST_MODE is set. SMS are available in globalThis.testSMS"
     );
-
     return;
   }
 
@@ -69,13 +78,29 @@ export const sendSMS = async (
     });
   }
 
-  const response = await twilio.messages.create({
-    body: body,
+  const payload: {
+    messagingServiceSid: string | undefined;
+    to: string;
+    from: string;
+    body?: string;
+    contentSid?: string;
+    contentVariables?: string;
+  } = {
     messagingServiceSid: process.env.TWILIO_MESSAGING_SID,
     to: getSMSNumber(phoneNumber, whatsapp),
     from: whatsapp ? getDefaultSender(whatsapp) : sender ? sender : getDefaultSender(),
-  });
+  };
 
+  if (whatsapp) {
+    if (contentVariables === "{}") return Promise.resolve();
+
+    if (template) payload.contentSid = whatsappTemplateMap[template];
+    payload.contentVariables = contentVariables;
+  } else {
+    payload.body = body;
+  }
+
+  const response = await twilio.messages.create(payload);
   return response;
 };
 
@@ -86,7 +111,9 @@ export const scheduleSMS = async (
   sender: string,
   userId?: number | null,
   teamId?: number | null,
-  whatsapp = false
+  whatsapp = false,
+  template?: WorkflowTemplates,
+  contentVariables?: string
 ) => {
   const isSMSSendingLocked = await isLockedForSMSSending(userId, teamId);
 
@@ -115,16 +142,32 @@ export const scheduleSMS = async (
       rateLimitingType: "smsMonth",
     });
   }
-
-  const response = await twilio.messages.create({
-    body: body,
+  const payload: {
+    messagingServiceSid: string | undefined;
+    to: string;
+    // scheduleType: string;
+    sendAt: Date;
+    from: string;
+    body?: string;
+    contentSid?: string;
+    contentVariables?: string;
+  } = {
     messagingServiceSid: process.env.TWILIO_MESSAGING_SID,
     to: getSMSNumber(phoneNumber, whatsapp),
-    scheduleType: "fixed",
+    // scheduleType: "fixed",
     sendAt: scheduledDate,
     from: whatsapp ? getDefaultSender(whatsapp) : sender ? sender : getDefaultSender(),
-  });
-
+  };
+  if (whatsapp) {
+    if (contentVariables === "{}") return Promise.resolve();
+    payload.contentVariables = contentVariables;
+    if (template) {
+      payload.contentSid = whatsappTemplateMap[template];
+    }
+  } else {
+    payload.body = body;
+  }
+  const response = await twilio.messages.create(payload);
   return response;
 };
 
@@ -196,3 +239,60 @@ async function isLockedForSMSSending(userId?: number | null, teamId?: number | n
     return user?.smsLockState === SMSLockState.LOCKED;
   }
 }
+
+export const whatsappTemplateMap: Partial<Record<WorkflowTemplates, string>> = {
+  [WorkflowTemplates.REMINDER]: WHATSAPP_REMINDER_SID,
+  [WorkflowTemplates.CANCELLED]: WHATSAPP_CANCELLED_SID,
+  [WorkflowTemplates.RESCHEDULED]: WHATSAPP_RESCHEDULED_SID,
+  [WorkflowTemplates.COMPLETED]: WHATSAPP_COMPLETED_SID,
+};
+
+export const generateContentVars = (
+  reminder: {
+    workflowStep: { action?: WorkflowActions; template?: WorkflowTemplates };
+    booking: {
+      eventType: { title?: string } | null;
+      startTime: Date;
+      user: { locale?: string | null; timeFormat?: number | null } | null;
+    };
+  },
+  attendeeName: string,
+  userName: string,
+  timeZone: string
+): Record<number, string> => {
+  const { workflowStep, booking } = reminder;
+  const formatDate = (date?: Date, format?: string) =>
+    dayjs(date?.toISOString() || "")
+      .tz(timeZone)
+      .locale(booking?.user?.locale || "en")
+      .format(format || "YYYY MMM D");
+
+  const baseVars = {
+    1: workflowStep?.action === WorkflowActions.WHATSAPP_ATTENDEE ? attendeeName : userName,
+    2: booking?.eventType?.title || "",
+    3: workflowStep?.action === WorkflowActions.WHATSAPP_ATTENDEE ? userName : attendeeName,
+    4: formatDate(booking?.startTime, "YYYY MMM D"),
+    5: `${formatDate(
+      booking?.startTime,
+      getTimeFormatStringFromUserTimeFormat(booking?.user?.timeFormat)
+    )} ${timeZone}`,
+    // 6: timeZone,
+  };
+
+  switch (workflowStep?.template) {
+    case WorkflowTemplates.REMINDER:
+    case WorkflowTemplates.CANCELLED:
+    case WorkflowTemplates.RESCHEDULED:
+      return baseVars;
+    case WorkflowTemplates.COMPLETED:
+      return {
+        1: baseVars[1],
+        2: baseVars[2],
+        3: baseVars[4], // Start Date
+        4: baseVars[5], // Start Time
+        // 5: baseVars[6], // Time Zone
+      };
+    default:
+      return {};
+  }
+};

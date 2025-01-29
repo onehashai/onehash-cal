@@ -133,6 +133,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           field.type === "boolean" ? markdownToSafeHTML(field.defaultLabel || "") : field.defaultLabel || "",
       };
     }),
+    hideBranding: eventTypeRaw.owner?.hideBranding ?? eventTypeRaw.team?.hideBranding ?? false,
+    bannerUrl: eventTypeRaw.owner?.bannerUrl ?? eventTypeRaw.team?.bannerUrl ?? null,
+    faviconUrl: eventTypeRaw.owner?.faviconUrl ?? eventTypeRaw.team?.faviconUrl ?? null,
   };
 
   const profile = {
@@ -186,7 +189,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     props: {
       orgSlug: currentOrgDomain,
       themeBasis: eventType.team ? eventType.team.slug : eventType.users[0]?.username,
-      hideBranding: eventType.team ? eventType.team.hideBranding : eventType.users[0].hideBranding,
       profile,
       eventType,
       recurringBookings: await getRecurringBookings(bookingInfo.recurringEventId),

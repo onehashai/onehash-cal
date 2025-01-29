@@ -5,6 +5,7 @@ import { validateIntervalLimitOrder } from "@calcom/lib";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { uploadLogo } from "@calcom/lib/server/avatar";
 import { isTeamAdmin } from "@calcom/lib/server/queries/teams";
+import { resizeBase64Image } from "@calcom/lib/server/resizeBase64Image";
 import { prisma } from "@calcom/prisma";
 import { RedirectType } from "@calcom/prisma/enums";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -71,6 +72,28 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     data.logoUrl = await uploadLogo({ teamId: input.id, logo: input.logo });
   } else if (typeof input.logo !== "undefined" && !input.logo) {
     data.logoUrl = null;
+  }
+
+  if (
+    input.bannerUrl &&
+    (input.bannerUrl.startsWith("data:image/png;base64,") || input.bannerUrl == "delete")
+  ) {
+    data.bannerUrl = await uploadLogo({
+      logo: input.bannerUrl == "delete" ? "delete" : await resizeBase64Image(input.bannerUrl),
+      teamId: input.id,
+      isBanner: true,
+    });
+  }
+
+  if (
+    input.faviconUrl &&
+    (input.faviconUrl.startsWith("data:image/png;base64,") || input.faviconUrl == "delete")
+  ) {
+    data.faviconUrl = await uploadLogo({
+      logo: input.faviconUrl == "delete" ? "delete" : await resizeBase64Image(input.faviconUrl),
+      teamId: input.id,
+      isFavicon: true,
+    });
   }
 
   if (

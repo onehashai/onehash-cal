@@ -70,6 +70,9 @@ export type UserFoundProps = {
     | "recurringEvent"
   >)[];
   isOrgSEOIndexable: boolean | undefined;
+  hideBranding: boolean;
+  bannerUrl: string | null;
+  faviconUrl: string | null;
 } & EmbedProps;
 
 export type UserNotFoundProps = {
@@ -223,6 +226,9 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
         trpcState: ssr.dehydrate(),
         markdownStrippedBio,
         isOrgSEOIndexable: org?.organizationSettings?.allowSEOIndexing ?? false,
+        hideBranding: user.hideBranding,
+        bannerUrl: user.bannerUrl,
+        faviconUrl: user.faviconUrl,
       },
     },
   };

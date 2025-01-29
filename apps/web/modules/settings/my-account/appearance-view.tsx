@@ -8,7 +8,9 @@ import type { z } from "zod";
 import { BookerLayoutSelector } from "@calcom/features/settings/BookerLayoutSelector";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import ThemeLabel from "@calcom/features/settings/ThemeLabel";
-import { DEFAULT_LIGHT_BRAND_COLOR, DEFAULT_DARK_BRAND_COLOR } from "@calcom/lib/constants";
+import { classNames } from "@calcom/lib";
+import { DEFAULT_LIGHT_BRAND_COLOR, DEFAULT_DARK_BRAND_COLOR, APP_NAME } from "@calcom/lib/constants";
+import { getBrandLogoUrl } from "@calcom/lib/getAvatarUrl";
 import { checkWCAGContrastColor } from "@calcom/lib/getBrandColours";
 import useGetBrandingColours from "@calcom/lib/getBrandColours";
 import { useHasPaidPlan } from "@calcom/lib/hooks/useHasPaidPlan";
@@ -29,6 +31,10 @@ import {
   SkeletonText,
   SettingsToggle,
   useBrandTheme,
+  Label,
+  BannerUploader,
+  ImageUploader,
+  Avatar,
 } from "@calcom/ui";
 
 const SkeletonLoader = () => {
@@ -123,6 +129,26 @@ const AppearanceView = ({
     formState: { isSubmitting: isUserThemeSubmitting, isDirty: isUserThemeDirty },
     reset: resetUserThemeReset,
   } = userThemeFormMethods;
+
+  const bannerFormMethods = useForm({
+    defaultValues: {
+      bannerUrl: user.bannerUrl,
+    },
+  });
+
+  const {
+    formState: { isSubmitting: isBannerFormSubmitting, isDirty: isBannerFormDirty },
+  } = bannerFormMethods;
+
+  const faviconFormMethods = useForm({
+    defaultValues: {
+      faviconUrl: user.faviconUrl,
+    },
+  });
+
+  const {
+    formState: { isSubmitting: isFaviconFormSubmitting, isDirty: isFaviconFormDirty },
+  } = faviconFormMethods;
 
   const bookerLayoutFormMethods = useForm({
     defaultValues: {
@@ -414,19 +440,185 @@ const AppearanceView = ({
         Preview
       </Button> */}
 
-          {/* <SettingsToggle
+          <SettingsToggle
             toggleSwitchAtTheEnd={true}
             title={t("disable_cal_branding", { appName: APP_NAME })}
             disabled={!hasPaidPlan || mutation?.isPending}
             description={t("removes_cal_branding", { appName: APP_NAME })}
             checked={hasPaidPlan ? hideBrandingValue : false}
-            Badge={<UpgradeTeamsBadge />}
             onCheckedChange={(checked) => {
               setHideBrandingValue(checked);
               mutation.mutate({ hideBranding: checked });
             }}
             switchContainerClassName="mt-6"
-          /> */}
+          />
+
+          <Form
+            form={bannerFormMethods}
+            handleSubmit={(values) => {
+              if (values.bannerUrl === null) {
+                values.bannerUrl = "delete";
+              }
+              mutation.mutate(values);
+            }}>
+            <Controller
+              control={bannerFormMethods.control}
+              name="bannerUrl"
+              render={({ field: { value, onChange } }) => {
+                const showRemoveAvatarButton = !!value;
+
+                return (
+                  <div className="mt-3">
+                    <div
+                      className={classNames(
+                        "border-subtle flex justify-between space-x-3 rounded-lg border px-4 py-6 sm:px-6",
+                        "rounded-b-none"
+                      )}>
+                      <div>
+                        <div className="flex items-center  gap-x-2">
+                          <Label
+                            className={classNames("mt-0.5 text-base font-semibold leading-none")}
+                            htmlFor="">
+                            {t("custom_brand_logo")}
+                          </Label>
+                        </div>
+                        <p className={classNames("text-default -mt-1.5 text-sm leading-normal")}>
+                          {t("customize_your_brand_logo")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="border-subtle my-auto h-full border  border-t-0 p-6">
+                      <div className="flex justify-between">
+                        <div className="flex">
+                          <Avatar
+                            alt={user.name || "User Brand"}
+                            imageSrc={getBrandLogoUrl({ bannerUrl: value })}
+                            size="lg"
+                          />
+                          <div className="ms-4">
+                            <div className="flex  gap-2">
+                              <BannerUploader
+                                height={100}
+                                width={300}
+                                target="avatar"
+                                uploadInstruction={t("org_banner_instructions", { height: 100, width: 300 })}
+                                id="avatar-upload"
+                                buttonMsg={t("upload_logo")}
+                                handleAvatarChange={onChange}
+                                imageSrc={getBrandLogoUrl({ bannerUrl: value })}
+                                triggerButtonColor={showRemoveAvatarButton ? "secondary" : "primary"}
+                              />
+
+                              {showRemoveAvatarButton && (
+                                <Button
+                                  color="secondary"
+                                  onClick={() => {
+                                    onChange(null);
+                                  }}>
+                                  <p className="mx-auto">{t("remove")}</p>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          className="my-auto"
+                          loading={mutation.isPending}
+                          disabled={isBannerFormSubmitting || !isBannerFormDirty}
+                          color="primary"
+                          type="submit">
+                          {t("update")}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          </Form>
+
+          <Form
+            form={faviconFormMethods}
+            handleSubmit={(values) => {
+              if (values.faviconUrl === null) {
+                values.faviconUrl = "delete";
+              }
+              mutation.mutate(values);
+            }}>
+            <Controller
+              control={faviconFormMethods.control}
+              name="faviconUrl"
+              render={({ field: { value, onChange } }) => {
+                const showRemoveFaviconButton = !!value;
+
+                return (
+                  <div className="mt-3">
+                    <div
+                      className={classNames(
+                        "border-subtle flex justify-between space-x-3 rounded-lg border px-4 py-6 sm:px-6",
+                        "rounded-b-none"
+                      )}>
+                      <div>
+                        <div className="flex items-center  gap-x-2">
+                          <Label
+                            className={classNames("mt-0.5 text-base font-semibold leading-none")}
+                            htmlFor="">
+                            {t("custom_brand_favicon")}
+                          </Label>
+                        </div>
+                        <p className={classNames("text-default -mt-1.5 text-sm leading-normal")}>
+                          {t("customize_your_brand_favicon")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="border-subtle my-auto h-full border  border-t-0 p-6">
+                      <div className="flex justify-between">
+                        <div className="flex">
+                          <Avatar
+                            alt={user.name || "User Favicon"}
+                            imageSrc={getBrandLogoUrl({ faviconUrl: value })}
+                            size="lg"
+                          />
+                          <div className="ms-4">
+                            <div className="flex  gap-2">
+                              <ImageUploader
+                                target="avatar"
+                                id="avatar-upload"
+                                buttonMsg={t("upload_favicon")}
+                                handleAvatarChange={(newAvatar) => {
+                                  onChange(newAvatar);
+                                }}
+                                imageSrc={getBrandLogoUrl({ bannerUrl: value })}
+                                triggerButtonColor={showRemoveFaviconButton ? "secondary" : "secondary"}
+                              />
+
+                              {showRemoveFaviconButton && (
+                                <Button
+                                  color="secondary"
+                                  onClick={() => {
+                                    onChange(null);
+                                  }}>
+                                  <p className="mx-auto">{t("remove")}</p>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          className="my-auto"
+                          loading={mutation.isPending}
+                          disabled={isFaviconFormSubmitting || !isFaviconFormDirty}
+                          color="primary"
+                          type="submit">
+                          {t("update")}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          </Form>
         </>
       )}
     </div>

@@ -3,7 +3,9 @@
 import classNames from "classnames";
 import type { InferGetServerSidePropsType } from "next";
 import dynamic from "next/dynamic";
+import Head from "next/head";
 import Link from "next/link";
+import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
 import {
@@ -53,6 +55,14 @@ function UserFound(props: UserFoundProps) {
       telemetry.event(telemetryEventTypes.embedView, collectPageParameters("/[user]"));
     }
   }, [telemetry, router.asPath]); */
+
+  useEffect(() => {
+    if (props.faviconUrl) {
+      const defaultFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+      defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
+    }
+  }, [props.faviconUrl]);
+
   if (entity.considerUnpublished) {
     return (
       <div className="flex h-full min-h-[calc(100dvh)] items-center justify-center">
@@ -72,6 +82,11 @@ function UserFound(props: UserFoundProps) {
 
   return (
     <>
+      {props.faviconUrl && (
+        <Head>
+          <link rel="icon" href={props.faviconUrl} type="image/x-icon" />
+        </Head>
+      )}
       <HeadSeo
         origin={getOrgFullOrigin(entity.orgSlug ?? null)}
         title={profile.name}
@@ -80,6 +95,7 @@ function UserFound(props: UserFoundProps) {
           title: markdownStrippedBio,
           profile: { name: `${profile.name}`, image: user.avatarUrl || null },
           users: [{ username: `${user.username}`, name: `${user.name}` }],
+          bannerUrl: props.bannerUrl,
         }}
         nextSeoProps={{
           noindex: !allowSEOIndexing,
@@ -167,7 +183,7 @@ function UserFound(props: UserFoundProps) {
 
           {isEventListEmpty && <EmptyPage name={profile.name || "User"} />}
           <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-            <PoweredBy logoOnly />
+            <PoweredBy logoOnly hideBranding={props.hideBranding} bannerUrl={props.bannerUrl ?? undefined} />
           </div>
         </main>
         <Toaster position="bottom-right" />

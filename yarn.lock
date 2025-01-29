@@ -3942,7 +3942,7 @@ __metadata:
     "@sendgrid/client": ^7.7.0
     "@sendgrid/mail": ^7.6.2
     libphonenumber-js: ^1.10.51
-    twilio: ^3.80.1
+    twilio: ^5.4.2
     zod: ^3.22.4
   languageName: unknown
   linkType: soft
@@ -5091,6 +5091,7 @@ __metadata:
     "@types/nodemailer": ^6.4.5
     "@types/qrcode": ^1.4.3
     "@types/react": 18.0.26
+    "@types/react-google-recaptcha": ^2.1.9
     "@types/react-phone-number-input": ^3.0.14
     "@types/remove-markdown": ^0.3.1
     "@types/sanitize-html": ^2.9.0
@@ -5158,6 +5159,7 @@ __metadata:
     react-digit-input: ^2.1.0
     react-dom: ^18.2.0
     react-easy-crop: ^3.5.2
+    react-google-recaptcha: ^3.1.0
     react-hook-form: ^7.43.3
     react-hot-toast: ^2.3.0
     react-intl: ^5.25.1
@@ -17549,6 +17551,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-google-recaptcha@npm:^2.1.9":
+  version: 2.1.9
+  resolution: "@types/react-google-recaptcha@npm:2.1.9"
+  dependencies:
+    "@types/react": "*"
+  checksum: 5a90bb50fe0a49f2e2ceb7950859cfdbe019aa0a75261451fb50ad83dcd4aa360a1941ab6c9b3c627f2b7a0dab2c6c09d6297469d3d4d02ebaf36b3fc34429b6
+  languageName: node
+  linkType: hard
+
 "@types/react-phone-number-input@npm:^3.0.14":
   version: 3.0.14
   resolution: "@types/react-phone-number-input@npm:3.0.14"
@@ -20138,7 +20149,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:>=0.21.2, axios@npm:^0.26.0, axios@npm:^0.26.1":
+"axios@npm:>=0.21.2, axios@npm:^0.26.0":
   version: 0.26.1
   resolution: "axios@npm:0.26.1"
   dependencies:
@@ -31848,7 +31859,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsonwebtoken@npm:9.0.2, jsonwebtoken@npm:^9.0.0":
+"jsonwebtoken@npm:9.0.2, jsonwebtoken@npm:^9.0.0, jsonwebtoken@npm:^9.0.2":
   version: 9.0.2
   resolution: "jsonwebtoken@npm:9.0.2"
   dependencies:
@@ -37061,13 +37072,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pop-iterate@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "pop-iterate@npm:1.0.1"
-  checksum: 3147476c57bee79a0f07d111d7c8564bf7153cb15614ad49421497f1976825b89746af7a2581a136e8284001a4d5b9cbf2b1d4ac1ca540b089f9bf582ecddb14
-  languageName: node
-  linkType: hard
-
 "possible-typed-array-names@npm:^1.0.0":
   version: 1.0.0
   resolution: "possible-typed-array-names@npm:1.0.0"
@@ -37860,7 +37864,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prop-types@npm:^15.0.0, prop-types@npm:^15.5.8, prop-types@npm:^15.6.0, prop-types@npm:^15.6.2, prop-types@npm:^15.7.2, prop-types@npm:^15.8.1":
+"prop-types@npm:^15.0.0, prop-types@npm:^15.5.0, prop-types@npm:^15.5.8, prop-types@npm:^15.6.0, prop-types@npm:^15.6.2, prop-types@npm:^15.7.2, prop-types@npm:^15.8.1":
   version: 15.8.1
   resolution: "prop-types@npm:15.8.1"
   dependencies:
@@ -38297,17 +38301,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"q@npm:2.0.x":
-  version: 2.0.3
-  resolution: "q@npm:2.0.3"
-  dependencies:
-    asap: ^2.0.0
-    pop-iterate: ^1.0.1
-    weak-map: ^1.0.5
-  checksum: ad3c925b242d06bd97c8bc7d57d5c6506bcae876f9172cffea7eacafe93a4f434f06f0eb6f87b59028f7b03dd15ed7fe7c6be8e3ab43173b584d8d40cb3a335d
-  languageName: node
-  linkType: hard
-
 "qr.js@npm:0.0.0":
   version: 0.0.0
   resolution: "qr.js@npm:0.0.0"
@@ -38532,6 +38525,18 @@ __metadata:
   bin:
     rc: ./cli.js
   checksum: 2e26e052f8be2abd64e6d1dabfbd7be03f80ec18ccbc49562d31f617d0015fbdbcf0f9eed30346ea6ab789e0fdfe4337f033f8016efdbee0df5354751842080e
+  languageName: node
+  linkType: hard
+
+"react-async-script@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "react-async-script@npm:1.2.0"
+  dependencies:
+    hoist-non-react-statics: ^3.3.0
+    prop-types: ^15.5.0
+  peerDependencies:
+    react: ">=16.4.1"
+  checksum: 303890eeaf9e18d59fca77f9c891bf3b52d2ec9ea88f0af9d19c160a1f101b447c5104ca46e2dd84c19de756d4797f1f054d041b888a3d57204d9145f4b1b532
   languageName: node
   linkType: hard
 
@@ -38778,6 +38783,18 @@ __metadata:
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0
   checksum: c2dd74dbdae570ce3ce2f7466643ac8e27de2511cb73cb3027fdfc572bed7bb058e1c459ffb32d02e2c41e4c21b0ca490d0dc861f30452fe3689d2e938ad7277
+  languageName: node
+  linkType: hard
+
+"react-google-recaptcha@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "react-google-recaptcha@npm:3.1.0"
+  dependencies:
+    prop-types: ^15.5.0
+    react-async-script: ^1.2.0
+  peerDependencies:
+    react: ">=16.4.1"
+  checksum: 9dc64daf9684d979b1f66d97e00a42c9ceaa9b9fe8b29c4d02d77edf86781e2008f2ae1bef14509351ff3b2ffbcc26463f0d88dd612d7280b455b8c07101e663
   languageName: node
   linkType: hard
 
@@ -40675,13 +40692,6 @@ __metadata:
   bin:
     rollup: dist/bin/rollup
   checksum: 268b29e9476165273256ccd56049d6307bc0869d2a832be7751ac347ddaa5a65269cba11eb528b03a88386b7793a23d28d989ffe6abc29a5626e5cbfe8f0e858
-  languageName: node
-  linkType: hard
-
-"rootpath@npm:^0.1.2":
-  version: 0.1.2
-  resolution: "rootpath@npm:0.1.2"
-  checksum: e39fad0912f5757c087e1b9c0a66278bb9cbe5ffbacfb1960f75a4feddf16fe837319a5764abdb73839ef0e6ea8ef155b98eb383b951b25b279c153c50cd13f0
   languageName: node
   linkType: hard
 
@@ -44385,22 +44395,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"twilio@npm:^3.80.1":
-  version: 3.80.1
-  resolution: "twilio@npm:3.80.1"
+"twilio@npm:^5.4.2":
+  version: 5.4.2
+  resolution: "twilio@npm:5.4.2"
   dependencies:
-    axios: ^0.26.1
-    dayjs: ^1.8.29
+    axios: ^1.7.4
+    dayjs: ^1.11.9
     https-proxy-agent: ^5.0.0
-    jsonwebtoken: ^8.5.1
-    lodash: ^4.17.21
-    q: 2.0.x
+    jsonwebtoken: ^9.0.2
     qs: ^6.9.4
-    rootpath: ^0.1.2
     scmp: ^2.1.0
-    url-parse: ^1.5.9
     xmlbuilder: ^13.0.2
-  checksum: 223655b5d20229f1a0a179596319284381d3524018229ad6eabdede4c7a9828c58d616c57fb7e14b80e372560cd97f4a270241c1598baea0e6f42e616d2ba6e7
+  checksum: 5a0dbd2860a1522282a2a4b151ef47a1e4060a5e9f0dee39b0afa6ee31a639d716bebca36d3482ce3445e87b190dccc88fbf950db3b63bda3ba8b9972404026b
   languageName: node
   linkType: hard
 
@@ -45179,7 +45185,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"url-parse@npm:^1.4.3, url-parse@npm:^1.5.3, url-parse@npm:^1.5.8, url-parse@npm:^1.5.9":
+"url-parse@npm:^1.4.3, url-parse@npm:^1.5.3, url-parse@npm:^1.5.8":
   version: 1.5.10
   resolution: "url-parse@npm:1.5.10"
   dependencies:
@@ -45944,13 +45950,6 @@ __metadata:
   dependencies:
     defaults: ^1.0.3
   checksum: 814e9d1ddcc9798f7377ffa448a5a3892232b9275ebb30a41b529607691c0491de47cba426e917a4d08ded3ee7e9ba2f3fe32e62ee3cd9c7d3bafb7754bd553c
-  languageName: node
-  linkType: hard
-
-"weak-map@npm:^1.0.5":
-  version: 1.0.8
-  resolution: "weak-map@npm:1.0.8"
-  checksum: ce030b3c6b1a461bda6eac88b3b3be57245ce26330c6ddb98d821d85c0636117ca94693ef8292407066fd367740ec6a1ef6cd9027111453d7ced43f4f78b327a
   languageName: node
   linkType: hard
 

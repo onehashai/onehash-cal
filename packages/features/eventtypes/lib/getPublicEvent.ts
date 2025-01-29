@@ -141,6 +141,7 @@ const publicEventSelect = Prisma.validator<Prisma.EventTypeSelect>()({
   hidden: true,
   assignAllTeamMembers: true,
   rescheduleWithSameRoundRobinHost: true,
+  captchaType: true,
 });
 
 export async function isCurrentlyAvailable({

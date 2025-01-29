@@ -127,6 +127,7 @@ export const dynamicEvent = {
   position: 0,
   ...commons,
   metadata: EventTypeMetaDataSchema.parse({ multipleDuration: [15, 30, 45, 60, 90] }),
+  disableGuests: false,
 };
 
 export const defaultEvents = [dynamicEvent];

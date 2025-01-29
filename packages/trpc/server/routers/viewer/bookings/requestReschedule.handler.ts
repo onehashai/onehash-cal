@@ -61,6 +61,14 @@ export const requestRescheduleHandler = async ({ ctx, input }: RequestReschedule
               id: true,
               name: true,
               parentId: true,
+              bannerUrl: true,
+              hideBranding: true,
+            },
+          },
+          owner: {
+            select: {
+              bannerUrl: true,
+              hideBranding: true,
             },
           },
         },
@@ -208,6 +216,14 @@ export const requestRescheduleHandler = async ({ ctx, input }: RequestReschedule
           members: [],
         }
       : undefined,
+    hideBranding:
+      bookingToReschedule.eventType?.owner?.hideBranding ??
+      bookingToReschedule.eventType?.team?.hideBranding ??
+      false,
+    bannerUrl:
+      bookingToReschedule.eventType?.owner?.bannerUrl ??
+      bookingToReschedule.eventType?.team?.bannerUrl ??
+      null,
   });
 
   const director = new CalendarEventDirector();

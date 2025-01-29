@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import fetch from "node-fetch";
 
-import { uploadAvatar } from "@calcom/lib/server/avatar";
+import { uploadLogo } from "@calcom/lib/server/avatar";
 import { resizeBase64Image } from "@calcom/lib/server/resizeBase64Image";
 import prisma from "@calcom/prisma";
 
@@ -43,7 +43,7 @@ export const prefillAvatar = async ({ email }: IPrefillAvatar) => {
   if (!user) {
     return;
   }
-  const avatarUrl = await uploadAvatar({ userId: user.id, avatar });
+  const avatarUrl = await uploadLogo({ userId: user.id, logo: avatar });
 
   const data: Prisma.UserUpdateInput = {};
   data.avatarUrl = avatarUrl;

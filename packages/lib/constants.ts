@@ -233,3 +233,12 @@ export const DIRECTORY_IDS_TO_LOG = process.env.DIRECTORY_IDS_TO_LOG?.split(",")
 export const ONEHASH_CHAT_INTEGRATION_PAGE = `${ONEHASH_CHAT_ORIGIN}/app?to=cal_integration`;
 export const ONEHASH_CHAT_SYNC_BASE_URL = `${ONEHASH_CHAT_ORIGIN}/api/oh/integrations`;
 export const ONEHASH_API_KEY = process.env.ONEHASH_API_KEY;
+
+export const WHATSAPP_REMINDER_SID = process.env.WHATSAPP_REMINDER_SID;
+export const WHATSAPP_CANCELLED_SID = process.env.WHATSAPP_CANCELLED_SID;
+export const WHATSAPP_RESCHEDULED_SID = process.env.WHATSAPP_RESCHEDULED_SID;
+export const WHATSAPP_COMPLETED_SID = process.env.WHATSAPP_COMPLETED_SID;
+
+export const RECAPTCHA__KEY_LOW = process.env.NEXT_PUBLIC_RECAPTCHA_LOW;
+export const RECAPTCHA__KEY_MEDIUM = process.env.NEXT_PUBLIC_RECAPTCHA_MEDIUM;
+export const RECAPTCHA__KEY_HIGH = process.env.NEXT_PUBLIC_RECAPTCHA_HIGH;

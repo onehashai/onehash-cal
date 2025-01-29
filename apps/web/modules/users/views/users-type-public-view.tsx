@@ -1,6 +1,8 @@
 "use client";
 
+import Head from "next/head";
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 import { Booker } from "@calcom/atoms/monorepo";
 import { getBookerWrapperClasses } from "@calcom/features/bookings/Booker/utils/getBookerWrapperClasses";
@@ -33,49 +35,66 @@ function Type({
   rescheduleUid,
   eventData,
   orgBannerUrl,
+  bannerUrl,
+  faviconUrl,
 }: PageProps) {
   const searchParams = useSearchParams();
   const { profile, users, hidden, title } = eventData;
+  useEffect(() => {
+    if (faviconUrl) {
+      const defaultFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+      defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
+    }
+  }, [faviconUrl]);
+
   return (
-    <main className={getBookerWrapperClasses({ isEmbed: !!isEmbed })}>
-      <BookerSeo
-        username={user}
-        eventSlug={slug}
-        rescheduleUid={rescheduleUid ?? undefined}
-        hideBranding={isBrandingHidden}
-        isSEOIndexable={isSEOIndexable ?? true}
-        eventData={
-          profile && users && title && hidden !== undefined
-            ? {
-                profile,
-                users,
-                title,
-                hidden,
-              }
-            : undefined
-        }
-        entity={eventData.entity}
-        bookingData={booking}
-      />
-      <Booker
-        username={user}
-        eventSlug={slug}
-        bookingData={booking}
-        hideBranding={isBrandingHidden}
-        entity={{ ...eventData.entity, eventTypeId: eventData?.id }}
-        durationConfig={eventData.metadata?.multipleDuration}
-        orgBannerUrl={orgBannerUrl}
-        /* TODO: Currently unused, evaluate it is needed-
-         *       Possible alternative approach is to have onDurationChange.
-         */
-        duration={getMultipleDurationValue(
-          eventData.metadata?.multipleDuration,
-          searchParams?.get("duration"),
-          eventData.length
-        )}
-        billingAddressRequired={eventData.metadata?.billingAddressRequired}
-      />
-    </main>
+    <>
+      {faviconUrl && (
+        <Head>
+          <link rel="icon" href={faviconUrl} type="image/x-icon" />
+        </Head>
+      )}
+      <main className={getBookerWrapperClasses({ isEmbed: !!isEmbed })}>
+        <BookerSeo
+          username={user}
+          eventSlug={slug}
+          rescheduleUid={rescheduleUid ?? undefined}
+          hideBranding={isBrandingHidden}
+          isSEOIndexable={isSEOIndexable ?? true}
+          eventData={
+            profile && users && title && hidden !== undefined
+              ? {
+                  profile,
+                  users,
+                  title,
+                  hidden,
+                }
+              : undefined
+          }
+          entity={eventData.entity}
+          bookingData={booking}
+        />
+        <Booker
+          username={user}
+          eventSlug={slug}
+          bookingData={booking}
+          hideBranding={isBrandingHidden}
+          entity={{ ...eventData.entity, eventTypeId: eventData?.id }}
+          durationConfig={eventData.metadata?.multipleDuration}
+          orgBannerUrl={orgBannerUrl}
+          /* TODO: Currently unused, evaluate it is needed-
+           *       Possible alternative approach is to have onDurationChange.
+           */
+          duration={getMultipleDurationValue(
+            eventData.metadata?.multipleDuration,
+            searchParams?.get("duration"),
+            eventData.length
+          )}
+          billingAddressRequired={eventData.metadata?.billingAddressRequired}
+          bannerUrl={bannerUrl}
+        />
+      </main>
+    </>
   );
 }
 

@@ -72,6 +72,8 @@ export async function getUserFromSession(ctx: TRPCContextInner, session: Maybe<S
       allowSEOIndexing: true,
       receiveMonthlyDigestEmail: true,
       profiles: true,
+      bannerUrl: true,
+      faviconUrl: true,
     },
   });
 

@@ -1,5 +1,6 @@
 import dayjs from "@calcom/dayjs";
 import logger from "@calcom/lib/logger";
+import { TimeFormat } from "@calcom/lib/timeFormat";
 import prisma from "@calcom/prisma";
 import {
   WorkflowTriggerEvents,
@@ -153,7 +154,36 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
       triggerEvent === WorkflowTriggerEvents.RESCHEDULE_EVENT
     ) {
       try {
-        await twilio.sendSMS(reminderPhone, textMessage, "", userId, teamId, true);
+        const contentVars = twilio.generateContentVars(
+          {
+            workflowStep: {
+              action: action,
+              template: template,
+            },
+            booking: {
+              eventType: { title: evt.eventType.title ?? evt.title },
+              user: {
+                locale: evt.organizer.language.locale,
+                timeFormat: evt.organizer.timeFormat === TimeFormat.TWENTY_FOUR_HOUR ? 24 : 12,
+              },
+              startTime: new Date(evt.startTime),
+            },
+          },
+          evt.attendees[0].name || "",
+          evt.organizer.name || "",
+          timeZone || ""
+        );
+
+        await twilio.sendSMS(
+          reminderPhone,
+          textMessage,
+          "",
+          userId,
+          teamId,
+          true,
+          template,
+          JSON.stringify(contentVars)
+        );
       } catch (error) {
         console.log(`Error sending WHATSAPP with error ${error}`);
       }
@@ -168,14 +198,36 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
         !scheduledDate.isAfter(currentDate.add(7, "day"))
       ) {
         try {
+          const contentVars = twilio.generateContentVars(
+            {
+              workflowStep: {
+                action: action,
+                template: template,
+              },
+              booking: {
+                eventType: { title: evt.eventType.title ?? evt.title },
+                user: {
+                  locale: evt.organizer.language.locale,
+                  timeFormat: evt.organizer.timeFormat === TimeFormat.TWENTY_FOUR_HOUR ? 24 : 12,
+                },
+                startTime: new Date(evt.startTime),
+              },
+            },
+            evt.attendees[0].name || "",
+            evt.organizer.name || "",
+            timeZone || ""
+          );
+
           const scheduledWHATSAPP = await twilio.scheduleSMS(
             reminderPhone,
-            textMessage,
+            "",
             scheduledDate.toDate(),
             "",
             userId,
             teamId,
-            true
+            true,
+            template,
+            JSON.stringify(contentVars)
           );
 
           if (scheduledWHATSAPP) {

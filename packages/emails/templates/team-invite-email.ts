@@ -23,6 +23,8 @@ export type TeamInvite = {
   isExistingUserMovedToOrg: boolean;
   prevLink: string | null;
   newLink: string | null;
+  hideBranding?: boolean;
+  bannerUrl?: string;
 };
 
 export function getTypeOfInvite(teamInviteEvent: TeamInvite) {

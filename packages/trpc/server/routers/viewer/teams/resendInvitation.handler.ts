@@ -69,6 +69,8 @@ export const resendInvitationHandler = async ({ ctx, input }: InviteMemberOption
     isExistingUserMovedToOrg: false,
     prevLink: null,
     newLink: null,
+    hideBranding: team.hideBranding,
+    bannerUrl: team.bannerUrl ?? undefined,
   });
 
   return input;

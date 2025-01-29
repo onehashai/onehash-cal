@@ -69,6 +69,7 @@ const BookerComponent = ({
   billingAddressRequired,
   areInstantMeetingParametersSet = false,
   userLocale,
+  bannerUrl,
 }: BookerProps & WrappedBookerProps) => {
   const { t } = useLocale();
 
@@ -466,7 +467,7 @@ const BookerComponent = ({
           )}
         {!getQueryParam("widget_view") && (
           <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-            <PoweredBy logoOnly />
+            <PoweredBy logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { isPrismaObjOrUndefined } from "@calcom/lib";
-import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
+import { IS_DEV, ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import { getDefaultLocations } from "@calcom/lib/server";
 import { EventTypeRepository } from "@calcom/lib/server/repository/eventType";
 import type { PrismaClient } from "@calcom/prisma";
@@ -142,6 +142,8 @@ const handleOHChatSync = async ({
   url: string;
   userId: number;
 }): Promise<void> => {
+  if (IS_DEV) return Promise.resolve();
+
   const credentials = await prismaClient.credential.findMany({
     where: {
       appId: "onehash-chat",

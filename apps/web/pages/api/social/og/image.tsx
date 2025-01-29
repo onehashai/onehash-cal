@@ -28,6 +28,7 @@ const meetingSchema = z.object({
   usernames: z.string().array(),
   meetingProfileName: z.string(),
   meetingImage: z.string().nullable().optional(),
+  bannerUrl: z.string().nullable().optional(),
 });
 
 const appSchema = z.object({
@@ -65,12 +66,13 @@ export default async function handler(req: NextApiRequest) {
 
   switch (imageType) {
     case "meeting": {
-      const { names, usernames, title, meetingProfileName, meetingImage } = meetingSchema.parse({
+      const { names, usernames, title, meetingProfileName, meetingImage, bannerUrl } = meetingSchema.parse({
         names: searchParams.getAll("names"),
         usernames: searchParams.getAll("usernames"),
         title: searchParams.get("title"),
         meetingProfileName: searchParams.get("meetingProfileName"),
         meetingImage: searchParams.get("meetingImage"),
+        bannerUrl: searchParams.get("bannerUrl"),
         imageType,
       });
 
@@ -80,6 +82,7 @@ export default async function handler(req: NextApiRequest) {
             title={title}
             profile={{ name: meetingProfileName, image: meetingImage }}
             users={names.map((name, index) => ({ name, username: usernames[index] }))}
+            bannerUrl={bannerUrl}
           />
         ),
         ogConfig
@@ -101,7 +104,6 @@ export default async function handler(req: NextApiRequest) {
 
       return new Response(img.body, { status: 200, headers: { "Content-Type": "image/png" } });
     }
-
     case "generic": {
       const { title, description } = genericSchema.parse({
         title: searchParams.get("title"),

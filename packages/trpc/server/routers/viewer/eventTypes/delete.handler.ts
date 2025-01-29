@@ -1,4 +1,4 @@
-import { ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL } from "@calcom/lib/constants";
+import { IS_DEV, ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL } from "@calcom/lib/constants";
 import { isPrismaObjOrUndefined } from "@calcom/lib/isPrismaObj";
 import { prisma } from "@calcom/prisma";
 
@@ -36,6 +36,8 @@ export const deleteHandler = async ({ ctx, input }: DeleteOptions) => {
 };
 
 const handleOHChatSync = async (eventUid: number, userId: number) => {
+  if (IS_DEV) return Promise.resolve();
+
   const credentials = await prisma.credential.findMany({
     where: {
       appId: "onehash-chat",

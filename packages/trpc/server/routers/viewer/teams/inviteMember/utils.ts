@@ -452,7 +452,7 @@ export async function sendSignupToOrganizationEmail({
   isOrg,
 }: {
   usernameOrEmail: string;
-  team: { name: string; parent: { name: string } | null };
+  team: { name: string; parent: { name: string } | null; hideBranding?: boolean; bannerUrl?: string };
   translation: TFunction;
   inviterName: string;
   teamId: number;
@@ -489,6 +489,8 @@ export async function sendSignupToOrganizationEmail({
     // For a new user there is no prev and new links.
     prevLink: null,
     newLink: null,
+    hideBranding: team.hideBranding,
+    bannerUrl: team.bannerUrl ?? undefined,
   });
 }
 
@@ -947,6 +949,8 @@ export async function handleNewUsersInvites({
       team: {
         name: team.name,
         parent: team.parent,
+        hideBranding: team.hideBranding,
+        bannerUrl: team.bannerUrl ?? undefined,
       },
       translation,
       inviterName: inviter.name ?? "",

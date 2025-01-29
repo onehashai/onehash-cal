@@ -42,6 +42,13 @@ enum PeriodType {
   RANGE          @map("range")
 }
 
+enum CaptchaType {
+  OFF    @map("off")
+  LOW    @map("low")
+  MEDIUM @map("medium")
+  HIGH   @map("high")
+}
+
 model Host {
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           Int
@@ -164,6 +171,7 @@ model EventType {
 
   secondaryEmailId Int?
   secondaryEmail   SecondaryEmail? @relation(fields: [secondaryEmailId], references: [id], onDelete: Cascade)
+  captchaType      CaptchaType     @default(OFF)
 
   @@unique([userId, slug])
   @@unique([teamId, slug])
@@ -365,6 +373,8 @@ model User {
   updatedTranslations        EventTypeTranslation[]       @relation("UpdatedEventTypeTranslations")
   createdWatchlists          Watchlist[]                  @relation("CreatedWatchlists")
   updatedWatchlists          Watchlist[]                  @relation("UpdatedWatchlists")
+  bannerUrl                  String?
+  faviconUrl                 String?
 
   @@unique([email])
   @@unique([email, username])
@@ -473,6 +483,7 @@ model Team {
   /// @zod.custom(imports.intervalLimitsType)
   bookingLimits                Json?
   includeManagedEventsInLimits Boolean @default(false)
+  faviconUrl                   String?
 
   @@unique([slug, parentId])
   @@index([parentId])
@@ -1447,7 +1458,9 @@ model Avatar {
 
   isBanner Boolean @default(false)
 
-  @@unique([teamId, userId, isBanner])
+  isFavicon Boolean @default(false)
+
+  @@unique([teamId, userId, isBanner, isFavicon])
   @@map(name: "avatars")
 }
 

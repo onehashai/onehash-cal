@@ -25,6 +25,8 @@ export const ZUpdateInputSchema = z.object({
   theme: z.string().optional().nullable(),
   bookingLimits: intervalLimitsType.optional(),
   includeManagedEventsInLimits: z.boolean().optional(),
+  bannerUrl: z.string().nullable().optional(),
+  faviconUrl: z.string().nullable().optional(),
 });
 
 export type TUpdateInputSchema = z.infer<typeof ZUpdateInputSchema>;

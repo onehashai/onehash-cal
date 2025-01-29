@@ -19,6 +19,7 @@ export type HeadSeoProps = {
   meeting?: MeetingImageProps;
   isBrandingHidden?: boolean;
   origin?: string;
+  bannerUrl?: string;
 };
 
 /**

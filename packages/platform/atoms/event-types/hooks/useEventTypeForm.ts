@@ -129,6 +129,7 @@ export const useEventTypeForm = ({
       },
       isRRWeightsEnabled: eventType.isRRWeightsEnabled,
       maxLeadThreshold: eventType.maxLeadThreshold,
+      captchaType: eventType.captchaType,
     };
   }, [eventType, periodDates]);
 

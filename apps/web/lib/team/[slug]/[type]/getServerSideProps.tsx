@@ -59,6 +59,8 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     select: {
       id: true,
       hideBranding: true,
+      bannerUrl: true,
+      faviconUrl: true,
       parent: {
         select: {
           slug: true,
@@ -190,6 +192,8 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       crmOwnerRecordType,
       crmAppSlug,
       isSEOIndexable: allowSEOIndexing,
+      bannerUrl: team?.bannerUrl,
+      faviconUrl: team?.faviconUrl,
     },
   };
 };

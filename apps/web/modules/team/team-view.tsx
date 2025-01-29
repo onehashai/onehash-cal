@@ -7,6 +7,8 @@
 // 1. org/[orgSlug]/team/[slug]
 // 2. org/[orgSlug]/[user]/[type]
 import classNames from "classnames";
+import dynamic from "next/dynamic";
+import Head from "next/head";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
@@ -56,6 +58,16 @@ function TeamPage({
       collectPageParameters("/team/[slug]", { isTeamBooking: true })
     );
   }, [telemetry, pathname]);
+
+  const faviconUrl = team.faviconUrl;
+  const bannerUrl = team.bannerUrl;
+  const hideBranding = team.hideBranding;
+  useEffect(() => {
+    if (faviconUrl) {
+      const defaultFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+      defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
+    }
+  }, [faviconUrl]);
 
   if (considerUnpublished) {
     const teamSlug = team.slug || metadata?.requestedSlug;
@@ -162,9 +174,15 @@ function TeamPage({
     );
 
   const profileImageSrc = getOrgOrTeamAvatar(team);
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   return (
     <>
+      {faviconUrl && (
+        <Head>
+          <link rel="icon" href={faviconUrl} type="image/x-icon" />
+        </Head>
+      )}
       <HeadSeo
         origin={getOrgFullOrigin(currentOrgDomain)}
         title={teamName}
@@ -175,6 +193,7 @@ function TeamPage({
             name: `${team.name}`,
             image: profileImageSrc,
           },
+          bannerUrl: bannerUrl,
         }}
         nextSeoProps={{
           nofollow: !isSEOIndexable,
@@ -261,6 +280,9 @@ function TeamPage({
             )}
           </>
         )}
+        <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+          <PoweredBy logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
+        </div>
       </main>
     </>
   );
