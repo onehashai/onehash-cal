@@ -18,7 +18,6 @@ import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsF
 import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import OneHashChatProvider from "@calcom/features/support/onehashchat/OneHashChatProvider";
-import ViaSocketScript from "@calcom/features/support/viaSocket/ViaSocketScript";
 import { classNames, parseEventTypeColor } from "@calcom/lib";
 import { APP_NAME, WEBSITE_URL } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
@@ -1041,7 +1040,6 @@ const EventTypesPage: React.FC & {
           errorMessage={getUserEventGroupsStatusError?.message}
         />
       </OneHashChatProvider>
-      <ViaSocketScript />
     </Shell>
   );
 };
