@@ -1,5 +1,4 @@
-import type { SessionContextValue } from "next-auth/react";
-import { signIn } from "next-auth/react";
+import { signIn, type SessionContextValue } from "next-auth/react";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { TopBanner } from "@calcom/ui";
@@ -12,7 +11,9 @@ function ImpersonatingBanner({ data }: ImpersonatingBannerProps) {
   if (!data?.user.impersonatedBy) return null;
   const returnToId = data.user.impersonatedBy.id;
 
-  const canReturnToSelf = data.user.impersonatedBy.role == "ADMIN" || data.user?.org?.id;
+  //TODO: Impersonating
+  // const canReturnToSelf = data.user.impersonatedBy.role == "ADMIN" || data.user?.org?.id;
+  const canReturnToSelf = true;
 
   return (
     <>
