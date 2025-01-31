@@ -279,7 +279,12 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
           : undefined,
         sendAt: data.sendAt,
       },
-      { sender }
+      { sender },
+      {
+        ...(evt.eventType?.id && {
+          eventTypeId: evt.eventType?.id,
+        }),
+      }
     );
   }
 

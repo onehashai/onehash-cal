@@ -51,6 +51,7 @@ export type BookingInfo = {
     title?: string;
     slug?: string;
     recurringEvent?: RecurringEvent | null;
+    id?: number;
   };
   startTime: string;
   endTime: string;
