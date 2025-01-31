@@ -1992,7 +1992,13 @@ async function handler(
     await scheduleWorkflowReminders({
       workflows,
       smsReminderNumber: smsReminderNumber || null,
-      calendarEvent: evtWithMetadata,
+      calendarEvent: {
+        ...evtWithMetadata,
+        eventType: {
+          ...(evtWithMetadata.eventType || {}),
+          id: eventType?.id,
+        },
+      },
       isNotConfirmed: rescheduleUid ? false : !isConfirmedByDefault,
       isRescheduleEvent: !!rescheduleUid,
       isFirstRecurringEvent: req.body.allRecurringDates ? req.body.isFirstRecurringSlot : undefined,

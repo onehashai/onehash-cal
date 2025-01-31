@@ -22,7 +22,6 @@ function assertSendgrid() {
     console.error("Sendgrid credentials are missing from the .env file");
   }
 }
-
 export async function getBatchId() {
   if (testMode) {
     return uuidv4();
@@ -41,7 +40,10 @@ export async function getBatchId() {
 
 export function sendSendgridMail(
   mailData: Partial<MailData>,
-  addData: { sender?: string | null; includeCalendarEvent?: boolean }
+  addData: { sender?: string | null; includeCalendarEvent?: boolean },
+  customArgs?: {
+    [key: string]: any;
+  }
 ) {
   assertSendgrid();
 
@@ -68,7 +70,6 @@ export function sendSendgridMail(
     console.info("No sendgrid API key provided, skipping email");
     return Promise.resolve();
   }
-
   return sgMail.send({
     to: mailData.to,
     from: {
@@ -81,6 +82,7 @@ export function sendSendgridMail(
     replyTo: mailData.replyTo || senderEmail,
     attachments: mailData.attachments,
     sendAt: mailData.sendAt,
+    ...(customArgs && { customArgs: { ...customArgs, msg_id: uuidv4() } }),
   });
 }
 

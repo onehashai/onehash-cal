@@ -65,7 +65,7 @@ export async function handleConfirmation(args: {
     metadata?: Prisma.JsonValue;
     eventTypeId: number | null;
     smsReminderNumber: string | null;
-    userId: number | null;
+    userId?: number | null;
   };
   paid?: boolean;
   emailsEnabled?: boolean;
@@ -352,7 +352,13 @@ export async function handleConfirmation(args: {
       await scheduleWorkflowReminders({
         workflows,
         smsReminderNumber: updatedBookings[index].smsReminderNumber,
-        calendarEvent: evtOfBooking,
+        calendarEvent: {
+          ...evtOfBooking,
+          eventType: {
+            ...(evtOfBooking.eventType || {}),
+            id: eventType?.id,
+          },
+        },
         isFirstRecurringEvent: isFirstBooking,
         hideBranding: !!updatedBookings[index].eventType?.owner?.hideBranding,
       });
@@ -423,7 +429,7 @@ export async function handleConfirmation(args: {
         id: booking.id,
       },
       triggerForUser,
-      organizerUser: { id: booking.userId },
+      organizerUser: { id: booking.userId ?? null },
       eventTypeId: booking.eventTypeId,
       teamId,
       orgId,
