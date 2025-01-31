@@ -127,10 +127,10 @@ const InfiniteTeamsTab: FC<InfiniteTeamsTabProps> = (props) => {
     <div>
       <div className="flex gap-1">
         <TextField
-          className="bg-subtle !border-muted max-w-64 mb-4 mr-auto rounded-md !pl-0 focus:!ring-offset-0"
+          className="bg-subtle !border-muted md:max-w-64 mb-4 mr-auto w-full rounded-md !pl-0 focus:!ring-offset-0"
           addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
           addOnClassname="!border-muted"
-          containerClassName="max-w-64 focus:!ring-offset-0 mb-4"
+          containerClassName="md:max-w-64 w-full focus:!ring-offset-0 mb-4"
           type="search"
           value={searchTerm}
           autoComplete="false"
@@ -985,6 +985,13 @@ const EventTypesPage: React.FC & {
   });
 
   useEffect(() => {
+    // const widget = document.querySelector(".woot-widget-bubble.woot-elements--right");
+    // if (widget) {
+    //   widget.style.bottom = "300px"; // Change property
+    //   widget.style.right = "100px";
+    //   widget.style.position = "fixed";
+    // }
+
     if (searchParams?.get("openIntercom") === "true") {
       open();
     }

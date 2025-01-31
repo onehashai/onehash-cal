@@ -1063,7 +1063,16 @@ export const getOptions = ({
           `keycloak_token=${browser_token}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
             useSecureCookies ? "None" : "Lax"
           }; Max-Age=${7776000}`,
+          `is_auth=true; Domain=${keycloak_cookie_domain}; Path=/; HttpOnly; SameSite=${
+            useSecureCookies ? "None" : "Lax"
+          }; Max-Age=${7776000}`,
         ]);
+
+        // res.setHeader("Set-Cookie", [
+        //   `is_auth=true;, Domain=${keycloak_cookie_domain}; Path=/; HttpOnly; SameSite=${
+        //     useSecureCookies ? "None" : "Lax"
+        //   }; Max-Age=${7776000}`,
+        // ]);
       }
     },
     async signOut(_) {
@@ -1071,7 +1080,10 @@ export const getOptions = ({
       if (keycloak_token) {
         await prisma.keycloakSessionInfo.deleteMany({
           where: {
-            browserToken: keycloak_token,
+            OR: [
+              { browserToken: keycloak_token },
+              { browserToken: "is_auth" }, // Replace `another_token` with the actual token variable
+            ],
           },
         });
         const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
@@ -1081,7 +1093,16 @@ export const getOptions = ({
           `keycloak_token=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
             useSecureCookies ? "None" : "Lax"
           }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+          `is_auth=; Domain=${keycloak_cookie_domain}; Path=/; HttpOnly; SameSite=${
+            useSecureCookies ? "None" : "Lax"
+          };`,
         ]);
+
+        // res.setHeader("Set-Cookie", [
+        //   `is_auth=; Domain=${keycloak_cookie_domain}; Path=/; HttpOnly; SameSite=${
+        //     useSecureCookies ? "None" : "Lax"
+        //   }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+        // ]);
       }
     },
   },
