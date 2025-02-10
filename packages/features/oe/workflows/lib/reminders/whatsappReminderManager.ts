@@ -182,7 +182,10 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
           teamId,
           true,
           template,
-          JSON.stringify(contentVars)
+          JSON.stringify(contentVars),
+          {
+            eventTypeId: evt.eventType.id,
+          }
         );
       } catch (error) {
         console.log(`Error sending WHATSAPP with error ${error}`);
@@ -227,7 +230,10 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
             teamId,
             true,
             template,
-            JSON.stringify(contentVars)
+            JSON.stringify(contentVars),
+            {
+              eventTypeId: evt.eventType.id,
+            }
           );
 
           if (scheduledWHATSAPP) {

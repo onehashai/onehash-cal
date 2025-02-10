@@ -5065,6 +5065,7 @@ __metadata:
     "@radix-ui/react-toggle-group": ^1.0.0
     "@radix-ui/react-tooltip": ^1.0.0
     "@replexica/sdk": ^0.7.0
+    "@sendgrid/eventwebhook": ^8.0.0
     "@sentry/nextjs": ^8.47.0
     "@stripe/react-stripe-js": ^1.10.0
     "@stripe/stripe-js": ^1.35.0
@@ -13426,6 +13427,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sendgrid/eventwebhook@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "@sendgrid/eventwebhook@npm:8.0.0"
+  dependencies:
+    starkbank-ecdsa: ^1.1.1
+  checksum: a1920d3304bb0c7ed394fa9f1bf49670dd5564382897248fa8129a4b129f2bc4d73fab64ad3cfd1a412695e243e8cd862669ac3953b42ebd9a2f719898b5e742
+  languageName: node
+  linkType: hard
+
 "@sendgrid/helpers@npm:^7.7.0":
   version: 7.7.0
   resolution: "@sendgrid/helpers@npm:7.7.0"
@@ -20467,7 +20477,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"big-integer@npm:^1.6.44":
+"big-integer@npm:^1.6.44, big-integer@npm:^1.6.48":
   version: 1.6.52
   resolution: "big-integer@npm:1.6.52"
   checksum: 6e86885787a20fed96521958ae9086960e4e4b5e74d04f3ef7513d4d0ad631a9f3bde2730fc8aaa4b00419fc865f6ec573e5320234531ef37505da7da192c40b
@@ -31504,6 +31514,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-sha256@npm:^0.9.0":
+  version: 0.9.0
+  resolution: "js-sha256@npm:0.9.0"
+  checksum: ffad54b3373f81581e245866abfda50a62c483803a28176dd5c28fd2d313e0bdf830e77dac7ff8afd193c53031618920f3d98daf21cbbe80082753ab639c0365
+  languageName: node
+  linkType: hard
+
 "js-tokens@npm:^3.0.0 || ^4.0.0, js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -42029,6 +42046,16 @@ __metadata:
   version: 2.1.0
   resolution: "standard-as-callback@npm:2.1.0"
   checksum: 88bec83ee220687c72d94fd86a98d5272c91d37ec64b66d830dbc0d79b62bfa6e47f53b71646011835fc9ce7fae62739545d13124262b53be4fbb3e2ebad551c
+  languageName: node
+  linkType: hard
+
+"starkbank-ecdsa@npm:^1.1.1":
+  version: 1.1.5
+  resolution: "starkbank-ecdsa@npm:1.1.5"
+  dependencies:
+    big-integer: ^1.6.48
+    js-sha256: ^0.9.0
+  checksum: 0cc275ec482858d2e32add65dc02f4f859ee7e51d99fe3c3756ef5e33c61e08368429871d26eedc27b64e04e45d50831a5f4385c756b7d8052d72d3e9fa72f62
   languageName: node
   linkType: hard
 
