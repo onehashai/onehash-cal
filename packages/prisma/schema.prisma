@@ -1061,7 +1061,7 @@ model App_RoutingForms_FormResponse {
 }
 
 model WorkflowInsights {
-  msgId       Int             @unique
+  msgId       String          @unique
   eventTypeId Int
   eventType   EventType?      @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   workflowId  Int?
@@ -1069,6 +1069,7 @@ model WorkflowInsights {
   type        WorkflowMethods
   status      WorkflowStatus
   metadata    Json?
+  createdAt   DateTime        @default(now())
   // userId     Int? 
   // user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade )
   // teamId     Int? 

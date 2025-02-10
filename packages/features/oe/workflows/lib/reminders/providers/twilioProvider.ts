@@ -4,6 +4,9 @@ import { v4 as uuidv4 } from "uuid";
 import dayjs from "@calcom/dayjs";
 import { checkSMSRateLimit } from "@calcom/lib/checkRateLimitAndThrowError";
 import {
+  IS_DEV,
+  NGROK_URL,
+  WEBAPP_URL,
   WHATSAPP_CANCELLED_SID,
   WHATSAPP_COMPLETED_SID,
   WHATSAPP_REMINDER_SID,
@@ -46,7 +49,10 @@ export const sendSMS = async (
   teamId?: number | null,
   whatsapp = false,
   template?: WorkflowTemplates,
-  contentVariables?: string
+  contentVariables?: string,
+  customArgs?: {
+    [key: string]: any;
+  }
 ) => {
   log.silly("sendSMS", JSON.stringify({ phoneNumber, body, sender, userId, teamId }));
 
@@ -78,6 +84,16 @@ export const sendSMS = async (
     });
   }
 
+  let statusCallback;
+  if (customArgs) {
+    const domain = "";
+    customArgs = { ...customArgs, msg_id: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
+    statusCallback = `${domain}?${Object.entries(customArgs)
+      .filter(([_, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join("&")}`;
+  }
+
   const payload: {
     messagingServiceSid: string | undefined;
     to: string;
@@ -85,10 +101,12 @@ export const sendSMS = async (
     body?: string;
     contentSid?: string;
     contentVariables?: string;
+    statusCallback?: string;
   } = {
     messagingServiceSid: process.env.TWILIO_MESSAGING_SID,
     to: getSMSNumber(phoneNumber, whatsapp),
     from: whatsapp ? getDefaultSender(whatsapp) : sender ? sender : getDefaultSender(),
+    ...(statusCallback && { statusCallback: statusCallback }),
   };
 
   if (whatsapp) {
@@ -113,7 +131,10 @@ export const scheduleSMS = async (
   teamId?: number | null,
   whatsapp = false,
   template?: WorkflowTemplates,
-  contentVariables?: string
+  contentVariables?: string,
+  customArgs?: {
+    [key: string]: any;
+  }
 ) => {
   const isSMSSendingLocked = await isLockedForSMSSending(userId, teamId);
 
@@ -142,6 +163,16 @@ export const scheduleSMS = async (
       rateLimitingType: "smsMonth",
     });
   }
+
+  let statusCallback;
+  if (customArgs) {
+    const domain = IS_DEV ? NGROK_URL : WEBAPP_URL;
+    customArgs = { ...customArgs, msg_id: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
+    statusCallback = `${domain}?${Object.entries(customArgs)
+      .filter(([_, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join("&")}`;
+  }
   const payload: {
     messagingServiceSid: string | undefined;
     to: string;
@@ -151,12 +182,14 @@ export const scheduleSMS = async (
     body?: string;
     contentSid?: string;
     contentVariables?: string;
+    statusCallback?: string;
   } = {
     messagingServiceSid: process.env.TWILIO_MESSAGING_SID,
     to: getSMSNumber(phoneNumber, whatsapp),
     // scheduleType: "fixed",
     sendAt: scheduledDate,
     from: whatsapp ? getDefaultSender(whatsapp) : sender ? sender : getDefaultSender(),
+    ...(statusCallback && { statusCallback: statusCallback }),
   };
   if (whatsapp) {
     if (contentVariables === "{}") return Promise.resolve();
