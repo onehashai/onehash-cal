@@ -1771,7 +1771,7 @@ export const insightsRouter = router({
 
       stats.total = workflowInsights.length;
       workflowInsights.forEach((insight) => {
-        if (insight.status === WorkflowStatus.DELIVERED) {
+        if (insight.status === WorkflowStatus.DELIVERED || insight.status === WorkflowStatus.READ) {
           stats.sentCount += 1;
         }
         if (insight.status === WorkflowStatus.READ) {
@@ -1899,7 +1899,8 @@ export const insightsRouter = router({
 
         const countsForDateRange = countsByStatus[formattedDate];
         if (countsForDateRange) {
-          WorkflowData["Sent"] = countsForDateRange[WorkflowStatus.DELIVERED] || 0;
+          WorkflowData["Sent"] =
+            countsForDateRange[WorkflowStatus.DELIVERED] + countsForDateRange[WorkflowStatus.READ] || 0;
           WorkflowData["Read"] = countsForDateRange[WorkflowStatus.READ] || 0;
           WorkflowData["Failed"] = countsForDateRange[WorkflowStatus.FAILED] || 0;
           WorkflowData["Total"] = WorkflowData["Sent"] + WorkflowData["Read"] + WorkflowData["Failed"];
