@@ -58,6 +58,7 @@ export async function handlePaymentSuccess(
   });
 
   if (!existingPayment) {
+    log.error(`Payment with id '${paymentId}' not found.`);
     throw new HttpCode({
       statusCode: 404,
       message: `Payment with id '${paymentId}' not found.`,
@@ -65,6 +66,7 @@ export async function handlePaymentSuccess(
   }
 
   if (existingPayment.success) {
+    log.warn(`Payment with id '${paymentId}' was already paid and confirmed.`);
     throw new HttpCode({
       statusCode: 200,
       message: `Booking with id '${booking.id}' was paid and confirmed.`,

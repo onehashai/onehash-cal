@@ -15,6 +15,7 @@ const querySchema = z.object({
   razorpay_payment_link_status: z.string().optional(),
   razorpay_signature: z.string().optional(),
 });
+
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const parsedQuery = querySchema.safeParse(context.query);
   if (!parsedQuery.success) return { notFound: true } as const;
