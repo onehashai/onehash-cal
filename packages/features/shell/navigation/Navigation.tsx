@@ -114,12 +114,17 @@ const getNavigationItems = (orgBranding: OrganizationBranding): NavigationItemTy
       {
         name: "bookings",
         href: "/insights",
-        isCurrent: ({ pathname: path }) => path == "/insights" ?? false,
+        isCurrent: ({ pathname: path }) => path == "/insights",
       },
       {
         name: "routing",
         href: "/insights/routing",
         isCurrent: ({ pathname: path }) => path?.startsWith("/insights/routing") ?? false,
+      },
+      {
+        name: "workflows",
+        href: "/insights/workflow",
+        isCurrent: ({ pathname: path }) => path?.startsWith("/insights/workflow") ?? false,
       },
     ],
   },

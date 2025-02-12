@@ -242,3 +242,5 @@ export const WHATSAPP_COMPLETED_SID = process.env.WHATSAPP_COMPLETED_SID;
 export const RECAPTCHA__KEY_LOW = process.env.NEXT_PUBLIC_RECAPTCHA_LOW;
 export const RECAPTCHA__KEY_MEDIUM = process.env.NEXT_PUBLIC_RECAPTCHA_MEDIUM;
 export const RECAPTCHA__KEY_HIGH = process.env.NEXT_PUBLIC_RECAPTCHA_HIGH;
+
+export const NGROK_URL = process.env.NGROK_URL;

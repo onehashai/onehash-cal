@@ -21,6 +21,16 @@ type AggregateResult = {
   [date: string]: StatusAggregate;
 };
 
+type WorkflowStatusAggregate = {
+  DELIVERED: number;
+  READ: number;
+  FAILED: number;
+  _all: number;
+};
+
+type WorkflowAggregateResult = {
+  [date: string]: WorkflowStatusAggregate;
+};
 // Recursive function to convert a JSON condition object into SQL
 // Helper type guard function to check if value has 'in' property
 function isInCondition(value: any): value is { in: any[] } {
@@ -648,6 +658,130 @@ class EventsInsights {
     const rows = data.map((obj: any) => `${Object.values(obj).join(",")}\n`);
     return header + rows.join("");
   }
+
+  static countGroupedWorkflowByStatusForRanges = async (
+    whereConditional: Prisma.WorkflowInsightsWhereInput,
+    startDate: Dayjs,
+    endDate: Dayjs,
+    timeView: "week" | "month" | "year" | "day"
+  ): Promise<WorkflowAggregateResult> => {
+    // Format the start and end dates for SQL query
+
+    const conditions: string[] = [];
+
+    if (whereConditional.AND) {
+      (whereConditional.AND as Prisma.WorkflowInsightsWhereInput[]).forEach((condition) => {
+        if ((condition.createdAt as Prisma.DateTimeFilter)?.gte) {
+          conditions.push(`"createdAt" >= '${(condition.createdAt as Prisma.DateTimeFilter).gte}'`);
+        }
+        if ((condition.createdAt as Prisma.DateTimeFilter)?.lte) {
+          conditions.push(`"createdAt" <= '${(condition.createdAt as Prisma.DateTimeFilter).lte}'`);
+        }
+        if (condition.eventTypeId as Prisma.IntFilter) {
+          if (condition.eventTypeId?.hasOwnProperty("in")) {
+            if (condition.eventTypeId?.in?.length > 0) {
+              const ids = condition.eventTypeId.in.map((id) => `'${id}'`).join(",");
+              conditions.push(`"eventTypeId" IN (${ids})`);
+            } else {
+              conditions.push(`FALSE`); // Prevents an invalid `IN ()` clause
+            }
+          } else {
+            conditions.push(`"eventTypeId" = ${condition.eventTypeId}`);
+          }
+        }
+      });
+    }
+
+    // Construct the WHERE clause
+    const whereClause = conditions.length ? `${conditions.join(" AND ")}` : "";
+
+    const data = await prisma.$queryRaw<
+      {
+        periodStart: Date;
+        insightsCount: number;
+        status: string;
+      }[]
+    >`
+    SELECT
+      "periodStart",
+      CAST(COUNT(*) AS INTEGER) AS "insightsCount",
+      "status"
+    FROM (
+      SELECT
+        DATE_TRUNC(${timeView}, "createdAt") AS "periodStart",
+        "status"
+      FROM
+        "WorkflowInsights"
+      WHERE
+        ${Prisma.raw(whereClause)}
+    ) AS truncated_dates
+    GROUP BY
+      "periodStart",
+      "status"
+    ORDER BY
+      "periodStart";
+    `;
+
+    const aggregate: WorkflowAggregateResult = {};
+    data.forEach(({ periodStart, insightsCount, status }) => {
+      const formattedDate = dayjs(periodStart).format("MMM D, YYYY");
+
+      if (dayjs(periodStart).isAfter(endDate)) {
+        return;
+      }
+
+      // Ensure the date entry exists in the aggregate object
+      if (!aggregate[formattedDate]) {
+        aggregate[formattedDate] = {
+          DELIVERED: 0,
+          READ: 0,
+          FAILED: 0,
+          _all: 0,
+        };
+      }
+
+      // Add to the specific status count
+      const statusKey = status as keyof WorkflowStatusAggregate;
+      aggregate[formattedDate][statusKey] += Number(insightsCount);
+
+      // Always add to the total count (_all)
+      aggregate[formattedDate]["_all"] += Number(insightsCount);
+    });
+
+    // Generate a complete list of expected date labels based on the timeline
+    let current = dayjs(startDate);
+    const expectedDates: string[] = [];
+
+    while (current.isBefore(endDate) || current.isSame(endDate)) {
+      const formattedDate = current.format("MMM D, YYYY");
+      expectedDates.push(formattedDate);
+
+      // Increment based on the selected timeView
+      if (timeView === "day") {
+        current = current.add(1, "day");
+      } else if (timeView === "week") {
+        current = current.add(1, "week");
+      } else if (timeView === "month") {
+        current = current.add(1, "month");
+      } else if (timeView === "year") {
+        current = current.add(1, "year");
+      }
+    }
+
+    // Fill in any missing dates with zero counts
+    expectedDates.forEach((label) => {
+      if (!aggregate[label]) {
+        aggregate[label] = {
+          DELIVERED: 0,
+          READ: 0,
+          FAILED: 0,
+          _all: 0,
+        };
+      }
+    });
+
+    return aggregate;
+  };
 }
 
 export { EventsInsights };

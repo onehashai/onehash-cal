@@ -28,6 +28,7 @@ export const updateHandler = async ({ input, ctx }: UpdateOptions) => {
         days: [],
       }));
 
+  console.log("input", JSON.stringify(input));
   // Not able to update the schedule with userId where clause, so fetch schedule separately and then validate
   // Bug: https://github.com/prisma/prisma/issues/7290
   const userSchedule = await prisma.schedule.findUnique({

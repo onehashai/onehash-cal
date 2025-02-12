@@ -95,7 +95,8 @@ async function scheduleReminders() {
           teamId,
           true,
           reminder.workflowStep.template,
-          JSON.stringify(contentVars)
+          JSON.stringify(contentVars),
+          reminder.booking?.eventType?.id ? { eventTypeId: reminder.booking?.eventType?.id } : undefined
         );
 
         if (scheduledSMS) {

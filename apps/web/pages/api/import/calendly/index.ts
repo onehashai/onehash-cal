@@ -934,6 +934,8 @@ async function confirmUpcomingImportedBookings(createdBookings: any[], userIntID
               smsReminderNumber: booking.smsReminderNumber,
               eventTypeId: booking.eventType?.id ?? null,
               userId: userIntID,
+              id: booking.id,
+              startTime: booking.startTime,
             },
           });
         });

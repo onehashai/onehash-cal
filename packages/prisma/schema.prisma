@@ -170,8 +170,9 @@ model EventType {
   rescheduleWithSameRoundRobinHost Boolean @default(false)
 
   secondaryEmailId Int?
-  secondaryEmail   SecondaryEmail? @relation(fields: [secondaryEmailId], references: [id], onDelete: Cascade)
-  captchaType      CaptchaType     @default(OFF)
+  secondaryEmail   SecondaryEmail?    @relation(fields: [secondaryEmailId], references: [id], onDelete: Cascade)
+  captchaType      CaptchaType        @default(OFF)
+  workflowInsights WorkflowInsights[]
 
   @@unique([userId, slug])
   @@unique([teamId, slug])
@@ -375,6 +376,7 @@ model User {
   updatedWatchlists          Watchlist[]                  @relation("UpdatedWatchlists")
   bannerUrl                  String?
   faviconUrl                 String?
+  // workflowInsights    WorkflowInsights[] 
 
   @@unique([email])
   @@unique([email, username])
@@ -484,6 +486,7 @@ model Team {
   bookingLimits                Json?
   includeManagedEventsInLimits Boolean @default(false)
   faviconUrl                   String?
+  // workflowInsights      WorkflowInsights[]
 
   @@unique([slug, parentId])
   @@index([parentId])
@@ -1057,6 +1060,22 @@ model App_RoutingForms_FormResponse {
   @@index([formId])
 }
 
+model WorkflowInsights {
+  msgId       String          @unique
+  eventTypeId Int
+  eventType   EventType?      @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  workflowId  Int?
+  workflow    Workflow?       @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  type        WorkflowMethods
+  status      WorkflowStatus
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+  // userId     Int? 
+  // user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade )
+  // teamId     Int? 
+  // team       Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
 model Feedback {
   id      Int      @id @default(autoincrement())
   date    DateTime @default(now())
@@ -1110,20 +1129,21 @@ model WorkflowStep {
 }
 
 model Workflow {
-  id            Int                     @id @default(autoincrement())
-  position      Int                     @default(0)
-  name          String
-  userId        Int?
-  user          User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team          Team?                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  teamId        Int?
-  activeOn      WorkflowsOnEventTypes[]
-  activeOnTeams WorkflowsOnTeams[]
-  isActiveOnAll Boolean                 @default(false)
-  trigger       WorkflowTriggerEvents
-  time          Int?
-  timeUnit      TimeUnit?
-  steps         WorkflowStep[]
+  id               Int                     @id @default(autoincrement())
+  position         Int                     @default(0)
+  name             String
+  userId           Int?
+  user             User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team             Team?                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId           Int?
+  activeOn         WorkflowsOnEventTypes[]
+  activeOnTeams    WorkflowsOnTeams[]
+  isActiveOnAll    Boolean                 @default(false)
+  trigger          WorkflowTriggerEvents
+  time             Int?
+  timeUnit         TimeUnit?
+  steps            WorkflowStep[]
+  workflowInsights WorkflowInsights[]
 
   @@index([userId])
   @@index([teamId])
@@ -1242,6 +1262,12 @@ enum WorkflowMethods {
   EMAIL
   SMS
   WHATSAPP
+}
+
+enum WorkflowStatus {
+  DELIVERED
+  READ
+  FAILED
 }
 
 model BookingSeat {

@@ -120,6 +120,7 @@ async function scheduleReminders() {
       } else if (reminder.workflowStep.template === WorkflowTemplates.REMINDER) {
         message = smsReminderTemplate(
           false,
+          locale ?? "en",
           reminder.workflowStep.action,
           getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
           reminder.booking?.startTime.toISOString() || "",
@@ -137,7 +138,11 @@ async function scheduleReminders() {
           reminder.scheduledDate,
           senderID,
           userId,
-          teamId
+          teamId,
+          false,
+          undefined,
+          undefined,
+          reminder.booking?.eventType?.id ? { eventTypeId: reminder.booking?.eventType?.id } : undefined
         );
 
         if (scheduledSMS) {

@@ -216,6 +216,7 @@ export const activateEventTypeHandler = async ({ ctx, input }: ActivateEventType
                 },
               },
             },
+            id: true,
           },
         },
         user: true,
@@ -254,6 +255,7 @@ export const activateEventTypeHandler = async ({ ctx, input }: ActivateEventType
           slug: booking.eventType?.slug || "",
           schedulingType: booking.eventType?.schedulingType,
           hosts: booking.eventType?.hosts,
+          id: booking.eventType?.id,
         },
         metadata: booking.metadata,
       };

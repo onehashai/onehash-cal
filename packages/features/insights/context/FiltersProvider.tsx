@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import dayjs from "@calcom/dayjs";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
-import { BookingStatus } from "@calcom/prisma/enums";
+import { BookingStatus, WorkflowMethods } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc";
 
 import { useDefaultRoutingForm } from "../hooks/useDefaultRoutingForm";
@@ -23,6 +23,7 @@ const querySchema = z.object({
     .nullable(),
   routingFormId: z.string().nullable(),
   bookingStatus: z.enum(["NO_BOOKING", ...Object.values(BookingStatus)]).nullable(),
+  selectedType: z.nativeEnum(WorkflowMethods).optional().nullable(),
 });
 
 // TODO(SEAN): We can have a big refactor here and move this all out of context and into query state. This will make it easier to create shareable links
@@ -41,7 +42,8 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
     filterParsed,
     routingFormIdParsed,
     bookingStatusParsed,
-    memberUserIdParsed;
+    memberUserIdParsed,
+    selectedTypeParsed;
 
   const safe = querySchema.safeParse({
     startTime: searchParams?.get("startTime") ?? null,
@@ -53,6 +55,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
     memberUserId: searchParams?.get("memberUserId") ?? null,
     routingFormId: searchParams?.get("routingFormId") ?? null,
     bookingStatus: searchParams?.get("bookingStatus") ?? null,
+    selectedType: searchParams?.get("selectedType") ?? null,
   });
 
   if (!safe.success) {
@@ -67,6 +70,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
     routingFormIdParsed = safe.data.routingFormId;
     memberUserIdParsed = safe.data.memberUserId;
     bookingStatusParsed = safe.data.bookingStatus;
+    selectedTypeParsed = safe.data.selectedType;
   }
 
   const [configFilters, setConfigFilters] = useState<FilterContextType["filter"]>({
@@ -92,6 +96,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
       teamId: null,
       isAll: null,
     },
+    selectedType: selectedTypeParsed || undefined,
   });
 
   // Use the custom hook
@@ -122,6 +127,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
     selectedRoutingFormFilter,
     isAll,
     initialConfig,
+    selectedType,
   } = configFilters;
   return (
     <FilterProvider
@@ -140,6 +146,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
           selectedRoutingFormId,
           selectedBookingStatus,
           selectedRoutingFormFilter,
+          selectedType,
         },
         setConfigFilters: (newConfigFilters) => {
           setConfigFilters({
@@ -158,6 +165,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
             initialConfig,
             selectedRoutingFormId,
             selectedBookingStatus,
+            selectedType,
           } = newConfigFilters;
           const [startTime, endTime] = dateRange || [null, null];
           const newSearchParams = new URLSearchParams(searchParams?.toString() ?? undefined);
@@ -175,6 +183,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
           setParamsIfDefined("filter", selectedFilter?.[0]);
           setParamsIfDefined("routingFormId", selectedRoutingFormId);
           setParamsIfDefined("bookingStatus", selectedBookingStatus);
+          setParamsIfDefined("selectedType", selectedType);
           router.push(`${pathname}?${newSearchParams.toString()}`);
         },
         clearFilters: () => {
@@ -196,6 +205,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
             selectedRoutingFormId: mostPopularForm?.id ?? null, // Set the most popular form as default when clearing filters
             selectedBookingStatus: null,
             selectedRoutingFormFilter: null,
+            selectedType: undefined,
           });
 
           const newSearchParams = new URLSearchParams();

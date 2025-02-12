@@ -11,6 +11,7 @@ import { RoutingFormFieldFilter } from "./RoutingFormFieldFilter";
 import { RoutingFormFilterList } from "./RoutingFormFilterList";
 import { TeamAndSelfList } from "./TeamAndSelfList";
 import { UserListInTeam } from "./UsersListInTeam";
+import { WorkflowTypeFilter } from "./WorkflowTypeFilter";
 
 const ClearFilters = () => {
   const { t } = useLocale();
@@ -37,7 +38,13 @@ const ClearFilters = () => {
   );
 };
 
-export const Filters = ({ showRoutingFilters = false }: { showRoutingFilters?: boolean }) => {
+export const Filters = ({
+  showRoutingFilters = false,
+  showWorkflowFilters = false,
+}: {
+  showRoutingFilters?: boolean;
+  showWorkflowFilters?: boolean;
+}) => {
   const { filter } = useFilterContext();
   const { selectedFilter } = filter;
 
@@ -53,7 +60,8 @@ export const Filters = ({ showRoutingFilters = false }: { showRoutingFilters?: b
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-nowrap sm:justify-start">
         <TeamAndSelfList omitOrg={showRoutingFilters} />
 
-        <UserListInTeam />
+        {!showWorkflowFilters && <UserListInTeam />}
+        {showWorkflowFilters && <WorkflowTypeFilter />}
 
         <EventTypeList />
 
@@ -96,7 +104,7 @@ export const Filters = ({ showRoutingFilters = false }: { showRoutingFilters?: b
         </Tooltip>
       </ButtonGroup> */}
       <div className="flex flex-col-reverse sm:flex-row sm:flex-nowrap sm:justify-between">
-        {showRoutingFilters ? <RoutingDownload /> : <Download />}
+        {!showWorkflowFilters ? showRoutingFilters ? <RoutingDownload /> : <Download /> : null}
         <DateSelect />
       </div>
     </div>

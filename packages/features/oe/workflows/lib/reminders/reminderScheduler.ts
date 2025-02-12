@@ -21,6 +21,7 @@ export type ExtendedCalendarEvent = Omit<CalendarEvent, "bookerUrl"> & {
     schedulingType?: SchedulingType | null;
     hosts?: { user: { email: string; destinationCalendar?: { primaryEmail: string | null } | null } }[];
     title?: string;
+    id?: number;
   };
   bookerUrl: string;
 };
