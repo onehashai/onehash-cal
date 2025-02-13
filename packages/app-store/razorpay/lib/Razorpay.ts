@@ -218,7 +218,7 @@ class RazorpayWrapper {
       customer,
       callback_url: `${WEBAPP_URL}/booking/${bookingUid}/razorpay`,
       callback_method: "get",
-      upi_link: true,
+      upi_link: false,
       description: `Payment for ${eventTitle} booking on OneHash Cal`,
       expire_by: Math.floor((Date.now() + 30 * 60 * 1000) / 1000),
     };
