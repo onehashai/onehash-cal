@@ -847,6 +847,7 @@ export const getOptions = ({
         }
         /* --- END FIXES LEGACY ISSUE WHERE 'identityProviderId' was accidentally set to userId --- */
         if (existingUser) {
+          account.userId = existingUser.id.toString();
           // In this case there's an existing user and their email address
           // hasn't changed since they last logged in.
           if (existingUser.email === user.email) {
@@ -1063,6 +1064,11 @@ export const getOptions = ({
           `keycloak_token=${browser_token}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
             useSecureCookies ? "None" : "Lax"
           }; Max-Age=${7776000}`,
+          `loggedInUserId=${encodeURIComponent(
+            account?.userId || ""
+          )}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; SameSite=${
+            useSecureCookies ? "None" : "Lax"
+          }; Expires=Fri, 31 Dec 9999 23:59:59 GMT`,
         ]);
       }
     },
@@ -1079,6 +1085,9 @@ export const getOptions = ({
 
         res.setHeader("Set-Cookie", [
           `keycloak_token=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
+            useSecureCookies ? "None" : "Lax"
+          }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+          `loggedInUserId=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; SameSite=${
             useSecureCookies ? "None" : "Lax"
           }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
         ]);
