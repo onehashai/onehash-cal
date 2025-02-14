@@ -490,7 +490,7 @@ export default function Success(props: PageProps) {
           </div>
         )}
         {isIFrame && (
-          <div className="float-right mb-4 mr-4 mt-2">
+          <div className="absolute right-4 top-12 z-10">
             <Button
               onClick={() => window.parent.postMessage("close-dialog", "*")}
               color="minimal"
