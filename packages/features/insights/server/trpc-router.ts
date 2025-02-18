@@ -292,7 +292,6 @@ export const insightsRouter = router({
         lte: dayjs(endDate).endOf("day").toDate(),
       },
     };
-
     const startTimeEndTimeDiff = dayjs(endDate).diff(dayjs(startDate), "day");
 
     const lastPeriodStartDate = dayjs(startDate).subtract(startTimeEndTimeDiff, "day");
@@ -482,13 +481,15 @@ export const insightsRouter = router({
           formattedDate: startOfRange.format(dateFormat), // Align formatted date for consistency
         };
       });
+
       // Fetch counts grouped by status for the entire range
       const countsByStatus = await EventsInsights.countGroupedByStatusForRanges(
         whereConditional,
         startDate,
         endDate,
-        timeView
+        dateRanges
       );
+
       const result = dateRanges.map(({ formattedDate }) => {
         const EventData = {
           Month: formattedDate,
@@ -1877,13 +1878,10 @@ export const insightsRouter = router({
           formattedDate: startOfRange.format(dateFormat),
         };
       });
-
       // Fetch aggregated counts
       const countsByStatus = await EventsInsights.countGroupedWorkflowByStatusForRanges(
         whereQuery,
-        startDate,
-        endDate,
-        timeView
+        dateRanges
       );
 
       const ranges = dateRanges.map(({ startDate, endDate, formattedDate }) => {
