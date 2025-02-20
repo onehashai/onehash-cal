@@ -312,18 +312,18 @@ async function scheduleReminders() {
                   : undefined,
               },
               { sender: reminder.workflowStep.sender }
+            ).then(() =>
+              prisma.workflowReminder.update({
+                where: {
+                  id: reminder.id,
+                },
+                data: {
+                  scheduled: true,
+                  referenceId: batchId,
+                },
+              })
             )
           );
-
-          await prisma.workflowReminder.update({
-            where: {
-              id: reminder.id,
-            },
-            data: {
-              scheduled: true,
-              referenceId: batchId,
-            },
-          });
         }
       } catch (error) {
         logger.error(`Error scheduling Email with error ${error}`);
@@ -371,18 +371,18 @@ async function scheduleReminders() {
                 replyTo: reminder.booking?.userPrimaryEmail ?? reminder.booking.user?.email,
               },
               { sender: reminder.workflowStep?.sender }
+            ).then(() =>
+              prisma.workflowReminder.update({
+                where: {
+                  id: reminder.id,
+                },
+                data: {
+                  scheduled: true,
+                  referenceId: batchId,
+                },
+              })
             )
           );
-
-          await prisma.workflowReminder.update({
-            where: {
-              id: reminder.id,
-            },
-            data: {
-              scheduled: true,
-              referenceId: batchId,
-            },
-          });
         }
       } catch (error) {
         logger.error(`Error scheduling Email with error ${error}`);
