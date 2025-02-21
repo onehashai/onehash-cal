@@ -51,6 +51,7 @@ export type BookingInfo = {
     title?: string;
     slug?: string;
     recurringEvent?: RecurringEvent | null;
+    id?: number;
   };
   startTime: string;
   endTime: string;
@@ -194,7 +195,19 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
       triggerEvent === WorkflowTriggerEvents.RESCHEDULE_EVENT
     ) {
       try {
-        await twilio.sendSMS(reminderPhone, smsMessage, senderID, userId, teamId);
+        await twilio.sendSMS(
+          reminderPhone,
+          smsMessage,
+          senderID,
+          userId,
+          teamId,
+          false,
+          undefined,
+          undefined,
+          {
+            eventTypeId: evt.eventType.id,
+          }
+        );
       } catch (error) {
         log.error(`Error sending SMS with error ${error}`);
       }
@@ -215,7 +228,13 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
             scheduledDate.toDate(),
             senderID,
             userId,
-            teamId
+            teamId,
+            false,
+            undefined,
+            undefined,
+            {
+              eventTypeId: evt.eventType.id,
+            }
           );
 
           if (scheduledSMS) {

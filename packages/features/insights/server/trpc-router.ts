@@ -1,11 +1,12 @@
-import type { Prisma } from "@prisma/client";
+import { type Prisma } from "@prisma/client";
 import md5 from "md5";
 import { z } from "zod";
 
 import dayjs from "@calcom/dayjs";
 import { rawDataInputSchema } from "@calcom/features/insights/server/raw-data.schema";
 import { randomString } from "@calcom/lib/random";
-import type { readonlyPrisma } from "@calcom/prisma";
+import { prisma, type readonlyPrisma } from "@calcom/prisma";
+import { WorkflowMethods, WorkflowStatus } from "@calcom/prisma/enums";
 import { BookingStatus } from "@calcom/prisma/enums";
 import authedProcedure from "@calcom/trpc/server/procedures/authedProcedure";
 import { router } from "@calcom/trpc/server/trpc";
@@ -19,6 +20,7 @@ const UserBelongsToTeamInput = z.object({
   teamId: z.coerce.number().optional().nullable(),
   isAll: z.boolean().optional(),
 });
+const WorkflowMethodsSchema = z.nativeEnum(WorkflowMethods);
 
 type BuildBaseWhereConditionCtxType = {
   userIsOwnerAdminOfParentTeam: boolean;
@@ -290,7 +292,6 @@ export const insightsRouter = router({
         lte: dayjs(endDate).endOf("day").toDate(),
       },
     };
-
     const startTimeEndTimeDiff = dayjs(endDate).diff(dayjs(startDate), "day");
 
     const lastPeriodStartDate = dayjs(startDate).subtract(startTimeEndTimeDiff, "day");
@@ -480,13 +481,15 @@ export const insightsRouter = router({
           formattedDate: startOfRange.format(dateFormat), // Align formatted date for consistency
         };
       });
+
       // Fetch counts grouped by status for the entire range
       const countsByStatus = await EventsInsights.countGroupedByStatusForRanges(
         whereConditional,
         startDate,
         endDate,
-        timeView
+        dateRanges
       );
+
       const result = dateRanges.map(({ formattedDate }) => {
         const EventData = {
           Month: formattedDate,
@@ -1707,4 +1710,233 @@ export const insightsRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
     }),
+  workflowsByStatus: userBelongsToTeamProcedure
+    .input(
+      rawDataInputSchema.extend({
+        type: WorkflowMethodsSchema.optional().nullable(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { startDate, endDate, eventTypeId, userId, teamId, type } = input;
+
+      const stats: {
+        sentCount: number;
+        readCount: number;
+        failedCount: number;
+        total: number;
+      } = {
+        sentCount: 0,
+        readCount: 0,
+        failedCount: 0,
+        total: 0,
+      };
+
+      const whereConditions = [
+        startDate ? { createdAt: { gte: new Date(startDate) } } : null,
+        endDate ? { createdAt: { lte: new Date(endDate) } } : null,
+        eventTypeId ? { eventTypeId } : null,
+
+        type ? { type } : null,
+      ].filter(Boolean) as Prisma.WorkflowInsightsWhereInput[]; // Type assertion
+
+      const whereQuery: Prisma.WorkflowInsightsWhereInput = whereConditions.length
+        ? { AND: whereConditions }
+        : {};
+      const eventTypeIds: number[] = [];
+      if (userId) {
+        const _eventTypeIds = (
+          await prisma.eventType.findMany({
+            where: { userId },
+            select: { id: true },
+          })
+        ).map(({ id }) => id);
+        eventTypeIds.push(..._eventTypeIds);
+      }
+
+      if (teamId) {
+        const _eventTypeIds = (
+          await prisma.eventType.findMany({
+            where: { teamId },
+            select: { id: true },
+          })
+        ).map(({ id }) => id);
+        eventTypeIds.concat(_eventTypeIds);
+      }
+
+      if (!eventTypeId)
+        (whereQuery.AND as Prisma.WorkflowInsightsWhereInput[]).push({ eventTypeId: { in: eventTypeIds } });
+
+      const workflowInsights = await prisma.workflowInsights.findMany({
+        where: whereQuery,
+      });
+
+      stats.total = workflowInsights.length;
+      workflowInsights.forEach((insight) => {
+        if (insight.status === WorkflowStatus.DELIVERED || insight.status === WorkflowStatus.READ) {
+          stats.sentCount += 1;
+        }
+        if (insight.status === WorkflowStatus.READ) {
+          stats.readCount += 1;
+        }
+        if (insight.status === WorkflowStatus.FAILED) {
+          stats.failedCount += 1;
+        }
+      });
+
+      return stats;
+    }),
+
+  workflowsTimeline: userBelongsToTeamProcedure
+    .input(
+      rawDataInputSchema.extend({
+        timeView: z.enum(["week", "month", "year", "day"]),
+        type: WorkflowMethodsSchema.optional().nullable(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const {
+        teamId,
+        eventTypeId,
+        userId,
+        type,
+        startDate: startDateString,
+        endDate: endDateString,
+        timeView: inputTimeView,
+      } = input;
+
+      // Convert to UTC
+      let startDate = dayjs.utc(startDateString).startOf("day");
+      let endDate = dayjs.utc(endDateString).endOf("day");
+      let timeView = inputTimeView;
+
+      if (timeView === "week" && endDate.diff(startDate, "day") < 14) {
+        timeView = "day";
+      }
+
+      // Ensure weeks start on Monday
+      if (timeView === "week") {
+        startDate = startDate.startOf("week");
+        endDate = endDate.endOf("week");
+      }
+
+      // Build where conditions dynamically
+      const whereConditions = [
+        { createdAt: { gte: startDate.toISOString() } },
+        { createdAt: { lte: endDate.toISOString() } },
+        eventTypeId ? { eventTypeId } : null,
+        type ? { type } : null,
+      ].filter(Boolean) as Prisma.WorkflowInsightsWhereInput[];
+
+      const whereQuery: Prisma.WorkflowInsightsWhereInput = whereConditions.length
+        ? { AND: whereConditions }
+        : {};
+
+      const eventTypeIds: number[] = [];
+      if (userId) {
+        const _eventTypeIds = (
+          await prisma.eventType.findMany({
+            where: { userId },
+            select: { id: true },
+          })
+        ).map(({ id }) => id);
+        eventTypeIds.push(..._eventTypeIds);
+      }
+
+      if (teamId) {
+        const _eventTypeIds = (
+          await prisma.eventType.findMany({
+            where: { teamId },
+            select: { id: true },
+          })
+        ).map(({ id }) => id);
+        eventTypeIds.concat(_eventTypeIds);
+      }
+
+      // if (eventTypeIds.length > 0) {
+      //   whereQuery = { ...whereQuery, eventTypeId: { in: eventTypeIds } };
+      // }
+      if (!eventTypeId)
+        (whereQuery.AND as Prisma.WorkflowInsightsWhereInput[]).push({ eventTypeId: { in: eventTypeIds } });
+
+      const timeline = (await EventsInsights.getTimeLine(timeView, startDate, endDate)) || [];
+
+      const dateFormat = timeView === "year" ? "YYYY" : timeView === "month" ? "MMM YYYY" : "ll";
+
+      // Generate date ranges with correct week alignment
+      const dateRanges = timeline.map((date) => {
+        let startOfRange = dayjs.utc(date).startOf(timeView);
+        let endOfRange = dayjs.utc(date).endOf(timeView);
+
+        if (timeView === "week") {
+          startOfRange = dayjs.utc(date).startOf("week");
+          endOfRange = startOfRange.endOf("week");
+        }
+
+        return {
+          startDate: startOfRange.toISOString(),
+          endDate: endOfRange.toISOString(),
+          formattedDate: startOfRange.format(dateFormat),
+        };
+      });
+      // Fetch aggregated counts
+      const countsByStatus = await EventsInsights.countGroupedWorkflowByStatusForRanges(
+        whereQuery,
+        dateRanges
+      );
+
+      const ranges = dateRanges.map(({ startDate, endDate, formattedDate }) => {
+        const WorkflowData = {
+          startDate,
+          endDate,
+          formattedDate,
+          Sent: 0,
+          Read: 0,
+          Failed: 0,
+          Total: 0,
+        };
+
+        const countsForDateRange = countsByStatus[formattedDate];
+        if (countsForDateRange) {
+          WorkflowData["Sent"] =
+            countsForDateRange[WorkflowStatus.DELIVERED] + countsForDateRange[WorkflowStatus.READ] || 0;
+          WorkflowData["Read"] = countsForDateRange[WorkflowStatus.READ] || 0;
+          WorkflowData["Failed"] = countsForDateRange[WorkflowStatus.FAILED] || 0;
+          WorkflowData["Total"] = WorkflowData["Sent"] + WorkflowData["Read"] + WorkflowData["Failed"];
+        }
+        return WorkflowData;
+      });
+      return ranges;
+    }),
+
+  // routingFormResponses: userBelongsToTeamProcedure
+  //   .input(
+  //     rawDataInputSchema.extend({
+  //       routingFormId: z.string().optional(),
+  //       cursor: z.number().optional(),
+  //       limit: z.number().optional(),
+  //       bookingStatus: bookingStatusSchema,
+  //       fieldFilter: z
+  //         .object({
+  //           fieldId: z.string(),
+  //           optionId: z.string(),
+  //         })
+  //         .optional(),
+  //     })
+  //   )
+  //   .query(async ({ ctx, input }) => {
+  //     const { startDate, endDate } = input;
+  //     return await RoutingEventsInsights.getRoutingFormPaginatedResponses({
+  //       teamId: input.teamId ?? null,
+  //       startDate,
+  //       endDate,
+  //       isAll: input.isAll ?? false,
+  //       organizationId: ctx.user.organizationId ?? null,
+  //       routingFormId: input.routingFormId ?? null,
+  //       cursor: input.cursor,
+  //       userId: input.userId ?? null,
+  //       limit: input.limit,
+  //       bookingStatus: input.bookingStatus ?? null,
+  //       fieldFilter: input.fieldFilter ?? null,
+  //     });
+  //   }),
 });

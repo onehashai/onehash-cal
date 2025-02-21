@@ -311,7 +311,12 @@ async function scheduleReminders() {
                     ]
                   : undefined,
               },
-              { sender: reminder.workflowStep.sender }
+              { sender: reminder.workflowStep.sender },
+              {
+                ...(reminder.booking.eventType?.id && {
+                  eventTypeId: reminder.booking.eventType?.id,
+                }),
+              }
             ).then(() =>
               prisma.workflowReminder.update({
                 where: {
@@ -370,7 +375,12 @@ async function scheduleReminders() {
                 sendAt: dayjs(reminder.scheduledDate).unix(),
                 replyTo: reminder.booking?.userPrimaryEmail ?? reminder.booking.user?.email,
               },
-              { sender: reminder.workflowStep?.sender }
+              { sender: reminder.workflowStep?.sender },
+              {
+                ...(reminder.booking.eventType?.id && {
+                  eventTypeId: reminder.booking.eventType?.id,
+                }),
+              }
             ).then(() =>
               prisma.workflowReminder.update({
                 where: {

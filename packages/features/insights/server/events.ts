@@ -21,6 +21,16 @@ type AggregateResult = {
   [date: string]: StatusAggregate;
 };
 
+type WorkflowStatusAggregate = {
+  DELIVERED: number;
+  READ: number;
+  FAILED: number;
+  _all: number;
+};
+
+type WorkflowAggregateResult = {
+  [date: string]: WorkflowStatusAggregate;
+};
 // Recursive function to convert a JSON condition object into SQL
 // Helper type guard function to check if value has 'in' property
 function isInCondition(value: any): value is { in: any[] } {
@@ -45,7 +55,9 @@ function buildSqlCondition(condition: any): string {
   } else {
     const clauses: string[] = [];
     for (const [key, value] of Object.entries(condition)) {
-      if (isInCondition(value)) {
+      if (value === null) {
+        clauses.push(`"${key}" IS NULL`);
+      } else if (isInCondition(value)) {
         const valuesList = value.in.map((v) => `'${v}'`).join(", ");
         clauses.push(`"${key}" IN (${valuesList})`);
       } else if (isGteCondition(value)) {
@@ -66,13 +78,25 @@ class EventsInsights {
     whereConditional: Prisma.BookingTimeStatusWhereInput,
     startDate: Dayjs,
     endDate: Dayjs,
-    timeView: "week" | "month" | "year" | "day"
+    dateRanges: {
+      startDate: string;
+      endDate: string;
+      formattedDate: string;
+    }[]
   ): Promise<AggregateResult> => {
-    // Determine the date truncation and date range based on timeView
-    const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD HH:mm:ss");
-    const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD HH:mm:ss");
     const whereClause = buildSqlCondition(whereConditional);
 
+    const formattedStartDate = dayjs(startDate).startOf("day").format("YYYY-MM-DD HH:mm:ss");
+
+    const formattedEndDate = dayjs(endDate).endOf("day").format("YYYY-MM-DD HH:mm:ss");
+
+    const dateRangeConditions = `("createdAt" BETWEEN '${formattedStartDate}' AND '${formattedEndDate}')`;
+
+    const finalWhereClause = `(${whereClause})`
+      ? `(${whereClause}) AND (${dateRangeConditions})`
+      : `(${dateRangeConditions})`;
+
+    // Query to get grouped booking counts
     const data = await prisma.$queryRaw<
       {
         periodStart: Date;
@@ -83,103 +107,58 @@ class EventsInsights {
       }[]
     >`
     SELECT
-      "periodStart",
+      "createdAt" AS "periodStart",
       CAST(COUNT(*) AS INTEGER) AS "bookingsCount",
-      CAST(COUNT(CASE WHEN "isNoShowGuest" = true THEN 1 END) AS INTEGER) AS "noShowGuests",
+      CAST(COUNT(CASE WHEN "noShowHost" = true THEN 1 END) AS INTEGER) AS "noShowGuests",
       "timeStatus",
       "noShowHost"
-    FROM (
-      SELECT
-        DATE_TRUNC(${timeView}, "createdAt") AS "periodStart",
-        "a"."noShow" AS "isNoShowGuest",
-        "timeStatus",
-        "noShowHost"
-      FROM
-        "BookingTimeStatus"
-      JOIN
-        "Attendee" "a" ON "a"."bookingId" = "BookingTimeStatus"."id"
-      WHERE
-        "createdAt" BETWEEN ${formattedStartDate}::timestamp AND ${formattedEndDate}::timestamp
-        AND ${Prisma.raw(whereClause)}
-    ) AS truncated_dates
+    FROM
+      "BookingTimeStatus"
+    JOIN
+      "Attendee" "a" ON "a"."bookingId" = "BookingTimeStatus"."id"
+    WHERE
+      ${Prisma.raw(finalWhereClause)}
     GROUP BY
-      "periodStart",
+      "createdAt",
       "timeStatus",
       "noShowHost"
     ORDER BY
-      "periodStart";
-  `;
+      "createdAt";
+    `;
 
+    // Initialize aggregate with expected date keys
     const aggregate: AggregateResult = {};
+    dateRanges.forEach(({ formattedDate }) => {
+      aggregate[formattedDate] = {
+        completed: 0,
+        rescheduled: 0,
+        cancelled: 0,
+        noShowHost: 0,
+        noShowGuests: 0,
+        _all: 0,
+        uncompleted: 0,
+      };
+    });
+
+    // Process fetched data and map it to the correct formattedDate
     data.forEach(({ periodStart, bookingsCount, timeStatus, noShowHost, noShowGuests }) => {
-      const formattedDate = dayjs(periodStart).format("MMM D, YYYY");
+      const matchingRange = dateRanges.find(({ startDate, endDate }) =>
+        dayjs(periodStart).isBetween(startDate, endDate, null, "[]")
+      );
 
-      if (dayjs(periodStart).isAfter(endDate)) {
-        return;
-      }
+      if (!matchingRange) return;
 
-      // Ensure the date entry exists in the aggregate object
-      if (!aggregate[formattedDate]) {
-        aggregate[formattedDate] = {
-          completed: 0,
-          rescheduled: 0,
-          cancelled: 0,
-          noShowHost: 0,
-          _all: 0,
-          uncompleted: 0,
-          noShowGuests: 0,
-        };
-      }
-
-      // Add to the specific status count
+      const formattedDate = matchingRange.formattedDate;
       const statusKey = timeStatus as keyof StatusAggregate;
-      aggregate[formattedDate][statusKey] += Number(bookingsCount);
 
-      // Always add to the total count (_all)
+      aggregate[formattedDate][statusKey] += Number(bookingsCount);
       aggregate[formattedDate]["_all"] += Number(bookingsCount);
 
-      // Track no-show host counts separately
       if (noShowHost) {
         aggregate[formattedDate]["noShowHost"] += Number(bookingsCount);
       }
 
-      // Track no-show guests explicitly
       aggregate[formattedDate]["noShowGuests"] += noShowGuests;
-    });
-
-    // Generate a complete list of expected date labels based on the timeline
-    let current = dayjs(startDate);
-    const expectedDates: string[] = [];
-
-    while (current.isBefore(endDate) || current.isSame(endDate)) {
-      const formattedDate = current.format("MMM D, YYYY");
-      expectedDates.push(formattedDate);
-
-      // Increment based on the selected timeView
-      if (timeView === "day") {
-        current = current.add(1, "day");
-      } else if (timeView === "week") {
-        current = current.add(1, "week");
-      } else if (timeView === "month") {
-        current = current.add(1, "month");
-      } else if (timeView === "year") {
-        current = current.add(1, "year");
-      }
-    }
-
-    // Fill in any missing dates with zero counts
-    expectedDates.forEach((label) => {
-      if (!aggregate[label]) {
-        aggregate[label] = {
-          completed: 0,
-          rescheduled: 0,
-          cancelled: 0,
-          noShowHost: 0,
-          noShowGuests: 0,
-          _all: 0,
-          uncompleted: 0,
-        };
-      }
     });
 
     return aggregate;
@@ -648,6 +627,106 @@ class EventsInsights {
     const rows = data.map((obj: any) => `${Object.values(obj).join(",")}\n`);
     return header + rows.join("");
   }
+
+  static countGroupedWorkflowByStatusForRanges = async (
+    whereConditional: Prisma.WorkflowInsightsWhereInput,
+    dateRanges: {
+      startDate: string;
+      endDate: string;
+      formattedDate: string;
+    }[]
+  ): Promise<WorkflowAggregateResult> => {
+    // Prepare conditions from whereConditional
+    const conditions: string[] = [];
+
+    if (whereConditional.AND) {
+      (whereConditional.AND as Prisma.WorkflowInsightsWhereInput[]).forEach((condition) => {
+        if ((condition.createdAt as Prisma.DateTimeFilter)?.gte) {
+          conditions.push(`"createdAt" >= '${(condition.createdAt as Prisma.DateTimeFilter).gte}'`);
+        }
+        if ((condition.createdAt as Prisma.DateTimeFilter)?.lte) {
+          conditions.push(`"createdAt" <= '${(condition.createdAt as Prisma.DateTimeFilter).lte}'`);
+        }
+        if (condition.eventTypeId as Prisma.IntFilter) {
+          if (condition.eventTypeId?.hasOwnProperty("in")) {
+            if (condition.eventTypeId?.in?.length > 0) {
+              const ids = condition.eventTypeId.in.map((id) => `'${id}'`).join(",");
+              conditions.push(`"eventTypeId" IN (${ids})`);
+            } else {
+              conditions.push(`FALSE`); // Prevents an invalid `IN ()` clause
+            }
+          } else {
+            conditions.push(`"eventTypeId" = ${condition.eventTypeId}`);
+          }
+        }
+      });
+    }
+
+    // Build the OR conditions for the provided date ranges
+    // const dateRangeConditions = dateRanges
+    //   .map((range) => `("createdAt" BETWEEN '${range.startDate}' AND '${range.endDate}')`)
+    //   .join(" OR ");
+
+    // Combine conditions with the date range conditions
+    const whereClause = `(${conditions.join(" AND ")})`;
+    // ? `(${conditions.join(" AND ")}) AND (${dateRangeConditions})`
+    // : `(${dateRangeConditions})`;
+
+    const data = await prisma.$queryRaw<
+      {
+        periodStart: Date;
+        insightsCount: number;
+        status: string;
+      }[]
+    >`
+    SELECT
+      "periodStart",
+      CAST(COUNT(*) AS INTEGER) AS "insightsCount",
+      "status"
+    FROM (
+      SELECT
+        "createdAt" AS "periodStart",
+        "status"
+      FROM
+        "WorkflowInsights"
+      WHERE
+        ${Prisma.raw(whereClause)}
+    ) AS filtered_dates
+    GROUP BY
+      "periodStart",
+      "status"
+    ORDER BY
+      "periodStart";
+    `;
+
+    // Initialize the aggregate object with expected date keys
+    const aggregate: WorkflowAggregateResult = {};
+    dateRanges.forEach(({ formattedDate }) => {
+      aggregate[formattedDate] = {
+        DELIVERED: 0,
+        READ: 0,
+        FAILED: 0,
+        _all: 0,
+      };
+    });
+
+    // Process fetched data and map it to the correct formattedDate
+    data.forEach(({ periodStart, insightsCount, status }) => {
+      const matchingRange = dateRanges.find(({ startDate, endDate }) =>
+        dayjs(periodStart).isBetween(startDate, endDate, null, "[]")
+      );
+
+      if (!matchingRange) return;
+
+      const formattedDate = matchingRange.formattedDate;
+      const statusKey = status as keyof WorkflowStatusAggregate;
+
+      aggregate[formattedDate][statusKey] += Number(insightsCount);
+      aggregate[formattedDate]["_all"] += Number(insightsCount);
+    });
+
+    return aggregate;
+  };
 }
 
 export { EventsInsights };

@@ -87,6 +87,7 @@ export default abstract class SMSManager {
   }
 
   async sendSMSToAttendees() {
+    return Promise.resolve();
     if (!this.isTeamEvent) return;
     const smsToSend: Promise<unknown>[] = [];
 

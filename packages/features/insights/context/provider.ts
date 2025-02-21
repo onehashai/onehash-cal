@@ -1,4 +1,4 @@
-import type { BookingStatus } from "@prisma/client";
+import type { BookingStatus, WorkflowMethods } from "@prisma/client";
 import * as React from "react";
 
 import type { Dayjs } from "@calcom/dayjs";
@@ -6,7 +6,9 @@ import type { Dayjs } from "@calcom/dayjs";
 interface IFilter {
   dateRange: [Dayjs, Dayjs, null | string];
   selectedTimeView?: "year" | "week" | "month";
-  selectedFilter?: Array<"user" | "event-type" | "routing_forms" | "booking_status" | `rf_${string}`> | null;
+  selectedFilter?: Array<
+    "user" | "event-type" | "routing_forms" | "booking_status" | `rf_${string}` | "type"
+  > | null;
   selectedTeamId?: number | null;
   selectedTeamName?: string | null;
   selectedUserId?: number | null;
@@ -24,6 +26,7 @@ interface IFilter {
     userId?: number | null;
     isAll?: boolean | null;
   };
+  selectedType?: WorkflowMethods;
 }
 
 export type FilterContextType = {
