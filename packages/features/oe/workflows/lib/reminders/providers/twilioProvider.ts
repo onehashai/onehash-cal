@@ -86,7 +86,7 @@ export const sendSMS = async (
 
   let statusCallback;
   if (customArgs) {
-    const domain = "";
+    const domain = IS_DEV ? NGROK_URL : WEBAPP_URL;
     customArgs = { ...customArgs, msg_id: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
     statusCallback = `${domain}?${Object.entries(customArgs)
       .filter(([_, value]) => value !== undefined && value !== null)
