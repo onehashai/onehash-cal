@@ -16,6 +16,7 @@ import { deleteWebhookScheduledTriggers } from "@calcom/features/webhooks/lib/sc
 import sendPayload from "@calcom/features/webhooks/lib/sendOrSchedulePayload";
 import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
+import firebaseService from "@calcom/lib/firebaseAdmin";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import getOrgIdFromMemberOrTeamId from "@calcom/lib/getOrgIdFromMemberOrTeamId";
 import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
@@ -34,7 +35,12 @@ import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import { getAllWorkflowsFromEventType } from "@calcom/trpc/server/routers/viewer/workflows/util";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
-import { ONEHASH_CHAT_SYNC_BASE_URL, ONEHASH_API_KEY, IS_DEV } from "./../../../lib/constants";
+import {
+  ONEHASH_CHAT_SYNC_BASE_URL,
+  ONEHASH_API_KEY,
+  IS_DEV,
+  MOBILE_NOTIFICATIONS_ENABLED,
+} from "./../../../lib/constants";
 import { getAllCredentials } from "./getAllCredentialsForUsersOnEvent/getAllCredentials";
 import cancelAttendeeSeat from "./handleSeats/cancel/cancelAttendeeSeat";
 
@@ -580,6 +586,23 @@ async function handler(req: CustomRequest) {
       );
   } catch (error) {
     console.error("Error deleting event", error);
+  }
+  if (MOBILE_NOTIFICATIONS_ENABLED) {
+    try {
+      await firebaseService.sendNotification(
+        `host_${organizer.id}`,
+        {
+          title: tOrganizer("booking_cancelled"),
+          body: evt.title,
+        },
+        {
+          bookingId: evt.bookingId,
+          status: "CANCELLED",
+        }
+      );
+    } catch (error) {
+      log.error("Error while send mobile notification", JSON.stringify({ error }));
+    }
   }
   if (organizerHasIntegratedOHChat) {
     await handleOHChatSync(cancelledBookingsUids);
