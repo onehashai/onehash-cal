@@ -51,11 +51,18 @@ import {
 import { isPrismaObj, isPrismaObjOrUndefined } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { isRerouting, shouldIgnoreContactOwner } from "@calcom/lib/bookings/routing/utils";
-import { IS_DEV, ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
+import {
+  IS_DEV,
+  MOBILE_NOTIFICATIONS_ENABLED,
+  ONEHASH_API_KEY,
+  ONEHASH_CHAT_SYNC_BASE_URL,
+  WEBAPP_URL,
+} from "@calcom/lib/constants";
 import { getDefaultEvent, getUsernameList } from "@calcom/lib/defaultEvents";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import { extractBaseEmail } from "@calcom/lib/extract-base-email";
+import firebaseService from "@calcom/lib/firebaseAdmin";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import getOrgIdFromMemberOrTeamId from "@calcom/lib/getOrgIdFromMemberOrTeamId";
 import getPaymentAppData from "@calcom/lib/getPaymentAppData";
@@ -2041,6 +2048,27 @@ async function handler(
     paymentRequired: false,
   };
 
+  if (MOBILE_NOTIFICATIONS_ENABLED) {
+    try {
+      await firebaseService.sendNotification(
+        `host_${organizerUser.id}`,
+        {
+          title: isConfirmedByDefault
+            ? rescheduleUid
+              ? tOrganizer("booking_rescheduled")
+              : tOrganizer("booking_created")
+            : tOrganizer("booking_requested"),
+          body: evt.title,
+        },
+        {
+          bookingId: booking.id,
+          status: isConfirmedByDefault ? "UPCOMING" : "UNCONFIRMED",
+        }
+      );
+    } catch (error) {
+      loggerWithEventDetails.error("Error while send mobile notification", JSON.stringify({ error }));
+    }
+  }
   if (
     booking.status === BookingStatus.ACCEPTED &&
     isPrismaObjOrUndefined(organizerUser.metadata)?.connectedChatAccounts

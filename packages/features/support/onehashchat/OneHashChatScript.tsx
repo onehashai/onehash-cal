@@ -19,22 +19,21 @@ export default function OneHashChatScript() {
     };
   }, []);
 
-  // const handleScriptLoad = () => {
-  //   const elements = document.querySelectorAll(".woot-widget-bubble.woot-elements--left");
-  //   console.log("elements", elements);
-  //   elements.forEach((element) => {
-  //     const el = element as HTMLElement;
-  //     adjustChatWidgetPosition(el);
-  //   });
+  const handleScriptLoad = () => {
+    const elements = document.querySelectorAll(".woot-widget-bubble");
+    elements.forEach((element) => {
+      const el = element as HTMLElement;
+      adjustChatWidgetPosition(el);
+    });
 
-  //   // Adjust position on window resize
-  //   window.addEventListener("resize", () => {
-  //     elements.forEach((element) => {
-  //       const el = element as HTMLElement;
-  //       adjustChatWidgetPosition(el);
-  //     });
-  //   });
-  // };
+    // Adjust position on window resize
+    window.addEventListener("resize", () => {
+      elements.forEach((element) => {
+        const el = element as HTMLElement;
+        adjustChatWidgetPosition(el);
+      });
+    });
+  };
 
   const adjustChatWidgetPosition = (element: HTMLElement) => {
     // Get viewport height
@@ -42,14 +41,14 @@ export default function OneHashChatScript() {
 
     // Adjust position based on viewport height
     if (windowWidth <= 600) {
-      element.style.bottom = "80px";
-      element.style.left = "20px";
+      element.style.bottom = "78px";
+      element.style.right = "20px";
     } else if (windowWidth <= 900) {
       element.style.bottom = "40px";
       element.style.left = "40px";
     } else {
-      element.style.bottom = "20px";
-      element.style.left = "140px";
+      // element.style.bottom = "20px";
+      // element.style.left = "140px";
     }
   };
 
@@ -63,9 +62,9 @@ export default function OneHashChatScript() {
           baseUrl: "https://chat.onehash.ai",
         });
 
-        // setTimeout(() => {
-        //   handleScriptLoad();
-        // }, 1000);
+        setTimeout(() => {
+          handleScriptLoad();
+        }, 2000);
       }}
     />
   );
