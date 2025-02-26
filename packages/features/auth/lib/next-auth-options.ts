@@ -909,6 +909,7 @@ export const getOptions = ({
         });
 
         if (existingUserWithEmail) {
+          account.userId = existingUserWithEmail.id.toString();
           // if self-hosted then we can allow auto-merge of identity providers if email is verified
           if (
             !hostedCal &&
@@ -1017,6 +1018,7 @@ export const getOptions = ({
             }),
           },
         });
+        account.userId = newUser.id.toString();
 
         const linkAccountNewUserData = { ...account, userId: newUser.id, providerEmail: user.email };
         await calcomAdapter.linkAccount(linkAccountNewUserData);
@@ -1048,6 +1050,7 @@ export const getOptions = ({
     async signIn(message) {
       //setting keycloak session in Db and token in cookie
       const { account } = message;
+      console.log("in_here_account", account);
       let browser_token = "";
       if (account?.id_token) {
         browser_token = randomString(256);
