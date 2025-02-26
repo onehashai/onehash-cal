@@ -7,9 +7,9 @@ import type { FieldError } from "react-hook-form";
 
 import type { BookerEvent } from "@calcom/features/bookings/types";
 import {
-  RECAPTCHA__KEY_HIGH,
-  RECAPTCHA__KEY_LOW,
-  RECAPTCHA__KEY_MEDIUM,
+  RECAPTCHA_KEY_HIGH,
+  RECAPTCHA_KEY_LOW,
+  RECAPTCHA_KEY_MEDIUM,
   WEBSITE_PRIVACY_POLICY_URL,
   WEBSITE_TERMS_URL,
 } from "@calcom/lib/constants";
@@ -139,17 +139,33 @@ export const BookEventForm = ({
   }
 
   const reCaptchaMap = {
-    LOW: RECAPTCHA__KEY_LOW,
-    MEDIUM: RECAPTCHA__KEY_MEDIUM,
-    HIGH: RECAPTCHA__KEY_HIGH,
+    LOW: RECAPTCHA_KEY_LOW,
+    MEDIUM: RECAPTCHA_KEY_MEDIUM,
+    HIGH: RECAPTCHA_KEY_HIGH,
   };
   const recaptchaKey = reCaptchaMap[eventType.captchaType as keyof typeof reCaptchaMap];
   const handleFormSubmit = async () => {
     if (recaptchaRef.current) {
-      const val = await recaptchaRef.current.executeAsync();
-      if (val) {
+      try {
+        const token = await recaptchaRef.current.executeAsync();
         recaptchaRef.current.reset();
-        onSubmit();
+
+        if (token) {
+          const response = await fetch("/api/verify-recaptcha", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, type: eventType.captchaType as keyof typeof reCaptchaMap }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            onSubmit();
+          } else {
+            console.error("reCAPTCHA failed", data.error);
+          }
+        }
+      } catch (error) {
+        console.error("reCAPTCHA error:", error);
       }
     } else {
       onSubmit();
