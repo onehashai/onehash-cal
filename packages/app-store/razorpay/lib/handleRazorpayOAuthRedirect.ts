@@ -1,5 +1,6 @@
 import type { ParsedUrlQuery } from "querystring";
 
+import { default as Razorpay } from "@calcom/app-store/razorpay/lib/Razorpay";
 import {
   IS_PRODUCTION,
   RAZORPAY_CLIENT_ID,
@@ -34,7 +35,17 @@ const handleRazorpayOAuthRedirect = async (query: ParsedUrlQuery, userId: number
     throw new Error("Failed to fetch razorpay token");
   }
   const { access_token, refresh_token, public_token, razorpay_account_id } = await res.json();
+  //setting up webhooks on user account programmatically
+  const razorpay = new Razorpay({
+    access_token,
+    refresh_token,
+    user_id: userId,
+  });
 
+  const didCreate = await razorpay.createWebhooks(razorpay_account_id);
+  if (!didCreate) {
+    throw new Error("Failed to create webhooks for user");
+  }
   const installation = await prisma.credential.create({
     data: {
       type: "razorpay_payment",

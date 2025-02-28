@@ -8,6 +8,8 @@ import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import { HttpError as HttpCode } from "@calcom/lib/http-error";
+import logger from "@calcom/lib/logger";
+import { handlePaymentSuccess } from "@calcom/lib/payment/handlePaymentSuccess";
 import { prisma } from "@calcom/prisma";
 
 export const config = {
@@ -15,6 +17,9 @@ export const config = {
     bodyParser: false,
   },
 };
+
+const log = logger.getSubLogger({ prefix: [`[razorpay/api/webhook]`] });
+
 async function detachAppFromEvents(where: Prisma.EventTypeWhereInput) {
   //detaching razorpay from eventtypes, if any
   const eventTypes = await prisma.eventType.findMany({
@@ -78,11 +83,30 @@ async function handleAppRevoked(accountId: string) {
       id: credential.id,
     },
   });
-  return;
+}
+
+async function handlePaymentLinkPaid({
+  paymentId,
+  paymentLinkId,
+}: {
+  paymentId?: string;
+  paymentLinkId?: string;
+}) {
+  if (!paymentId || !paymentLinkId) throw new HttpCode({ statusCode: 400, message: "Bad Request" });
+  const payment = await prisma.payment.findUnique({
+    where: { externalId: paymentLinkId },
+    select: { id: true, bookingId: true, success: true },
+  });
+  if (!payment) throw new HttpCode({ statusCode: 404, message: "Payment not found" });
+
+  if (!payment.success) {
+    await handlePaymentSuccess(payment.id, payment.bookingId, { paymentId });
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    log.info("Received webhook event");
     if (req.method !== "POST") {
       throw new HttpCode({ statusCode: 405, message: "Method Not Allowed" });
     }
@@ -92,11 +116,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     if (!parsedVerifyWebhook.success) {
       console.error("Razorpay webhook malformed");
+      log.error("Razorpay webhook malformed");
       throw new HttpCode({ statusCode: 400, message: "Bad Request" });
     }
     const isValid = Razorpay.verifyWebhook(parsedVerifyWebhook.data);
     if (!isValid) {
       console.error("Razorpay webhook signature mismatch");
+      log.error("Razorpay webhook signature mismatch");
       throw new HttpCode({ statusCode: 400, message: "Bad Request" });
     }
     const { event, account_id } = req.body;
@@ -104,8 +130,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case WebhookEvents.APP_REVOKED:
         await handleAppRevoked(account_id);
         break;
+      case WebhookEvents.PAYMENT_LINK_PAID:
+        await handlePaymentLinkPaid({
+          paymentId: req.body.payload.payment.entity.id,
+          paymentLinkId: req.body.payload.payment_link.entity.id,
+        });
+        break;
       default:
         console.error("Razorpay webhook event not handled");
+        log.error("Razorpay webhook event not handled");
         throw new HttpCode({ statusCode: 204, message: "No event handler found" });
     }
     // Returning a response to acknowledge receipt of the event
@@ -113,6 +146,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (_err) {
     const err = getErrorFromUnknown(_err);
     console.error(`Webhook Error: ${err.message}`);
+    log.error(`Webhook Error: ${err.message}`);
     res.status(200).send({
       message: err.message,
       stack: IS_PRODUCTION ? undefined : err.stack,
