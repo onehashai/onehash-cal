@@ -1050,7 +1050,6 @@ export const getOptions = ({
     async signIn(message) {
       //setting keycloak session in Db and token in cookie
       const { account } = message;
-      console.log("in_here_account", account);
       let browser_token = "";
       if (account?.id_token) {
         browser_token = randomString(256);
