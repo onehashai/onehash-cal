@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const rawBody = await getRawBody(req);
     const parsedBody = parse(rawBody.toString());
-    const { status: event } = parsedBody;
+    const { SmsStatus: event } = parsedBody;
     const { msgId, eventTypeId, channel } = req.query as {
       msgId: string;
       eventTypeId: string;

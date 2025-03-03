@@ -117,7 +117,6 @@ export const sendSMS = async (
   } else {
     payload.body = body;
   }
-
   const response = await twilio.messages.create(payload);
   return response;
 };
