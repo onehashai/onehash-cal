@@ -86,9 +86,9 @@ export const sendSMS = async (
 
   let statusCallback;
   if (customArgs) {
-    const domain = IS_DEV ? NGROK_URL : WEBAPP_URL;
+    const webhookUrl = `${IS_DEV ? NGROK_URL : WEBAPP_URL}/api/webhook/twilio`;
     customArgs = { ...customArgs, msgId: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
-    statusCallback = `${domain}?${Object.entries(customArgs)
+    statusCallback = `${webhookUrl}?${Object.entries(customArgs)
       .filter(([_, value]) => value !== undefined && value !== null)
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join("&")}`;
@@ -166,9 +166,9 @@ export const scheduleSMS = async (
 
   let statusCallback;
   if (customArgs) {
-    const domain = IS_DEV ? NGROK_URL : WEBAPP_URL;
+    const webhookUrl = `${IS_DEV ? NGROK_URL : WEBAPP_URL}/api/webhook/twilio`;
     customArgs = { ...customArgs, msgId: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
-    statusCallback = `${domain}?${Object.entries(customArgs)
+    statusCallback = `${webhookUrl}?${Object.entries(customArgs)
       .filter(([_, value]) => value !== undefined && value !== null)
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join("&")}`;
