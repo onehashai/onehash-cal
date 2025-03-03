@@ -86,9 +86,9 @@ export const sendSMS = async (
 
   let statusCallback;
   if (customArgs) {
-    const domain = IS_DEV ? NGROK_URL : WEBAPP_URL;
-    customArgs = { ...customArgs, msg_id: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
-    statusCallback = `${domain}?${Object.entries(customArgs)
+    const webhookUrl = `${IS_DEV ? NGROK_URL : WEBAPP_URL}/api/webhook/twilio`;
+    customArgs = { ...customArgs, msgId: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
+    statusCallback = `${webhookUrl}?${Object.entries(customArgs)
       .filter(([_, value]) => value !== undefined && value !== null)
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join("&")}`;
@@ -117,7 +117,6 @@ export const sendSMS = async (
   } else {
     payload.body = body;
   }
-
   const response = await twilio.messages.create(payload);
   return response;
 };
@@ -166,9 +165,9 @@ export const scheduleSMS = async (
 
   let statusCallback;
   if (customArgs) {
-    const domain = IS_DEV ? NGROK_URL : WEBAPP_URL;
-    customArgs = { ...customArgs, msg_id: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
-    statusCallback = `${domain}?${Object.entries(customArgs)
+    const webhookUrl = `${IS_DEV ? NGROK_URL : WEBAPP_URL}/api/webhook/twilio`;
+    customArgs = { ...customArgs, msgId: uuidv4(), channel: whatsapp ? "WHATSAPP" : "SMS" };
+    statusCallback = `${webhookUrl}?${Object.entries(customArgs)
       .filter(([_, value]) => value !== undefined && value !== null)
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join("&")}`;

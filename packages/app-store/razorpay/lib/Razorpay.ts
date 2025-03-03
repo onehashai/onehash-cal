@@ -13,10 +13,11 @@ import { prisma } from "@calcom/prisma";
 
 export enum WebhookEvents {
   APP_REVOKED = "account.app.authorization_revoked",
+  PAYMENT_LINK_PAID = "payment_link.paid",
 }
 
 const razorpay_auth_base_url = "https://auth.razorpay.com";
-const razorpay_api_base_url = "https://api.razorpay.com/v1";
+const razorpay_api_base_url = "https://api.razorpay.com";
 
 interface RazorpayWrapperOptions {
   access_token: string;
@@ -186,7 +187,7 @@ class RazorpayWrapper {
   }
 
   async test(): Promise<boolean> {
-    return this.handleRequest(() => this.axiosInstance.get("/payments"))
+    return this.handleRequest(() => this.axiosInstance.get("/v1/payments"))
       .then(() => true)
       .catch(() => false);
   }
@@ -222,17 +223,21 @@ class RazorpayWrapper {
       description: `Payment for ${eventTitle} booking on OneHash Cal`,
       expire_by: Math.floor((Date.now() + 30 * 60 * 1000) / 1000),
     };
-    return this.handleRequest(() => this.axiosInstance.post("/payment_links", this.createPaymentLinkReqBody));
+    return this.handleRequest(() =>
+      this.axiosInstance.post("/v1/payment_links", this.createPaymentLinkReqBody)
+    );
   }
 
   async initiateRefund(paymentId: string): Promise<boolean> {
-    const response = await this.handleRequest(() => this.axiosInstance.post(`/payments/${paymentId}/refund`));
+    const response = await this.handleRequest(() =>
+      this.axiosInstance.post(`/v1/payments/${paymentId}/refund`)
+    );
     return response.status === "processed";
   }
 
   async handleCancelPayment(paymentLinkId: string): Promise<boolean> {
     const response = await this.handleRequest(() =>
-      this.axiosInstance.post(`/payment_links/${paymentLinkId}/cancel`)
+      this.axiosInstance.post(`/v1/payment_links/${paymentLinkId}/cancel`)
     );
     return response.status === "cancelled";
   }
@@ -254,6 +259,22 @@ class RazorpayWrapper {
     const expectedSignature = crypto.createHmac("sha256", RAZORPAY_WEBHOOK_SECRET).update(body).digest("hex");
 
     return expectedSignature === signature;
+  }
+
+  async createWebhooks(accountId: string): Promise<boolean> {
+    if (!RAZORPAY_WEBHOOK_SECRET) {
+      throw new Error("Webhook secret is required");
+    }
+    const payload = {
+      url: `${WEBAPP_URL}/api/integrations/razorpay/webhook`,
+      alert_email: "engineering@onehash.ai",
+      secret: RAZORPAY_WEBHOOK_SECRET,
+      events: ["payment_link.paid", "account.app.authorization_revoked"],
+    };
+    const response = await this.handleRequest(() =>
+      this.axiosInstance.post(`/v2/accounts/${accountId}/webhooks`, payload)
+    );
+    return response.active == true;
   }
 }
 

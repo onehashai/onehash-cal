@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import { WorkflowMethods, WorkflowStatus } from "@calcom/prisma/client";
 
@@ -17,7 +18,11 @@ const statusMap = {
   // groupunsubscribe: WorkflowStatus.GROUP_UNSUBSCRIBE,
   // groupresubscribe: WorkflowStatus.GROUP_RESUBSCRIBE,
 };
+
+const log = logger.getSubLogger({ prefix: ["api/webhook/sengdrid"] });
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  log.info("Received request", req.method, req.body);
   if (req.method === "POST") {
     //VERIFICATION
     // const signature = req.headers["X-Twilio-Email-Event-Webhook-Signature"] as string;
@@ -38,37 +43,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     //   return res.status(400).json({ error: "Invalid signature" });
     // }
 
-    const {
-      msgId,
-      event,
-      eventTypeId,
-    }: { msgId: string; event: keyof typeof statusMap; eventTypeId: number } = req.body;
-    if (!msgId || !event || !eventTypeId) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const status = statusMap[event];
-    if (!status) {
-      return res.status(200).json({ error: "Status not handled" });
+    const events = req.body;
+    if (!Array.isArray(events) || events.length === 0) {
+      log.error("Invalid request body. Expected an array of events.");
+      return res.status(400).json({ error: "Invalid request body. Expected an array of events." });
     }
 
     try {
-      await prisma.workflowInsights.upsert({
-        where: { msgId: msgId },
-        update: {
-          status: status,
-        },
-        create: {
-          msgId: msgId,
-          eventTypeId: eventTypeId,
-          type: WorkflowMethods.EMAIL,
-          status: status,
-        },
-      });
-      res.status(200).json({ success: true });
+      for (const eventObj of events) {
+        const {
+          msgId,
+          event,
+          eventTypeId,
+        }: { msgId: string; event: keyof typeof statusMap; eventTypeId: number } = eventObj;
+
+        if (!msgId || !event || !eventTypeId) {
+          log.warn("Skipping event due to missing fields", eventObj);
+          console.warn("Skipping event due to missing fields", eventObj);
+          continue;
+        }
+
+        const status = statusMap[event];
+        if (!status) {
+          log.warn("Skipping event due to unhandled status", event);
+          console.warn("Skipping event due to unhandled status", event);
+          continue;
+        }
+
+        log.info("Updating workflow insights for event", { msgId, event, eventTypeId, status });
+        await prisma.workflowInsights.upsert({
+          where: { msgId: msgId },
+          update: { status: status },
+          create: {
+            msgId: msgId,
+            eventTypeId: eventTypeId,
+            type: WorkflowMethods.EMAIL,
+            status: status,
+          },
+        });
+        log.info("Updated workflow insights for event", { msgId, event, eventTypeId, status });
+      }
+
+      log.info("Successfully processed events", events);
+      return res.status(200).json({ success: true });
     } catch (err) {
+      log.error("Error in /event-webhook", err);
       console.error("Error in /event-webhook", err);
-      res.status(500).json({ error: "Internal Server Error" });
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-  } else res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+  } else {
+    log.error("Method Not Allowed", req.method);
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+  }
 }
