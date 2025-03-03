@@ -70,7 +70,7 @@ export function sendSendgridMail(
     console.info("No sendgrid API key provided, skipping email");
     return Promise.resolve();
   }
-  return sgMail.send({
+  const payload = {
     to: mailData.to,
     from: {
       email: senderEmail,
@@ -82,8 +82,9 @@ export function sendSendgridMail(
     replyTo: mailData.replyTo || senderEmail,
     attachments: mailData.attachments,
     sendAt: mailData.sendAt,
-    ...(customArgs && { customArgs: { ...customArgs, msg_id: uuidv4() } }),
-  });
+    ...(customArgs && { customArgs: { ...customArgs, msgId: uuidv4() } }),
+  };
+  return sgMail.send(payload);
 }
 
 export function cancelScheduledEmail(referenceId: string | null) {
