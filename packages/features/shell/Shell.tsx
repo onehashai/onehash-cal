@@ -12,6 +12,7 @@ import TimezoneChangeDialog from "@calcom/features/settings/TimezoneChangeDialog
 import classNames from "@calcom/lib/classNames";
 import { APP_NAME } from "@calcom/lib/constants";
 import { useFormbricks } from "@calcom/lib/formbricks-client";
+import useIsWebView from "@calcom/lib/hooks/useIsWebView";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { ButtonState, useNotifications } from "@calcom/lib/hooks/useNotifications";
 import { Button, ErrorBoundary, HeadSeo, SkeletonText } from "@calcom/ui";
@@ -147,7 +148,7 @@ export function ShellMain(props: LayoutProps) {
 
   // TODO:NOTIFICATIONS
   const { buttonToShow, isLoading, enableNotifications, disableNotifications } = useNotifications();
-
+  const isWebView = useIsWebView();
   return (
     <>
       {(props.heading || !!props.backPath) && (
@@ -207,7 +208,7 @@ export function ShellMain(props: LayoutProps) {
               )}
               {props.actions && props.actions}
               {/* TODO: temporary hide push notifications  */}
-              {props.heading === "Bookings" && buttonToShow && (
+              {props.heading === "Bookings" && buttonToShow && !isWebView && (
                 <Button
                   color="primary"
                   onClick={buttonToShow === ButtonState.ALLOW ? enableNotifications : disableNotifications}

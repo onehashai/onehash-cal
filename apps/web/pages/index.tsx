@@ -10,12 +10,12 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const handleGotoLoginPage = () => {
     window.location.href = "/auth/login";
   };
-  const handleGotoSignupPage = () => {
-    handleGettingStarted();
-  };
-  const handleGettingStarted = () => {
-    window.open(SIGNUP_URL, "_blank");
-  };
+  // const handleGotoSignupPage = () => {
+  //   handleGettingStarted();
+  // };
+  // const handleGettingStarted = () => {
+  //   window.open("https://www.google.com", "_blank");
+  // };
 
   const handleGoToApp = () => {
     if (process.env.NODE_ENV === "production") {
@@ -35,13 +35,13 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
     }
   };
 
-  const handleScheduleDemo = () => {
-    window.open(DEMO_URL, "_blank");
-  };
+  // const handleScheduleDemo = () => {
+  //   window.open(DEMO_URL, "_blank");
+  // };
 
-  const handleExploreIntegration = () => {
-    window.open("https://www.onehash.ai/integrations", "_blank");
-  };
+  // const handleExploreIntegration = () => {
+  //   window.open("https://www.onehash.ai/integrations", "_blank");
+  // };
 
   const trustedByLogos = [
     "bms",
@@ -149,11 +149,13 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
                       className="border-primary-color rounded-full border px-4 py-2 text-blue-500 hover:text-blue-700 md:px-6">
                       Log in
                     </button>
-                    <button
-                      onClick={handleGotoSignupPage}
-                      className="bg-primary-color hover:bg-hover-primary-color rounded-full px-4 py-2 text-white transition md:px-6">
+                    <a
+                      href={SIGNUP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-primary-color hover:bg-hover-primary-color flex items-center justify-center rounded-full px-4 py-2 text-white transition md:px-6">
                       Signup
-                    </button>
+                    </a>
                   </div>
                 )}
               </div>
@@ -183,16 +185,20 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
 
               <div id="getting-started" className="mt-16 flex flex-col gap-4 md:flex-row">
-                <button
-                  onClick={handleGettingStarted}
-                  className="bg-primary-color hover:bg-hover-primary-color w-full rounded-full px-6 py-2 text-white transition md:h-14 md:w-40">
+                <a
+                  href={SIGNUP_URL}
+                  target="_blank"
+                  className="bg-primary-color hover:bg-hover-primary-color flex w-full items-center justify-center rounded-full px-6 py-2 text-white transition md:h-14 md:w-40">
                   Get Started
-                </button>
-                <button
-                  onClick={handleScheduleDemo}
-                  className="border-primary-color rounded-full border px-6 py-2 text-blue-500 hover:text-blue-700">
+                </a>
+
+                <a
+                  href={DEMO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border-primary-color flex items-center justify-center rounded-full border px-6 py-2 text-blue-500 hover:text-blue-700">
                   Schedule a Demo
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -248,16 +254,21 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
             <div className="relative mt-3 w-full lg:w-1/2">
               <img src="assets/integrations.svg" alt="integrations" />
               <div className="absolute bottom-10 left-1/2 flex w-full -translate-x-1/2 transform flex-col gap-2 lg:bottom-32 lg:w-auto lg:flex-row">
-                <button
-                  onClick={handleExploreIntegration}
-                  className="bg-primary-color  hover:bg-hover-primary-color h-auto rounded-full px-6 py-2 text-white transition">
+                <a
+                  href="https://www.onehash.ai/integrations"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-primary-color hover:bg-hover-primary-color flex h-auto items-center justify-center rounded-full px-6 py-2 text-white transition">
                   Explore Integrations
-                </button>
-                <button
-                  onClick={handleScheduleDemo}
-                  className="border-primary-color hidden rounded-full border px-6 py-2 text-blue-500 hover:text-blue-700 md:block">
+                </a>
+
+                <a
+                  href={DEMO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border-primary-color flex hidden items-center justify-center rounded-full border px-6 py-2 text-blue-500 hover:text-blue-700 md:block">
                   Schedule a Demo
-                </button>
+                </a>
               </div>
             </div>
           </div>

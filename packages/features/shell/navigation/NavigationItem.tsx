@@ -76,7 +76,7 @@ export const NavigationItem: React.FC<{
             <Icon
               name={item.isLoading ? "rotate-cw" : item.icon}
               className={classNames(
-                "todesktop:!text-blue-500 mr-2 h-4 w-4 flex-shrink-0 md:ltr:mx-auto lg:ltr:mr-2 rtl:ml-2 [&[aria-current='page']]:text-inherit",
+                "todesktop:!text-blue-500 mr-2 h-4 w-4 flex-shrink-0 rtl:ml-2 md:ltr:mx-auto lg:ltr:mr-2 [&[aria-current='page']]:text-inherit",
                 item.isLoading && "animate-spin"
               )}
               aria-hidden="true"
