@@ -10,6 +10,7 @@ import {
   type OrganizationBranding,
 } from "@calcom/features/oe/organizations/context/provider";
 import { classNames, isPrismaObjOrUndefined } from "@calcom/lib";
+import useIsWebView from "@calcom/lib/hooks/useIsWebView";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import { showToast, Tooltip, Icon, Button } from "@calcom/ui";
@@ -21,7 +22,10 @@ import { NavigationItem, MobileNavigationItem, MobileNavigationMoreItem } from "
 
 export const MORE_SEPARATOR_NAME = "more";
 
-const getNavigationItems = (orgBranding: OrganizationBranding): NavigationItemType[] => [
+const getNavigationItems = (
+  orgBranding: OrganizationBranding,
+  isWebView: boolean | null
+): NavigationItemType[] => [
   {
     name: "event_types_page_title",
     href: "/event-types",
@@ -56,36 +60,42 @@ const getNavigationItems = (orgBranding: OrganizationBranding): NavigationItemTy
     onlyDesktop: true,
     badge: <TeamInviteBadge />,
   },
-  {
-    name: "apps",
-    href: "/apps",
-    icon: "grid-3x3",
-    isCurrent: ({ pathname: path, item }) => {
-      // During Server rendering path is /v2/apps but on client it becomes /apps(weird..)
-      return (path?.startsWith(item.href) ?? false) && !(path?.includes("routing-forms/") ?? false);
-    },
-    child: [
-      {
-        name: "app_store",
-        href: "/apps",
-        isCurrent: ({ pathname: path, item }) => {
-          // During Server rendering path is /v2/apps but on client it becomes /apps(weird..)
-          return (
-            (path?.startsWith(item.href) ?? false) &&
-            !(path?.includes("routing-forms/") ?? false) &&
-            !(path?.includes("/installed") ?? false)
-          );
-        },
-      },
-      {
-        name: "installed_apps",
-        href: "/apps/installed/calendar",
-        isCurrent: ({ pathname: path }) =>
-          (path?.startsWith("/apps/installed/") ?? false) ||
-          (path?.startsWith("/v2/apps/installed/") ?? false),
-      },
-    ],
-  },
+
+  ...(!isWebView
+    ? [
+        {
+          name: "apps",
+          href: "/apps",
+          icon: "grid-3x3",
+          isCurrent: ({ pathname: path, item }) => {
+            // During Server rendering path is /v2/apps but on client it becomes /apps(weird..)
+            return (path?.startsWith(item.href) ?? false) && !(path?.includes("routing-forms/") ?? false);
+          },
+          child: [
+            {
+              name: "app_store",
+              href: "/apps",
+              isCurrent: ({ pathname: path, item }) => {
+                // During Server rendering path is /v2/apps but on client it becomes /apps(weird..)
+                return (
+                  (path?.startsWith(item.href) ?? false) &&
+                  !(path?.includes("routing-forms/") ?? false) &&
+                  !(path?.includes("/installed") ?? false)
+                );
+              },
+            },
+            {
+              name: "installed_apps",
+              href: "/apps/installed/calendar",
+              isCurrent: ({ pathname: path }) =>
+                (path?.startsWith("/apps/installed/") ?? false) ||
+                (path?.startsWith("/v2/apps/installed/") ?? false),
+            },
+          ],
+        } satisfies NavigationItemType,
+      ]
+    : []),
+
   {
     name: MORE_SEPARATOR_NAME,
     href: "/more",
@@ -176,8 +186,11 @@ const platformNavigationItems: NavigationItemType[] = [
 
 const useNavigationItems = (isPlatformNavigation = false) => {
   const orgBranding = useOrgBranding();
+  const isWebView = useIsWebView();
   return useMemo(() => {
-    const items = !isPlatformNavigation ? getNavigationItems(orgBranding) : platformNavigationItems;
+    const items = !isPlatformNavigation
+      ? getNavigationItems(orgBranding, isWebView)
+      : platformNavigationItems;
 
     const desktopNavigationItems = items.filter((item) => item.name !== MORE_SEPARATOR_NAME);
     const mobileNavigationBottomItems = items.filter(
@@ -188,7 +201,7 @@ const useNavigationItems = (isPlatformNavigation = false) => {
     );
 
     return { desktopNavigationItems, mobileNavigationBottomItems, mobileNavigationMoreItems };
-  }, [isPlatformNavigation, orgBranding]);
+  }, [isPlatformNavigation, orgBranding, isWebView]);
 };
 
 type TIntegrationRequest = {
