@@ -8,7 +8,7 @@ describe("check if WhatsApp app & web opens", () => {
 
   beforeEach(() => {
     //since provider doesnt have window object defined, i define it here manually
-    global.window = {};
+    (global as any).window = {};
     global.window.open = vi.fn();
   });
 
