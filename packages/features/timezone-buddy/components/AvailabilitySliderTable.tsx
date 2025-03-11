@@ -14,20 +14,7 @@ import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc";
 import type { UserProfile } from "@calcom/types/UserProfile";
-import {
-  Button,
-  ButtonGroup,
-  UserAvatar,
-  Checkbox,
-  showToast,
-  Dropdown,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownItem,
-  Icon,
-  Tooltip,
-} from "@calcom/ui";
+import { Button, ButtonGroup, UserAvatar, Checkbox, showToast, Icon, Tooltip } from "@calcom/ui";
 
 import { GroupMeetingDialog } from "../../../../apps/web/components/dialog/GroupMeetingDialog";
 import { UpgradeTip } from "../../tips/UpgradeTip";
@@ -85,42 +72,8 @@ const MoreOptions: React.FC<{
   const [opened, setOpened] = useState<boolean>(false);
   const { t } = useLocale();
   return (
-    <div className="flex gap-2">
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-        }}>
-        <Dropdown
-          // onToggle={setOpened}
-          open={opened}
-          onOpenChange={(_) => {
-            setOpened(!opened);
-          }}>
-          <DropdownMenuTrigger asChild>
-            <div className="flex gap-2">
-              <Tooltip content={t("view_membership")}>
-                <Button
-                  type="button"
-                  variant="icon"
-                  color="secondary"
-                  className="ltr:radix-state-open:rounded-r-md rtl:radix-state-open:rounded-l-md">
-                  <Icon name="users" className=" h-6 w-6 dark:text-white" aria-hidden="true" />
-                </Button>
-              </Tooltip>
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="min-w-[200px]">
-            {user.teamName.map((item, index) => {
-              const _teamName = item.charAt(0).toUpperCase() + item.slice(1);
-              return (
-                <DropdownMenuItem key={index}>
-                  <DropdownItem type="button">{_teamName}</DropdownItem>
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </Dropdown>
-      </div>
+    // <div className="flex gap-2">
+    <div>
       <Tooltip content={t("view_schedule")}>
         <Button
           type="button"
@@ -136,6 +89,43 @@ const MoreOptions: React.FC<{
         </Button>
       </Tooltip>
     </div>
+    //   {/* <div
+    //     onClick={(e) => {
+    //       e.stopPropagation();
+    //     }}>
+    //     <Dropdown
+    //       // onToggle={setOpened}
+    //       open={opened}
+    //       onOpenChange={(_) => {
+    //         setOpened(!opened);
+    //       }}>
+    //       <DropdownMenuTrigger asChild>
+    //         <div className="flex gap-2">
+    //           <Tooltip content={t("view_membership")}>
+    //             <Button
+    //               type="button"
+    //               variant="icon"
+    //               color="secondary"
+    //               className="ltr:radix-state-open:rounded-r-md rtl:radix-state-open:rounded-l-md">
+    //               <Icon name="users" className=" h-6 w-6 dark:text-white" aria-hidden="true" />
+    //             </Button>
+    //           </Tooltip>
+    //         </div>
+    //       </DropdownMenuTrigger>
+    //       <DropdownMenuContent className="min-w-[200px]">
+    //         {user.teamName.map((item, index) => {
+    //           const _teamName = item.charAt(0).toUpperCase() + item.slice(1);
+    //           return (
+    //             <DropdownMenuItem key={index}>
+    //               <DropdownItem type="button">{_teamName}</DropdownItem>
+    //             </DropdownMenuItem>
+    //           );
+    //         })}
+    //       </DropdownMenuContent>
+    //     </Dropdown>
+    //   </div> */}
+
+    // </div>
   );
 };
 
@@ -274,7 +264,7 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
         id: "member",
         accessorFn: (data) => data.username,
         header: "Member",
-        size: 200,
+        size: 250,
         cell: ({ row }) => {
           const { username, email, timeZone, name, avatarUrl, profile } = row.original;
           return (
@@ -305,6 +295,7 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
         id: "memberships",
         accessorFn: (data) => data.teamName,
         header: "More",
+        size: 100,
         cell: ({ row }) => {
           // const { teamName } = row.original;
           return (
@@ -426,9 +417,8 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
             <DataTableToolbar.Root>
               <div className=" flex">
                 <DataTableToolbar.SearchBar table={table} onSearch={(value) => setSearchString(value)} />
-                <DataTableToolbar.CTA type="button" color="minimal">
-                  {" "}
-                  <Button onClick={handleBookMembers}>Book</Button>
+                <DataTableToolbar.CTA type="button" color="primary" onClick={handleBookMembers}>
+                  {t("book_members")}
                 </DataTableToolbar.CTA>
               </div>
             </DataTableToolbar.Root>
