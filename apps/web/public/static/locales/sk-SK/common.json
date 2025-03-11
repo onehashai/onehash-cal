@@ -1,4 +1,13 @@
 {
+  "disable_on_mark_no_show": "Deaktivovať krok pracovného procesu pri označení účastníka ako neprítomného",
+  "chat_integration_desc": "Žiadosti o integráciu odoslané z OneHash Chat",
+  "export_booking_response": "Exportované rezervácie budú čoskoro odoslané na váš e-mail.",
+  "workflow_example_desc": "Tu sú niektoré príklady, ako môžete automatizovať úlohy pomocou pracovných procesov.",
+  "workflows_total_responses": "Celkový počet spustených správ",
+  "workflows_sent_responses": "Počet odoslaných správ",
+  "workflows_read_responses": "Počet prečítaných správ",
+  "workflows_failed_responses": "Počet neúspešných správ",
+  "workflow_trends": "Trendy pracovných procesov",
   "identity_provider": "Poskytovateľ identity",
   "trial_days_left": "Máte $t(day, {\"count\": {{days}} }) na vašej PRO skúšobnej verzii",
   "day_one": "{{count}} deň",
