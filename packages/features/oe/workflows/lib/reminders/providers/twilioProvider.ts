@@ -175,7 +175,7 @@ export const scheduleSMS = async (
   const payload: {
     messagingServiceSid: string | undefined;
     to: string;
-    // scheduleType: string;
+    scheduleType: "fixed";
     sendAt: Date;
     from: string;
     body?: string;
@@ -185,7 +185,7 @@ export const scheduleSMS = async (
   } = {
     messagingServiceSid: process.env.TWILIO_MESSAGING_SID,
     to: getSMSNumber(phoneNumber, whatsapp),
-    // scheduleType: "fixed",
+    scheduleType: "fixed",
     sendAt: scheduledDate,
     from: whatsapp ? getDefaultSender(whatsapp) : sender ? sender : getDefaultSender(),
     ...(statusCallback && { statusCallback: statusCallback }),

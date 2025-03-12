@@ -253,7 +253,6 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
       organizer: { ...evt.organizer, language: { ...evt.organizer.language, translate: organizerT } },
       attendees: [attendee],
     };
-
     return sendSendgridMail(
       {
         to: data.to,
@@ -281,8 +280,8 @@ export const scheduleEmailReminder = async (args: scheduleEmailReminderArgs) => 
       },
       { sender },
       {
-        ...(evt.eventType?.id && {
-          eventTypeId: evt.eventType?.id,
+        ...(evt.eventTypeId && {
+          eventTypeId: evt.eventTypeId,
         }),
       }
     );

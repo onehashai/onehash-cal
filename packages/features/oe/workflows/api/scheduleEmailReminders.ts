@@ -33,6 +33,9 @@ async function deletePastReminders() {
       scheduledDate: {
         lte: dayjs().toISOString(),
       },
+      //to preserve workflows that weren't scheduled due to some reason
+      scheduled: false,
+      OR: [{ cancelled: null }, { cancelled: false }],
     },
   });
 }

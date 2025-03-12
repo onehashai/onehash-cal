@@ -47,6 +47,7 @@ export type BookingInfo = {
     timeFormat?: TimeFormat;
     username?: string;
   };
+  eventTypeId?: number | null;
   eventType: {
     title?: string;
     slug?: string;
@@ -233,7 +234,7 @@ export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
             undefined,
             undefined,
             {
-              eventTypeId: evt.eventType.id,
+              eventTypeId: evt.eventTypeId,
             }
           );
 

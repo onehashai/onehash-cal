@@ -15,12 +15,16 @@ class FirebaseService {
       try {
         serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
         serviceAccount.privateKey = serviceAccount.privateKey?.replace(/\\n/g, "\n");
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
       } catch (error) {
-        throw new Error("Invalid FIREBASE_SERVICE_ACCOUNT JSON format");
+        throw new Error(
+          error instanceof SyntaxError
+            ? "Invalid FIREBASE_SERVICE_ACCOUNT JSON format"
+            : "Invalid FIREBASE_SERVICE_ACCOUNT"
+        );
       }
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
     }
   }
 
