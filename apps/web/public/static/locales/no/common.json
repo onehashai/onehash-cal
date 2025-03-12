@@ -21,7 +21,7 @@
   "whatsapp_chat": "Chat på WhatsApp",
   "please_verify_phone_number": "Vennligst verifiser telefonnummeret ditt",
   "running_late": "Kommer du for sent?",
-  "connect_with_organizer": "Koble til arrangøren via WhatsApp",
+  "connect_with_host": "Koble til verten via WhatsApp",
   "connect_with_attendee": "Koble til {{name}} via WhatsApp",
   "autorefund": "Aktiver automatisk refusjon for dette betalte arrangementet til bestilleren",
   "autorefund_info": "Aktivering av automatisk refusjon vil sikre at deltakere får refusjon hvis arrangementet blir kansellert.",

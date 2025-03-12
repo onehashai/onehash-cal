@@ -21,7 +21,7 @@
   "whatsapp_chat": "Chatovat na WhatsApp",
   "please_verify_phone_number": "Prosím ověřte své telefonní číslo",
   "running_late": "Máte zpoždění?",
-  "connect_with_organizer": "Spojte se s organizátorem přes WhatsApp",
+  "connect_with_host": "Spojte se s hostitelem přes WhatsApp",
   "connect_with_attendee": "Spojte se s {{name}} přes WhatsApp",
   "autorefund": "Povolit automatické vrácení platby za tento zaplacený event pro rezervujícího",
   "autorefund_info": "Povolení automatického vrácení platby zajistí, že účastníci události dostanou vrácení peněz, pokud bude událost úspěšně zrušena.",

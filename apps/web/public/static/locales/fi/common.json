@@ -21,7 +21,7 @@
   "whatsapp_chat": "Keskustele WhatsAppissa",
   "please_verify_phone_number": "Vahvista puhelinnumerosi",
   "running_late": "Oletko myöhässä?",
-  "connect_with_organizer": "Yhdistä järjestäjään WhatsAppissa",
+  "connect_with_host": "Yhdistä isäntään WhatsAppin kautta",
   "connect_with_attendee": "Yhdistä {{name}}:n kanssa WhatsAppissa",
   "autorefund": "Ota käyttöön automaattinen hyvitys tälle maksetulle tapahtumalle varaajalle",
   "autorefund_info": "Automaattisen hyvityksen käyttö takaa, että tapahtuman osallistujat saavat hyvityksen, jos tapahtuma peruutetaan onnistuneesti.",

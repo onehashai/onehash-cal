@@ -21,7 +21,7 @@
   "whatsapp_chat": "Csevegés WhatsApp-on",
   "please_verify_phone_number": "Kérjük, erősítse meg a telefonszámát",
   "running_late": "Késik?",
-  "connect_with_organizer": "Kapcsolódjon a szervezőhöz WhatsApp-on",
+  "connect_with_host": "Kapcsolat a házigazdával WhatsAppon keresztül",
   "connect_with_attendee": "Kapcsolódjon {{name}}-val WhatsApp-on",
   "autorefund": "Automatikus visszatérítés engedélyezése ezen a fizetett eseményen a foglaló számára",
   "autorefund_info": "Az automatikus visszatérítés engedélyezése biztosítja, hogy a résztvevők visszatérítést kapjanak, ha az eseményt sikeresen törlik.",

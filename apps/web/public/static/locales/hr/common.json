@@ -21,7 +21,7 @@
   "whatsapp_chat": "Razgovaraj na WhatsAppu",
   "please_verify_phone_number": "Molimo vas da provjerite svoj broj telefona",
   "running_late": "Kasnite?",
-  "connect_with_organizer": "Povežite se s organizatorom putem WhatsAppa",
+  "connect_with_host": "Povežite se s domaćinom putem WhatsAppa",
   "connect_with_attendee": "Povežite se s {{name}} putem WhatsAppa",
   "autorefund": "Omogući automatski povrat novca za ovaj plaćeni događaj rezervatoru",
   "autorefund_info": "Omogućavanje automatskog povrata novca osigurat će da sudionici dobiju povrat novca ako je događaj uspješno otkazan.",

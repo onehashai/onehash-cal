@@ -21,7 +21,7 @@
   "whatsapp_chat": "Saruna WhatsApp",
   "please_verify_phone_number": "Lūdzu, apstipriniet savu tālruņa numuru",
   "running_late": "Kavējaties?",
-  "connect_with_organizer": "Sazināties ar organizatoru caur WhatsApp",
+  "connect_with_host": "Izveido savienojumu ar viesu saimnieku, izmantojot WhatsApp",
   "connect_with_attendee": "Sazināties ar {{name}} caur WhatsApp",
   "autorefund": "Iespējot automātisku atmaksu šim apmaksātajam pasākumam rezervētājam",
   "autorefund_info": "Iespējot automātisko atmaksu, tiks nodrošināts, ka dalībnieki saņems atmaksu, ja pasākums tiks veiksmīgi atcelts.",

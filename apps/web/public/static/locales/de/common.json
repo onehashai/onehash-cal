@@ -21,7 +21,7 @@
   "whatsapp_chat": "Chat über WhatsApp",
   "please_verify_phone_number": "Bitte verifiziere deine Telefonnummer",
   "running_late": "Kommst du zu spät?",
-  "connect_with_organizer": "Mit dem Organisator über WhatsApp verbinden",
+  "connect_with_host": "Verbinde dich mit dem Gastgeber über WhatsApp",
   "connect_with_attendee": "Mit {{name}} über WhatsApp verbinden",
   "autorefund": "Automatische Rückerstattung für diese bezahlte Veranstaltung an den Bucher aktivieren",
   "autorefund_info": "Die Aktivierung der automatischen Rückerstattung stellt sicher, dass Teilnehmer eine Rückerstattung erhalten, wenn die Veranstaltung erfolgreich abgesagt wird.",

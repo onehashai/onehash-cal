@@ -21,7 +21,7 @@
   "whatsapp_chat": "Chat op WhatsApp",
   "please_verify_phone_number": "Verifieer je telefoonnummer",
   "running_late": "Te laat?",
-  "connect_with_organizer": "Neem contact op met de organisator via WhatsApp",
+  "connect_with_host": "Verbind met de host via WhatsApp",
   "connect_with_attendee": "Neem contact op met {{name}} via WhatsApp",
   "autorefund": "Sta automatische terugbetaling van dit betaalde evenement naar de boeker toe",
   "autorefund_info": "Het inschakelen van automatische terugbetaling zorgt ervoor dat deelnemers een terugbetaling ontvangen als het evenement succesvol wordt geannuleerd.",

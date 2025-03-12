@@ -21,7 +21,7 @@
   "whatsapp_chat": "Vestlus WhatsAppis",
   "please_verify_phone_number": "Palun kinnitage oma telefoninumber",
   "running_late": "Hilinetakse?",
-  "connect_with_organizer": "Ühenduge korraldajaga WhatsAppi kaudu",
+  "connect_with_host": "Ühendu võõrustajaga WhatsAppi kaudu",
   "connect_with_attendee": "Ühenduge {{name}}-ga WhatsAppi kaudu",
   "autorefund": "Luba automaatne tagasimakse sellele tasulisele üritusele broneerijale",
   "autorefund_info": "Automaatse tagasimakse lubamine tagab, et ürituse osalejad saavad tagasimakse, kui üritus tühistatakse edukalt.",

@@ -21,7 +21,7 @@
   "whatsapp_chat": "צ'אט ב-WhatsApp",
   "please_verify_phone_number": "נא לאמת את מספר הטלפון שלך",
   "running_late": "מאחר?",
-  "connect_with_organizer": "התחבר עם המארגן דרך WhatsApp",
+  "connect_with_host": "התחבר למארח דרך WhatsApp",
   "connect_with_attendee": "התחבר עם {{name}} דרך WhatsApp",
   "autorefund": "אפשר החזר אוטומטי לאירוע זה למזמין",
   "autorefund_info": "הפעלת החזר אוטומטי תוודא שהמשתתפים יקבלו החזר אם האירוע בוטל בהצלחה.",

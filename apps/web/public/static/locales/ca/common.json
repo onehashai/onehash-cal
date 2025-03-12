@@ -21,7 +21,7 @@
   "whatsapp_chat": "Xateja per WhatsApp",
   "please_verify_phone_number": "Si us plau, verifica el teu número de telèfon",
   "running_late": "Et mous tard?",
-  "connect_with_organizer": "Connecta amb l'organitzador a través de WhatsApp",
+  "connect_with_host": "Connecta amb l'amfitrió per WhatsApp",
   "connect_with_attendee": "Connecta amb {{name}} a través de WhatsApp",
   "autorefund": "Activar el reemborsament automàtic d'aquest esdeveniment pagat per al reservant",
   "autorefund_info": "Activar el reemborsament automàtic garantirà que els assistents a l'esdeveniment rebin un reemborsament si l'esdeveniment es cancel·la amb èxit.",

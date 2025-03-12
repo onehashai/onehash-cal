@@ -21,7 +21,7 @@
   "whatsapp_chat": "通过WhatsApp聊天",
   "please_verify_phone_number": "请验证您的电话号码",
   "running_late": "迟到了？",
-  "connect_with_organizer": "通过WhatsApp与组织者联系",
+  "connect_with_host": "通过 WhatsApp 与房东联系",
   "connect_with_attendee": "通过WhatsApp与{{name}}联系",
   "autorefund": "启用此付费活动的自动退款",
   "autorefund_info": "启用自动退款将确保在活动成功取消时，参与者会收到退款。",

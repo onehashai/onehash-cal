@@ -21,7 +21,7 @@
   "whatsapp_chat": "الدردشة على WhatsApp",
   "please_verify_phone_number": "يرجى التحقق من رقم هاتفك",
   "running_late": "هل تتأخر؟",
-  "connect_with_organizer": "اتصل بالمنظم عبر WhatsApp",
+  "connect_with_host": "تواصل مع المضيف عبر WhatsApp",
   "connect_with_attendee": "اتصل بـ {{name}} عبر WhatsApp",
   "autorefund": "تمكين استرداد تلقائي لهذا الحدث المدفوع إلى الحجز",
   "autorefund_info": "تمكين الاسترداد التلقائي سيضمن أن يحصل المشاركون في الحدث على استرداد إذا تم إلغاء الحدث بنجاح.",

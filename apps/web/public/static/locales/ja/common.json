@@ -21,7 +21,7 @@
   "whatsapp_chat": "WhatsAppでチャット",
   "please_verify_phone_number": "電話番号を確認してください",
   "running_late": "遅れていますか？",
-  "connect_with_organizer": "WhatsAppで主催者に連絡",
+  "connect_with_host": "WhatsAppでホストとつながる",
   "connect_with_attendee": "WhatsAppで{{name}}に連絡",
   "autorefund": "この有料イベントの自動返金を予約者に有効にする",
   "autorefund_info": "自動返金を有効にすると、イベントが正常にキャンセルされた場合に参加者が返金されることを保証します。",

@@ -21,7 +21,7 @@
   "whatsapp_chat": "WhatsApp으로 채팅",
   "please_verify_phone_number": "전화번호를 확인해주세요",
   "running_late": "늦었나요?",
-  "connect_with_organizer": "WhatsApp으로 주최자와 연결",
+  "connect_with_host": "WhatsApp을 통해 호스트와 연결하세요",
   "connect_with_attendee": "WhatsApp으로 {{name}}와 연결",
   "autorefund": "이 유료 이벤트에 대해 예약자에게 자동 환불 활성화",
   "autorefund_info": "자동 환불을 활성화하면 이벤트가 성공적으로 취소된 경우 참석자에게 환불이 보장됩니다.",

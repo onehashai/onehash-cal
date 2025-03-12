@@ -5,7 +5,13 @@ import Row from "./Row";
 
 const CommentIE = ({ html = "" }) => <RawHtml html={`<!--[if mso | IE]>${html}<![endif]-->`} />;
 
-const EmailBodyLogo = ({ disableLogo = false, bannerUrl = "" }) => {
+const EmailBodyLogo = ({
+  disableLogo = false,
+  bannerUrl = "",
+}: {
+  disableLogo?: boolean;
+  bannerUrl?: string | null;
+}) => {
   if (!bannerUrl && disableLogo) {
     return null;
   }

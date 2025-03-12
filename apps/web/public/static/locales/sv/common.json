@@ -21,7 +21,7 @@
   "whatsapp_chat": "Chatta på WhatsApp",
   "please_verify_phone_number": "Vänligen verifiera ditt telefonnummer",
   "running_late": "Kommer du sent?",
-  "connect_with_organizer": "Anslut med arrangören via WhatsApp",
+  "connect_with_host": "Anslut till värden via WhatsApp",
   "connect_with_attendee": "Anslut med {{name}} via WhatsApp",
   "autorefund": "Aktivera automatisk återbetalning för detta betalda evenemang till bokaren",
   "autorefund_info": "Aktivering av automatisk återbetalning kommer att säkerställa att deltagarna får en återbetalning om evenemanget avbryts framgångsrikt.",

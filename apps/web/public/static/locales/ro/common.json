@@ -21,7 +21,7 @@
   "whatsapp_chat": "Chat pe WhatsApp",
   "please_verify_phone_number": "Te rog verifică-ți numărul de telefon",
   "running_late": "Întârziat?",
-  "connect_with_organizer": "Conectează-te cu organizatorul prin WhatsApp",
+  "connect_with_host": "Conectează-te cu gazda prin WhatsApp",
   "connect_with_attendee": "Conectează-te cu {{name}} prin WhatsApp",
   "autorefund": "Activează rambursarea automată a acestui eveniment plătit către rezervant",
   "autorefund_info": "Activarea rambursării automate va asigura că participanții vor primi o rambursare în cazul în care evenimentul este anulat cu succes.",

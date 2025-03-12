@@ -137,7 +137,7 @@ export const BaseScheduledEmail = (
         : props.calEvent.organizer.phoneNumber && (
             <Info
               label={t("running_late")}
-              description={t("connect_with_organizer")}
+              description={t("connect_with_host")}
               withSpacer
               link={getRunningLateLink(props.calEvent.organizer.phoneNumber)}
             />

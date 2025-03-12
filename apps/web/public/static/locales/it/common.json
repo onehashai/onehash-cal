@@ -21,7 +21,7 @@
   "whatsapp_chat": "Chat su WhatsApp",
   "please_verify_phone_number": "Verifica il tuo numero di telefono",
   "running_late": "In ritardo?",
-  "connect_with_organizer": "Connetti con l'organizzatore tramite WhatsApp",
+  "connect_with_host": "Connettiti con l'host tramite WhatsApp",
   "connect_with_attendee": "Connetti con {{name}} tramite WhatsApp",
   "autorefund": "Abilita il rimborso automatico per questo evento a pagamento al prenotante",
   "autorefund_info": "Abilitare il rimborso automatico garantirà che i partecipanti ricevano un rimborso se l'evento viene annullato con successo.",

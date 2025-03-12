@@ -21,7 +21,7 @@
   "whatsapp_chat": "Czat na WhatsApp",
   "please_verify_phone_number": "Proszę zweryfikować swój numer telefonu",
   "running_late": "Opóźniony?",
-  "connect_with_organizer": "Połącz się z organizatorem przez WhatsApp",
+  "connect_with_host": "Połącz się z gospodarzem przez WhatsApp",
   "connect_with_attendee": "Połącz się z {{name}} przez WhatsApp",
   "autorefund": "Włącz automatyczny zwrot środków za to opłacone wydarzenie do rezerwującego",
   "autorefund_info": "Włączenie automatycznego zwrotu zapewni, że uczestnicy otrzymają zwrot, jeśli wydarzenie zostanie pomyślnie odwołane.",
