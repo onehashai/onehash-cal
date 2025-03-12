@@ -109,7 +109,7 @@ async function scheduleReminders() {
           true,
           reminder.workflowStep.template,
           JSON.stringify(contentVars),
-          reminder.booking?.eventType?.id ? { eventTypeId: reminder.booking?.eventType?.id } : undefined
+          reminder.booking?.eventTypeId ? { eventTypeId: reminder.booking?.eventTypeId } : undefined
         );
 
         if (scheduledSMS) {
