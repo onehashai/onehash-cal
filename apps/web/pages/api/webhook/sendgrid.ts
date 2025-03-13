@@ -63,6 +63,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           continue;
         }
 
+        const eventType = await prisma.eventType.findUnique({
+          where: { id: eventTypeId },
+        });
+
+        if (!eventType) {
+          log.warn(`Event not found with ID ${eventTypeId} skipping operation`);
+          console.warn(`Event not found with ID ${eventTypeId} skipping operation`);
+          continue;
+        }
+
         const status = statusMap[event];
         if (!status) {
           log.warn("Skipping event due to unhandled status", event);
@@ -87,8 +97,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       log.info("Successfully processed events", events);
       return res.status(200).json({ success: true });
     } catch (err) {
-      log.error("Error in /event-webhook", err);
-      console.error("Error in /event-webhook", err);
+      log.error("Error in / /api/webhook/sendgrid", err);
+      console.error("Error in / /api/webhook/sendgrid", err);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   } else {
