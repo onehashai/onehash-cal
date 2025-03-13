@@ -55,7 +55,7 @@ export const WorkflowStatusLineChart = () => {
   if (isPending) return <LoadingInsight />;
 
   if (!isSuccess) return null;
-
+  console.log("eventsTimeLine", eventsTimeLine);
   return (
     <CardInsights>
       <Title className="text-emphasis">{t("workflow_trends")}</Title>
@@ -63,7 +63,7 @@ export const WorkflowStatusLineChart = () => {
         className="linechart mt-4 h-80"
         data={eventsTimeLine ?? []}
         categories={["Sent", "Read", "Failed", "Total"]}
-        index="Month"
+        index="formattedDate"
         colors={["purple", "green", "blue", "red"]}
         valueFormatter={valueFormatter}
       />
