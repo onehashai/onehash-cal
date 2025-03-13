@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Script from "next/script";
 import { useEffect } from "react";
+
+import useIsWebView from "@calcom/lib/hooks/useIsWebView";
 
 declare global {
   interface Window {
@@ -10,62 +11,76 @@ declare global {
 }
 
 export default function OneHashChatScript() {
-  useEffect(() => {
-    window.chatwootSettings = {
-      hideMessageBubble: false,
-      position: "right",
-      locale: "en",
-      type: "expanded",
-    };
-  }, []);
-
-  const handleScriptLoad = () => {
-    const elements = document.querySelectorAll(".woot-widget-bubble");
-    elements.forEach((element) => {
-      const el = element as HTMLElement;
-      adjustChatWidgetPosition(el);
-    });
-
-    // Adjust position on window resize
-    window.addEventListener("resize", () => {
-      elements.forEach((element) => {
-        const el = element as HTMLElement;
-        adjustChatWidgetPosition(el);
-      });
-    });
-  };
+  const isWebView = useIsWebView();
 
   const adjustChatWidgetPosition = (element: HTMLElement) => {
-    // Get viewport height
     const windowWidth = window.innerWidth;
-
-    // Adjust position based on viewport height
-    if (windowWidth <= 600) {
+    if (windowWidth <= 900) {
       element.style.bottom = "78px";
-      element.style.right = "20px";
-    } else if (windowWidth <= 900) {
-      element.style.bottom = "40px";
-      element.style.left = "40px";
-    } else {
-      // element.style.bottom = "20px";
-      // element.style.left = "140px";
     }
   };
 
-  return (
-    <Script
-      id="onehash-chat-sdk"
-      src="https://chat.onehash.ai/packs/js/sdk.js"
-      onLoad={() => {
+  useEffect(() => {
+    if (isWebView === null) return;
+    const script = document.createElement("script");
+    script.id = "onehash-chat-sdk";
+    script.src = "https://chat.onehash.ai/packs/js/sdk.js";
+    script.async = true;
+
+    script.onload = () => {
+      window.chatwootSettings = {
+        hideMessageBubble: isWebView,
+
+        position: window.innerWidth <= 900 ? "left" : "right",
+        type: "standard",
+        launcherTitle: "Chat with us",
+      };
+
+      if (window.chatwootSDK) {
         window.chatwootSDK.run({
           websiteToken: "wDbXNafmeJPxJPAimstLMpZQ",
           baseUrl: "https://chat.onehash.ai",
         });
+      }
 
-        setTimeout(() => {
-          handleScriptLoad();
-        }, 2000);
-      }}
-    />
-  );
+      const handleScriptLoad = () => {
+        const elements = document.querySelectorAll(".woot-widget-bubble");
+        elements.forEach((element) => {
+          adjustChatWidgetPosition(element as HTMLElement);
+        });
+
+        // Adjust position on window resize
+        window.addEventListener("resize", () => {
+          elements.forEach((element) => {
+            adjustChatWidgetPosition(element as HTMLElement);
+          });
+        });
+      };
+
+      // Use MutationObserver to detect when `.woot-widget-bubble` is added
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.addedNodes.length) {
+            const elements = document.querySelectorAll(".woot-widget-bubble");
+            if (elements.length > 0) {
+              handleScriptLoad();
+              observer.disconnect(); // Stop observing after the element is found
+              break;
+            }
+          }
+        }
+      });
+
+      // Start observing body for added nodes
+      observer.observe(document.body, { childList: true, subtree: true });
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [isWebView]);
+
+  return <></>;
 }

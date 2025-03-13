@@ -384,9 +384,7 @@ export const getRunningLateSection = (
     } else {
       if (!calEvent.organizer.phoneNumber) return "";
       return `${t("running_late")}:
-        <a href="${getRunningLateLink(calEvent.organizer.phoneNumber)}" > ${t(
-        "connect_with_organizer"
-      )} </a>`;
+        <a href="${getRunningLateLink(calEvent.organizer.phoneNumber)}" > ${t("connect_with_host")} </a>`;
     }
   } else {
     // For non-email case, ensure "Running Late" appears only once if there are any links
@@ -395,7 +393,7 @@ export const getRunningLateSection = (
     // Add the organizer link if available
     if (calEvent.organizer.phoneNumber) {
       links.push(
-        `<a href="${getRunningLateLink(calEvent.organizer.phoneNumber)}">${t("connect_with_organizer")}</a>`
+        `<a href="${getRunningLateLink(calEvent.organizer.phoneNumber)}">${t("connect_with_host")}</a>`
       );
     }
 

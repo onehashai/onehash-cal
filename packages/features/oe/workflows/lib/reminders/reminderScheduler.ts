@@ -195,6 +195,7 @@ export const scheduleWorkflowReminders = async (args: ScheduleWorkflowRemindersA
     hideBranding,
     seatReferenceUid,
   } = args;
+
   if (isNotConfirmed || !workflows.length) return;
 
   for (const workflow of workflows) {

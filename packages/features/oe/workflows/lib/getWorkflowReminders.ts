@@ -35,6 +35,7 @@ type PartialBooking =
       | "userPrimaryEmail"
       | "smsReminderNumber"
       | "title"
+      | "eventTypeId"
     > & {
       eventType:
         | (Partial<EventType> & {
@@ -156,6 +157,7 @@ export const select: Prisma.WorkflowReminderSelect = {
       description: true,
       smsReminderNumber: true,
       userPrimaryEmail: true,
+      eventTypeId: true,
       user: {
         select: {
           email: true,

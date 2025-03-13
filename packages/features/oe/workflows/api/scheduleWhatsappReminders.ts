@@ -17,6 +17,9 @@ async function deletePastReminders() {
       scheduledDate: {
         lte: dayjs().toISOString(),
       },
+      //to preserve workflows that weren't scheduled due to some reason
+      scheduled: false,
+      OR: [{ cancelled: null }, { cancelled: false }],
     },
   });
 }
@@ -71,13 +74,23 @@ async function scheduleReminders() {
       //   userName
       // );
 
+      const { workflowStep, booking } = reminder;
       const contentVars = twilio.generateContentVars(
         {
           workflowStep: {
-            action: reminder.workflowStep.action,
-            template: reminder.workflowStep.template,
+            action: workflowStep.action,
+            template: workflowStep.template,
           },
-          booking: reminder.booking,
+          booking: {
+            eventType: {
+              title: booking.eventType?.title ?? "N/A",
+            },
+            startTime: booking.startTime,
+            user: {
+              locale: booking.user?.locale,
+              timeFormat: booking.user?.timeFormat,
+            },
+          },
         },
         attendeeName || "",
         userName || "",
@@ -96,7 +109,7 @@ async function scheduleReminders() {
           true,
           reminder.workflowStep.template,
           JSON.stringify(contentVars),
-          reminder.booking?.eventType?.id ? { eventTypeId: reminder.booking?.eventType?.id } : undefined
+          reminder.booking?.eventTypeId ? { eventTypeId: reminder.booking?.eventTypeId } : undefined
         );
 
         if (scheduledSMS) {

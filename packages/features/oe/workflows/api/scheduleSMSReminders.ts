@@ -142,7 +142,7 @@ async function scheduleReminders() {
           false,
           undefined,
           undefined,
-          reminder.booking?.eventType?.id ? { eventTypeId: reminder.booking?.eventType?.id } : undefined
+          reminder.booking?.eventTypeId ? { eventTypeId: reminder.booking?.eventTypeId } : undefined
         );
 
         if (scheduledSMS) {
@@ -190,6 +190,9 @@ async function deletePastReminders() {
           scheduledDate: {
             lte: dayjs().toISOString(),
           },
+          //to preserve workflows that weren't scheduled due to some reason
+          scheduled: false,
+          OR: [{ cancelled: null }, { cancelled: false }],
         },
         {
           retryCount: {

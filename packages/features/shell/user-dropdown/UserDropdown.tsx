@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import HelpMenuItem from "@calcom/features/oe/support/components/HelpMenuItem";
 import { classNames } from "@calcom/lib";
 import { JOIN_COMMUNITY, ROADMAP } from "@calcom/lib/constants";
+import useIsWebView from "@calcom/lib/hooks/useIsWebView";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import {
@@ -24,6 +25,11 @@ import federatedLogout from "../../auth/lib/federatedLogout";
 import usePostHog from "../../ee/event-tracking/lib/posthog/userPostHog";
 import FreshChatProvider from "../../ee/support/lib/freshchat/FreshChatProvider";
 
+declare global {
+  interface Window {
+    $chatwoot: any;
+  }
+}
 interface UserDropdownProps {
   small?: boolean;
 }
@@ -48,6 +54,15 @@ export function UserDropdown({ small }: UserDropdownProps) {
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const isWebView = useIsWebView();
+  const handleOnClickHelp = () => {
+    if (isWebView) {
+      window.$chatwoot.toggle("open"); // To open widget
+    } else {
+      setHelpOpen(true);
+    }
+  };
 
   const onHelpItemSelect = () => {
     setHelpOpen(false);
@@ -172,7 +187,7 @@ export function UserDropdown({ small }: UserDropdownProps) {
                     type="button"
                     StartIcon="circle-help"
                     aria-hidden="true"
-                    onClick={() => setHelpOpen(true)}>
+                    onClick={handleOnClickHelp}>
                     {t("help")}
                   </DropdownItem>
                 </DropdownMenuItem>

@@ -33,6 +33,9 @@ async function deletePastReminders() {
       scheduledDate: {
         lte: dayjs().toISOString(),
       },
+      //to preserve workflows that weren't scheduled due to some reason
+      scheduled: false,
+      OR: [{ cancelled: null }, { cancelled: false }],
     },
   });
 }
@@ -313,8 +316,8 @@ async function scheduleReminders() {
               },
               { sender: reminder.workflowStep.sender },
               {
-                ...(reminder.booking.eventType?.id && {
-                  eventTypeId: reminder.booking.eventType?.id,
+                ...(reminder.booking.eventTypeId && {
+                  eventTypeId: reminder.booking.eventTypeId,
                 }),
               }
             ).then(() =>
@@ -377,8 +380,8 @@ async function scheduleReminders() {
               },
               { sender: reminder.workflowStep?.sender },
               {
-                ...(reminder.booking.eventType?.id && {
-                  eventTypeId: reminder.booking.eventType?.id,
+                ...(reminder.booking.eventTypeId && {
+                  eventTypeId: reminder.booking.eventTypeId,
                 }),
               }
             ).then(() =>

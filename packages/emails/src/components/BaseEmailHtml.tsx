@@ -24,7 +24,7 @@ export const BaseEmailHtml = (props: {
   subtitle?: React.ReactNode | string;
   headerType?: BodyHeadType;
   hideLogo?: boolean;
-  bannerUrl?: string;
+  bannerUrl?: string | null;
 }) => {
   return (
     <Html>

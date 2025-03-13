@@ -235,7 +235,6 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs) =
               eventTypeId: evt.eventType.id,
             }
           );
-
           if (scheduledWHATSAPP) {
             await prisma.workflowReminder.create({
               data: {
