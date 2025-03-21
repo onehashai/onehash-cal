@@ -40,7 +40,7 @@ export const getCalendarCredentials = (credentials: Array<CredentialPayload>) =>
 
 export const getConnectedCalendars = async (
   calendarCredentials: ReturnType<typeof getCalendarCredentials>,
-  selectedCalendars: { externalId: string }[],
+  selectedCalendars: { externalId: string; googleSyncEnabled: boolean }[],
   destinationCalendarExternalId?: string
 ) => {
   let destinationCalendar: IntegrationCalendar | undefined;
@@ -67,6 +67,8 @@ export const getConnectedCalendars = async (
               primary: cal.primary || null,
               isSelected: selectedCalendars.some((selected) => selected.externalId === cal.externalId),
               credentialId,
+              googleSyncEnabled: selectedCalendars.find((selected) => selected.externalId === cal.externalId)
+                ?.googleSyncEnabled,
             };
           }),
           ["primary"]

@@ -318,17 +318,21 @@ function BookingListItem(booking: BookingItemProps) {
   // }
 
   let bookedActions: ActionType[] = [
-    {
-      id: "cancel",
-      label: isTabRecurring && isRecurring ? t("cancel_all_remaining") : t("cancel_event"),
-      /* When cancelling we need to let the UI and the API know if the intention is to
+    ...(!isPrismaObjOrUndefined(booking.metadata)?.isExternalEvent
+      ? [
+          {
+            id: "cancel",
+            label: isTabRecurring && isRecurring ? t("cancel_all_remaining") : t("cancel_event"),
+            /* When cancelling we need to let the UI and the API know if the intention is to
                cancel all remaining bookings or just that booking instance. */
-      href: `/booking/${booking.uid}?cancel=true${
-        isTabRecurring && isRecurring ? "&allRemainingBookings=true" : ""
-      }${booking.seatsReferences.length ? `&seatReferenceUid=${getSeatReferenceUid()}` : ""}
+            href: `/booking/${booking.uid}?cancel=true${
+              isTabRecurring && isRecurring ? "&allRemainingBookings=true" : ""
+            }${booking.seatsReferences.length ? `&seatReferenceUid=${getSeatReferenceUid()}` : ""}
       `,
-      icon: "x" as const,
-    },
+            icon: "x" as const,
+          },
+        ]
+      : []),
     {
       id: "edit_booking",
       label: t("edit"),
@@ -1076,20 +1080,24 @@ const RecurringBookingsTooltip = ({
         <div className="underline decoration-gray-400 decoration-dashed underline-offset-2">
           <div className="flex">
             <Tooltip
-              content={recurringDates.map((aDate, key) => {
-                const pastOrCancelled =
-                  aDate < now ||
-                  booking.recurringInfo?.bookings[BookingStatus.CANCELLED]
-                    .map((date) => date.toString())
-                    .includes(aDate.toString());
-                return (
-                  <p key={key} className={classNames(pastOrCancelled && "line-through")}>
-                    {formatTime(aDate, userTimeFormat, userTimeZone)}
-                    {" - "}
-                    {dayjs(aDate).locale(language).format("D MMMM YYYY")}
-                  </p>
-                );
-              })}>
+              content={
+                <div className="max-h-48 w-64 overflow-y-auto p-2">
+                  {recurringDates.map((aDate, key) => {
+                    const pastOrCancelled =
+                      aDate < now ||
+                      booking.recurringInfo?.bookings[BookingStatus.CANCELLED]
+                        .map((date) => date.toString())
+                        .includes(aDate.toString());
+                    return (
+                      <p key={key} className={classNames(pastOrCancelled && "line-through")}>
+                        {formatTime(aDate, userTimeFormat, userTimeZone)}
+                        {" - "}
+                        {dayjs(aDate).locale(language).format("D MMMM YYYY")}
+                      </p>
+                    );
+                  })}
+                </div>
+              }>
               <div className="text-default">
                 <Icon
                   name="refresh-ccw"

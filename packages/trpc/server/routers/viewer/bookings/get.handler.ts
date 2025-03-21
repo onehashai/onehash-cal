@@ -1,6 +1,7 @@
 import { Prisma as PrismaClientType } from "@prisma/client";
+import { RRule, RRuleSet, rrulestr } from "rrule";
 
-import { parseRecurringEvent, parseEventTypeColor } from "@calcom/lib";
+import { parseRecurringEvent, parseEventTypeColor, isPrismaObjOrUndefined } from "@calcom/lib";
 import getAllUserBookings from "@calcom/lib/bookings/getAllUserBookings";
 import type { PrismaClient } from "@calcom/prisma";
 import { bookingMinimalSelect } from "@calcom/prisma";
@@ -59,6 +60,80 @@ const getUniqueBookings = <T extends { uid: string }>(arr: T[]) => {
   set.clear();
   return unique;
 };
+
+//returns recurrence dates and count for google calendar events with recurrence pattern as per "RFC5545"
+function generateDatesFromRecurrence(
+  recurrencePattern: {
+    RRULE?: string;
+    EXRULE?: string;
+    RDATE?: string;
+    EXDATE?: string;
+  },
+  startTime: Date
+): { dates: Date[]; count: number } {
+  const ruleSet = new RRuleSet();
+  const MAX_OCCURRENCES = 730;
+
+  if (recurrencePattern.RRULE) {
+    let rule = rrulestr(recurrencePattern.RRULE, { dtstart: startTime });
+
+    if (!rule.options.until && !rule.options.count) {
+      rule = new RRule({ ...rule.options, count: MAX_OCCURRENCES, dtstart: startTime });
+    }
+
+    ruleSet.rrule(rule);
+  }
+
+  if (recurrencePattern.EXRULE) {
+    let exRule = rrulestr(recurrencePattern.EXRULE, { dtstart: startTime });
+
+    if (!exRule.options.until && !exRule.options.count) {
+      exRule = new RRule({ ...exRule.options, count: MAX_OCCURRENCES, dtstart: startTime });
+    }
+
+    ruleSet.exrule(exRule);
+  }
+
+  if (recurrencePattern.RDATE) {
+    recurrencePattern.RDATE.split(",").forEach((date) => ruleSet.rdate(new Date(date)));
+  }
+
+  if (recurrencePattern.EXDATE) {
+    recurrencePattern.EXDATE.split(",").forEach((date) => ruleSet.exdate(new Date(date)));
+  }
+
+  const occurrences = ruleSet.all();
+  return { dates: occurrences, count: occurrences.length };
+}
+
+//to retrieve metadata from grouped events
+async function getMetadatafromGroupedEvent(
+  prisma: PrismaClient,
+  recurringInfoExtended: {
+    recurringEventId: string | null;
+    status: BookingStatus;
+    startTime: Date;
+  }[]
+) {
+  const metadataRecords = await prisma.booking.findMany({
+    where: {
+      recurringEventId: {
+        in: recurringInfoExtended.map((b) => b.recurringEventId).filter((id): id is string => id !== null),
+      },
+    },
+    select: { recurringEventId: true, metadata: true },
+  });
+
+  const metadataMap: Record<string, Prisma.JsonValue> = Object.fromEntries(
+    metadataRecords.map((record) => [record.recurringEventId, record.metadata])
+  );
+
+  const recurringInfoExtendedWithMeta = recurringInfoExtended.map((group) => ({
+    ...group,
+    metadata: metadataMap[group.recurringEventId ?? ""],
+  }));
+  return recurringInfoExtendedWithMeta;
+}
 
 export async function getBookings({
   user,
@@ -428,6 +503,7 @@ export async function getBookings({
       take: take + 1,
       skip,
     }),
+    //recurringInfoBasic
     prisma.booking.groupBy({
       by: ["recurringEventId"],
       _min: {
@@ -443,6 +519,7 @@ export async function getBookings({
         userId: user.id,
       },
     }),
+    //recurringInfoExtended
     prisma.booking.groupBy({
       by: ["recurringEventId", "status", "startTime"],
       _min: {
@@ -457,6 +534,71 @@ export async function getBookings({
     }),
   ]);
 
+  // Fetch metadata separately
+  const recurringInfoExtendedWithMeta = await getMetadatafromGroupedEvent(prisma, recurringInfoExtended);
+
+  const allOccurrences = recurringInfoExtendedWithMeta.flatMap((it, index) => {
+    //Try different patterns for testing
+    // const recurrenctPattern =
+    //   index == 1
+    //     ? {
+    //         RRULE: "FREQ=DAILY;UNTIL=20250830T235959Z",
+    //         RDATE: "2025-04-18T03:30:00Z,2025-04-22T03:30:00Z",
+    //         EXDATE: "2025-04-19T03:30:00Z,2025-05-01T03:30:00Z",
+    //       }
+    //     : isPrismaObjOrUndefined(it.metadata)?.recurrencePattern;
+
+    const recurrenctPattern = isPrismaObjOrUndefined(it.metadata)?.recurrencePattern;
+    if (!recurrenctPattern) {
+      return [{ ...it, count: 1 }];
+    }
+
+    const { dates, count } = generateDatesFromRecurrence(
+      recurrenctPattern as PrismaClientType.JsonObject,
+      it.startTime
+    );
+
+    console.log("in_here_561", "count", count, "\ndates", dates);
+
+    return dates.map((date) => ({
+      recurringEventId: it.recurringEventId,
+      status: it.status,
+      startTime: date,
+      count,
+    }));
+  });
+
+  const googleRecurringEventSet = new Set(
+    recurringInfoExtendedWithMeta
+      .filter((b) => isPrismaObjOrUndefined(b.metadata)?.recurrencePattern)
+      .map((b) => b.recurringEventId)
+  );
+
+  const googleEventCountMap = new Map<string, number>();
+  allOccurrences.forEach((b) => {
+    if (b.recurringEventId) googleEventCountMap.set(b.recurringEventId, b.count);
+  });
+
+  // Precompute bookings organized by status
+  const recurringEvtStatusMap = new Map<string, { [key in BookingStatus]: Date[] }>();
+  allOccurrences.forEach((curr) => {
+    if (!curr.recurringEventId) return;
+
+    if (!recurringEvtStatusMap.has(curr.recurringEventId)) {
+      recurringEvtStatusMap.set(curr.recurringEventId, {
+        ACCEPTED: [],
+        CANCELLED: [],
+        REJECTED: [],
+        PENDING: [],
+        AWAITING_HOST: [],
+      });
+    } else {
+      const statusEntry = recurringEvtStatusMap.get(curr.recurringEventId);
+      if (statusEntry) {
+        statusEntry[curr.status].push(curr.startTime);
+      }
+    }
+  });
   const recurringInfo = recurringInfoBasic.map(
     (
       info: (typeof recurringInfoBasic)[number]
@@ -468,22 +610,33 @@ export async function getBookings({
         [key: string]: Date[];
       };
     } => {
-      const bookings = recurringInfoExtended.reduce(
-        (prev, curr) => {
-          if (curr.recurringEventId === info.recurringEventId) {
-            prev[curr.status].push(curr.startTime);
-          }
-          return prev;
-        },
-        { ACCEPTED: [], CANCELLED: [], REJECTED: [], PENDING: [], AWAITING_HOST: [] } as {
-          [key in BookingStatus]: Date[];
-        }
-      );
+      const isGoogleCalendarRecurringEvt = googleRecurringEventSet.has(info.recurringEventId);
+
+      const count = isGoogleCalendarRecurringEvt
+        ? googleEventCountMap.get(info.recurringEventId ?? "") ?? 730
+        : info._count.recurringEventId;
+      // const bookings = recurringInfoExtended.reduce(
+      //   (prev, curr) => {
+      //     if (curr.recurringEventId === info.recurringEventId) {
+      //       prev[curr.status].push(curr.startTime);
+      //     }
+      //     return prev;
+      //   },
+      //   { ACCEPTED: [], CANCELLED: [], REJECTED: [], PENDING: [], AWAITING_HOST: [] } as {
+      //     [key in BookingStatus]: Date[];
+      //   }
+      // );
       return {
         recurringEventId: info.recurringEventId,
-        count: info._count.recurringEventId,
+        count: count,
         firstDate: info._min.startTime,
-        bookings,
+        bookings: recurringEvtStatusMap.get(info.recurringEventId ?? "") ?? {
+          ACCEPTED: [],
+          CANCELLED: [],
+          REJECTED: [],
+          PENDING: [],
+          AWAITING_HOST: [],
+        },
       };
     }
   );

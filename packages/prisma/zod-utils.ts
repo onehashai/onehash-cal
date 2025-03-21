@@ -465,8 +465,10 @@ export const bookingMetadataSchema = z
     videoCallUrl: z.string().optional(),
     meetingNote: z.string().optional(),
     isImported: z.string().optional(),
+    recurrencePattern: z.record(z.any()).optional(),
+    isExternalEvent: z.boolean().optional(),
   })
-  .and(z.record(z.string()))
+  .and(z.record(z.union([z.string(), z.boolean()])))
   .nullable();
 
 export const customInputOptionSchema = z.array(

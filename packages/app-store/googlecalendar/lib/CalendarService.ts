@@ -797,6 +797,32 @@ export default class GoogleCalendarService implements Calendar {
       throw error;
     }
   }
+
+  async getCalendarEvents(params: {
+    eventTypes: string[];
+    maxResults: number;
+    showDeleted: boolean;
+    timeMin: string;
+  }): Promise<calendar_v3.Schema$Event[]> {
+    let pageToken: string | undefined;
+    const externalCalEvents: calendar_v3.Schema$Event[] = [];
+    try {
+      do {
+        const calendar = await this.authedCalendar();
+
+        const response: any = await calendar.events.list({ ...params, pageToken: pageToken });
+
+        const events: calendar_v3.Schema$Event[] = response.data.items ?? [];
+        const _externalCalEvents = events.filter((evt) => !evt.iCalUID?.includes("OneHash"));
+        externalCalEvents.concat(_externalCalEvents);
+        pageToken = response.data.nextPageToken;
+      } while (pageToken);
+      return externalCalEvents;
+    } catch (error) {
+      logger.error("Error in `getCalendarEvents`", { error });
+      throw error;
+    }
+  }
 }
 
 class MyGoogleAuth extends OAuth2Client {

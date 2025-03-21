@@ -32,21 +32,23 @@ export class SelectedCalendarRepository {
     const nextBatch = await prisma.selectedCalendar.findMany({
       take: limit,
       where: {
-        user: {
-          teams: {
-            some: {
-              team: {
-                features: {
-                  some: {
-                    featureId: "calendar-cache",
-                  },
-                },
-              },
-            },
-          },
-        },
+        // TODO:GCAL SYNC need to get all calendars , for google calendar bi-directional sync feature
+        // user: {
+        //   teams: {
+        //     some: {
+        //       team: {
+        //         features: {
+        //           some: {
+        //             featureId: "calendar-cache",
+        //           },
+        //         },
+        //       },
+        //     },
+        //   },
+        // },
         // RN we only support google calendar subscriptions for now
         integration: "google_calendar",
+        googleSyncEnabled: true,
         OR: [
           // Either is a calendar pending to be watched
           { googleChannelExpiration: null },
@@ -59,25 +61,28 @@ export class SelectedCalendarRepository {
   }
   /** Retrieve calendars that are being watched but shouldn't be anymore */
   static async getNextBatchToUnwatch(limit = 100) {
+    const oneDayInMS = 24 * 60 * 60 * 1000;
+    const tomorrowTimestamp = String(new Date().getTime() + oneDayInMS);
     const nextBatch = await prisma.selectedCalendar.findMany({
       take: limit,
       where: {
-        user: {
-          teams: {
-            every: {
-              team: {
-                features: {
-                  none: {
-                    featureId: "calendar-cache",
-                  },
-                },
-              },
-            },
-          },
-        },
+        // TODO:GCAL SYNC need to get all calendars , for google calendar bi-directional sync feature
+        // user: {
+        //   teams: {
+        //     every: {
+        //       team: {
+        //         features: {
+        //           none: {
+        //             featureId: "calendar-cache",
+        //           },
+        //         },
+        //       },
+        //     },
+        //   },
+        // },
         // RN we only support google calendar subscriptions for now
+        OR: [{ googleChannelExpiration: { lt: tomorrowTimestamp } }, { googleSyncEnabled: false }],
         integration: "google_calendar",
-        googleChannelExpiration: { not: null },
       },
     });
     return nextBatch;
@@ -108,6 +113,19 @@ export class SelectedCalendarRepository {
             selectedCalendars: {
               orderBy: {
                 externalId: "asc",
+              },
+            },
+          },
+        },
+        user: {
+          select: {
+            teams: {
+              select: {
+                team: {
+                  select: {
+                    features: true,
+                  },
+                },
               },
             },
           },

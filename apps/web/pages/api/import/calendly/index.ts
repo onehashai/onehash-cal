@@ -25,6 +25,7 @@ import { INNGEST_ID } from "@calcom/lib/constants";
 import { defaultHandler, defaultResponder, getTranslation } from "@calcom/lib/server";
 import { getUsersCredentials } from "@calcom/lib/server/getUsersCredentials";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
+import { getServerTimezone } from "@calcom/lib/timezone";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus, IntegrationProvider, SchedulingType } from "@calcom/prisma/client";
@@ -381,10 +382,10 @@ const getDateTimeISOString = (time: string) => {
 };
 
 //Returns the server timezone
-const getServerTimezone = (): string => {
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return timeZone;
-};
+// const getServerTimezone = (): string => {
+//   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+//   return timeZone;
+// };
 
 //Returns the attendees with timezone
 const getAttendeesWithTimezone = (

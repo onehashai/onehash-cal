@@ -12,6 +12,7 @@ import { ZEventTypeOrderInputSchema } from "./eventTypeOrder.schema";
 import { ZGetAttendeesSchema } from "./getAttendees.schema";
 import { ZGetCalVideoRecordingsInputSchema } from "./getCalVideoRecordings.schema";
 import { ZGetDownloadLinkOfCalVideoRecordingsInputSchema } from "./getDownloadLinkOfCalVideoRecordings.schema";
+import { ZGoogleSyncMutationInputSchema } from "./googleSyncMutation.schema";
 import { ZIntegrationsInputSchema } from "./integrations.schema";
 import { ZLocationOptionsInputSchema } from "./locationOptions.schema";
 import { ZNoShowInputSchema } from "./markNoShow.schema";
@@ -70,6 +71,7 @@ type AppsRouterHandlerCache = {
   removeNotificationsSubscription?: typeof import("./removeNotificationsSubscription.handler").removeNotificationsSubscriptionHandler;
   markNoShow?: typeof import("./markNoShow.handler").markNoShow;
   getAttendees?: typeof import("./getAttendees.handler").getAttendeesHandler;
+  googleSyncMutation?: typeof import("./googleSyncMutation.handler").googleSyncMutationHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: AppsRouterHandlerCache = {};
@@ -120,6 +122,23 @@ export const loggedInViewerRouter = router({
 
     return UNSTABLE_HANDLER_CACHE.connectedCalendars({ ctx, input });
   }),
+
+  googleSyncMutation: authedProcedure
+    .input(ZGoogleSyncMutationInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (!UNSTABLE_HANDLER_CACHE.googleSyncMutation) {
+        UNSTABLE_HANDLER_CACHE.googleSyncMutation = (
+          await import("./googleSyncMutation.handler")
+        ).googleSyncMutationHandler;
+      }
+
+      // Unreachable code but required for type safety
+      if (!UNSTABLE_HANDLER_CACHE.googleSyncMutation) {
+        throw new Error("Failed to load handler");
+      }
+
+      return UNSTABLE_HANDLER_CACHE.googleSyncMutation({ ctx, input });
+    }),
 
   setDestinationCalendar: authedProcedure
     .input(ZSetDestinationCalendarInputSchema)

@@ -739,6 +739,7 @@ model SelectedCalendar {
   googleChannelExpiration          String?
   domainWideDelegationCredential   DomainWideDelegation? @relation(fields: [domainWideDelegationCredentialId], references: [id], onDelete: Cascade)
   domainWideDelegationCredentialId String?
+  googleSyncEnabled                Boolean               @default(true)
 
   @@id([userId, integration, externalId])
   @@index([userId])
