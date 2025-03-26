@@ -317,8 +317,10 @@ function BookingListItem(booking: BookingItemProps) {
   //   });
   // }
 
+  const isExtBooking = isPrismaObjOrUndefined(booking.metadata)?.isExternalEvent;
+
   let bookedActions: ActionType[] = [
-    ...(!isPrismaObjOrUndefined(booking.metadata)?.isExternalEvent
+    ...(!isExtBooking
       ? [
           {
             id: "cancel",
@@ -331,13 +333,13 @@ function BookingListItem(booking: BookingItemProps) {
       `,
             icon: "x" as const,
           },
+          {
+            id: "edit_booking",
+            label: t("edit"),
+            actions: editBookingActions,
+          },
         ]
       : []),
-    {
-      id: "edit_booking",
-      label: t("edit"),
-      actions: editBookingActions,
-    },
   ];
 
   const chargeCardActions: ActionType[] = [
@@ -975,7 +977,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("whatsapp_chat")}
                 </Button>
               )}
-              {(isBookingInPast || isOngoing) && !(isImported === "yes") && (
+              {(isBookingInPast || isOngoing) && !(isImported === "yes" || isExtBooking) && (
                 <Button
                   className="flex w-full justify-center "
                   color="secondary"
@@ -1073,7 +1075,8 @@ const RecurringBookingsTooltip = ({
 
   return (
     (booking.recurringInfo &&
-      booking.eventType?.recurringEvent?.freq &&
+      (booking.eventType?.recurringEvent?.freq ||
+        isPrismaObjOrUndefined(booking.metadata)?.isExternalEvent) &&
       (booking.listingStatus === "recurring" ||
         booking.listingStatus === "unconfirmed" ||
         booking.listingStatus === "cancelled") && (
@@ -1105,13 +1108,14 @@ const RecurringBookingsTooltip = ({
                   className="text-muted float-left mr-1 mt-1.5 inline-block h-3 w-3"
                 />
                 <p className="mt-1 pl-5 text-xs">
-                  {booking.status === BookingStatus.ACCEPTED
+                  {(booking.status === BookingStatus.ACCEPTED 
+                  && !booking.eventType?.recurringEvent)
                     ? `${t("event_remaining_other", {
                         count: recurringCount,
                       })}`
                     : getEveryFreqFor({
                         t,
-                        recurringEvent: booking.eventType.recurringEvent,
+                        recurringEvent: booking.eventType.recurringEvent ?? undefined,
                         recurringCount: booking.recurringInfo.count,
                       })}
                 </p>

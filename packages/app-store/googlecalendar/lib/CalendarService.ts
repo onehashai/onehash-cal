@@ -16,6 +16,8 @@ import {
   CREDENTIAL_SYNC_ENDPOINT,
   CREDENTIAL_SYNC_SECRET,
   CREDENTIAL_SYNC_SECRET_HEADER_NAME,
+  IS_DEV,
+  NGROK_URL,
 } from "@calcom/lib/constants";
 import { formatCalEvent } from "@calcom/lib/formatCalendarEvent";
 import logger from "@calcom/lib/logger";
@@ -30,7 +32,6 @@ import type {
   NewCalendarEventType,
 } from "@calcom/types/Calendar";
 import type { CredentialPayload } from "@calcom/types/Credential";
-
 import { invalidateCredential } from "../../_utils/invalidateCredential";
 import { AxiosLikeResponseToFetchResponse } from "../../_utils/oauth/AxiosLikeResponseToFetchResponse";
 import { OAuthManager } from "../../_utils/oauth/OAuthManager";
@@ -49,7 +50,11 @@ interface GoogleCalError extends Error {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const ONE_MONTH_IN_MS = 30 * MS_PER_DAY;
 // eslint-disable-next-line turbo/no-undeclared-env-vars -- GOOGLE_WEBHOOK_URL only for local testing
-const GOOGLE_WEBHOOK_URL_BASE = process.env.GOOGLE_WEBHOOK_URL || process.env.NEXT_PUBLIC_WEBAPP_URL;
+const GOOGLE_WEBHOOK_URL_BASE =IS_DEV? NGROK_URL:
+
+process.env.GOOGLE_WEBHOOK_URL || process.env.NEXT_PUBLIC_WEBAPP_URL;
+
+// const GOOGLE_WEBHOOK_URL_BASE = "https://c63e-183-182-85-155.ngrok-free.app";
 const GOOGLE_WEBHOOK_URL = `${GOOGLE_WEBHOOK_URL_BASE}/api/integrations/googlecalendar/webhook`;
 
 export default class GoogleCalendarService implements Calendar {
@@ -634,32 +639,36 @@ export default class GoogleCalendarService implements Calendar {
       return;
     }
     const calendar = await this.authedCalendar();
-    const res = await calendar.events.watch({
-      // Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword.
-      calendarId,
-      requestBody: {
-        // A UUID or similar unique string that identifies this channel.
-        id: uuid(),
-        type: "web_hook",
-        address: GOOGLE_WEBHOOK_URL,
-        token: process.env.GOOGLE_WEBHOOK_TOKEN,
-        params: {
-          // The time-to-live in seconds for the notification channel. Default is 604800 seconds.
-          ttl: `${Math.round(ONE_MONTH_IN_MS / 1000)}`,
+    try {
+      const res = await calendar.events.watch({
+        // Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword.
+        calendarId,
+        requestBody: {
+          // A UUID or similar unique string that identifies this channel.
+          id: uuid(),
+          type: "web_hook",
+          address: GOOGLE_WEBHOOK_URL,
+          token: process.env.GOOGLE_WEBHOOK_TOKEN,
+          params: {
+            // The time-to-live in seconds for the notification channel. Default is 604800 seconds.
+            ttl: `${Math.round(ONE_MONTH_IN_MS / 1000)}`,
+          },
         },
-      },
-    });
-    const response = res.data;
-    await this.upsertSelectedCalendar({
-      externalId: calendarId,
-      googleChannelId: response?.id,
-      googleChannelKind: response?.kind,
-      googleChannelResourceId: response?.resourceId,
-      googleChannelResourceUri: response?.resourceUri,
-      googleChannelExpiration: response?.expiration,
-    });
+      });
+      const response = res.data;
+      await this.upsertSelectedCalendar({
+        externalId: calendarId,
+        googleChannelId: response?.id,
+        googleChannelKind: response?.kind,
+        googleChannelResourceId: response?.resourceId,
+        googleChannelResourceUri: response?.resourceUri,
+        googleChannelExpiration: response?.expiration,
+      });
 
-    return res.data;
+      return res.data;
+    } catch (e) {
+      console.log("in_here_error", e);
+    }
   }
   async unwatchCalendar({ calendarId }: { calendarId: string }) {
     const credentialId = this.credential.id;
@@ -803,9 +812,19 @@ export default class GoogleCalendarService implements Calendar {
     maxResults: number;
     showDeleted: boolean;
     timeMin: string;
-  }): Promise<calendar_v3.Schema$Event[]> {
+    calendarId: string;
+  }): Promise<{
+    confirmedEvents: calendar_v3.Schema$Event[];
+    cancelledEvents: calendar_v3.Schema$Event[];
+  }> {
     let pageToken: string | undefined;
-    const externalCalEvents: calendar_v3.Schema$Event[] = [];
+    const externalCalEvents: {
+      confirmedEvents: calendar_v3.Schema$Event[];
+      cancelledEvents: calendar_v3.Schema$Event[];
+    } = {
+      confirmedEvents: [],
+      cancelledEvents: [],
+    };
     try {
       do {
         const calendar = await this.authedCalendar();
@@ -813,8 +832,22 @@ export default class GoogleCalendarService implements Calendar {
         const response: any = await calendar.events.list({ ...params, pageToken: pageToken });
 
         const events: calendar_v3.Schema$Event[] = response.data.items ?? [];
-        const _externalCalEvents = events.filter((evt) => !evt.iCalUID?.includes("OneHash"));
-        externalCalEvents.concat(_externalCalEvents);
+        const _externalCalEvents = events
+          .filter((evt) => !evt.iCalUID?.includes("OneHash"))
+          .reduce(
+            (acc, evt) => {
+              if (evt.status === "confirmed") acc.confirmedEvents.push(evt);
+              else if (evt.status === "cancelled") acc.cancelledEvents.push(evt);
+              return acc;
+            },
+            {
+              confirmedEvents: [] as calendar_v3.Schema$Event[],
+              cancelledEvents: [] as calendar_v3.Schema$Event[],
+            }
+          );
+        externalCalEvents.confirmedEvents.push(..._externalCalEvents.confirmedEvents);
+        externalCalEvents.cancelledEvents.push(..._externalCalEvents.cancelledEvents);
+
         pageToken = response.data.nextPageToken;
       } while (pageToken);
       return externalCalEvents;

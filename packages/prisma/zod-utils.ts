@@ -468,7 +468,7 @@ export const bookingMetadataSchema = z
     recurrencePattern: z.record(z.any()).optional(),
     isExternalEvent: z.boolean().optional(),
   })
-  .and(z.record(z.union([z.string(), z.boolean()])))
+  .and(z.record(z.union([z.string(), z.boolean(), z.record(z.any())]))) 
   .nullable();
 
 export const customInputOptionSchema = z.array(

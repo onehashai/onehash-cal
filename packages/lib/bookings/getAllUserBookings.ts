@@ -33,23 +33,38 @@ const getAllUserBookings = async ({ ctx, filters, bookingListingByStatus, take, 
 
   const bookingListingFilters: Record<InputByStatus, Prisma.BookingWhereInput> = {
     upcoming: {
-      endTime: { gte: new Date() },
-      // These changes are needed to not show confirmed recurring events,
       // as rescheduling or cancel for recurring event bookings should be
       // handled separately for each occurrence
-      OR: [
-        {
-          recurringEventId: { not: null },
-          status: { equals: BookingStatus.ACCEPTED },
-        },
-        {
-          recurringEventId: { equals: null },
-          status: { notIn: [BookingStatus.CANCELLED, BookingStatus.REJECTED] },
-        },
-      ],
+      AND:[
+        { recurringEventId:null},
+        { endTime: { gte: new Date() }},
+       ],
+      // OR:[
+      //   {}
+      // ]
+      // AND: [
+      //   {
+      //     OR: [
+      //       {
+      //         recurringEventId: { not: null },
+      //         status: { equals: BookingStatus.ACCEPTED },
+      //       },
+      //       {
+      //         recurringEventId: { equals: null },
+      //         status: { notIn: [BookingStatus.CANCELLED, BookingStatus.REJECTED] },
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     endTime: {
+      //       gte: new Date(), // Current time
+      //       lte: new Date(new Date().setDate(new Date().getDate() + 3)), // Next 3 days
+      //     },
+      //   },
+      // ],
     },
     recurring: {
-      endTime: { gte: new Date() },
+      // endTime: { gte: new Date() },
       AND: [
         { NOT: { recurringEventId: { equals: null } } },
         { status: { notIn: [BookingStatus.CANCELLED, BookingStatus.REJECTED] } },
