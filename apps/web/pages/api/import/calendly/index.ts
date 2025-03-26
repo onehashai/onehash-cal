@@ -63,6 +63,13 @@ type CombinedAvailabilityRules = {
   date?: Date;
 };
 
+const quesTypeMapping: { [key: string]: string } = {
+  string: "text",
+  text: "text",
+  phone_number: "phone",
+  single_select: "select",
+  multi_select: "multiselect",
+};
 //Maps the weekday to its corresponding number
 const wdayMapping: { [key: string]: number } = {
   monday: 1,
@@ -552,6 +559,30 @@ const mapEventTypeAndBookingsToInputSchema = (
           : undefined,
       owner: { connect: { id: userIntID } },
       users: { connect: { id: userIntID } },
+      bookingFields: event_type.custom_questions.map((q) => {
+        return {
+          name: q.name,
+          type: quesTypeMapping[q.type],
+          defaultLabel: q.name.split(" ").join("_"),
+          hidden: !q.enabled,
+          required: q.required,
+          options: q.answer_choices.map((ch) => {
+            return {
+              lable: ch,
+              value: ch,
+            };
+          }),
+          sources: [
+            {
+              id: "user",
+              type: "user",
+              label: "User",
+            },
+          ],
+          editable: "user",
+          placeholder: "",
+        };
+      }),
     };
     //Scheduled Booking Input
     let scheduled_events_input: Prisma.BookingCreateInput[] = [];
