@@ -2118,7 +2118,7 @@ async function handleOHChatSync({
     originalBookingUid?: string;
   };
 }) {
-  // if (IS_DEV) return Promise.resolve();
+  if (IS_DEV) return Promise.resolve();
   const credentials = await prisma.credential.findMany({
     where: {
       appId: "onehash-chat",
