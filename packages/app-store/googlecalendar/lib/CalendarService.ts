@@ -32,6 +32,7 @@ import type {
   NewCalendarEventType,
 } from "@calcom/types/Calendar";
 import type { CredentialPayload } from "@calcom/types/Credential";
+
 import { invalidateCredential } from "../../_utils/invalidateCredential";
 import { AxiosLikeResponseToFetchResponse } from "../../_utils/oauth/AxiosLikeResponseToFetchResponse";
 import { OAuthManager } from "../../_utils/oauth/OAuthManager";
@@ -50,9 +51,7 @@ interface GoogleCalError extends Error {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const ONE_MONTH_IN_MS = 30 * MS_PER_DAY;
 // eslint-disable-next-line turbo/no-undeclared-env-vars -- GOOGLE_WEBHOOK_URL only for local testing
-const GOOGLE_WEBHOOK_URL_BASE =IS_DEV? NGROK_URL:
-
-process.env.GOOGLE_WEBHOOK_URL || process.env.NEXT_PUBLIC_WEBAPP_URL;
+const GOOGLE_WEBHOOK_URL_BASE = IS_DEV ? NGROK_URL : process.env.NEXT_PUBLIC_WEBAPP_URL;
 
 // const GOOGLE_WEBHOOK_URL_BASE = "https://c63e-183-182-85-155.ngrok-free.app";
 const GOOGLE_WEBHOOK_URL = `${GOOGLE_WEBHOOK_URL_BASE}/api/integrations/googlecalendar/webhook`;
