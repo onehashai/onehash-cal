@@ -54,7 +54,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     if (!checkIfTokenIsValid(req.headers)) return res.status(401).json({ message: "Unauthorized" });
-
     const { account_user_id, account_name, user_id, user_email, user_name } = getSchema.parse(req.query);
     const user = await prisma.user.findUnique({
       where: {
@@ -121,8 +120,8 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
         bookingEventType: booking.eventType?.title,
         bookingStartTime: booking.startTime,
         bookingEndTime: booking.endTime,
-        bookerEmail: booking.attendees[0].email ?? "N/A",
-        bookerPhone: booking.attendees[0].phoneNumber ?? "N/A",
+        bookerEmail: booking.attendees.length > 0 ? booking.attendees[0].email : "N/A",
+        bookerPhone: booking.attendees.length > 0 ? booking.attendees[0].phoneNumber : "N/A",
         bookingUid: booking.uid,
         // bookingStatus:booking.status,
       };
@@ -141,10 +140,10 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     });
 
     await setConnectedChatAccounts(user.id, user.metadata);
-    console.log("set_chat_accounts");
 
     return res.json({ cal_events, bookings, user_id: user.id });
   } catch (err) {
+    console.log("in_here_err", err);
     throw err;
   }
 };
@@ -169,7 +168,6 @@ const deleteHandler = async (req: NextApiRequest, res: NextApiResponse) => {
       },
     });
     await unsetConnectedChatAccounts(userId);
-    console.log("deleted_chat_accounts");
     return res.json({ message: "Deleted successfully" });
   } catch (error) {
     throw error;
