@@ -1,15 +1,15 @@
-import { isPrismaObjOrUndefined } from '@calcom/lib';
 import type { calendar_v3 } from "@googleapis/calendar";
 import type GoogleCalendarService from "googlecalendar/lib/CalendarService";
 import type { NextApiRequest, NextApiResponse } from "next";
 import short from "short-uuid";
-import { getServerTimezone } from "@calcom/lib/timezone";
 
 import dayjs from "@calcom/dayjs";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { defaultHandler } from "@calcom/lib/server";
 import { SelectedCalendarRepository } from "@calcom/lib/server/repository/selectedCalendar";
+import { getServerTimezone } from "@calcom/lib/timezone";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
@@ -110,29 +110,29 @@ function getCancelledEvtPromises({
     };
   };
 }): // credential: {
-  //   user: { email: string } | null;
-  //   id: number;
-  //   userId: number | null;
-  //   selectedCalendars: {
-  //     userId: number;
-  //     googleChannelId: string | null;
-  //     externalId: string;
-  //     integration: string;
-  //     credentialId: number | null;
-  //     googleChannelKind: string | null;
-  //     googleChannelResourceId: string | null;
-  //     googleChannelResourceUri: string | null;
-  //     googleChannelExpiration: string | null;
-  //     domainWideDelegationCredentialId: string | null;
-  //     googleSyncEnabled: boolean;
-  //   }[];
-  //   type: string;
-  //   key: Prisma.JsonValue;
-  //   teamId: number | null;
-  //   appId: string | null;
-  //   invalid: boolean | null;
-  // } | null
-  Promise<any>[] {
+//   user: { email: string } | null;
+//   id: number;
+//   userId: number | null;
+//   selectedCalendars: {
+//     userId: number;
+//     googleChannelId: string | null;
+//     externalId: string;
+//     integration: string;
+//     credentialId: number | null;
+//     googleChannelKind: string | null;
+//     googleChannelResourceId: string | null;
+//     googleChannelResourceUri: string | null;
+//     googleChannelExpiration: string | null;
+//     domainWideDelegationCredentialId: string | null;
+//     googleSyncEnabled: boolean;
+//   }[];
+//   type: string;
+//   key: Prisma.JsonValue;
+//   teamId: number | null;
+//   appId: string | null;
+//   invalid: boolean | null;
+// } | null
+Promise<any>[] {
   return ext.events.cancelledEvents.map(async (evt) => {
     if (!evt.id) return;
 
@@ -216,11 +216,11 @@ async function getConfirmedEvtPromises({
       .filter((at) => at.email)
       .map(
         (at) =>
-        ({
-          name: at.displayName ?? at.email?.split("@")[0] ?? "",
-          email: at.email,
-          timeZone: evt.start?.timeZone ?? getServerTimezone(),
-        } as Prisma.AttendeeCreateWithoutBookingSeatInput)
+          ({
+            name: at.displayName ?? at.email?.split("@")[0] ?? "",
+            email: at.email,
+            timeZone: evt.start?.timeZone ?? getServerTimezone(),
+          } as Prisma.AttendeeCreateWithoutBookingSeatInput)
       );
     const bookingData: Prisma.BookingCreateInput = {
       uid: evt.id ?? short.generate(),
@@ -277,96 +277,42 @@ async function getConfirmedEvtPromises({
       }),
     };
 
-    const existingBooking = await prisma.booking.findUnique({
-      where: { uid: evt.id },
-    });
+    return prisma.$transaction(async (tx) => {
+      const existingBooking = await tx.booking.findUnique({
+        where: { uid: evt.id as string },
+      });
 
-    return prisma.booking.upsert({
-      where: {
-        uid: evt.id,
-      },
-      update: {
-        ...{
-          ...bookingData,
-          attendees: {
-            ...(existingBooking && {
-              deleteMany: {
-                bookingId: existingBooking.id,
+      if (existingBooking) {
+        // Step 1: Delete existing attendees
+        await tx.attendee.deleteMany({
+          where: { bookingId: existingBooking.id },
+        });
+
+        // Step 2: Update booking with new data
+        return await tx.booking.update({
+          where: { id: existingBooking.id },
+          data: {
+            ...bookingData,
+            attendees: {
+              createMany: {
+                data: attendeesData,
+                skipDuplicates: true,
               },
-            }),
-            createMany: {
-              data: attendeesData,
-              skipDuplicates: true,
             },
           },
-        },
-      },
-      create: {
-        ...bookingData,
-      },
+        });
+      } else {
+        try {
+          return await tx.booking.create({
+            data: {
+              ...bookingData,
+            },
+          });
+        } catch (e) {
+          log.error(`Booking already created with UID : ${evt.id}`);
+        }
+      }
     });
-    // if (existingBooking) {
-    //   return prisma.booking.update({
-    //     where: {
-    //       uid: evt.id,
-    //     },
-    //     data: {
-    //       ...{
-    //         ...bookingData,
-    //         attendees: {
-    //           deleteMany: {
-    //             bookingId: existingBooking.id,
-    //           },
-    //           createMany: {
-    //             data: attendeesData,
-    //             skipDuplicates: true,
-    //           },
-    //         },
-    //       },
-    //     },
-    //   });
-    //   // await prisma.$transaction([
-    //   //   prisma.attendee.deleteMany({
-    //   //     where: { bookingId: existingBooking.id },
-    //   //   }),
-    //   //   prisma.booking.update({
-    //   //     where: { uid: evt.id },
-    //   //     data: {
-    //   //       ...bookingData,
-    //   //     },
-    //   //   }),
-    //   // ]);
-    //   // return Promise.resolve();
-    // } else {
-    //   return new Promise((res) => {
-    //     prisma.booking
-    //       .create({
-    //         data: {
-    //           ...bookingData,
-    //         },
-    //       })
-    //       .then(res)
-    //       .catch((e) => {
-    //         log.warn("Already created booking", safeStringify(e));
-    //         res(null);
-    //       });
-    //   });
-    // }
-
-    // return prisma.booking.upsert({
-    //   where: {
-    //     uid: evt.id,
-    //   },
-    //   update: {
-    //     ...{
-    //       ...bookingData,
-    //       attendees: {
-    //         disconnect: [], // Disconnect all linked attendees
-    //       },
-    //     },
-    //   },
-    //   create: { ...bookingData },
-    // });
   });
 }
 
