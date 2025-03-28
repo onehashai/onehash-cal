@@ -561,14 +561,14 @@ const mapEventTypeAndBookingsToInputSchema = (
       users: { connect: { id: userIntID } },
       bookingFields: event_type.custom_questions.map((q) => {
         return {
-          name: q.name,
+          name: q.name.split(" ").join("_"),
           type: quesTypeMapping[q.type],
-          defaultLabel: q.name.split(" ").join("_"),
+          defaultLabel: q.name,
           hidden: !q.enabled,
           required: q.required,
           options: q.answer_choices.map((ch) => {
             return {
-              lable: ch,
+              label: ch,
               value: ch,
             };
           }),
