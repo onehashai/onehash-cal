@@ -28,7 +28,7 @@ import emailThankYouTemplate from "./templates/emailThankYouTemplate";
 
 const log = logger.getSubLogger({ prefix: ["[emailReminderManager]"] });
 
-type ScheduleEmailReminderAction = Extract<
+export type ScheduleEmailReminderAction = Extract<
   WorkflowActions,
   "EMAIL_HOST" | "EMAIL_ATTENDEE" | "EMAIL_ADDRESS"
 >;
