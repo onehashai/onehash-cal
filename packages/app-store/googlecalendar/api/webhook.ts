@@ -272,47 +272,76 @@ async function getConfirmedEvtPromises({
     };
 
     return prisma.$transaction(async (tx) => {
-      const existingBooking = await tx.booking.findUnique({
+      const booking = await tx.booking.upsert({
         where: { uid: evt.id as string },
+        update: { ...bookingData },
+        create: { ...bookingData },
       });
 
-      if (existingBooking) {
-        await tx.attendee.deleteMany({
-          where: { bookingId: existingBooking.id },
-        });
+      await tx.attendee.deleteMany({
+        where: { bookingId: booking.id },
+      });
 
-        return await tx.booking.update({
-          where: { id: existingBooking.id },
-          data: {
-            ...bookingData,
-            attendees: {
-              createMany: {
-                data: attendeesData,
-                skipDuplicates: true,
-              },
-            },
-          },
-        });
-      } else {
-        try {
-          const createdBooking = await tx.booking.create({
-            data: {
-              ...bookingData,
-            },
-          });
+      await tx.attendee.createMany({
+        skipDuplicates: true,
+        data: attendeesData.map((at) => ({
+          ...at,
+          bookingId: booking.id,
+        })),
+      });
 
-          await tx.attendee.createMany({
-            skipDuplicates: true,
-            data: attendeesData.map((at) => ({
-              ...at,
-              bookingId: createdBooking.id,
-            })),
-          });
-        } catch (e) {
-          log.error(`Booking already created with UID : ${evt.id}`);
-        }
-      }
+      return booking;
     });
+
+    // return prisma.$transaction(async (tx) => {
+    //   const existingBooking = await tx.booking.findUnique({
+    //     where: { uid: evt.id as string },
+    //   });
+
+    //   if (existingBooking) {
+    //     await tx.attendee.deleteMany({
+    //       where: { bookingId: existingBooking.id },
+    //     });
+
+    //     const updatedBooking = await tx.booking.update({
+    //       where: { id: existingBooking.id },
+    //       data: {
+    //         ...bookingData,
+    //       },
+    //     });
+
+    //     await tx.attendee.createMany({
+    //       skipDuplicates: true,
+    //       data: attendeesData.map((at) => ({
+    //         ...at,
+    //         bookingId: updatedBooking.id,
+    //       })),
+    //     });
+
+    //     return updatedBooking;
+    //   } else {
+    //     try {
+    //       const createdBooking = await tx.booking.create({
+    //         data: {
+    //           ...bookingData,
+    //         },
+    //       });
+
+    //       await tx.attendee.createMany({
+    //         skipDuplicates: true,
+    //         data: attendeesData.map((at) => ({
+    //           ...at,
+    //           bookingId: createdBooking.id,
+    //         })),
+    //       });
+
+    //       return createdBooking;
+    //     } catch (e) {
+    //       log.error(`Booking already created with UID: ${evt.id}`);
+    //       throw e;
+    //     }
+    //   }
+    // });
   });
 }
 
