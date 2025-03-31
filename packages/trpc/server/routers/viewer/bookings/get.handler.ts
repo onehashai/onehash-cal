@@ -519,7 +519,16 @@ export async function getBookings({
         recurringEventId: {
           not: { equals: null },
         },
-        userId: user.id,
+        OR: [
+          { userId: user.id },
+          {
+            attendees: {
+              some: {
+                email: user.email,
+              },
+            },
+          },
+        ],
       },
     }),
     //recurringInfoExtended
@@ -532,7 +541,16 @@ export async function getBookings({
         recurringEventId: {
           not: { equals: null },
         },
-        userId: user.id,
+        OR: [
+          { userId: user.id },
+          {
+            attendees: {
+              some: {
+                email: user.email,
+              },
+            },
+          },
+        ],
       },
     }),
   ]);
@@ -648,9 +666,11 @@ export async function getBookings({
       .filter((booking) => {
         const metadata = isPrismaObjOrUndefined(booking.metadata);
         if (!metadata?.isExternalEvent) return true;
-
         const _r = recurringInfo.find((info) => info.recurringEventId === booking.recurringEventId);
-        return !_r || hasUpcomingDate(_r.bookings.ACCEPTED);
+        if (!_r) {
+          return true;
+        }
+        return hasUpcomingDate(_r.bookings.ACCEPTED);
       })
       .map(async (booking) => {
         // If seats are enabled and the event is not set to show attendees, filter out attendees that are not the current user

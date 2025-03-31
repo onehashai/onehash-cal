@@ -268,12 +268,6 @@ async function getConfirmedEvtPromises({
             id: bookerFromDb.id,
           },
         },
-        attendees: {
-          createMany: {
-            data: attendeesData,
-            skipDuplicates: true,
-          },
-        },
       }),
     };
 
@@ -283,12 +277,10 @@ async function getConfirmedEvtPromises({
       });
 
       if (existingBooking) {
-        // Step 1: Delete existing attendees
         await tx.attendee.deleteMany({
           where: { bookingId: existingBooking.id },
         });
 
-        // Step 2: Update booking with new data
         return await tx.booking.update({
           where: { id: existingBooking.id },
           data: {
@@ -303,10 +295,18 @@ async function getConfirmedEvtPromises({
         });
       } else {
         try {
-          return await tx.booking.create({
+          const createdBooking = await tx.booking.create({
             data: {
               ...bookingData,
             },
+          });
+
+          await tx.attendee.createMany({
+            skipDuplicates: true,
+            data: attendeesData.map((at) => ({
+              ...at,
+              bookingId: createdBooking.id,
+            })),
           });
         } catch (e) {
           log.error(`Booking already created with UID : ${evt.id}`);
