@@ -243,17 +243,20 @@ function BookingListItem(booking: BookingItemProps) {
       : []),
   ];
 
+  const isExtBooking = isPrismaObjOrUndefined(booking.metadata)?.isExternalEvent;
+
+  const reschedule_booking_action = {
+    id: "reschedule",
+    icon: "clock" as const,
+    label: t("reschedule_booking"),
+    href: `/reschedule/${booking.uid}${
+      booking.seatsReferences.length ? `?seatReferenceUid=${getSeatReferenceUid()}` : ""
+    }`,
+  };
   const editBookingActions: ActionType[] = [
     ...(isBookingInPast
       ? [
-          {
-            id: "reschedule",
-            icon: "clock" as const,
-            label: t("reschedule_booking"),
-            href: `/reschedule/${booking.uid}${
-              booking.seatsReferences.length ? `?seatReferenceUid=${getSeatReferenceUid()}` : ""
-            }`,
-          },
+          reschedule_booking_action,
           {
             id: "reschedule_request",
             icon: "send" as const,
@@ -316,8 +319,6 @@ function BookingListItem(booking: BookingItemProps) {
   //     icon: "eye-off" as const,
   //   });
   // }
-
-  const isExtBooking = isPrismaObjOrUndefined(booking.metadata)?.isExternalEvent;
 
   let bookedActions: ActionType[] = [
     ...(!isExtBooking
@@ -798,6 +799,7 @@ function BookingListItem(booking: BookingItemProps) {
               {isPending && (userId === booking.user?.id || booking.isUserTeamAdminOrOwner) && (
                 <TableActions actions={pendingActions} />
               )}
+              {isConfirmed && !isExtBooking && <TableActions actions={[reschedule_booking_action]} />}
               {isConfirmed && <TableActions actions={bookedActions} />}
               {isRejected && <div className="text-subtle text-sm">{t("rejected")}</div>}
             </>
@@ -824,6 +826,7 @@ function BookingListItem(booking: BookingItemProps) {
             userTimeFormat={userTimeFormat}
             userTimeZone={userTimeZone}
           /> */}
+
           {isOrganizer ? (
             <div className="text-md flex items-center pl-3">
               <p className="mt-px">{t("details")}</p>
@@ -1108,8 +1111,7 @@ const RecurringBookingsTooltip = ({
                   className="text-muted float-left mr-1 mt-1.5 inline-block h-3 w-3"
                 />
                 <p className="mt-1 pl-5 text-xs">
-                  {(booking.status === BookingStatus.ACCEPTED 
-                  && !booking.eventType?.recurringEvent)
+                  {booking.status === BookingStatus.ACCEPTED && !booking.eventType?.recurringEvent
                     ? `${t("event_remaining_other", {
                         count: recurringCount,
                       })}`

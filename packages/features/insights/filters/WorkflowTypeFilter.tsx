@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-restricted-imports
+import { startCase } from "lodash";
 import { memo } from "react";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -15,7 +17,7 @@ type WorkflowMethodType = keyof typeof WorkflowMethods;
 
 const mapTypeToOption = (type: WorkflowMethodType) => ({
   value: type,
-  label: type,
+  label: startCase(type.toLowerCase()),
 });
 
 export const WorkflowTypeFilter = memo(() => {

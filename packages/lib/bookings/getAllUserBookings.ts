@@ -35,10 +35,11 @@ const getAllUserBookings = async ({ ctx, filters, bookingListingByStatus, take, 
     upcoming: {
       // as rescheduling or cancel for recurring event bookings should be
       // handled separately for each occurrence
-      AND:[
-        { recurringEventId:null},
-        { endTime: { gte: new Date() }},
-       ],
+      AND: [
+        { recurringEventId: null },
+        { endTime: { gte: new Date() } },
+        { status: { equals: BookingStatus.ACCEPTED } },
+      ],
       // OR:[
       //   {}
       // ]
