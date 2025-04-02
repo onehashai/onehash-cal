@@ -56,6 +56,8 @@
   "workflows_read_responses":"No. of messages read ",
   "workflows_failed_responses":"No. of messages failed",
   "workflow_trends":"Workflow Trends",
+  "custom_brand_preview":"Custom Brand Preview",
+  "custom_brand_preview_desc":"Allows you to set own brand logo on public pages",
   "identity_provider": "Identity provider",
   "insights_workflow_subtitle":"View workflow insights across your events",
   "view_schedule": "View schedule",
