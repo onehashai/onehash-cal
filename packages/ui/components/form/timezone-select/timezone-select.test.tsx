@@ -68,8 +68,8 @@ const openMenu = async () => {
   await waitFor(async () => {
     const element = screen.getByLabelText("Test");
     element.focus();
-    fireEvent.keyDown(element, { key: "ArrowDown", code: "ArrowDown" });
-    screen.getByText(optionMockValues[0]);
+    await fireEvent.keyDown(element, { key: "ArrowDown", code: "ArrowDown" });
+    await screen.findByText(optionMockValues[0]);
   });
 };
 
@@ -85,7 +85,7 @@ describe("Test TimezoneSelect", () => {
     });
     test("Should render with the correct CSS when provided with classNames prop", async () => {
       renderSelect({ value: timezoneMockValues[0], classNames });
-      openMenu();
+      await openMenu();
 
       const dawsonEl = screen.getByText(timezoneMockValues[0]);
 
