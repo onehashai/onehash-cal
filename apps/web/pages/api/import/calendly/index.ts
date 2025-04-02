@@ -1172,14 +1172,40 @@ export const handleCalendlyImportEvent = async (
         );
     } else {
       //Scheduling new event to continue process the next set of events
-      await inngestClient.send({
-        name: `import-from-calendly-${key}`,
-        data: {
-          sendCampaignEmails,
-          userCalendlyIntegrationProvider,
-          user,
-        },
-      });
+
+      try {
+        await step.run("Triggering continued event", async () => {
+          await inngestClient.send({
+            name: `import-from-calendly-${key}`,
+            data: {
+              sendCampaignEmails,
+              userCalendlyIntegrationProvider,
+              user,
+            },
+          });
+        });
+      } catch (error) {
+        logger.error(`Error triggering event: ${error instanceof Error ? error.message : error}`);
+
+        // Notify user only if step fails
+        await step.run("Notify user of failure", async () => {
+          const status = false;
+          const data: ImportDataEmailProps = {
+            status,
+            provider: "Calendly",
+            user: {
+              email: user.email,
+              name: user.name,
+            },
+          };
+          await sendImportDataEmail(data);
+          logger.info(`User notified with failure import status`);
+        });
+
+        throw new NonRetriableError(
+          `Error - Triggering event : ${error instanceof Error ? error.message : error}`
+        );
+      }
     }
 
     logger.info("Calendly import completed");

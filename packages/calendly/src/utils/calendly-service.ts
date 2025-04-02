@@ -253,7 +253,7 @@ export default class CalendlyAPIService {
       };
 
       if (!_next_page) {
-        let queryParams = [`user=${userUri}`, `count=10`, `sort=start_time:asc`].join("&");
+        let queryParams = [`user=${userUri}`, `count=100`, `sort=start_time:asc`].join("&");
         if (pageToken) queryParams += `&page_token=${pageToken}`;
         if (status) queryParams += `&status=${status}`;
         if (maxStartTime) queryParams += `&max_start_time=${maxStartTime}`;
