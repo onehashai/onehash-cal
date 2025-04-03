@@ -1,5 +1,4 @@
 import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
-import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import prisma from "@calcom/prisma";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
 import type { Calendar } from "@calcom/types/Calendar";
@@ -15,14 +14,16 @@ export class CalendarCache {
       select: credentialForCalendarServiceSelect,
     });
     const calendar = await getCalendar(credential);
+    if (!calendar) throw new Error("Calendar not found");
     return await CalendarCache.init(calendar);
   }
   static async init(calendar: Calendar | null): Promise<ICalendarCacheRepository> {
-    const featureRepo = new FeaturesRepository();
-    const isCalendarCacheEnabledGlobally = await featureRepo.checkIfFeatureIsEnabledGlobally(
-      "calendar-cache"
-    );
-    if (isCalendarCacheEnabledGlobally) return new CalendarCacheRepository(calendar);
+    // const featureRepo = new FeaturesRepository();
+    // const isCalendarCacheEnabledGlobally = await featureRepo.checkIfFeatureIsEnabledGlobally(
+    //   "calendar-cache"
+    // );
+    // if (isCalendarCacheEnabledGlobally)
+    return new CalendarCacheRepository(calendar);
     return new CalendarCacheRepositoryMock();
   }
 }

@@ -59,6 +59,7 @@ export async function getUserFromSession(ctx: TRPCContextInner, session: Maybe<S
         select: {
           externalId: true,
           integration: true,
+          googleSyncEnabled: true,
         },
       },
       completedOnboarding: true,

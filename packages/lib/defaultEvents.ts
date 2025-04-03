@@ -130,6 +130,9 @@ export const dynamicEvent = {
   disableGuests: false,
 };
 
+//Default event for external bookings fetched from gcal
+// export const gCalExtEvent = {};
+
 export const defaultEvents = [dynamicEvent];
 
 export const getDynamicEventDescription = (dynamicUsernames: string[], slug: string): string => {

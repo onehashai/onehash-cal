@@ -1,5 +1,4 @@
 import Link from "next/link";
-import React from "react";
 
 import AppListCard from "@calcom/features/apps/components/AppListCard";
 import DisconnectIntegration from "@calcom/features/apps/components/DisconnectIntegration";
@@ -7,8 +6,7 @@ import { CalendarSwitch } from "@calcom/features/calendars/CalendarSwitch";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { QueryCell } from "@calcom/trpc/components/QueryCell";
 import { trpc } from "@calcom/trpc/react";
-import { Alert } from "@calcom/ui";
-import { List } from "@calcom/ui";
+import { List, Alert, Switch, Icon, showToast } from "@calcom/ui";
 import AdditionalCalendarSelector from "@calcom/web/components/apps/AdditionalCalendarSelector";
 
 import { SelectedCalendarsSettings } from "../SelectedCalendarsSettings";
@@ -26,6 +24,21 @@ export const SelectedCalendarsSettingsWebWrapper = (props: SelectedCalendarsSett
   const query = trpc.viewer.connectedCalendars.useQuery(undefined, {
     suspense: true,
     refetchOnWindowFocus: false,
+  });
+  const googleSyncMutation = trpc.viewer.googleSyncMutation.useMutation({
+    onSuccess: () => {
+      showToast(t("successfully_synced"), "success");
+      // setIsOpenLocationDialog(false);
+      // utils.viewer.bookings.invalidate();
+    },
+    onError: (e) => {
+      const errorMessages: Record<string, string> = {
+        UNAUTHORIZED: t("you_are_unauthorized_to_make_this_change_to_the_booking"),
+        BAD_REQUEST: e.message,
+      };
+      const message = errorMessages[e.data?.code as string] || t("location_update_failed");
+      showToast(message, "error");
+    },
   });
   const { fromOnboarding, isPending } = props;
 
@@ -74,18 +87,42 @@ export const SelectedCalendarsSettingsWebWrapper = (props: SelectedCalendarsSett
                               <p className="text-subtle px-5 pt-4 text-sm">
                                 {t("toggle_calendars_conflict")}
                               </p>
+
                               <ul className="space-y-4 px-5 py-4">
                                 {connectedCalendar.calendars?.map((cal) => (
-                                  <CalendarSwitch
-                                    key={cal.externalId}
-                                    externalId={cal.externalId}
-                                    title={cal.name || "Nameless calendar"}
-                                    name={cal.name || "Nameless calendar"}
-                                    type={connectedCalendar.integration.type}
-                                    isChecked={cal.isSelected}
-                                    destination={cal.externalId === props.destinationCalendarId}
-                                    credentialId={cal.credentialId}
-                                  />
+                                  <div className="border" key={cal.externalId}>
+                                    <CalendarSwitch
+                                      externalId={cal.externalId}
+                                      title={cal.name || "Nameless calendar"}
+                                      name={cal.name || "Nameless calendar"}
+                                      type={connectedCalendar.integration.type}
+                                      isChecked={cal.isSelected}
+                                      destination={cal.externalId === props.destinationCalendarId}
+                                      credentialId={cal.credentialId}
+                                    />
+                                    {cal.isSelected && cal.integration === "google_calendar" && (
+                                      <div className="flex p-2">
+                                        <Switch
+                                          name="calendar_sync"
+                                          checked={cal.googleSyncEnabled}
+                                          label={t("calendar_sync")}
+                                          onCheckedChange={(checked) => {
+                                            googleSyncMutation.mutate({
+                                              integration: cal.integration,
+                                              externalId: cal.externalId,
+                                              googleSyncEnabled: checked,
+                                            });
+                                          }}
+                                        />
+                                        {googleSyncMutation.isPending && (
+                                          <Icon
+                                            name="rotate-cw"
+                                            className="text-muted h-4 w-4 animate-spin ltr:ml-1 rtl:mr-1"
+                                          />
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                 ))}
                               </ul>
                             </>

@@ -102,6 +102,17 @@ export default function Bookings() {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     }
   );
+  // if (!query.isFetching && query.status === "success") {
+  //   console.log(
+  //     "query.data",
+  //     query.data?.pages.map((page) =>
+  //       JSON.stringify({
+  //         bookings: page.bookings,
+  //         recurringInfo: page.recurringInfo,
+  //       })
+  //     )
+  //   );
+  // }
 
   // Animate page (tab) transitions to look smoothing
 
@@ -278,7 +289,6 @@ export default function Bookings() {
         recurringInfoToday = page.recurringInfo.find(
           (info) => info.recurringEventId === booking.recurringEventId
         );
-
         return (
           dayjs(booking.startTime).tz(user?.timeZone).format("YYYY-MM-DD") ===
           dayjs().tz(user?.timeZone).format("YYYY-MM-DD")

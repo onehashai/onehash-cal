@@ -3,7 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import type { getEventLocationValue } from "@calcom/app-store/locations";
+import type {
+  DefaultEventLocationType,
+  EventLocationTypeFromApp,
+  getEventLocationValue,
+} from "@calcom/app-store/locations";
 import { getSuccessPageLocationMessage, guessEventLocationType } from "@calcom/app-store/locations";
 import dayjs from "@calcom/dayjs";
 // TODO: Use browser locale, implement Intl in Dayjs maybe?
@@ -243,17 +247,20 @@ function BookingListItem(booking: BookingItemProps) {
       : []),
   ];
 
+  const isExtBooking = isPrismaObjOrUndefined(booking.metadata)?.isExternalEvent;
+
+  const reschedule_booking_action = {
+    id: "reschedule",
+    icon: "clock" as const,
+    label: t("reschedule_booking"),
+    href: `/reschedule/${booking.uid}${
+      booking.seatsReferences.length ? `?seatReferenceUid=${getSeatReferenceUid()}` : ""
+    }`,
+  };
   const editBookingActions: ActionType[] = [
     ...(isBookingInPast
       ? [
-          {
-            id: "reschedule",
-            icon: "clock" as const,
-            label: t("reschedule_booking"),
-            href: `/reschedule/${booking.uid}${
-              booking.seatsReferences.length ? `?seatReferenceUid=${getSeatReferenceUid()}` : ""
-            }`,
-          },
+          reschedule_booking_action,
           {
             id: "reschedule_request",
             icon: "send" as const,
@@ -318,22 +325,26 @@ function BookingListItem(booking: BookingItemProps) {
   // }
 
   let bookedActions: ActionType[] = [
-    {
-      id: "cancel",
-      label: isTabRecurring && isRecurring ? t("cancel_all_remaining") : t("cancel_event"),
-      /* When cancelling we need to let the UI and the API know if the intention is to
+    ...(!isExtBooking
+      ? [
+          {
+            id: "cancel",
+            label: isTabRecurring && isRecurring ? t("cancel_all_remaining") : t("cancel_event"),
+            /* When cancelling we need to let the UI and the API know if the intention is to
                cancel all remaining bookings or just that booking instance. */
-      href: `/booking/${booking.uid}?cancel=true${
-        isTabRecurring && isRecurring ? "&allRemainingBookings=true" : ""
-      }${booking.seatsReferences.length ? `&seatReferenceUid=${getSeatReferenceUid()}` : ""}
+            href: `/booking/${booking.uid}?cancel=true${
+              isTabRecurring && isRecurring ? "&allRemainingBookings=true" : ""
+            }${booking.seatsReferences.length ? `&seatReferenceUid=${getSeatReferenceUid()}` : ""}
       `,
-      icon: "x" as const,
-    },
-    {
-      id: "edit_booking",
-      label: t("edit"),
-      actions: editBookingActions,
-    },
+            icon: "x" as const,
+          },
+          {
+            id: "edit_booking",
+            label: t("edit"),
+            actions: editBookingActions,
+          },
+        ]
+      : []),
   ];
 
   const chargeCardActions: ActionType[] = [
@@ -633,35 +644,8 @@ function BookingListItem(booking: BookingItemProps) {
                 attendees={booking.attendees}
               />
             </div>
-            {!isPending && (
-              <div>
-                {(provider?.label || locationToDisplay?.startsWith("https://")) &&
-                  locationToDisplay.startsWith("http") && (
-                    <a
-                      href={locationToDisplay}
-                      onClick={(e) => e.stopPropagation()}
-                      target="_blank"
-                      title={locationToDisplay}
-                      rel="noreferrer"
-                      className="text-sm leading-6 text-blue-600 hover:underline dark:text-blue-400">
-                      <div className="flex items-center gap-2">
-                        {provider?.iconUrl && (
-                          <Image
-                            src={provider.iconUrl}
-                            className="rounded-sm"
-                            alt={`${provider?.label} logo`}
-                            width={16}
-                            height={16}
-                          />
-                        )}
-                        {provider?.label
-                          ? t("join_event_location", { eventLocationType: provider?.label })
-                          : t("join_meeting")}
-                      </div>
-                    </a>
-                  )}
-              </div>
-            )}
+
+            {!isPending && <DisplayLocation locationToDisplay={locationToDisplay} provider={provider} />}
             {isPending &&
               (isPrismaObjOrUndefined(booking.metadata)?.paymentStatus === "failed" ? (
                 <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
@@ -734,7 +718,7 @@ function BookingListItem(booking: BookingItemProps) {
                     &quot;{booking.description}&quot;
                   </div>
                 )}
-                {booking.attendees.length !== 0 && (
+                {/* {booking.attendees.length !== 0 && (
                   <DisplayAttendees
                     attendees={attendeeList}
                     user={booking.user}
@@ -742,8 +726,9 @@ function BookingListItem(booking: BookingItemProps) {
                     bookingUid={booking.uid}
                     isBookingInPast={isBookingInPast}
                   />
-                )}
+                )} */}
               </div>
+              {!isPending && <DisplayLocation locationToDisplay={locationToDisplay} provider={provider} />}
             </div>
 
             <div className="cursor-pointer py-4">
@@ -792,6 +777,7 @@ function BookingListItem(booking: BookingItemProps) {
               {isPending && (userId === booking.user?.id || booking.isUserTeamAdminOrOwner) && (
                 <TableActions actions={pendingActions} />
               )}
+              {isConfirmed && !isExtBooking && <TableActions actions={[reschedule_booking_action]} />}
               {isConfirmed && <TableActions actions={bookedActions} />}
               {isRejected && <div className="text-subtle text-sm">{t("rejected")}</div>}
             </>
@@ -818,6 +804,7 @@ function BookingListItem(booking: BookingItemProps) {
             userTimeFormat={userTimeFormat}
             userTimeZone={userTimeZone}
           /> */}
+
           {isOrganizer ? (
             <div className="text-md flex items-center pl-3">
               <p className="mt-px">{t("details")}</p>
@@ -971,7 +958,7 @@ function BookingListItem(booking: BookingItemProps) {
                   {t("whatsapp_chat")}
                 </Button>
               )}
-              {(isBookingInPast || isOngoing) && !(isImported === "yes") && (
+              {(isBookingInPast || isOngoing) && !(isImported === "yes" || isExtBooking) && (
                 <Button
                   className="flex w-full justify-center "
                   color="secondary"
@@ -1069,27 +1056,32 @@ const RecurringBookingsTooltip = ({
 
   return (
     (booking.recurringInfo &&
-      booking.eventType?.recurringEvent?.freq &&
+      (booking.eventType?.recurringEvent?.freq ||
+        isPrismaObjOrUndefined(booking.metadata)?.isExternalEvent) &&
       (booking.listingStatus === "recurring" ||
         booking.listingStatus === "unconfirmed" ||
         booking.listingStatus === "cancelled") && (
         <div className="underline decoration-gray-400 decoration-dashed underline-offset-2">
           <div className="flex">
             <Tooltip
-              content={recurringDates.map((aDate, key) => {
-                const pastOrCancelled =
-                  aDate < now ||
-                  booking.recurringInfo?.bookings[BookingStatus.CANCELLED]
-                    .map((date) => date.toString())
-                    .includes(aDate.toString());
-                return (
-                  <p key={key} className={classNames(pastOrCancelled && "line-through")}>
-                    {formatTime(aDate, userTimeFormat, userTimeZone)}
-                    {" - "}
-                    {dayjs(aDate).locale(language).format("D MMMM YYYY")}
-                  </p>
-                );
-              })}>
+              content={
+                <div className="max-h-48 w-64 overflow-y-auto p-2">
+                  {recurringDates.map((aDate, key) => {
+                    const pastOrCancelled =
+                      aDate < now ||
+                      booking.recurringInfo?.bookings[BookingStatus.CANCELLED]
+                        .map((date) => date.toString())
+                        .includes(aDate.toString());
+                    return (
+                      <p key={key} className={classNames(pastOrCancelled && "line-through")}>
+                        {formatTime(aDate, userTimeFormat, userTimeZone)}
+                        {" - "}
+                        {dayjs(aDate).locale(language).format("D MMMM YYYY")}
+                      </p>
+                    );
+                  })}
+                </div>
+              }>
               <div className="text-default">
                 <Icon
                   name="refresh-ccw"
@@ -1097,13 +1089,13 @@ const RecurringBookingsTooltip = ({
                   className="text-muted float-left mr-1 mt-1.5 inline-block h-3 w-3"
                 />
                 <p className="mt-1 pl-5 text-xs">
-                  {booking.status === BookingStatus.ACCEPTED
+                  {booking.status === BookingStatus.ACCEPTED && !booking.eventType?.recurringEvent
                     ? `${t("event_remaining_other", {
                         count: recurringCount,
                       })}`
                     : getEveryFreqFor({
                         t,
-                        recurringEvent: booking.eventType.recurringEvent,
+                        recurringEvent: booking.eventType.recurringEvent ?? undefined,
                         recurringCount: booking.recurringInfo.count,
                       })}
                 </p>
@@ -1509,26 +1501,53 @@ const DisplayAttendees = ({
 
 const DisplayLocation = ({
   locationToDisplay,
-  providerName,
+  provider,
   className,
 }: {
   locationToDisplay: string;
-  providerName?: string;
+  provider: DefaultEventLocationType | EventLocationTypeFromApp | null | undefined;
   className?: string;
-}) =>
-  locationToDisplay.startsWith("http") ? (
+}) => {
+  const { t } = useLocale();
+
+  return locationToDisplay.startsWith("http") ? (
     <a
       href={locationToDisplay}
       target="_blank"
       title={locationToDisplay}
-      className={classNames("text-default flex items-center gap-2", className)}
+      className="text-sm leading-6 text-blue-600 hover:underline dark:text-blue-400"
       rel="noreferrer">
-      {providerName || "Link"}
-      <Icon name="external-link" className="text-default inline h-4 w-4" />
+      <div className="flex gap-1">
+        {" "}
+        {provider?.iconUrl ? (
+          <div className="relative h-6 w-6">
+            <Image
+              src={provider.iconUrl}
+              alt={`${provider?.label} logo`}
+              className="rounded-sm object-contain"
+              fill
+            />
+          </div>
+        ) : (
+          <Icon name="external-link" className="text-default inline h-4 w-4" />
+        )}
+        {provider?.label
+          ? t("join_event_location", { eventLocationType: provider?.label })
+          : t("join_meeting")}
+      </div>
     </a>
   ) : (
-    <p className={className}>{locationToDisplay}</p>
+    <div className="flex gap-1">
+      <Icon
+        name={locationToDisplay.startsWith("+") ? "phone-call" : "map-pin"}
+        className="text-default mt-1 inline h-4 w-4"
+      />
+
+      <p className={classNames("text-sm leading-6", className)}>{locationToDisplay}</p>
+    </div>
   );
+};
+
 const AssignmentReasonTooltip = ({ assignmentReason }: { assignmentReason: AssignmentReason }) => {
   const { t } = useLocale();
   const badgeTitle = assignmentReasonBadgeTitleMap(assignmentReason.reasonEnum);
