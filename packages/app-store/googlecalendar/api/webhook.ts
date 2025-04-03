@@ -136,26 +136,25 @@ Promise<any>[] {
   return ext.events.cancelledEvents.map(async (evt) => {
     if (!evt.id) return;
 
+    const existingBooking = await prisma.booking.findUnique({
+      where: { uid: evt.id },
+    });
+
+    if (!existingBooking) {
+      return log.warn("Recurrence Booking not found to update recurrence pattern");
+    }
+
     if (evt.recurrence) {
-      const existingBooking = await prisma.booking.findUnique({
-        where: { uid: evt.id },
-      });
-
-      if (!existingBooking) {
-        log.warn("Recurrence Booking not found to update recurrence pattern");
-        return;
-      }
-
-      const existingMetadataParsed = isPrismaObjOrUndefined(existingBooking.metadata);
+      const updateData = {
+        metadata: {
+          ...isPrismaObjOrUndefined(existingBooking.metadata),
+          recurrencePattern: parseRecurrenceDetails(evt.recurrence),
+        },
+      };
 
       return prisma.booking.update({
         where: { uid: evt.id },
-        data: {
-          metadata: {
-            ...(existingMetadataParsed && { existingMetadataParsed }),
-            recurrencePattern: parseRecurrenceDetails(evt.recurrence),
-          },
-        },
+        data: updateData,
       });
     }
 
@@ -223,8 +222,8 @@ async function getConfirmedEvtPromises({
           } as Prisma.AttendeeCreateWithoutBookingSeatInput)
       );
     const bookingData: Prisma.BookingCreateInput = {
-      uid: evt.id ?? short.generate(),
       // ...(credential?.user?.email && { userPrimaryEmail: credential.user.email }),
+      uid: evt.id ?? short.generate(),
       responses: {
         name: booker.displayName,
         email: booker.email,
@@ -271,27 +270,64 @@ async function getConfirmedEvtPromises({
       }),
     };
 
+    const { uid, ...bookingUpdateData } = bookingData;
     return prisma.$transaction(async (tx) => {
       const booking = await tx.booking.upsert({
         where: { uid: evt.id as string },
-        update: { ...bookingData },
+        update: { ...bookingUpdateData },
         create: { ...bookingData },
       });
 
-      await tx.attendee.deleteMany({
+      // Avoid delete if there are no changes
+      const existingAttendees = await tx.attendee.findMany({
         where: { bookingId: booking.id },
+        select: { email: true }, // Only select a unique identifier
       });
 
-      await tx.attendee.createMany({
-        skipDuplicates: true,
-        data: attendeesData.map((at) => ({
-          ...at,
-          bookingId: booking.id,
-        })),
-      });
+      const existingEmails = new Set(existingAttendees.map((a) => a.email));
+      const newEmails = new Set(attendeesData.map((a) => a.email));
+
+      if (
+        existingEmails.size !== newEmails.size ||
+        Array.from(newEmails).some((email) => !existingEmails.has(email))
+      ) {
+        await tx.attendee.deleteMany({
+          where: { bookingId: booking.id },
+        });
+
+        await tx.attendee.createMany({
+          skipDuplicates: true,
+          data: attendeesData.map((at) => ({
+            ...at,
+            bookingId: booking.id,
+          })),
+        });
+      }
 
       return booking;
     });
+
+    // return prisma.$transaction(async (tx) => {
+    //   const booking = await tx.booking.upsert({
+    //     where: { uid: evt.id as string },
+    //     update: { ...bookingData },
+    //     create: { ...bookingData },
+    //   });
+
+    //   await tx.attendee.deleteMany({
+    //     where: { bookingId: booking.id },
+    //   });
+
+    //   await tx.attendee.createMany({
+    //     skipDuplicates: true,
+    //     data: attendeesData.map((at) => ({
+    //       ...at,
+    //       bookingId: booking.id,
+    //     })),
+    //   });
+
+    //   return booking;
+    // });
 
     // return prisma.$transaction(async (tx) => {
     //   const existingBooking = await tx.booking.findUnique({

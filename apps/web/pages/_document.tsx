@@ -255,7 +255,7 @@ class MyDocument extends Document<Props> {
               />
             </noscript>
           )}
-          <Script
+          {/* <Script
             id="frill-widget"
             strategy="afterInteractive"
             dangerouslySetInnerHTML={{
@@ -288,7 +288,7 @@ class MyDocument extends Document<Props> {
             });
           `,
             }}
-          />
+          /> */}
           <Main />
           <NextScript nonce={nonce} />
         </body>

@@ -3,7 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import type { getEventLocationValue } from "@calcom/app-store/locations";
+import type {
+  DefaultEventLocationType,
+  EventLocationTypeFromApp,
+  getEventLocationValue,
+} from "@calcom/app-store/locations";
 import { getSuccessPageLocationMessage, guessEventLocationType } from "@calcom/app-store/locations";
 import dayjs from "@calcom/dayjs";
 // TODO: Use browser locale, implement Intl in Dayjs maybe?
@@ -640,35 +644,8 @@ function BookingListItem(booking: BookingItemProps) {
                 attendees={booking.attendees}
               />
             </div>
-            {!isPending && (
-              <div>
-                {(provider?.label || locationToDisplay?.startsWith("https://")) &&
-                  locationToDisplay.startsWith("http") && (
-                    <a
-                      href={locationToDisplay}
-                      onClick={(e) => e.stopPropagation()}
-                      target="_blank"
-                      title={locationToDisplay}
-                      rel="noreferrer"
-                      className="text-sm leading-6 text-blue-600 hover:underline dark:text-blue-400">
-                      <div className="flex items-center gap-2">
-                        {provider?.iconUrl && (
-                          <Image
-                            src={provider.iconUrl}
-                            className="rounded-sm"
-                            alt={`${provider?.label} logo`}
-                            width={16}
-                            height={16}
-                          />
-                        )}
-                        {provider?.label
-                          ? t("join_event_location", { eventLocationType: provider?.label })
-                          : t("join_meeting")}
-                      </div>
-                    </a>
-                  )}
-              </div>
-            )}
+
+            {!isPending && <DisplayLocation locationToDisplay={locationToDisplay} provider={provider} />}
             {isPending &&
               (isPrismaObjOrUndefined(booking.metadata)?.paymentStatus === "failed" ? (
                 <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
@@ -741,7 +718,7 @@ function BookingListItem(booking: BookingItemProps) {
                     &quot;{booking.description}&quot;
                   </div>
                 )}
-                {booking.attendees.length !== 0 && (
+                {/* {booking.attendees.length !== 0 && (
                   <DisplayAttendees
                     attendees={attendeeList}
                     user={booking.user}
@@ -749,8 +726,9 @@ function BookingListItem(booking: BookingItemProps) {
                     bookingUid={booking.uid}
                     isBookingInPast={isBookingInPast}
                   />
-                )}
+                )} */}
               </div>
+              {!isPending && <DisplayLocation locationToDisplay={locationToDisplay} provider={provider} />}
             </div>
 
             <div className="cursor-pointer py-4">
@@ -1523,26 +1501,53 @@ const DisplayAttendees = ({
 
 const DisplayLocation = ({
   locationToDisplay,
-  providerName,
+  provider,
   className,
 }: {
   locationToDisplay: string;
-  providerName?: string;
+  provider: DefaultEventLocationType | EventLocationTypeFromApp | null | undefined;
   className?: string;
-}) =>
-  locationToDisplay.startsWith("http") ? (
+}) => {
+  const { t } = useLocale();
+
+  return locationToDisplay.startsWith("http") ? (
     <a
       href={locationToDisplay}
       target="_blank"
       title={locationToDisplay}
-      className={classNames("text-default flex items-center gap-2", className)}
+      className="text-sm leading-6 text-blue-600 hover:underline dark:text-blue-400"
       rel="noreferrer">
-      {providerName || "Link"}
-      <Icon name="external-link" className="text-default inline h-4 w-4" />
+      <div className="flex gap-1">
+        {" "}
+        {provider?.iconUrl ? (
+          <div className="relative h-6 w-6">
+            <Image
+              src={provider.iconUrl}
+              alt={`${provider?.label} logo`}
+              className="rounded-sm object-contain"
+              fill
+            />
+          </div>
+        ) : (
+          <Icon name="external-link" className="text-default inline h-4 w-4" />
+        )}
+        {provider?.label
+          ? t("join_event_location", { eventLocationType: provider?.label })
+          : t("join_meeting")}
+      </div>
     </a>
   ) : (
-    <p className={className}>{locationToDisplay}</p>
+    <div className="flex gap-1">
+      <Icon
+        name={locationToDisplay.startsWith("+") ? "phone-call" : "map-pin"}
+        className="text-default mt-1 inline h-4 w-4"
+      />
+
+      <p className={classNames("text-sm leading-6", className)}>{locationToDisplay}</p>
+    </div>
   );
+};
+
 const AssignmentReasonTooltip = ({ assignmentReason }: { assignmentReason: AssignmentReason }) => {
   const { t } = useLocale();
   const badgeTitle = assignmentReasonBadgeTitleMap(assignmentReason.reasonEnum);
