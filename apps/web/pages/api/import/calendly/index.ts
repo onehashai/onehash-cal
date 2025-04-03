@@ -25,6 +25,7 @@ import { INNGEST_ID } from "@calcom/lib/constants";
 import { defaultHandler, defaultResponder, getTranslation } from "@calcom/lib/server";
 import { getUsersCredentials } from "@calcom/lib/server/getUsersCredentials";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
+import { getServerTimezone } from "@calcom/lib/timezone";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus, IntegrationProvider, SchedulingType } from "@calcom/prisma/client";
@@ -162,12 +163,16 @@ const refreshTokenIfExpired = async (
 
 //Fetches user data from Calendly including event types, availability schedules and scheduled events
 const fetchCalendlyData = async (
+  userId: number,
   ownerUniqIdentifier: string,
   cAService: CalendlyAPIService,
   step: ReturnType<typeof createStepTools>,
   logger: Logger
 ): Promise<{
-  userScheduledEvents: CalendlyScheduledEvent[];
+  userScheduledEvents: {
+    events: CalendlyScheduledEvent[];
+    hasNextPage: boolean;
+  };
   userAvailabilitySchedules: CalendlyUserAvailabilitySchedules[];
   userEventTypes: CalendlyEventType[];
 }> => {
@@ -185,10 +190,18 @@ const fetchCalendlyData = async (
 
     const sixHoursBefore = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
 
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    const calendlyNextPageUrl = isPrismaObjOrUndefined(existingUser?.metadata)?.calendlyNextPageUrl;
     const userScheduledEvents = await cAService.getUserScheduledEvents({
+      userId,
       userUri: ownerUniqIdentifier,
       maxStartTime: sixHoursBefore.replace(/(\.\d{3})Z$/, "$1000Z"),
       step,
+      ...(calendlyNextPageUrl && {
+        next_page: calendlyNextPageUrl as string,
+      }),
       // minStartTime: new Date().toISOString(),
       // status: "active",
     });
@@ -387,12 +400,6 @@ const getDateTimeISOString = (time: string) => {
   return formattedDate;
 };
 
-//Returns the server timezone
-const getServerTimezone = (): string => {
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return timeZone;
-};
-
 //Returns the attendees with timezone
 const getAttendeesWithTimezone = (
   scheduledEvent: CalendlyScheduledEventWithScheduler
@@ -410,7 +417,8 @@ const getAttendeesWithTimezone = (
     attendeeInput.push(scheduledByAttendee);
   }
 
-  const eventGuestTimezone = scheduledEvent.scheduled_by[0].timezone ?? getServerTimezone();
+  const eventGuestTimezone = scheduledEvent.scheduled_by?.[0]?.timezone ?? getServerTimezone();
+
   if (scheduledEvent.event_guests && scheduledEvent.event_guests.length > 0) {
     const eventGuest: Prisma.AttendeeCreateWithoutBookingSeatInput[] = scheduledEvent.event_guests.map(
       (event_guest) => ({
@@ -561,14 +569,14 @@ const mapEventTypeAndBookingsToInputSchema = (
       users: { connect: { id: userIntID } },
       bookingFields: event_type.custom_questions.map((q) => {
         return {
-          name: q.name,
+          name: q.name.split(" ").join("_"),
           type: quesTypeMapping[q.type],
-          defaultLabel: q.name.split(" ").join("_"),
+          defaultLabel: q.name,
           hidden: !q.enabled,
           required: q.required,
           options: q.answer_choices.map((ch) => {
             return {
-              lable: ch,
+              label: ch,
               value: ch,
             };
           }),
@@ -675,7 +683,7 @@ const insertEventTypeAndBookingsToDB = async (
     const eventTypesAndBookingsInsertedResults = [];
 
     for (const eventTypeAndBooking of eventTypesAndBookingsToBeInserted) {
-      const { event_type_input } = eventTypeAndBooking;
+      const { event_type_input, scheduled_events_input } = eventTypeAndBooking;
 
       // Upsert event type
       const eventType = await step.run(`Upserting eventType - ${event_type_input.slug}`, async () => {
@@ -698,8 +706,6 @@ const insertEventTypeAndBookingsToDB = async (
         }
       });
 
-      // Create bookings for this event type in batches sequentially
-      const { scheduled_events_input } = eventTypeAndBooking;
       const createdBookings = [];
 
       for (let i = 0; i < scheduled_events_input.length; i += batchSize) {
@@ -989,6 +995,8 @@ async function confirmUpcomingImportedBookings(createdBookings: any[], userIntID
     );
   }
 }
+const key = INNGEST_ID === "onehash-cal" ? "prod" : "stag";
+
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   const { userId, sendCampaignEmails } = req.query as { userId: string; sendCampaignEmails: string };
   if (!userId) {
@@ -1023,8 +1031,6 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     if (!userCalendlyIntegrationProvider.ownerUniqIdentifier) {
       return res.status(400).json({ message: "Missing User Unique Identifier" });
     }
-
-    const key = INNGEST_ID === "onehash-cal" ? "prod" : "stag";
 
     await inngestClient.send({
       name: `import-from-calendly-${key}`,
@@ -1088,6 +1094,7 @@ export const handleCalendlyImportEvent = async (
 
     //0. Getting user data from calendly
     const { userAvailabilitySchedules, userEventTypes, userScheduledEvents } = await fetchCalendlyData(
+      user.id,
       userCalendlyIntegrationProvider.ownerUniqIdentifier,
       cAService,
       step,
@@ -1113,54 +1120,93 @@ export const handleCalendlyImportEvent = async (
     const importedData = await importEventTypesAndBookings(
       user.id,
       cAService,
-      userScheduledEvents as CalendlyScheduledEvent[],
+      userScheduledEvents.events as CalendlyScheduledEvent[],
       userEventTypes as CalendlyEventType[],
       step,
       logger
     );
 
-    //3. Notifying the user about the import status
-    await step.run("Notify user", async () => {
-      try {
-        const status = !!importedData;
-        const data: ImportDataEmailProps = {
-          status,
-          provider: "Calendly",
-          user: {
-            email: user.email,
-            name: user.name,
+    const allEventsProcessed = !userScheduledEvents.hasNextPage;
+    if (allEventsProcessed) {
+      //3. Notifying the user about the import status
+      await step.run("Notify user", async () => {
+        try {
+          const status = !!importedData;
+          const data: ImportDataEmailProps = {
+            status,
+            provider: "Calendly",
+            user: {
+              email: user.email,
+              name: user.name,
+            },
+          };
+          await sendImportDataEmail(data);
+          logger.info(`User notified with ${status ? "success" : "failure"} import status`);
+        } catch (error) {
+          throw new NonRetriableError(
+            `Error - Notify User : ${error instanceof Error ? error.message : error}`
+          );
+        }
+      });
+
+      //4. Sending campaign emails to Calendly user scheduled events bookers
+      if (importedData && sendCampaignEmails)
+        await sendCampaigningEmails(
+          {
+            fullName: user.name,
+            slug: user.slug,
+            emails: Array.from(
+              importedData.reduce<Set<string>>((emailsSet, event) => {
+                event.createdBookings.forEach((booking) => {
+                  booking.attendees.forEach((attendee) => {
+                    if (attendee.email !== user.email) {
+                      emailsSet.add(attendee.email);
+                    }
+                  });
+                });
+                return emailsSet;
+              }, new Set())
+            ),
           },
-        };
-        await sendImportDataEmail(data);
-        logger.info(`User notified with ${status ? "success" : "failure"} import status`);
+          step
+        );
+    } else {
+      //Scheduling new event to continue process the next set of events
+
+      try {
+        await step.run("Triggering continued event", async () => {
+          await inngestClient.send({
+            name: `import-from-calendly-${key}`,
+            data: {
+              sendCampaignEmails,
+              userCalendlyIntegrationProvider,
+              user,
+            },
+          });
+        });
       } catch (error) {
+        logger.error(`Error triggering event: ${error instanceof Error ? error.message : error}`);
+
+        // Notify user only if step fails
+        await step.run("Notify user of failure", async () => {
+          const status = false;
+          const data: ImportDataEmailProps = {
+            status,
+            provider: "Calendly",
+            user: {
+              email: user.email,
+              name: user.name,
+            },
+          };
+          await sendImportDataEmail(data);
+          logger.info(`User notified with failure import status`);
+        });
+
         throw new NonRetriableError(
-          `Error - Notify User : ${error instanceof Error ? error.message : error}`
+          `Error - Triggering event : ${error instanceof Error ? error.message : error}`
         );
       }
-    });
-
-    //4. Sending campaign emails to Calendly user scheduled events bookers
-    if (importedData && sendCampaignEmails)
-      await sendCampaigningEmails(
-        {
-          fullName: user.name,
-          slug: user.slug,
-          emails: Array.from(
-            importedData.reduce<Set<string>>((emailsSet, event) => {
-              event.createdBookings.forEach((booking) => {
-                booking.attendees.forEach((attendee) => {
-                  if (attendee.email !== user.email) {
-                    emailsSet.add(attendee.email);
-                  }
-                });
-              });
-              return emailsSet;
-            }, new Set())
-          ),
-        },
-        step
-      );
+    }
 
     logger.info("Calendly import completed");
   } catch (error) {

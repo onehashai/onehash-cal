@@ -3,6 +3,7 @@ import axios from "axios";
 import { NonRetriableError, RetryAfterError } from "inngest";
 import type { createStepTools } from "inngest/components/InngestStepTools";
 
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import prisma from "@calcom/prisma";
 import { IntegrationProvider } from "@calcom/prisma/enums";
 
@@ -158,6 +159,15 @@ export default class CalendlyAPIService {
     }
   };
 
+  getUserMetadataFromDb = async (userId: number) => {
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { metadata: true },
+    });
+
+    return isPrismaObjOrUndefined(existingUser?.metadata) ?? {};
+  };
+
   getUserEventTypes = async ({
     userUri,
     active,
@@ -204,57 +214,78 @@ export default class CalendlyAPIService {
   };
 
   getUserScheduledEvents = async ({
+    userId,
     userUri,
-    count,
     pageToken,
     status,
     maxStartTime,
     minStartTime,
     step,
+    next_page,
   }: {
+    userId: number;
     userUri: string;
-    count?: number;
     pageToken?: string;
     status?: string;
     maxStartTime?: string;
     minStartTime?: string;
     step: ReturnType<typeof createStepTools>;
-  }): Promise<CalendlyScheduledEvent[]> => {
+    next_page?: string;
+  }): Promise<{
+    events: CalendlyScheduledEvent[];
+    hasNextPage: boolean;
+  }> => {
     try {
-      let queryParams = [`user=${userUri}`, `count=${count || 99}`, `sort=start_time:asc`].join("&");
-      let page = 1;
-      if (pageToken) queryParams += `&page_token=${pageToken}`;
-      if (status) queryParams += `&status=${status}`;
-      if (maxStartTime) queryParams += `&max_start_time=${maxStartTime}`;
-      if (minStartTime) queryParams += `&min_start_time=${minStartTime}`;
+      let allScheduledEvents: CalendlyScheduledEvent[] = [];
+      let _next_page: string | null = next_page ?? null;
 
-      const url = `/scheduled_events?${queryParams}`;
-      const res = await this.fetchDataWithRetry({
-        title: `Fetch Bookings from Calendly Page ${page}`,
-        url,
-        fnName: "getUserScheduledEvents",
-        step,
-      });
-
-      const data = res as CalendlyScheduledEventSuccessResponse;
-      let allScheduledEvents: CalendlyScheduledEvent[] = [...data.collection];
-      let next_page: string | null = data?.pagination?.next_page ?? null;
-
-      while (next_page) {
-        page++;
+      const fetchAndProcessEvents = async (url: string) => {
         const res = await this.fetchDataWithRetry({
-          title: `Fetch Bookings from Calendly Page ${page}`,
-          url: next_page,
+          title: `Fetch Bookings from Calendly`,
+          url,
           fnName: "getUserScheduledEvents",
           step,
         });
 
-        const newData = res as CalendlyScheduledEventSuccessResponse;
-        allScheduledEvents = [...allScheduledEvents, ...newData.collection];
-        next_page = newData.pagination.next_page;
+        const data = res as CalendlyScheduledEventSuccessResponse;
+        allScheduledEvents = data.collection; // No need to merge since API always returns 1000 events.
+        _next_page = data.pagination.next_page ?? null;
+      };
+
+      if (!_next_page) {
+        let queryParams = [`user=${userUri}`, `count=100`, `sort=start_time:asc`].join("&");
+        if (pageToken) queryParams += `&page_token=${pageToken}`;
+        if (status) queryParams += `&status=${status}`;
+        if (maxStartTime) queryParams += `&max_start_time=${maxStartTime}`;
+        if (minStartTime) queryParams += `&min_start_time=${minStartTime}`;
+
+        const url = `/scheduled_events?${queryParams}`;
+        await fetchAndProcessEvents(url);
+      } else {
+        await fetchAndProcessEvents(_next_page);
       }
 
-      return allScheduledEvents;
+      // Handle next_page storage in DB
+      const existingMeta = await this.getUserMetadataFromDb(userId);
+      if (_next_page) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            metadata: { ...existingMeta, calendlyNextPageUrl: _next_page },
+          },
+        });
+      } else if (existingMeta?.calendlyNextPageUrl) {
+        delete existingMeta.calendlyNextPageUrl;
+        await prisma.user.update({
+          where: { id: userId },
+          data: { metadata: existingMeta },
+        });
+      }
+
+      return {
+        events: allScheduledEvents,
+        hasNextPage: !!_next_page,
+      };
     } catch (error) {
       console.error("Internal server error:", error instanceof Error ? error.message : String(error));
       throw error;
