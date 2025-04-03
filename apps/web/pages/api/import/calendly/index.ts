@@ -64,6 +64,13 @@ type CombinedAvailabilityRules = {
   date?: Date;
 };
 
+const quesTypeMapping: { [key: string]: string } = {
+  string: "text",
+  text: "text",
+  phone_number: "phone",
+  single_select: "select",
+  multi_select: "multiselect",
+};
 //Maps the weekday to its corresponding number
 const wdayMapping: { [key: string]: number } = {
   monday: 1,
@@ -393,12 +400,6 @@ const getDateTimeISOString = (time: string) => {
   return formattedDate;
 };
 
-//Returns the server timezone
-// const getServerTimezone = (): string => {
-//   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-//   return timeZone;
-// };
-
 //Returns the attendees with timezone
 const getAttendeesWithTimezone = (
   scheduledEvent: CalendlyScheduledEventWithScheduler
@@ -566,6 +567,30 @@ const mapEventTypeAndBookingsToInputSchema = (
           : undefined,
       owner: { connect: { id: userIntID } },
       users: { connect: { id: userIntID } },
+      bookingFields: event_type.custom_questions.map((q) => {
+        return {
+          name: q.name.split(" ").join("_"),
+          type: quesTypeMapping[q.type],
+          defaultLabel: q.name,
+          hidden: !q.enabled,
+          required: q.required,
+          options: q.answer_choices.map((ch) => {
+            return {
+              label: ch,
+              value: ch,
+            };
+          }),
+          sources: [
+            {
+              id: "user",
+              type: "user",
+              label: "User",
+            },
+          ],
+          editable: "user",
+          placeholder: "",
+        };
+      }),
     };
     //Scheduled Booking Input
     let scheduled_events_input: Prisma.BookingCreateInput[] = [];
@@ -1147,14 +1172,40 @@ export const handleCalendlyImportEvent = async (
         );
     } else {
       //Scheduling new event to continue process the next set of events
-      await inngestClient.send({
-        name: `import-from-calendly-${key}`,
-        data: {
-          sendCampaignEmails,
-          userCalendlyIntegrationProvider,
-          user,
-        },
-      });
+
+      try {
+        await step.run("Triggering continued event", async () => {
+          await inngestClient.send({
+            name: `import-from-calendly-${key}`,
+            data: {
+              sendCampaignEmails,
+              userCalendlyIntegrationProvider,
+              user,
+            },
+          });
+        });
+      } catch (error) {
+        logger.error(`Error triggering event: ${error instanceof Error ? error.message : error}`);
+
+        // Notify user only if step fails
+        await step.run("Notify user of failure", async () => {
+          const status = false;
+          const data: ImportDataEmailProps = {
+            status,
+            provider: "Calendly",
+            user: {
+              email: user.email,
+              name: user.name,
+            },
+          };
+          await sendImportDataEmail(data);
+          logger.info(`User notified with failure import status`);
+        });
+
+        throw new NonRetriableError(
+          `Error - Triggering event : ${error instanceof Error ? error.message : error}`
+        );
+      }
     }
 
     logger.info("Calendly import completed");
