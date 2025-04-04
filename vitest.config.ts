@@ -1,6 +1,9 @@
 import { defineConfig } from "vitest/config";
+import dotenv from "dotenv";
 
 process.env.INTEGRATION_TEST_MODE = "true";
+dotenv.config({ path: "./.env" }); 
+
 
 export default defineConfig({
   test: {
