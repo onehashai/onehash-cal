@@ -271,41 +271,44 @@ async function getConfirmedEvtPromises({
     };
 
     const { uid, ...bookingUpdateData } = bookingData;
-    return prisma.$transaction(async (tx) => {
-      const booking = await tx.booking.upsert({
-        where: { uid: evt.id as string },
-        update: { ...bookingUpdateData },
-        create: { ...bookingData },
-      });
+    return prisma.$transaction(
+      async (tx) => {
+        const booking = await tx.booking.upsert({
+          where: { uid: evt.id as string },
+          update: { ...bookingUpdateData },
+          create: { ...bookingData },
+        });
 
-      // Avoid delete if there are no changes
-      const existingAttendees = await tx.attendee.findMany({
-        where: { bookingId: booking.id },
-        select: { email: true }, // Only select a unique identifier
-      });
-
-      const existingEmails = new Set(existingAttendees.map((a) => a.email));
-      const newEmails = new Set(attendeesData.map((a) => a.email));
-
-      if (
-        existingEmails.size !== newEmails.size ||
-        Array.from(newEmails).some((email) => !existingEmails.has(email))
-      ) {
-        await tx.attendee.deleteMany({
+        // Avoid delete if there are no changes
+        const existingAttendees = await tx.attendee.findMany({
           where: { bookingId: booking.id },
+          select: { email: true }, // Only select a unique identifier
         });
 
-        await tx.attendee.createMany({
-          skipDuplicates: true,
-          data: attendeesData.map((at) => ({
-            ...at,
-            bookingId: booking.id,
-          })),
-        });
-      }
+        const existingEmails = new Set(existingAttendees.map((a) => a.email));
+        const newEmails = new Set(attendeesData.map((a) => a.email));
 
-      return booking;
-    });
+        if (
+          existingEmails.size !== newEmails.size ||
+          Array.from(newEmails).some((email) => !existingEmails.has(email))
+        ) {
+          await tx.attendee.deleteMany({
+            where: { bookingId: booking.id },
+          });
+
+          await tx.attendee.createMany({
+            skipDuplicates: true,
+            data: attendeesData.map((at) => ({
+              ...at,
+              bookingId: booking.id,
+            })),
+          });
+        }
+
+        return booking;
+      },
+      { timeout: 60000 }
+    );
 
     // return prisma.$transaction(async (tx) => {
     //   const booking = await tx.booking.upsert({
