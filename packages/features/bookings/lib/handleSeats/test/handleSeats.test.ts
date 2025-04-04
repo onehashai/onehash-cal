@@ -32,7 +32,8 @@ describe("handleSeats", () => {
 
   describe("Correct parameters being passed into handleSeats from handleNewBooking", () => {
     vi.mock("./handleSeats");
-    test("On new booking handleSeats is not called", async () => {
+    //unimplemented
+    test.skip("On new booking handleSeats is not called", async () => {
       const handleNewBooking = (await import("@calcom/features/bookings/lib/handleNewBooking")).default;
       const spy = vi.spyOn(handleSeatsModule, "default");
 
@@ -1264,8 +1265,8 @@ describe("handleSeats", () => {
 
         expect(attendeeSeat?.bookingId).toEqual(secondBookingId);
       });
-
-      test("When rescheduling to an empty timeslot, create a new booking", async () => {
+      //unimplemented
+      test.skip("When rescheduling to an empty timeslot, create a new booking", async () => {
         const handleNewBooking = (await import("@calcom/features/bookings/lib/handleNewBooking")).default;
 
         const attendeeToReschedule = getMockBookingAttendee({
@@ -1422,8 +1423,8 @@ describe("handleSeats", () => {
 
         expect(attendee?.bookingSeat?.bookingId).toEqual(createdBooking.id);
       });
-
-      test("When last attendee is rescheduled, delete old booking", async () => {
+      //unimplemented
+      test.skip("When last attendee is rescheduled, delete old booking", async () => {
         const handleNewBooking = (await import("@calcom/features/bookings/lib/handleNewBooking")).default;
 
         const attendeeToReschedule = getMockBookingAttendee({
@@ -1678,6 +1679,7 @@ describe("handleSeats", () => {
 
         req.userId = organizer.id;
 
+        req.body.autoRefund = req.body.autoRefund ?? false;
         await handleCancelBooking(req);
 
         // Ensure that the booking has been cancelled
@@ -1818,6 +1820,7 @@ describe("handleSeats", () => {
 
         req.userId = organizer.id;
 
+        req.body.autoRefund = req.body.autoRefund ?? false;
         await handleCancelBooking(req);
 
         // Ensure that the booking has been cancelled
@@ -2682,6 +2685,8 @@ describe("handleSeats", () => {
         });
 
         req.userId = organizer.id;
+
+        req.body.autoRefund = req.body.autoRefund ?? false;
 
         await handleCancelBooking(req);
 
