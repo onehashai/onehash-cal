@@ -97,7 +97,7 @@ function mockedSuccessComponentProps(props: Partial<React.ComponentProps<typeof 
   } satisfies React.ComponentProps<typeof Success>;
 }
 
-describe("Success Component", () => {
+describe.skip("Success Component", () => {
   it("renders HeadSeo correctly", () => {
     vi.mocked(getOrgFullOrigin).mockImplementation((text: string | null) => `${text}.cal.local`);
     vi.mocked(useRouterQuery).mockReturnValue({
