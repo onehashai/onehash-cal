@@ -1,31 +1,59 @@
-name: Cron - Calendar Cache and Watch 
+name: Cron - Calendar Cache and Watch
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
-  cron-scheduleSMSReminders:
+  cron-calendarCacheAndWatch:
+    runs-on: ubuntu-latest
     env:
       APP_URL: ${{ secrets.APP_URL }}
-      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}  
-    runs-on: ubuntu-latest
+      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
     steps:
-      - name: cURL request to production
-        if: ${{ env.APP_URL && env.CRON_SECRET }}
+      - name: Check if required secrets are available
         run: |
-          curl ${{ env.APP_URL }}/api/cron/calendar-cache-and-watch \
-            -X GET \
-            -H 'content-type: application/json' \
-            -H 'Authorization: Bearer ${{ env.CRON_SECRET }}' \
-            -sSf
+          if [[ -z "${{ secrets.APP_URL }}" || -z "${{ secrets.CRON_SECRET }}" ]]; then
+            echo "❌ ERROR: Missing required secrets (APP_URL or CRON_SECRET)."
+            exit 1
+          fi
+
+      - name: cURL request to production
+        run: |
+          echo "🚀 Sending request to Production: ${{ secrets.APP_URL }}/api/cron/calendar-cache-and-watch"
+          RESPONSE=$(curl -w "%{http_code}" -o response.txt -s -X GET \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/calendar-cache-and-watch")
+
+          HTTP_STATUS=$(cat response.txt)
+          if [[ $HTTP_STATUS -ne 200 ]]; then
+            echo "❌ ERROR: Production request failed with status $HTTP_STATUS"
+            cat response.txt
+            exit 1
+          fi
+          echo "✅ Production request succeeded."
 
       - name: cURL request to staging
-        if: ${{ env.APP_URL_STAG && env.CRON_SECRET }}
         run: |
-          curl ${{ env.APP_URL }}/api/cron/calendar-cache-and-watch \
-            -X GET \
-            -H 'content-type: application/json' \
-            -H 'Authorization: Bearer ${{ env.CRON_SECRET }}' \
-            -sSf
+          if [[ -z "${{ secrets.APP_URL_STAG }}" ]]; then
+            echo "⚠️ WARNING: Skipping staging request (APP_URL_STAG not set)."
+            exit 0
+          fi
+
+          echo "🚀 Sending request to Staging: ${{ secrets.APP_URL_STAG }}/api/cron/calendar-cache-and-watch"
+          RESPONSE=$(curl -w "%{http_code}" -o response.txt -s -X GET \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL_STAG }}/api/cron/calendar-cache-and-watch")
+
+          HTTP_STATUS=$(cat response.txt)
+          if [[ $HTTP_STATUS -ne 200 ]]; then
+            echo "❌ ERROR: Staging request failed with status $HTTP_STATUS"
+            cat response.txt
+            exit 1
+          fi
+          echo "✅ Staging request succeeded."

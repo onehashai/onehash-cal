@@ -21,22 +21,22 @@ type SelectedCalendarsSettingsWebWrapperProps = {
 
 export const SelectedCalendarsSettingsWebWrapper = (props: SelectedCalendarsSettingsWebWrapperProps) => {
   const { t } = useLocale();
+  const utils = trpc.useUtils();
+
   const query = trpc.viewer.connectedCalendars.useQuery(undefined, {
     suspense: true,
     refetchOnWindowFocus: false,
   });
   const googleSyncMutation = trpc.viewer.googleSyncMutation.useMutation({
-    onSuccess: () => {
-      showToast(t("successfully_synced"), "success");
-      // setIsOpenLocationDialog(false);
-      // utils.viewer.bookings.invalidate();
+    onSuccess: (res) => {
+      showToast(t(res.googleSyncEnabled ? "successfully_synced" : "sync_revoked"), "success");
     },
     onError: (e) => {
       const errorMessages: Record<string, string> = {
         UNAUTHORIZED: t("you_are_unauthorized_to_make_this_change_to_the_booking"),
         BAD_REQUEST: e.message,
       };
-      const message = errorMessages[e.data?.code as string] || t("location_update_failed");
+      const message = errorMessages[e.data?.code as string] || t("something_went_wrong");
       showToast(message, "error");
     },
   });
@@ -107,11 +107,21 @@ export const SelectedCalendarsSettingsWebWrapper = (props: SelectedCalendarsSett
                                           checked={cal.googleSyncEnabled}
                                           label={t("calendar_sync")}
                                           onCheckedChange={(checked) => {
-                                            googleSyncMutation.mutate({
-                                              integration: cal.integration,
-                                              externalId: cal.externalId,
-                                              googleSyncEnabled: checked,
-                                            });
+                                            const previousValue = cal.googleSyncEnabled;
+
+                                            cal.googleSyncEnabled = checked;
+                                            googleSyncMutation.mutate(
+                                              {
+                                                integration: cal.integration,
+                                                externalId: cal.externalId,
+                                                googleSyncEnabled: checked,
+                                              },
+                                              {
+                                                onError: () => {
+                                                  cal.googleSyncEnabled = previousValue;
+                                                },
+                                              }
+                                            );
                                           }}
                                         />
                                         {googleSyncMutation.isPending && (

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  cron-scheduleSMSReminders:
+  cron-calendarCacheCleanup:
     env:
       APP_URL: ${{ secrets.APP_URL }}
       APP_URL_STAG: ${{ secrets.APP_URL_STAG }}  
