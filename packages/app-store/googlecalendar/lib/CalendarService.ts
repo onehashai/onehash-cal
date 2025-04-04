@@ -637,8 +637,8 @@ export default class GoogleCalendarService implements Calendar {
       log.warn("GOOGLE_WEBHOOK_TOKEN is not set, skipping watching calendar");
       return;
     }
-    const calendar = await this.authedCalendar();
     try {
+      const calendar = await this.authedCalendar();
       const res = await calendar.events.watch({
         // Calendar identifier. To retrieve calendar IDs call the calendarList.list method. If you want to access the primary calendar of the currently logged in user, use the "primary" keyword.
         calendarId,
@@ -661,12 +661,16 @@ export default class GoogleCalendarService implements Calendar {
         googleChannelKind: response?.kind,
         googleChannelResourceId: response?.resourceId,
         googleChannelResourceUri: response?.resourceUri,
-        googleChannelExpiration: response?.expiration,
+        googleChannelExpiration: response?.expiration ?? "N/A",
       });
 
       return res.data;
     } catch (e) {
       console.log("in_here_error", e);
+      await this.upsertSelectedCalendar({
+        externalId: calendarId,
+        googleChannelExpiration: "N/A",
+      });
     }
   }
   async unwatchCalendar({ calendarId }: { calendarId: string }) {
