@@ -16,6 +16,7 @@ import { BookingStatus } from "@calcom/prisma/enums";
 
 import { getCalendar } from "../../_utils/getCalendar";
 import { MeetLocationType } from "../../locations";
+import { ZoomLocationType } from "./../../locations";
 
 const log = logger.getSubLogger({ prefix: ["api/integrations/googlecalendar/webhook"] });
 type FindByGoogleChannelIdReturnType = Awaited<
@@ -221,6 +222,7 @@ async function getConfirmedEvtPromises({
             timeZone: evt.start?.timeZone ?? getServerTimezone(),
           } as Prisma.AttendeeCreateWithoutBookingSeatInput)
       );
+    const location = getLocation(evt.location);
     const bookingData: Prisma.BookingCreateInput = {
       // ...(credential?.user?.email && { userPrimaryEmail: credential.user.email }),
       uid: evt.id ?? short.generate(),
@@ -246,7 +248,7 @@ async function getConfirmedEvtPromises({
       description: evt.description ?? "",
       customInputs: {},
       status: BookingStatus.ACCEPTED,
-      location: evt.location ? evt.location : MeetLocationType,
+      location: location,
       // eventType: {
       //   create: {},
       // },
@@ -382,6 +384,12 @@ async function getConfirmedEvtPromises({
     //   }
     // });
   });
+}
+
+function getLocation(location: string | undefined) {
+  if (location?.contains("meet")) return MeetLocationType;
+  if (location?.contains("zoom")) return ZoomLocationType;
+  return location;
 }
 
 function parseRecurrenceDetails(details: string[]): {
