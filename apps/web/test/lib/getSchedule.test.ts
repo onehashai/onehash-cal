@@ -997,9 +997,11 @@ describe("getSchedule", () => {
       let { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
       let { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
       let { dateString: plus3DateString } = getDate({ dateIncrement: 3 });
-      plus2DateString = "2025-04-05";
-      plus1DateString = "2025-04-04";
-      plus3DateString = "2025-04-06";
+      //generate test dates dynamically based on current dates since getDate is decremented
+      const today = dayjs();
+      plus1DateString = today.add(1, "day").format("YYYY-MM-DD");
+      plus2DateString = today.add(2, "day").format("YYYY-MM-DD");
+      plus3DateString = today.add(3, "day").format("YYYY-MM-DD");
 
       CalendarManagerMock.getBusyCalendarTimes.mockResolvedValue([
         {
