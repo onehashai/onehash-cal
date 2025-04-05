@@ -10,4 +10,14 @@ vi.mock("@calcom/ui", async (originalImport) => {
   };
 });
 
+// Mock the configuration or context that PhoneInput depends on
+vi.mock("@calcom/lib/config", () => ({
+  default: {
+    public: {
+      // Add whatever properties the component expects here
+      defaultCountry: "US", // or whatever default country you want to use
+    },
+  },
+}));
+
 export {};

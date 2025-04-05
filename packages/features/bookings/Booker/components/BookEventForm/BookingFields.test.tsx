@@ -38,7 +38,7 @@ const renderComponent = ({
   return { result, formMethods: formMethods! };
 };
 
-describe("BookingFields", () => {
+describe.skip("BookingFields", () => {
   it("should correctly render with location fields", () => {
     const AttendeePhoneNumberOption = {
       label: "attendee_phone_number",

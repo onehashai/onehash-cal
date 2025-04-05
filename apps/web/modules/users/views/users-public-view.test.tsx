@@ -7,6 +7,15 @@ import { HeadSeo } from "@calcom/ui";
 
 import UserPage from "./users-public-view";
 
+vi.mock("@calcom/ui", () => ({
+  HeadSeo: vi.fn(),
+  Button: vi.fn(() => <button>Mocked Button</button>),
+}));
+
+vi.mock("@calcom/lib/constants", () => ({
+  SIGNUP_URL: "https://mocked-signup-url.com",
+}));
+
 function mockedUserPageComponentProps(props: Partial<React.ComponentProps<typeof UserPage>>) {
   return {
     trpcState: {
@@ -42,9 +51,9 @@ function mockedUserPageComponentProps(props: Partial<React.ComponentProps<typeof
       },
     ],
     markdownStrippedBio: "My Bio",
-    entity: {
+    entity: props.entity ?? {
       considerUnpublished: false,
-      ...(props.entity ?? null),
+      orgSlug: "default-org-slug",
     },
     eventTypes: [],
     isOrgSEOIndexable: false,
@@ -59,12 +68,13 @@ describe("UserPage Component", () => {
           considerUnpublished: false,
           orgSlug: "org1",
         },
+        userNotFound: {
+          slug: "org1",
+        },
       }),
     };
 
-    vi.mocked(getOrgFullOrigin).mockImplementation((orgSlug: string | null) => {
-      return `${orgSlug}.cal.local`;
-    });
+    vi.mocked(getOrgFullOrigin).mockReturnValue("org1.cal.local");
 
     vi.mocked(useRouterQuery).mockReturnValue({
       uid: "uid",
@@ -72,29 +82,17 @@ describe("UserPage Component", () => {
 
     render(<UserPage {...mockData.props} />);
 
-    const expectedDescription = mockData.props.markdownStrippedBio;
+    render(<UserPage {...(mockData.props as any)} />);
+    const expectedDescription = "Default description";
     const expectedTitle = expectedDescription;
     expect(HeadSeo).toHaveBeenCalledWith(
       {
         origin: `${mockData.props.entity.orgSlug}.cal.local`,
-        title: `${mockData.props.profile.name}`,
-        description: expectedDescription,
-        meeting: {
-          profile: {
-            name: mockData.props.profile.name,
-            image: mockData.props.users[0].avatarUrl,
-          },
-          title: expectedTitle,
-          users: [
-            {
-              name: mockData.props.users[0].name,
-              username: mockData.props.users[0].username,
-            },
-          ],
-        },
+        title: "Oops no one's here",
+        description: "Register and claim this Cal ID username before it’s gone!",
         nextSeoProps: {
-          nofollow: !mockData.props.profile.allowSEOIndexing,
-          noindex: !mockData.props.profile.allowSEOIndexing,
+          nofollow: true,
+          noindex: true,
         },
       },
       {}

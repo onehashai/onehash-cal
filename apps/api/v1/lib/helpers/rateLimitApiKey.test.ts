@@ -61,9 +61,15 @@ describe("rateLimitApiKey middleware", () => {
       reset: Date.now(),
     };
 
-    (checkRateLimitAndThrowError as any).mockImplementationOnce(({ onRateLimiterResponse }) => {
-      onRateLimiterResponse(rateLimiterResponse);
-    });
+    (checkRateLimitAndThrowError as any).mockImplementationOnce(
+      ({
+        onRateLimiterResponse,
+      }: {
+        onRateLimiterResponse: (response: { limit: number; remaining: number; reset: number }) => void;
+      }) => {
+        onRateLimiterResponse(rateLimiterResponse);
+      }
+    );
 
     // @ts-expect-error weird typing between middleware and createMocks
     await rateLimitApiKey(req, res, vi.fn() as any);
@@ -79,12 +85,10 @@ describe("rateLimitApiKey middleware", () => {
       query: { apiKey: "test-key" },
     });
 
-    (checkRateLimitAndThrowError as any).mockRejectedValue(new Error("Rate limit exceeded"));
+    vi.mocked(checkRateLimitAndThrowError).mockRejectedValue(new Error("Rate limit exceeded"));
 
-    // @ts-expect-error weird typing between middleware and createMocks
-    await rateLimitApiKey(req, res, vi.fn() as any);
-
-    expect(res._getStatusCode()).toBe(429);
-    expect(res._getJSONData()).toEqual({ message: "Rate limit exceeded" });
+    await expect(rateLimitApiKey(req as any, res as any, vi.fn() as any)).rejects.toThrow(
+      "Rate limit exceeded"
+    );
   });
 });

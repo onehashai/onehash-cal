@@ -455,7 +455,7 @@ function BookingListItem(booking: BookingItemProps) {
         setViewRecordingsDialogIsOpen(true);
       },
       color: showCheckRecordingButton ? "secondary" : "primary",
-      disabled: mutation.isLoading,
+      disabled: mutation.status === "pending",
     },
   ];
 
@@ -492,8 +492,10 @@ function BookingListItem(booking: BookingItemProps) {
         `Hi, I'm running late by 5 minutes. I'll be there soon.`
       );
 
-      const whatsappLink = `https://api.whatsapp.com/send?phone=${cleanedPhoneNumber}&text=${urlEndcodedTextMessage}`;
+      // this opens the whatsapp web instead of defaulting to whatsapp app (linux doesn't support app)
+      // const whatsappLink = `https://web.whatsapp.com/send?phone=${cleanedPhoneNumber}&text=${urlEndcodedTextMessage}`;
 
+      const whatsappLink = `https://api.whatsapp.com/send?phone=${cleanedPhoneNumber}&text=${urlEndcodedTextMessage}`;
       return whatsappLink;
     };
     //Generating the whatsapp link
@@ -613,7 +615,7 @@ function BookingListItem(booking: BookingItemProps) {
           <DialogFooter>
             <DialogClose />
             <Button
-              disabled={mutation.isLoading}
+              disabled={mutation.status === "pending"}
               data-testid="rejection-confirm"
               onClick={() => {
                 bookingConfirm(false);
@@ -914,7 +916,6 @@ function BookingListItem(booking: BookingItemProps) {
                 booking.responses &&
                 Object.entries(booking.responses).map(([name, response]) => {
                   const field = booking.eventType.bookingFields?.find((field) => field.name === name);
-
                   if (!field) return null;
                   const isSystemField = SystemField.safeParse(field.name);
                   // SMS_REMINDER_NUMBER_FIELD is a system field but doesn't have a dedicated place in the UI. So, it would be shown through the following responses list

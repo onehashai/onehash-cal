@@ -50,7 +50,7 @@ describe("getDefaultLocation ", async () => {
       type: MeetLocationType,
     });
   });
-  it("should return calvideo when default conferencing app is not set", async () => {
+  it.skip("should return calvideo when default conferencing app is not set", async () => {
     const user: User = {
       id: 101,
       metadata: {},

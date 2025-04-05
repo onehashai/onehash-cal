@@ -341,7 +341,7 @@ describe("RerouteDialog", () => {
 
     expectEventTypeInfoInCurrentRouting({
       eventTypeText: "team/test-team/test-event",
-      eventTypeHref: "https://cal.com/team/test-team/test-event",
+      eventTypeHref: "https://cal.id/team/test-team/test-event",
     });
     expectOrganizerInfoInCurrentRouting({
       organizerText: "user@example.com",
@@ -389,7 +389,7 @@ describe("RerouteDialog", () => {
 
       expectEventTypeInfoInReroutePreview({
         eventTypeText: "team/test-team/new-test-event",
-        eventTypeHref: "https://cal.com/team/test-team/new-test-event",
+        eventTypeHref: "https://cal.id/team/test-team/new-test-event",
       });
       await expect(screen.getByText("verify_new_route")).toBeEnabled();
       expect(screen.getByTestId("reroute-preview-hosts")).toHaveTextContent("reroute_preview_possible_host");
