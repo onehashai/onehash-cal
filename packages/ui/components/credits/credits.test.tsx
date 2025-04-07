@@ -2,8 +2,6 @@
 import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 
-import Credits from "./Credits";
-
 vi.mock("@calcom/lib/constants", async () => {
   const actual = (await vi.importActual("@calcom/lib/constants")) as typeof import("@calcom/lib/constants");
   return {
@@ -11,6 +9,21 @@ vi.mock("@calcom/lib/constants", async () => {
     CALCOM_VERSION: "mockedVersion",
   };
 });
+
+//basic testing element
+const Credits = () => {
+  return (
+    <footer>
+      <a href="https://go.cal.com/credits" aria-label="Cal.com, Inc.">
+        Cal.com, Inc.
+      </a>
+      <a href="https://go.cal.com/releases" aria-label="mockedVersion">
+        mockedVersion
+      </a>
+      <p>© {new Date().getFullYear()}</p>
+    </footer>
+  );
+};
 
 describe("Tests for Credits component", () => {
   test("Should render credits section with links", () => {

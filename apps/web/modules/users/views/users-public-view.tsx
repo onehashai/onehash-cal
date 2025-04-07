@@ -245,7 +245,7 @@ function UserPage(props: PageProps) {
   return props.userFound ? (
     <UserFound {...props.userFound} />
   ) : (
-    <UserNotFound slug={props.userNotFound.slug || "User"} />
+    <UserNotFound slug={props.userNotFound?.slug || "User"} />
   );
 }
 
