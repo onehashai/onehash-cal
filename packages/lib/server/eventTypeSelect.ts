@@ -61,4 +61,5 @@ export const eventTypeSelect = Prisma.validator<Prisma.EventTypeSelect>()({
   rrSegmentQueryValue: true,
   assignRRMembersUsingSegment: true,
   maxLeadThreshold: true,
+  captchaType: true,
 });

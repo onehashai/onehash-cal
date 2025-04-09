@@ -641,16 +641,19 @@ class EventsInsights {
 
     if (whereConditional.AND) {
       (whereConditional.AND as Prisma.WorkflowInsightsWhereInput[]).forEach((condition) => {
-        if ((condition.createdAt as Prisma.DateTimeFilter)?.gte) {
-          conditions.push(`"createdAt" >= '${(condition.createdAt as Prisma.DateTimeFilter).gte}'`);
+        if (condition.createdAt) {
+          const dateFilter = condition.createdAt as Prisma.DateTimeFilter;
+          if (dateFilter.gte) {
+            conditions.push(`"createdAt" >= '${dateFilter.gte}'`);
+          }
+          if (dateFilter.lte) {
+            conditions.push(`"createdAt" <= '${dateFilter.lte}'`);
+          }
         }
-        if ((condition.createdAt as Prisma.DateTimeFilter)?.lte) {
-          conditions.push(`"createdAt" <= '${(condition.createdAt as Prisma.DateTimeFilter).lte}'`);
-        }
-        if (condition.eventTypeId as Prisma.IntFilter) {
-          if (condition.eventTypeId?.hasOwnProperty("in")) {
-            if (condition.eventTypeId?.in?.length > 0) {
-              const ids = condition.eventTypeId.in.map((id) => `'${id}'`).join(",");
+        if (condition.eventTypeId) {
+          if (this.isIntFilter(condition.eventTypeId)) {
+            if (condition.eventTypeId.in && condition.eventTypeId.in.length > 0) {
+              const ids = condition.eventTypeId.in.map((id: number) => `'${id}'`).join(",");
               conditions.push(`"eventTypeId" IN (${ids})`);
             } else {
               conditions.push(`FALSE`); // Prevents an invalid `IN ()` clause
@@ -662,15 +665,7 @@ class EventsInsights {
       });
     }
 
-    // Build the OR conditions for the provided date ranges
-    // const dateRangeConditions = dateRanges
-    //   .map((range) => `("createdAt" BETWEEN '${range.startDate}' AND '${range.endDate}')`)
-    //   .join(" OR ");
-
-    // Combine conditions with the date range conditions
-    const whereClause = `(${conditions.join(" AND ")})`;
-    // ? `(${conditions.join(" AND ")}) AND (${dateRangeConditions})`
-    // : `(${dateRangeConditions})`;
+    const whereClause = conditions.length > 0 ? `(${conditions.join(" AND ")})` : "TRUE";
 
     const data = await prisma.$queryRaw<
       {
@@ -726,6 +721,20 @@ class EventsInsights {
     });
 
     return aggregate;
+  };
+
+  static isIntFilter = (value: unknown): value is Prisma.IntFilter => {
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      ("equals" in value ||
+        "in" in value ||
+        "lt" in value ||
+        "lte" in value ||
+        "gt" in value ||
+        "gte" in value ||
+        "not" in value)
+    );
   };
 }
 

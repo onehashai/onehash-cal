@@ -47,7 +47,7 @@ const Addon = ({ isFilled, children, className, error, onClickAddon }: AddonProp
     )}>
     <div
       className={classNames(
-        "flex min-h-9 flex-col justify-center text-sm leading-7",
+        "min-h-9 flex flex-col justify-center text-sm leading-7",
         error ? "text-error" : "text-default"
       )}>
       <span

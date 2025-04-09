@@ -34,10 +34,11 @@ test.describe("User Avatar", async () => {
 
       const response = await prisma.avatar.findUniqueOrThrow({
         where: {
-          teamId_userId_isBanner: {
+          teamId_userId_isBanner_isFavicon: {
             userId: user.id,
             teamId: 0,
             isBanner: false,
+            isFavicon: false,
           },
         },
       });
@@ -102,10 +103,11 @@ test.describe("Team Logo", async () => {
 
       const response = await prisma.avatar.findUniqueOrThrow({
         where: {
-          teamId_userId_isBanner: {
+          teamId_userId_isBanner_isFavicon: {
             userId: 0,
             teamId: team.id,
             isBanner: false,
+            isFavicon: false,
           },
         },
       });
@@ -159,10 +161,11 @@ test.describe("Organization Logo", async () => {
 
       const response = await prisma.avatar.findUniqueOrThrow({
         where: {
-          teamId_userId_isBanner: {
+          teamId_userId_isBanner_isFavicon: {
             userId: 0,
             teamId: org.id,
             isBanner: false,
+            isFavicon: false,
           },
         },
       });

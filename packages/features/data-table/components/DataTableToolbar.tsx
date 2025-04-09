@@ -50,7 +50,7 @@ function SearchBarComponent<TData>(
     return (
       <Input
         ref={ref}
-        className={`mb-0 mr-auto max-w-64 rounded-md ${className ?? ""}`}
+        className={`max-w-64 mb-0 mr-auto rounded-md ${className ?? ""}`}
         placeholder="Search"
         value={searchTerm}
         onChange={(event) => setSearchTerm(event.target.value.trim())}
@@ -66,7 +66,7 @@ function SearchBarComponent<TData>(
   return (
     <Input
       ref={ref}
-      className="mb-0 mr-auto max-w-64 rounded-md"
+      className="max-w-64 mb-0 mr-auto rounded-md"
       placeholder="Search"
       value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
       onChange={(event) => {

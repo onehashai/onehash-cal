@@ -165,7 +165,7 @@ export const Button = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonPr
               <>
                 <Icon
                   name={StartIcon}
-                  className="hidden h-4 w-4 stroke-[1.5px] md:inline-flex ltr:-ml-1 ltr:mr-2 rtl:-mr-1 rtl:ml-2"
+                  className="hidden h-4 w-4 stroke-[1.5px] ltr:-ml-1 ltr:mr-2 rtl:-mr-1 rtl:ml-2 md:inline-flex"
                 />
                 <Icon name="plus" data-testid="plus" className="inline h-6 w-6 md:hidden" />
               </>

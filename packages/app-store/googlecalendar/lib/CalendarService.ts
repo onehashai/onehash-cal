@@ -861,6 +861,8 @@ export default class GoogleCalendarService implements Calendar {
   }
 }
 
+export type GoogleCalendarServiceType = InstanceType<typeof GoogleCalendarService>;
+
 class MyGoogleAuth extends OAuth2Client {
   constructor(client_id: string, client_secret: string, redirect_uri: string) {
     super(client_id, client_secret, redirect_uri);

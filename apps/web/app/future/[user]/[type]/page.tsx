@@ -42,6 +42,8 @@ const getData = withAppDirSsr<LegacyPageProps>(getServerSideProps);
 
 export default WithLayout({
   getData,
-  Page: LegacyPage,
+  Page: LegacyPage as unknown as (
+    props: LegacyPageProps & { dehydratedState?: any }
+  ) => React.ReactElement | null,
   getLayout: null,
 })<"P">;

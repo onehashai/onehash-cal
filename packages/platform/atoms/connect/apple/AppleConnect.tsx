@@ -153,7 +153,7 @@ export const AppleConnect: FC<Partial<Omit<OAuthConnectProps, "redir">>> = ({
                 data-testid="apple-calendar-password"
               />
             </fieldset>
-            <div className="mt-5 justify-end space-x-2 sm:mt-4 sm:flex rtl:space-x-reverse">
+            <div className="mt-5 justify-end space-x-2 rtl:space-x-reverse sm:mt-4 sm:flex">
               <Button
                 disabled={isSaving}
                 type="button"

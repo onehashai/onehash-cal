@@ -239,9 +239,9 @@ function UserNotFound(props: UserNotFoundProps) {
   );
 }
 
-export type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
+export type UserPageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
-function UserPage(props: PageProps) {
+function UserPage(props: UserPageProps) {
   return props.userFound ? (
     <UserFound {...props.userFound} />
   ) : (

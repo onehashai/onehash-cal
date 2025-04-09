@@ -179,7 +179,7 @@ function UsersTableBare() {
             {flatData.map((user) => (
               <Row key={user.email}>
                 <Cell widthClassNames="w-auto">
-                  <div className="flex min-h-10 ">
+                  <div className="min-h-10 flex ">
                     <Avatar
                       size="md"
                       alt={`Avatar of ${user.username || "Nameless"}`}

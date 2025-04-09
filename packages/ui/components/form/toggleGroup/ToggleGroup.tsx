@@ -46,7 +46,7 @@ export const ToggleGroup = ({
         {...props}
         onValueChange={onValueChange}
         className={classNames(
-          `border-default bg-default relative inline-flex min-h-9 gap-0.5 rounded-md border p-1 rtl:flex-row-reverse`,
+          `border-default bg-default min-h-9 relative inline-flex gap-0.5 rounded-md border p-1 rtl:flex-row-reverse`,
           props.className,
           isFullWidth && "w-full",
           customClassNames

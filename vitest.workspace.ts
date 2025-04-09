@@ -171,7 +171,11 @@ const workspaces = packagedEmbedTestsOnly
         test: {
           globals: true,
           name: "@calcom/web/components",
-          include: ["apps/web/components/**/*.{test,spec}.[jt]sx", "apps/web/test/lib/**/*.{test,spec}.[jt]sx","apps/web/test/lib/exportAllBookings/exportAllBookings.test.tsx"],
+          include: [
+            "apps/web/components/**/*.{test,spec}.[jt]sx",
+            "apps/web/test/lib/**/*.{test,spec}.[jt]sx",
+            "apps/web/test/lib/exportAllBookings/exportAllBookings.test.tsx",
+          ],
           environment: "jsdom",
           setupFiles: ["packages/ui/components/test-setup.ts"],
         },

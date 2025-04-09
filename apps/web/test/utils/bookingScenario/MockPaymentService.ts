@@ -21,21 +21,38 @@ export function getMockPaymentService() {
   class MockPaymentService implements IAbstractPaymentService {
     // TODO: We shouldn't need to implement adding a row to Payment table but that's a requirement right now.
     // We should actually delegate table creation to the core app. Here, only the payment app specific logic should come
-    async create(
-      payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-      bookingId: Booking["id"],
-      userId: Booking["userId"],
-      username: string | null,
-      bookerName: string | null,
-      bookerEmail: string,
-      paymentOption: PaymentOption
-    ) {
+    async create({
+      payment,
+      bookingId,
+      userId,
+      username,
+      bookerName,
+      paymentOption,
+      bookingUid,
+      bookerEmail,
+      bookerPhoneNumber,
+      eventTitle,
+      bookingTitle,
+      responses,
+    }: {
+      payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+      bookingId: Booking["id"];
+      userId: Booking["userId"];
+      username: string | null;
+      bookerName: string;
+      paymentOption: PaymentOption;
+      bookingUid: string;
+      bookerEmail: string;
+      bookerPhoneNumber?: string | null;
+      eventTitle?: string;
+      bookingTitle?: string;
+      responses?: Prisma.JsonValue;
+    }): Promise<Payment> {
       const paymentCreateData = {
         id: 1,
         uid: paymentUid,
         appId: null,
         bookingId,
-        // booking       Booking?       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
         fee: 10,
         success: true,
         refunded: false,

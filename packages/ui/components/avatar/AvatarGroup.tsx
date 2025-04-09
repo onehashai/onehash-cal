@@ -46,7 +46,7 @@ export const AvatarGroup = function AvatarGroup(props: AvatarGroupProps) {
         <li
           className={classNames(
             "bg-inverted relative -mr-1 inline-flex justify-center  overflow-hidden rounded-full",
-            props.size === "sm" ? "h-6 min-w-6" : "h-16 min-w-16"
+            props.size === "sm" ? "min-w-6 h-6" : "min-w-16 h-16"
           )}>
           <span
             className={classNames(

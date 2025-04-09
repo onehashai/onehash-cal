@@ -68,6 +68,7 @@ function SingleAppPage(props: PageProps) {
       dependencies={data.dependencies}
       concurrentMeetings={data.concurrentMeetings}
       paid={data.paid}
+      dirName={data.dirName}
       //   tos="https://zoom.us/terms"
       //   privacy="https://zoom.us/privacy"
       body={

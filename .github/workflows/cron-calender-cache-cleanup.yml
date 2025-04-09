@@ -9,7 +9,7 @@ jobs:
   cron-calendarCacheCleanup:
     env:
       APP_URL: ${{ secrets.APP_URL }}
-      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}  
+      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}
     runs-on: ubuntu-latest
     steps:
       - name: cURL request to production

@@ -135,24 +135,28 @@ export async function getAllBookings({
         },
       ],
     },
-    afterStartDate: {
-      AND: [
-        {
-          startTime: {
-            gte: new Date(filters.afterStartDate),
+    ...(filters.afterStartDate && {
+      afterStartDate: {
+        AND: [
+          {
+            startTime: {
+              gte: new Date(filters.afterStartDate),
+            },
           },
-        },
-      ],
-    },
-    beforeEndDate: {
-      AND: [
-        {
-          endTime: {
-            lte: new Date(filters.beforeEndDate),
+        ],
+      },
+    }),
+    ...(filters.beforeEndDate && {
+      beforeEndDate: {
+        AND: [
+          {
+            endTime: {
+              lte: new Date(filters.beforeEndDate),
+            },
           },
-        },
-      ],
-    },
+        ],
+      },
+    }),
   };
 
   const filtersCombined: Prisma.BookingWhereInput[] = !filters

@@ -27,6 +27,7 @@ const sdk = new Cal("your_client_id", {
 ```
 
 ### Authenticating as a User
+
 The SDK is also meant to be used as an authenticated user, to do that, you need to pass the `accessToken` to the `authOptions` in the SDK constructor.
 
 ```typescript
@@ -52,6 +53,7 @@ const schedule = await authedSdk.schedules.createSchedule({
 You can manually refresh access tokens, or you can let the SDK handle token refreshes via the `handleRefresh` option.
 
 To manually update an access token, you can use the following snippet:
+
 ```typescript
 sdk.secrets().updateAccessToken(oauth.accessToken, oauth.refreshToken);
 ```

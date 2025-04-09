@@ -103,7 +103,7 @@ export function ListLinkItem(props: ListLinkItemProps) {
             </Badge>
           )}
         </div>
-        <h2 className="mt-2 min-h-4 text-sm font-normal leading-none text-neutral-600">
+        <h2 className="min-h-4 mt-2 text-sm font-normal leading-none text-neutral-600">
           {subHeading.substring(0, 100)}
           {subHeading.length > 100 && "..."}
         </h2>

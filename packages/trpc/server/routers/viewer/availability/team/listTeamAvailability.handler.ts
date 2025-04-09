@@ -135,6 +135,7 @@ async function buildMember(member: Member, dateFrom: Dayjs, dateTo: Dayjs) {
       defaultScheduleId: -1,
       dateRanges: [] as DateRange[],
       teamName: member.team.name,
+      profile: member.user.profile,
     };
   }
 

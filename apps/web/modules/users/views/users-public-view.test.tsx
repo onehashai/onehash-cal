@@ -16,47 +16,52 @@ vi.mock("@calcom/lib/constants", () => ({
   SIGNUP_URL: "https://mocked-signup-url.com",
 }));
 
-function mockedUserPageComponentProps(props: Partial<React.ComponentProps<typeof UserPage>>) {
+function mockedUserPageComponentProps(props: Partial<React.ComponentProps<typeof UserPage>["userFound"]>) {
   return {
-    trpcState: {
-      mutations: [],
-      queries: [],
-    },
-    themeBasis: "dark",
-    safeBio: "My Bio",
-    profile: {
-      name: "John Doe",
-      image: "john-profile-url",
-      theme: "dark",
-      brandColor: "red",
-      darkBrandColor: "black",
-      organization: { requestedSlug: "slug", slug: "slug", id: 1 },
-      allowSEOIndexing: true,
-      username: "john",
-    },
-    users: [
-      {
-        name: "John Doe",
-        username: "john",
-        avatarUrl: "john-user-url",
-        bio: "",
-        verified: false,
-        profile: {
-          upId: "1",
-          id: 1,
-          username: "john",
-          organizationId: null,
-          organization: null,
-        },
+    userFound: {
+      trpcState: {
+        mutations: [],
+        queries: [],
       },
-    ],
-    markdownStrippedBio: "My Bio",
-    entity: props.entity ?? {
-      considerUnpublished: false,
-      orgSlug: "default-org-slug",
+      themeBasis: "dark",
+      safeBio: "My Bio",
+      profile: {
+        name: "John Doe",
+        image: "john-profile-url",
+        theme: "dark",
+        brandColor: "red",
+        darkBrandColor: "black",
+        organization: { requestedSlug: "slug", slug: "slug", id: 1 },
+        allowSEOIndexing: true,
+        username: "john",
+      },
+      users: [
+        {
+          name: "John Doe",
+          username: "john",
+          avatarUrl: "john-user-url",
+          bio: "",
+          verified: false,
+          profile: {
+            upId: "1",
+            id: 1,
+            username: "john",
+            organizationId: null,
+            organization: null,
+          },
+        },
+      ],
+      markdownStrippedBio: "My Bio",
+      entity: props?.entity ?? {
+        considerUnpublished: false,
+        orgSlug: "default-org-slug",
+      },
+      eventTypes: [],
+      isOrgSEOIndexable: false,
+      hideBranding: false,
+      bannerUrl: null,
+      faviconUrl: null,
     },
-    eventTypes: [],
-    isOrgSEOIndexable: false,
   } satisfies React.ComponentProps<typeof UserPage>;
 }
 
@@ -67,9 +72,6 @@ describe("UserPage Component", () => {
         entity: {
           considerUnpublished: false,
           orgSlug: "org1",
-        },
-        userNotFound: {
-          slug: "org1",
         },
       }),
     };
@@ -82,14 +84,13 @@ describe("UserPage Component", () => {
 
     render(<UserPage {...mockData.props} />);
 
-    render(<UserPage {...(mockData.props as any)} />);
     const expectedDescription = "Default description";
     const expectedTitle = expectedDescription;
     expect(HeadSeo).toHaveBeenCalledWith(
       {
-        origin: `${mockData.props.entity.orgSlug}.cal.local`,
+        origin: `${mockData.props.userFound.entity.orgSlug}.cal.local`,
         title: "Oops no one's here",
-        description: "Register and claim this Cal ID username before it’s gone!",
+        description: "Register and claim this Cal ID username before it's gone!",
         nextSeoProps: {
           nofollow: true,
           noindex: true,

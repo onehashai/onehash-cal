@@ -41,7 +41,7 @@ const EventTypeCard: FC<EventTypeCardProps> = ({
   return (
     <div
       data-testid={`select-event-type-${id}`}
-      className="hover:bg-muted box-border flex min-h-20 w-full cursor-pointer select-none items-center space-x-4 px-4 py-3"
+      className="hover:bg-muted min-h-20 box-border flex w-full cursor-pointer select-none items-center space-x-4 px-4 py-3"
       onClick={() => handleSelect()}>
       <input
         id={`${id}`}
@@ -96,7 +96,7 @@ const EventTypeGroup: FC<EventTypeGroupProps> = ({ groupIndex, userName, ...prop
         <p className="block pl-2 text-sm">{props.slug}</p>
       </div>
 
-      <div className="sm:border-subtle bg-default  border sm:rounded-md dark:bg-black">
+      <div className="sm:border-subtle bg-default  border dark:bg-black sm:rounded-md">
         <ScrollableArea className="rounded-md">
           <ul className="border-subtle max-h-97 !static w-full divide-y">
             {fields.length > 0 ? (

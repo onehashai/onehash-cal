@@ -7,13 +7,12 @@ import { sendScheduledEmailsAndSMS } from "@calcom/emails";
 import { doesBookingRequireConfirmation } from "@calcom/features/bookings/lib/doesBookingRequireConfirmation";
 import { handleBookingRequested } from "@calcom/features/bookings/lib/handleBookingRequested";
 import { handleConfirmation } from "@calcom/features/bookings/lib/handleConfirmation";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { HttpError as HttpCode } from "@calcom/lib/http-error";
+import logger from "@calcom/lib/logger";
 import { getBooking } from "@calcom/lib/payment/getBooking";
 // Using mocked Prisma instance
 import { BookingStatus } from "@calcom/prisma/enums";
-
-import { isPrismaObjOrUndefined } from "../isPrismaObj";
-import logger from "../logger";
 
 const log = logger.getSubLogger({ prefix: ["[handlePaymentSuccess]"] });
 
@@ -25,16 +24,16 @@ export async function handlePaymentSuccess(
   log.debug(`handling payment success for bookingId ${bookingId}`);
 
   // Mock getBooking function
-  getBooking.mockResolvedValue({
-    booking: {
-      id: bookingId,
-      status: BookingStatus.PENDING,
-      location: "Mocked Location",
-    },
-    user: { id: 1, email: "mocked@example.com" },
-    evt: { id: 1, name: "Mocked Event" },
-    eventType: { id: 2, metadata: { apps: ["mocked-app"] } },
-  });
+  // getBooking.mockResolvedValue({
+  //   booking: {
+  //     id: bookingId,
+  //     status: BookingStatus.PENDING,
+  //     location: "Mocked Location",
+  //   },
+  //   user: { id: 1, email: "mocked@example.com" },
+  //   evt: { id: 1, name: "Mocked Event" },
+  //   eventType: { id: 2, metadata: { apps: ["mocked-app"] } },
+  // });
 
   const { booking, user: userWithCredentials, evt, eventType } = await getBooking(bookingId);
 

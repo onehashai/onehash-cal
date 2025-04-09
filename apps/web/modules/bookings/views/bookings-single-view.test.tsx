@@ -44,6 +44,9 @@ function mockedSuccessComponentProps(props: Partial<React.ComponentProps<typeof 
       periodEndDate: "1",
       metadata: null,
       bookingFields: [] as unknown as [] & z.BRAND<"HAS_SYSTEM_FIELDS">,
+      hideBranding: false,
+      bannerUrl: null,
+      faviconUrl: null,
     },
     profile: {
       name: "John",
@@ -84,7 +87,6 @@ function mockedSuccessComponentProps(props: Partial<React.ComponentProps<typeof 
     userTimeFormat: 12,
     requiresLoginToUpdate: false,
     themeBasis: "dark",
-    hideBranding: false,
     recurringBookings: null,
     trpcState: {
       queries: [],
@@ -93,6 +95,7 @@ function mockedSuccessComponentProps(props: Partial<React.ComponentProps<typeof 
     dynamicEventName: "Event Title",
     paymentStatus: null,
     rescheduledToUid: null,
+    isLoggedInUserHost: false,
     ...props,
   } satisfies React.ComponentProps<typeof Success>;
 }

@@ -411,7 +411,9 @@ const NewRoutingManager = ({
         responses: booking.responses,
         timeZone: booker.timeZone,
         language: booker.locale || "en",
-        metadata: booking.metadata || {},
+        metadata: Object.fromEntries(
+          Object.entries(booking.metadata || {}).map(([key, value]) => [key, String(value)])
+        ),
         ...getBookingSeatFields(),
         ...getHashedLinkFields(),
       };

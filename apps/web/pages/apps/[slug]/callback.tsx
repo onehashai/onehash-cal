@@ -52,7 +52,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   } catch (error) {
     return {
       props: {
-        error: error?.message || "App oauth redirection failed",
+        error: error instanceof Error ? error?.message : "App oauth redirection failed",
       },
     };
   }

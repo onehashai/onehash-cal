@@ -46,7 +46,6 @@ function Type({
       defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
     }
   }, [faviconUrl]);
-
   return (
     <>
       {faviconUrl && (
@@ -61,16 +60,31 @@ function Type({
           rescheduleUid={rescheduleUid ?? undefined}
           hideBranding={isBrandingHidden}
           isSEOIndexable={isSEOIndexable ?? true}
-          eventData={
-            profile && users && title && hidden !== undefined
-              ? {
-                  profile,
-                  users,
-                  title,
-                  hidden,
-                }
-              : undefined
-          }
+          // eventData={
+          //   profile && users && title && hidden !== undefined
+          //     ? {
+          //         profile: {
+          //           image: profile.image,
+          //           name: profile.name,
+          //           username: profile.username,
+          //         },
+          //         users: users.map((user) => ({
+          //           name: user.name,
+          //           username: user.username,
+          //           avatarUrl: null,
+          //           weekStart: "Sunday",
+          //           profile: {
+          //             name: user.name,
+          //             image: null,
+          //             username: user.username,
+          //           },
+          //           bookerUrl: "",
+          //         })),
+          //         title,
+          //         hidden,
+          //       }
+          //     : undefined
+          // }
           entity={eventData.entity}
           bookingData={booking}
         />

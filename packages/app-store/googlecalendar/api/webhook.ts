@@ -1,5 +1,4 @@
 import type { calendar_v3 } from "@googleapis/calendar";
-import type GoogleCalendarService from "googlecalendar/lib/CalendarService";
 import type { NextApiRequest, NextApiResponse } from "next";
 import short from "short-uuid";
 
@@ -17,6 +16,7 @@ import { BookingStatus } from "@calcom/prisma/enums";
 import { getCalendar } from "../../_utils/getCalendar";
 import { MeetLocationType } from "../../locations";
 import { ZoomLocationType } from "./../../locations";
+import type { GoogleCalendarServiceType } from "./../lib/CalendarService";
 
 const log = logger.getSubLogger({ prefix: ["api/integrations/googlecalendar/webhook"] });
 type FindByGoogleChannelIdReturnType = Awaited<
@@ -57,7 +57,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       await calendar?.fetchAvailabilityAndSetCache?.(selectedCalendars);
     }
 
-    await handleCalendarSync(calendar as GoogleCalendarService, credential);
+    await handleCalendarSync(calendar as GoogleCalendarServiceType, credential);
 
     return res.status(200).json({ message: "ok" });
   } catch (e) {
@@ -66,7 +66,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-const handleCalendarSync = async (calendar: GoogleCalendarService, credential: CredentialType) => {
+const handleCalendarSync = async (calendar: GoogleCalendarServiceType, credential: CredentialType) => {
   try {
     if (!credential) return log.error("No credential found for selected calendar for googleChannelId");
     log.info("Handling Gcal sync");
@@ -386,9 +386,9 @@ async function getConfirmedEvtPromises({
   });
 }
 
-function getLocation(location: string | undefined) {
-  if (location?.contains("meet")) return MeetLocationType;
-  if (location?.contains("zoom")) return ZoomLocationType;
+function getLocation(location?: string | null) {
+  if (location?.includes("meet")) return MeetLocationType;
+  if (location?.includes("zoom")) return ZoomLocationType;
   return location;
 }
 

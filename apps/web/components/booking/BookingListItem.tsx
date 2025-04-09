@@ -915,10 +915,28 @@ function BookingListItem(booking: BookingItemProps) {
               {booking.eventType.bookingFields &&
                 booking.responses &&
                 Object.entries(booking.responses).map(([name, response]) => {
-                  const field = booking.eventType.bookingFields?.find((field) => field.name === name);
-                  if (!field) return null;
-                  const isSystemField = SystemField.safeParse(field.name);
-                  // SMS_REMINDER_NUMBER_FIELD is a system field but doesn't have a dedicated place in the UI. So, it would be shown through the following responses list
+                  const field = Array.isArray(booking.eventType.bookingFields)
+                    ? booking.eventType.bookingFields.find((field) => {
+                        const obj = isPrismaObjOrUndefined(field); // Returns `field` if it's an object, otherwise `undefined`
+                        return (
+                          obj &&
+                          typeof obj === "object" &&
+                          "name" in obj &&
+                          typeof obj.name === "string" &&
+                          obj.name === name
+                        );
+                      })
+                    : undefined;
+
+                  if (
+                    !field ||
+                    typeof field !== "object" ||
+                    !("name" in field) ||
+                    typeof field.name !== "string"
+                  )
+                    return null;
+
+                  const isSystemField = SystemField.safeParse(field.name); // SMS_REMINDER_NUMBER_FIELD is a system field but doesn't have a dedicated place in the UI. So, it would be shown through the following responses list
                   // TITLE is also an identifier for booking question "What is this meeting about?"
                   if (
                     isSystemField.success &&
@@ -927,7 +945,7 @@ function BookingListItem(booking: BookingItemProps) {
                   )
                     return null;
 
-                  const label = field.label || t(field.defaultLabel || "");
+                  const label = String(field.label) || t(String(field.defaultLabel) || "");
 
                   return (
                     <div className="flex items-center" key={label}>
@@ -1090,15 +1108,19 @@ const RecurringBookingsTooltip = ({
                   className="text-muted float-left mr-1 mt-1.5 inline-block h-3 w-3"
                 />
                 <p className="mt-1 pl-5 text-xs">
-                  {booking.status === BookingStatus.ACCEPTED && !booking.eventType?.recurringEvent
-                    ? `${t("event_remaining_other", {
-                        count: recurringCount,
-                      })}`
-                    : getEveryFreqFor({
-                        t,
-                        recurringEvent: booking.eventType.recurringEvent ?? undefined,
-                        recurringCount: booking.recurringInfo.count,
-                      })}
+                  {booking.status === BookingStatus.ACCEPTED && !booking.eventType?.recurringEvent ? (
+                    `${t("event_remaining_other", {
+                      count: recurringCount,
+                    })}`
+                  ) : booking.eventType.recurringEvent != undefined ? (
+                    getEveryFreqFor({
+                      t,
+                      recurringEvent: booking.eventType.recurringEvent,
+                      recurringCount: booking.recurringInfo.count,
+                    })
+                  ) : (
+                    <></>
+                  )}
                 </p>
               </div>
             </Tooltip>

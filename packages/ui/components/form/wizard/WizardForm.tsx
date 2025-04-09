@@ -73,7 +73,7 @@ function WizardForm<T extends DefaultStep>(props: {
             : currentStep.content}
         </div>
         {!props.disableNavigation && (
-          <div className="flex justify-end px-4 py-4 sm:px-6 print:hidden">
+          <div className="flex justify-end px-4 py-4 print:hidden sm:px-6">
             {step > 1 && (
               <Button
                 color="secondary"
