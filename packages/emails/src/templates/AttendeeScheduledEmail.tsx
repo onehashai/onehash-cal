@@ -6,6 +6,7 @@ export const AttendeeScheduledEmail = (
   props: {
     calEvent: CalendarEvent;
     attendee: Person;
+    disableCancelAndRescheduleMeeting?: boolean;
   } & Partial<React.ComponentProps<typeof BaseScheduledEmail>>
 ) => {
   return (
@@ -14,6 +15,7 @@ export const AttendeeScheduledEmail = (
       timeZone={props.attendee.timeZone}
       t={props.attendee.language.translate}
       timeFormat={props.attendee?.timeFormat}
+      disableCancelAndRescheduleMeeting={props.disableCancelAndRescheduleMeeting}
       {...props}
     />
   );

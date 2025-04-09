@@ -27,14 +27,17 @@ export const BaseScheduledEmail = (
     t: TFunction;
     locale: string;
     timeFormat: TimeFormat | undefined;
+    disableCancelAndRescheduleMeeting?: boolean;
     isOrganizer?: boolean;
     reassigned?: { name: string | null; email: string; reason?: string; byUser?: string };
   } & Partial<React.ComponentProps<typeof BaseEmailHtml>>
 ) => {
-  const { t, timeZone, locale, timeFormat: timeFormat_ } = props;
+  const { t, timeZone, locale, timeFormat: timeFormat_, disableCancelAndRescheduleMeeting } = props;
 
   const timeFormat = timeFormat_ ?? TimeFormat.TWELVE_HOUR;
-
+  const manageLinkComponent = !disableCancelAndRescheduleMeeting ? (
+    <ManageLink attendee={props.attendee} calEvent={props.calEvent} />
+  ) : null;
   function getRecipientStart(format: string) {
     return dayjs(props.calEvent.startTime).tz(timeZone).format(format);
   }
@@ -64,11 +67,7 @@ export const BaseScheduledEmail = (
           ? "your_event_has_been_scheduled_recurring"
           : "your_event_has_been_scheduled"
       )}
-      callToAction={
-        props.callToAction === null
-          ? null
-          : props.callToAction || <ManageLink attendee={props.attendee} calEvent={props.calEvent} />
-      }
+      callToAction={props.callToAction === null ? null : props.callToAction || manageLinkComponent}
       subtitle={props.subtitle || <>{t("emailed_you_and_any_other_attendees")}</>}>
       {props.calEvent.cancellationReason && (
         <Info

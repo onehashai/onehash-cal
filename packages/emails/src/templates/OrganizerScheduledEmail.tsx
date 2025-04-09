@@ -11,6 +11,7 @@ export const OrganizerScheduledEmail = (
     attendeeCancelled?: boolean;
     teamMember?: Person;
     reassigned?: { name: string | null; email: string; reason?: string; byUser?: string };
+    disableCancelAndRescheduleMeeting?: boolean;
   } & Partial<React.ComponentProps<typeof BaseScheduledEmail>>
 ) => {
   let subject;
@@ -42,6 +43,7 @@ export const OrganizerScheduledEmail = (
   return (
     <BaseScheduledEmail
       locale={locale}
+      disableCancelAndRescheduleMeeting={props.disableCancelAndRescheduleMeeting}
       timeZone={props.teamMember?.timeZone || props.calEvent.organizer.timeZone}
       t={t}
       subject={t(subject)}
