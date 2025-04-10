@@ -2562,7 +2562,7 @@ describe("handleNewBooking", () => {
 
           const { webhookResponse } = await mockPaymentSuccessWebhookFromStripe({ externalId });
 
-          expect(webhookResponse?.statusCode).toBe(204);
+          expect(webhookResponse?.statusCode).toBe(200);
         },
         timeout
       );
@@ -2709,7 +2709,7 @@ describe("handleNewBooking", () => {
           resetTestEmails();
           const { webhookResponse } = await mockPaymentSuccessWebhookFromStripe({ externalId });
 
-          expect(webhookResponse?.statusCode).toBe(204);
+          expect(webhookResponse?.statusCode).toBe(200);
           await expectBookingToBeInDatabase({
             description: "",
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
