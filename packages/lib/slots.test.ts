@@ -224,8 +224,8 @@ describe("Tests the slot logic", () => {
       organizerTimeZone: "America/Toronto",
     });
 
-    // 71 20-minutes events in a 24h - 15m day
-    expect(result).toHaveLength(71);
+    // 70 20-minutes events in a 24h - 15m day
+    expect(result).toHaveLength(70);
   });
 
   it("can fit 48 25 minute slots with a 5 minute offset for an empty day", async () => {

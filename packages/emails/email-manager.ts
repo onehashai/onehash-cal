@@ -116,14 +116,26 @@ export const sendScheduledEmailsAndSMS = async (
 ) => {
   const formattedCalEvent = formatCalEvent(calEvent);
   const emailsToSend: Promise<unknown>[] = [];
+  const disableCancelAndRescheduleMeeting = eventTypeMetadata?.disableCancelAndRescheduleMeeting ?? false;
 
   if (!hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
-    emailsToSend.push(sendEmail(() => new OrganizerScheduledEmail({ calEvent: formattedCalEvent })));
+    emailsToSend.push(
+      sendEmail(
+        () => new OrganizerScheduledEmail({ calEvent: formattedCalEvent, disableCancelAndRescheduleMeeting })
+      )
+    );
 
     if (formattedCalEvent.team) {
       for (const teamMember of formattedCalEvent.team.members) {
         emailsToSend.push(
-          sendEmail(() => new OrganizerScheduledEmail({ calEvent: formattedCalEvent, teamMember }))
+          sendEmail(
+            () =>
+              new OrganizerScheduledEmail({
+                calEvent: formattedCalEvent,
+                teamMember,
+                disableCancelAndRescheduleMeeting,
+              })
+          )
         );
       }
     }
@@ -142,7 +154,8 @@ export const sendScheduledEmailsAndSMS = async (
                   title: getEventName({ ...eventNameObject, t: attendee.language.translate }),
                 }),
               },
-              attendee
+              attendee,
+              disableCancelAndRescheduleMeeting
             )
         );
       })
@@ -170,10 +183,18 @@ export const sendRoundRobinScheduledEmailsAndSMS = async ({
   const formattedCalEvent = formatCalEvent(calEvent);
   const emailsAndSMSToSend: Promise<unknown>[] = [];
   const eventScheduledSMS = new EventSuccessfullyScheduledSMS(calEvent);
-
+  const disableCancelAndRescheduleMeeting = eventTypeMetadata?.disableCancelAndRescheduleMeeting ?? false;
   for (const teamMember of members) {
     emailsAndSMSToSend.push(
-      sendEmail(() => new OrganizerScheduledEmail({ calEvent: formattedCalEvent, teamMember, reassigned }))
+      sendEmail(
+        () =>
+          new OrganizerScheduledEmail({
+            calEvent: formattedCalEvent,
+            teamMember,
+            reassigned,
+            disableCancelAndRescheduleMeeting,
+          })
+      )
     );
     if (teamMember.phoneNumber) {
       emailsAndSMSToSend.push(eventScheduledSMS.sendSMSToAttendee(teamMember));
@@ -193,10 +214,18 @@ export const sendRoundRobinRescheduledEmailsAndSMS = async (
   const calendarEvent = formatCalEvent(calEvent);
   const emailsAndSMSToSend: Promise<unknown>[] = [];
   const successfullyReScheduledSMS = new EventSuccessfullyReScheduledSMS(calEvent);
+  const disableCancelAndRescheduleMeeting = eventTypeMetadata?.disableCancelAndRescheduleMeeting ?? false;
 
   for (const person of teamMembersAndAttendees) {
     emailsAndSMSToSend.push(
-      sendEmail(() => new OrganizerRescheduledEmail({ calEvent: calendarEvent, teamMember: person }))
+      sendEmail(
+        () =>
+          new OrganizerRescheduledEmail({
+            calEvent: calendarEvent,
+            teamMember: person,
+            disableCancelAndRescheduleMeeting,
+          })
+      )
     );
     if (person.phoneNumber) {
       emailsAndSMSToSend.push(successfullyReScheduledSMS.sendSMSToAttendee(person));
@@ -317,16 +346,29 @@ export const sendScheduledSeatsEmailsAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const calendarEvent = formatCalEvent(calEvent);
-
+  const disableCancelAndRescheduleMeeting = eventTypeMetadata?.disableCancelAndRescheduleMeeting ?? false;
   const emailsToSend: Promise<unknown>[] = [];
 
   if (!hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
-    emailsToSend.push(sendEmail(() => new OrganizerScheduledEmail({ calEvent: calendarEvent, newSeat })));
+    emailsToSend.push(
+      sendEmail(
+        () =>
+          new OrganizerScheduledEmail({ calEvent: calendarEvent, newSeat, disableCancelAndRescheduleMeeting })
+      )
+    );
 
     if (calendarEvent.team) {
       for (const teamMember of calendarEvent.team.members) {
         emailsToSend.push(
-          sendEmail(() => new OrganizerScheduledEmail({ calEvent: calendarEvent, newSeat, teamMember }))
+          sendEmail(
+            () =>
+              new OrganizerScheduledEmail({
+                calEvent: calendarEvent,
+                newSeat,
+                teamMember,
+                disableCancelAndRescheduleMeeting,
+              })
+          )
         );
       }
     }
@@ -342,7 +384,8 @@ export const sendScheduledSeatsEmailsAndSMS = async (
               ...(calendarEvent.hideCalendarNotes && { additionalNotes: undefined }),
             },
             invitee,
-            showAttendees
+            showAttendees,
+            disableCancelAndRescheduleMeeting
           )
       )
     );
@@ -620,7 +663,6 @@ export const sendLocationChangeEmailsAndSMS = async (
 };
 export const sendAddGuestsEmails = async (calEvent: CalendarEvent, newGuests: string[]) => {
   const calendarEvent = formatCalEvent(calEvent);
-
   const emailsToSend: Promise<unknown>[] = [];
   emailsToSend.push(sendEmail(() => new OrganizerAddGuestsEmail({ calEvent: calendarEvent })));
 

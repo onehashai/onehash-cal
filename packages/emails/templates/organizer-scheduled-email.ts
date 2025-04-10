@@ -25,6 +25,7 @@ export default class OrganizerScheduledEmail extends BaseEmail {
     newSeat?: boolean;
     teamMember?: Person;
     reassigned?: Reassigned;
+    disableCancelAndRescheduleMeeting?: boolean;
   }) {
     super();
     this.name = "SEND_BOOKING_CONFIRMATION";
@@ -33,6 +34,7 @@ export default class OrganizerScheduledEmail extends BaseEmail {
     this.newSeat = input.newSeat;
     this.teamMember = input.teamMember;
     this.reassigned = input.reassigned;
+    this.disableCancelAndRescheduleMeeting = input.disableCancelAndRescheduleMeeting;
   }
 
   protected async getNodeMailerPayload(): Promise<Record<string, unknown>> {
@@ -73,6 +75,7 @@ export default class OrganizerScheduledEmail extends BaseEmail {
       teamMember,
       newSeat,
       reassigned,
+      disableCancelAndRescheduleMeeting: this.disableCancelAndRescheduleMeeting,
     });
   }
 

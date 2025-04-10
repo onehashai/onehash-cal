@@ -932,8 +932,9 @@ describe("getSchedule", () => {
       //getDate is depricated here, do not use it
       let { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
       let { dateString: plus3DateString } = getDate({ dateIncrement: 3 });
-      plus2DateString = "2025-04-05";
-      plus3DateString = "2025-04-06";
+      const today = dayjs();
+      plus2DateString = today.add(2, "day").format("YYYY-MM-DD");
+      plus3DateString = today.add(3, "day").format("YYYY-MM-DD");
       CalendarManagerMock.getBusyCalendarTimes.mockResolvedValue([
         {
           start: `${plus3DateString}T04:00:00.000Z`,

@@ -213,6 +213,18 @@ const EventTypeWeb = ({
   });
 
   const { form, handleSubmit } = useEventTypeForm({ eventType, onSubmit: updateMutation.mutate });
+  // no need to remap the values, if needed to pass into metadata, just change the name of the controller field component to metadata.FieldNameInsideMetadata
+  // const handleSubmit = (input: FormValues) => {
+  //   const { disableCancelAndRescheduleMeeting = false, metadata = {}, ...rest } = input;
+  //   const newInput = {
+  //     ...rest,
+  //     metadata: {
+  //       ...metadata,
+  //       disableCancelAndRescheduleMeeting,
+  //     },
+  //   };
+  //   originalHandleSubmit(newInput);
+  // };
   const slug = form.watch("slug") ?? eventType.slug;
 
   const { data: allActiveWorkflows } = trpc.viewer.workflows.getAllActiveWorkflows.useQuery({

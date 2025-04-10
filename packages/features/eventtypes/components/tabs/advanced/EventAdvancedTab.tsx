@@ -131,7 +131,7 @@ export const EventAdvancedTab = ({
   const [useEventTypeDestinationCalendarEmail, setUseEventTypeDestinationCalendarEmail] = useState(
     formMethods.getValues("useEventTypeDestinationCalendarEmail")
   );
-
+  console.log(formMethods.getValues("metadata"));
   const bookingFields: Prisma.JsonObject = {};
   const workflows = eventType.workflows.map((workflowOnEventType) => workflowOnEventType.workflow);
   const selectedThemeIsDark =
@@ -162,7 +162,8 @@ export const EventAdvancedTab = ({
   const noShowFeeEnabled =
     formMethods.getValues("metadata")?.apps?.stripe?.enabled === true &&
     formMethods.getValues("metadata")?.apps?.stripe?.paymentOption === "HOLD";
-
+  // const testingvalue=formMethods.getValues("metadata")?.disableCancelAndRescheduleMeeting
+  // const testing2value=formMethods.getValues("disableCancelAndRescheduleMeeting");
   const isRoundRobinEventType =
     eventType.schedulingType && eventType.schedulingType === SchedulingType.ROUND_ROBIN;
 
@@ -479,6 +480,22 @@ export const EventAdvancedTab = ({
             title={t("disable_notes")}
             {...hideCalendarNotesLocked}
             description={t("disable_notes_description")}
+            checked={value}
+            onCheckedChange={(e) => onChange(e)}
+          />
+        )}
+      />
+      <Controller
+        name="metadata.disableCancelAndRescheduleMeeting"
+        defaultValue={formMethods.getValues("metadata")?.disableCancelAndRescheduleMeeting as boolean}
+        render={({ field: { value, onChange } }) => (
+          <SettingsToggle
+            labelClassName={classNames("text-sm")}
+            toggleSwitchAtTheEnd={true}
+            switchContainerClassName={classNames("border-subtle rounded-lg border py-6 px-4 sm:px-6")}
+            title={t("disable_cancel_and_reschedule_meeting")}
+            description={t("description_disable_cancel_and_reschedule_meeting")}
+            // descriptionClassName={customClassNames?.disableCancelAndRescheduleMeeting?.description}
             checked={value}
             onCheckedChange={(e) => onChange(e)}
           />

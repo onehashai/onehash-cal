@@ -116,6 +116,7 @@ export const EventTypeMetaDataSchema = z
     bookerLayouts: bookerLayouts.optional(),
     whatsappNumber: z.string().optional(),
     billingAddressRequired: z.boolean().optional(),
+    disableCancelAndRescheduleMeeting: z.boolean().optional(),
   })
   .nullable();
 

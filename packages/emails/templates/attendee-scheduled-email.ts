@@ -16,7 +16,12 @@ export default class AttendeeScheduledEmail extends BaseEmail {
   showAttendees: boolean | undefined;
   t: TFunction;
 
-  constructor(calEvent: CalendarEvent, attendee: Person, showAttendees?: boolean | undefined) {
+  constructor(
+    calEvent: CalendarEvent,
+    attendee: Person,
+    showAttendees?: boolean | undefined,
+    disableCancelAndRescheduleMeeting?: boolean
+  ) {
     super();
     if (!showAttendees && calEvent.seatsPerTimeSlot) {
       this.calEvent = cloneDeep(calEvent);
@@ -27,6 +32,7 @@ export default class AttendeeScheduledEmail extends BaseEmail {
     this.name = "SEND_BOOKING_CONFIRMATION";
     this.attendee = attendee;
     this.t = attendee.language.translate;
+    this.disableCancelAndRescheduleMeeting = disableCancelAndRescheduleMeeting;
   }
 
   protected async getNodeMailerPayload(): Promise<Record<string, unknown>> {
@@ -51,6 +57,7 @@ export default class AttendeeScheduledEmail extends BaseEmail {
     return await renderEmail("AttendeeScheduledEmail", {
       calEvent,
       attendee,
+      disableCancelAndRescheduleMeeting: this.disableCancelAndRescheduleMeeting,
     });
   }
 

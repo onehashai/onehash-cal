@@ -40,6 +40,7 @@ describe("POST /api/selected-calendars", () => {
         method: "POST",
         body: {
           integration: "google",
+          googleSyncEnabled: true,
         },
       });
 
@@ -79,6 +80,13 @@ describe("POST /api/selected-calendars", () => {
         integration: "google",
         externalId: "ext123",
         userId: 444444,
+        googleSyncEnabled: false,
+        googleChannelId: null,
+        googleChannelKind: null,
+        googleChannelResourceId: null,
+        googleChannelResourceUri: null,
+        googleChannelExpiration: null,
+        domainWideDelegationCredentialId: null,
       });
 
       await handler(req, res);
@@ -108,6 +116,13 @@ describe("POST /api/selected-calendars", () => {
         integration: "google",
         externalId: "ext123",
         userId: 333333,
+        googleSyncEnabled: false,
+        googleChannelId: null,
+        googleChannelKind: null,
+        googleChannelResourceId: null,
+        googleChannelResourceUri: null,
+        googleChannelExpiration: null,
+        domainWideDelegationCredentialId: null,
       });
 
       await handler(req, res);
