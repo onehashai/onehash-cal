@@ -67,6 +67,8 @@
   "enable_captcha":"Enable captcha on Booking page",
   "enable_captcha_description":"By enabling captcha, you'll prevent automated bots from booking you.",
   "trial_days_left": "You have $t(day, {\"count\": {{days}} }) left on your PRO trial",
+  "disable_cancel_and_reschedule_meeting":"Disable cancel and reschedule meeting",
+  "description_disable_cancel_and_reschedule_meeting":"Disable cancel and reschedule meeting for this event type",
   "day_one": "{{count}} day",
   "day_other": "{{count}} days",
   "second_one": "{{count}} second",
