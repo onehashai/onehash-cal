@@ -183,7 +183,7 @@ export const sendRoundRobinScheduledEmailsAndSMS = async ({
   const formattedCalEvent = formatCalEvent(calEvent);
   const emailsAndSMSToSend: Promise<unknown>[] = [];
   const eventScheduledSMS = new EventSuccessfullyScheduledSMS(calEvent);
-
+  const disableCancelAndRescheduleMeeting = eventTypeMetadata?.disableCancelAndRescheduleMeeting ?? false;
   for (const teamMember of members) {
     emailsAndSMSToSend.push(
       sendEmail(
@@ -214,6 +214,7 @@ export const sendRoundRobinRescheduledEmailsAndSMS = async (
   const calendarEvent = formatCalEvent(calEvent);
   const emailsAndSMSToSend: Promise<unknown>[] = [];
   const successfullyReScheduledSMS = new EventSuccessfullyReScheduledSMS(calEvent);
+  const disableCancelAndRescheduleMeeting = eventTypeMetadata?.disableCancelAndRescheduleMeeting ?? false;
 
   for (const person of teamMembersAndAttendees) {
     emailsAndSMSToSend.push(
@@ -345,7 +346,7 @@ export const sendScheduledSeatsEmailsAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const calendarEvent = formatCalEvent(calEvent);
-
+  const disableCancelAndRescheduleMeeting = eventTypeMetadata?.disableCancelAndRescheduleMeeting ?? false;
   const emailsToSend: Promise<unknown>[] = [];
 
   if (!hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
@@ -662,7 +663,6 @@ export const sendLocationChangeEmailsAndSMS = async (
 };
 export const sendAddGuestsEmails = async (calEvent: CalendarEvent, newGuests: string[]) => {
   const calendarEvent = formatCalEvent(calEvent);
-
   const emailsToSend: Promise<unknown>[] = [];
   emailsToSend.push(sendEmail(() => new OrganizerAddGuestsEmail({ calEvent: calendarEvent })));
 
@@ -677,9 +677,7 @@ export const sendAddGuestsEmails = async (calEvent: CalendarEvent, newGuests: st
   emailsToSend.push(
     ...calendarEvent.attendees.map((attendee) => {
       if (newGuests.includes(attendee.email)) {
-        return sendEmail(
-          () => new AttendeeScheduledEmail(calendarEvent, attendee, disableCancelAndRescheduleMeeting)
-        );
+        return sendEmail(() => new AttendeeScheduledEmail(calendarEvent, attendee));
       } else {
         return sendEmail(() => new AttendeeAddGuestsEmail(calendarEvent, attendee));
       }
