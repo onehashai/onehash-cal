@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 
 import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import { BookingStatus, SchedulingType } from "@calcom/prisma/enums";
 
 import { RerouteDialog } from "../RerouteDialog";
@@ -313,6 +314,10 @@ const buildBooking = () => {
   };
 };
 
+vi.mock("@calcom/lib/hooks/useBookerUrl", () => ({
+  useBookerUrl: vi.fn(() => WEBAPP_URL),
+}));
+
 describe("RerouteDialog", () => {
   const mockSetIsOpenDialog = vi.fn();
 
@@ -341,7 +346,7 @@ describe("RerouteDialog", () => {
 
     expectEventTypeInfoInCurrentRouting({
       eventTypeText: "team/test-team/test-event",
-      eventTypeHref: "https://cal.id/team/test-team/test-event",
+      eventTypeHref: `${WEBAPP_URL}/team/test-team/test-event`,
     });
     expectOrganizerInfoInCurrentRouting({
       organizerText: "user@example.com",
@@ -389,7 +394,7 @@ describe("RerouteDialog", () => {
 
       expectEventTypeInfoInReroutePreview({
         eventTypeText: "team/test-team/new-test-event",
-        eventTypeHref: "https://cal.id/team/test-team/new-test-event",
+        eventTypeHref: `${WEBAPP_URL}/team/test-team/new-test-event`,
       });
       await expect(screen.getByText("verify_new_route")).toBeEnabled();
       expect(screen.getByTestId("reroute-preview-hosts")).toHaveTextContent("reroute_preview_possible_host");

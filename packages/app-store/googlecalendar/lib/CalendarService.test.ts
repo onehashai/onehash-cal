@@ -131,17 +131,18 @@ test("Calendar can be watched and unwatched", async () => {
   await calendarCache.watchCalendar({ calendarId: testSelectedCalendar.externalId });
   const watchedCalendar = await prismock.selectedCalendar.findFirst({
     where: {
-      userId: credentialInDb1.userId!,
+      userId: Number(credentialInDb1.userId) || 1,
       externalId: testSelectedCalendar.externalId,
       integration: "google_calendar",
     },
   });
   expect(watchedCalendar).toEqual({
-    userId: 1,
+    userId: credentialInDb1.userId,
     integration: "google_calendar",
     externalId: "example@cal.com",
     credentialId: 1,
     domainWideDelegationCredentialId: null,
+    googleSyncEnabled: true,
     googleChannelId: "mock-channel-id",
     googleChannelKind: "api#channel",
     googleChannelResourceId: "mock-resource-id",
@@ -152,18 +153,19 @@ test("Calendar can be watched and unwatched", async () => {
   // There's a bug in prismock where upsert creates duplicate records so we need to acces the second element
   const [, unWatchedCalendar] = await prismock.selectedCalendar.findMany({
     where: {
-      userId: credentialInDb1.userId!,
+      userId: Number(credentialInDb1.userId) || 1,
       externalId: testSelectedCalendar.externalId,
       integration: "google_calendar",
     },
   });
 
   expect(unWatchedCalendar).toEqual({
-    userId: 1,
+    userId: credentialInDb1.userId,
     integration: "google_calendar",
     externalId: "example@cal.com",
     credentialId: 1,
     domainWideDelegationCredentialId: null,
+    googleSyncEnabled: true,
     googleChannelId: null,
     googleChannelKind: null,
     googleChannelResourceId: null,
