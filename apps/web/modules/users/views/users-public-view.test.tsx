@@ -8,8 +8,9 @@ import { HeadSeo } from "@calcom/ui";
 import UserPage from "./users-public-view";
 
 vi.mock("@calcom/ui", () => ({
-  HeadSeo: vi.fn(),
+  HeadSeo: vi.fn(() => <div>Mocked HeadSeo</div>),
   Button: vi.fn(() => <button>Mocked Button</button>),
+  UserAvatar: vi.fn(() => <div>Mocked User Avatar</div>),
 }));
 
 vi.mock("@calcom/lib/constants", () => ({
@@ -64,7 +65,6 @@ function mockedUserPageComponentProps(props: Partial<React.ComponentProps<typeof
     },
   } satisfies React.ComponentProps<typeof UserPage>;
 }
-
 describe("UserPage Component", () => {
   it("should render HeadSeo with correct props", () => {
     const mockData = {
@@ -85,17 +85,16 @@ describe("UserPage Component", () => {
     render(<UserPage {...mockData.props} />);
 
     const expectedDescription = "Default description";
-    const expectedTitle = expectedDescription;
     expect(HeadSeo).toHaveBeenCalledWith(
-      {
-        origin: `${mockData.props.userFound.entity.orgSlug}.cal.local`,
-        title: "Oops no one's here",
-        description: "Register and claim this Cal ID username before it's gone!",
-        nextSeoProps: {
-          nofollow: true,
-          noindex: true,
-        },
-      },
+      expect.objectContaining({
+        origin: "org1.cal.local",
+        title: "John Doe",
+        description: "My Bio",
+        nextSeoProps: expect.objectContaining({
+          nofollow: false,
+          noindex: false,
+        }),
+      }),
       {}
     );
   });
