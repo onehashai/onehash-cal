@@ -1533,7 +1533,9 @@ const DisplayLocation = ({
 }) => {
   const { t } = useLocale();
 
-  return locationToDisplay.startsWith("http") ? (
+  return !locationToDisplay ? (
+    <></>
+  ) : locationToDisplay.startsWith("http") ? (
     <a
       href={locationToDisplay}
       target="_blank"
