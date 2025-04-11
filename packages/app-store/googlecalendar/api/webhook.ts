@@ -1,4 +1,6 @@
 import type { calendar_v3 } from "@googleapis/calendar";
+// eslint-disable-next-line no-restricted-imports
+import isEqual from "lodash/isEqual";
 import type { NextApiRequest, NextApiResponse } from "next";
 import short from "short-uuid";
 
@@ -23,7 +25,22 @@ type FindByGoogleChannelIdReturnType = Awaited<
   ReturnType<typeof SelectedCalendarRepository.findByGoogleChannelId>
 >;
 type CredentialType = NonNullable<FindByGoogleChannelIdReturnType>["credential"];
-
+export type ExistingBookingType = Prisma.BookingGetPayload<{
+  select: {
+    attendees: true;
+    uid: true;
+    id: true;
+    title: true;
+    description: true;
+    startTime: true;
+    endTime: true;
+    location: true;
+    metadata: true;
+    iCalUID: true;
+    recurringEventId: true;
+    responses: true;
+  };
+}>;
 async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (req.headers["x-goog-channel-token"] !== process.env.GOOGLE_WEBHOOK_TOKEN) {
@@ -65,6 +82,27 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+const checkIfBookingDataChanged = (
+  existingBooking: ExistingBookingType,
+  bookingUpdateData: Prisma.BookingCreateInput
+) => {
+  const isDateEqual = (date1: Date | string, date2: Date | string) =>
+    new Date(date1).getTime() === new Date(date2).getTime();
+
+  return (
+    existingBooking.title !== bookingUpdateData.title ||
+    existingBooking.description !== bookingUpdateData.description ||
+    existingBooking.location !== bookingUpdateData.location ||
+    existingBooking.iCalUID !== bookingUpdateData.iCalUID ||
+    !isEqual(existingBooking.responses, bookingUpdateData.responses) ||
+    !isEqual(existingBooking.metadata, bookingUpdateData.metadata) ||
+    !isDateEqual(existingBooking.startTime, bookingUpdateData.startTime) ||
+    !isDateEqual(existingBooking.endTime, bookingUpdateData.endTime) ||
+    (bookingUpdateData.recurringEventId !== undefined &&
+      existingBooking.recurringEventId !== bookingUpdateData.recurringEventId)
+  );
+};
 
 const handleCalendarSync = async (calendar: GoogleCalendarServiceType, credential: CredentialType) => {
   try {
@@ -110,39 +148,33 @@ function getCancelledEvtPromises({
       cancelledEvents: calendar_v3.Schema$Event[];
     };
   };
-}): // credential: {
-//   user: { email: string } | null;
-//   id: number;
-//   userId: number | null;
-//   selectedCalendars: {
-//     userId: number;
-//     googleChannelId: string | null;
-//     externalId: string;
-//     integration: string;
-//     credentialId: number | null;
-//     googleChannelKind: string | null;
-//     googleChannelResourceId: string | null;
-//     googleChannelResourceUri: string | null;
-//     googleChannelExpiration: string | null;
-//     domainWideDelegationCredentialId: string | null;
-//     googleSyncEnabled: boolean;
-//   }[];
-//   type: string;
-//   key: Prisma.JsonValue;
-//   teamId: number | null;
-//   appId: string | null;
-//   invalid: boolean | null;
-// } | null
-Promise<any>[] {
+}): Promise<
+  | Prisma.BookingGetPayload<{
+      select: {
+        id: true;
+        uid: true;
+        status: true;
+        metadata: true;
+      };
+    }>
+  | undefined
+>[] {
   return ext.events.cancelledEvents.map(async (evt) => {
-    if (!evt.id) return;
+    if (!evt.id) return undefined;
 
     const existingBooking = await prisma.booking.findUnique({
       where: { uid: evt.id },
+      select: {
+        id: true,
+        uid: true,
+        status: true,
+        metadata: true,
+      },
     });
 
     if (!existingBooking) {
-      return log.warn("Recurrence Booking not found to update recurrence pattern");
+      log.warn("Booking to be cancelled not found");
+      return undefined;
     }
 
     if (evt.recurrence) {
@@ -153,19 +185,31 @@ Promise<any>[] {
         },
       };
 
-      return prisma.booking.update({
-        where: { uid: evt.id },
-        data: updateData,
-      });
+      const hasMetadataChanged = !isEqual(existingBooking.metadata, updateData.metadata);
+
+      if (hasMetadataChanged) {
+        return prisma.booking.update({
+          where: { uid: evt.id },
+          data: updateData,
+        });
+      }
+
+      return existingBooking;
+    }
+
+    //check if booking is already cancelled
+    if (existingBooking.status === BookingStatus.CANCELLED) {
+      return existingBooking;
     }
 
     // If not recurring, update we simply update status to CANCELLED
-    return prisma.booking
-      .update({
-        where: { uid: evt.id },
-        data: { status: BookingStatus.CANCELLED },
-      })
-      .then((res) => console.log(`Marked as cancelled: ${res.id}`));
+    const updatedBooking = await prisma.booking.update({
+      where: { uid: evt.id },
+      data: { status: BookingStatus.CANCELLED },
+    });
+
+    log.info(`Marked as cancelled: ${updatedBooking.id}`);
+    return updatedBooking;
   });
 }
 
@@ -194,6 +238,15 @@ async function getConfirmedEvtPromises({
       attendees: true,
       uid: true,
       id: true,
+      title: true,
+      description: true,
+      startTime: true,
+      endTime: true,
+      location: true,
+      metadata: true,
+      iCalUID: true,
+      recurringEventId: true,
+      responses: true,
     },
   });
 
@@ -280,25 +333,46 @@ async function getConfirmedEvtPromises({
       }),
     };
 
-    const { uid, ...bookingUpdateData } = bookingData;
     const existingBooking = bookingsMap.get(evt.id as string);
 
     return prisma.$transaction(
       async (tx) => {
         if (existingBooking) {
+          const { uid: _, ...bookingUpdateData } = bookingData;
+
+          // Check if booking data has changed
+          const hasBookingDataChanged = checkIfBookingDataChanged(existingBooking, bookingData);
+          let updatedBooking = existingBooking;
+
+          // Only update booking if data has changed
+          if (hasBookingDataChanged) {
+            const result = await tx.booking.update({
+              where: { id: existingBooking.id },
+              data: { ...bookingUpdateData },
+              select: {
+                attendees: true,
+                uid: true,
+                id: true,
+                title: true,
+                description: true,
+                startTime: true,
+                endTime: true,
+                location: true,
+                metadata: true,
+                iCalUID: true,
+                recurringEventId: true,
+                responses: true,
+              },
+            });
+            updatedBooking = result;
+          }
+
           // Check if attendees have changed
           const existingEmails = new Set(existingBooking.attendees.map((a) => a.email));
           const newEmails = new Set(attendeesData.map((a) => a.email));
-
           const attendeesChanged =
             existingEmails.size !== newEmails.size ||
             Array.from(newEmails).some((email) => !existingEmails.has(email));
-
-          // Update booking
-          const updatedBooking = await tx.booking.update({
-            where: { id: existingBooking.id },
-            data: { ...bookingUpdateData },
-          });
 
           // Only update attendees if they've changed
           if (attendeesChanged) {
