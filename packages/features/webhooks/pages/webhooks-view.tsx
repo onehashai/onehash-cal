@@ -34,14 +34,6 @@ const WebhooksView = () => {
   const { data, isPending } = trpc.viewer.webhook.getByViewer.useQuery(undefined, {
     enabled: session.status === "authenticated",
   });
-
-  const createFunction = (teamId?: number, platform?: boolean) => {
-    if (platform) {
-      router.push(`webhooks/new${platform ? `?platform=${platform}` : ""}`);
-    } else {
-      router.push(`webhooks/new${teamId ? `?teamId=${teamId}` : ""}`);
-    }
-  };
   if (isPending || !data) {
     return <SkeletonLoader />;
   }

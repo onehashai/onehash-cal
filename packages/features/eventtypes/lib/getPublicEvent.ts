@@ -83,6 +83,7 @@ const publicEventSelect = Prisma.validator<Prisma.EventTypeSelect>()({
   seatsShowAvailabilityCount: true,
   bookingFields: true,
   teamId: true,
+  captchaType: true,
   team: {
     select: {
       parentId: true,
@@ -141,7 +142,6 @@ const publicEventSelect = Prisma.validator<Prisma.EventTypeSelect>()({
   hidden: true,
   assignAllTeamMembers: true,
   rescheduleWithSameRoundRobinHost: true,
-  captchaType: true,
 });
 
 export async function isCurrentlyAvailable({
@@ -306,6 +306,7 @@ export const getPublicEvent = async (
       showInstantEventConnectNowModal: false,
       autoTranslateDescriptionEnabled: false,
       fieldTranslations: [],
+      captchaType: "OFF",
     };
   }
 
@@ -501,6 +502,7 @@ export const getPublicEvent = async (
     instantMeetingParameters: eventWithUserProfiles.instantMeetingParameters,
     aiPhoneCallConfig: eventWithUserProfiles.aiPhoneCallConfig,
     assignAllTeamMembers: event.assignAllTeamMembers,
+    captchaType: eventWithUserProfiles.captchaType,
   };
 };
 

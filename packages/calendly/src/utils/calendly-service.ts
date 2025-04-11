@@ -66,8 +66,11 @@ export default class CalendlyAPIService {
   async requestConfiguration() {
     // const { accessToken, createdAt, expiresIn } = this.apiConfig;
     const config = await this.getConfigFromDB();
+    if (!config) {
+      throw new Error("Calendly configuration not found");
+    }
     const { accessToken, createdAt, expiresIn } = config;
-    const isTokenExpired = Date.now() / 1000 > createdAt + expiresIn - 60;
+    const isTokenExpired = Date.now() / 1000 > (createdAt as number) + (expiresIn as number) - 60;
     if (isTokenExpired) {
       const updatedConfig = await this.refreshAccessToken(config.refreshToken);
       return {
@@ -83,7 +86,7 @@ export default class CalendlyAPIService {
     };
   }
 
-  private async refreshAccessToken(refreshToken) {
+  private async refreshAccessToken(refreshToken: string) {
     const data = await this.requestNewAccessToken(refreshToken);
 
     const updatedDoc = await prisma.integrationAccounts.update({
@@ -126,7 +129,7 @@ export default class CalendlyAPIService {
       try {
         return (await this.request.get(url, await this.requestConfiguration())).data;
       } catch (e) {
-        if (e.response && (e.response.status === 429 || e.response.status === 520)) {
+        if (axios.isAxiosError(e) && e.response && (e.response.status === 429 || e.response.status === 520)) {
           throw new RetryAfterError(
             `RetryError - ${fnName}: ${e instanceof Error ? e.message : e}`,
             waitTime
@@ -315,7 +318,7 @@ export default class CalendlyAPIService {
             const response = await this.request.get(url, await this.requestConfiguration());
             return response.data;
           } catch (e) {
-            if (e.response) {
+            if (axios.isAxiosError(e) && e.response) {
               if (e.response.status === 429 || e.response.status === 520) {
                 throw new RetryAfterError(
                   `RetryError - getUserScheduledEventInvitees: ${e instanceof Error ? e.message : e}`,
@@ -412,7 +415,7 @@ export default class CalendlyAPIService {
     }
   };
 
-  requestNewAccessToken = async (refreshToken) => {
+  requestNewAccessToken = async (refreshToken: string) => {
     try {
       // const { oauthUrl, clientID, clientSecret, refreshToken } = this.apiConfig;
       const { oauthUrl, clientID, clientSecret } = this.apiConfig;

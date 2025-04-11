@@ -116,6 +116,7 @@ export const EventTypeMetaDataSchema = z
     bookerLayouts: bookerLayouts.optional(),
     whatsappNumber: z.string().optional(),
     billingAddressRequired: z.boolean().optional(),
+    disableCancelAndRescheduleMeeting: z.boolean().optional(),
   })
   .nullable();
 
@@ -468,7 +469,7 @@ export const bookingMetadataSchema = z
     recurrencePattern: z.record(z.any()).optional(),
     isExternalEvent: z.boolean().optional(),
   })
-  .and(z.record(z.union([z.string(), z.boolean(), z.record(z.any())]))) 
+  .and(z.record(z.union([z.string(), z.boolean(), z.record(z.any())])))
   .nullable();
 
 export const customInputOptionSchema = z.array(

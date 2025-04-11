@@ -284,7 +284,7 @@ export default function ReporterWrapper({
     <SingleForm
       {...props}
       Page={({ form }) => (
-        <div className="route-config bg-default fixed inset-0 w-full overflow-scroll pt-12 sm:pt-0 ltr:mr-2 rtl:ml-2">
+        <div className="route-config bg-default fixed inset-0 w-full overflow-scroll pt-12 ltr:mr-2 rtl:ml-2 sm:pt-0">
           {isClient && <Reporter form={form} />}
         </div>
       )}

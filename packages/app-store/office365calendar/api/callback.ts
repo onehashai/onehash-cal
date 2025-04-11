@@ -93,10 +93,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
     let calBody = await handleErrorsJson<{ value: OfficeCalendar[]; "@odata.nextLink"?: string }>(calRequest);
-
-    if (typeof responseBody === "string") {
-      calBody = JSON.parse(responseBody) as { value: OfficeCalendar[] };
+    if (typeof calBody === "string") {
+      calBody = JSON.parse(calBody) as { value: OfficeCalendar[] };
     }
+
+    // if (typeof responseBody === "string") {
+    //   calBody = JSON.parse(responseBody) as { value: OfficeCalendar[] };
+    // }
 
     const findDefaultCalendar = calBody.value.find((calendar) => calendar.isDefaultCalendar);
 
@@ -158,6 +161,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
       return;
     }
+  } else {
+    // Handle case where default calendar is not found
+    const errorMessage = "no_default_calendar";
+    res.redirect(
+      `${
+        getSafeRedirectUrl(state?.onErrorReturnTo) ??
+        getInstalledAppPath({ variant: "calendar", slug: "office365-calendar" })
+      }?error=${errorMessage}`
+    );
+    return;
   }
 
   res.redirect(

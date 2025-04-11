@@ -12,4 +12,8 @@ const getData = withAppDirSsr<PageProps>(getServerSideProps);
 
 const getEmbedData = withEmbedSsrAppDir(getData);
 
-export default WithLayout({ getLayout: null, getData: getEmbedData, Page: LegacyPage })<"P">;
+export default WithLayout({
+  getLayout: null,
+  getData: getEmbedData,
+  Page: LegacyPage as unknown as (props: PageProps & { dehydratedState?: any }) => React.ReactElement | null,
+})<"P">;

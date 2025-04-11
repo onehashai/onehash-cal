@@ -10,13 +10,18 @@ import { buildLegacyCtx } from "@lib/buildLegacyCtx";
 
 import { getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
-import type { PageProps as LegacyPageProps } from "~/users/views/users-public-view";
+import type { UserPageProps as LegacyPageProps } from "~/users/views/users-public-view";
 import LegacyPage from "~/users/views/users-public-view";
 
 export const generateMetadata = async ({ params, searchParams }: PageProps) => {
   const props = await getData(buildLegacyCtx(headers(), cookies(), params, searchParams));
 
-  const { profile, markdownStrippedBio } = props;
+  if (!props.userFound) {
+    return null; // Handle the case where user is not found
+  }
+
+  const { profile, markdownStrippedBio } = props.userFound;
+
   return await _generateMetadata(
     () => profile.name,
     () => markdownStrippedBio

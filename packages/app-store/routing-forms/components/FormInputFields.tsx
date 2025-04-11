@@ -49,7 +49,7 @@ export default function FormInputFields(props: FormInputFieldsProps) {
         const fieldIdentifier = getFieldIdentifier(field);
         return (
           <div key={field.id} className="mb-4 block flex-col sm:flex ">
-            <div className="mb-2 min-w-48 flex-grow">
+            <div className="min-w-48 mb-2 flex-grow">
               <label id="slug-label" htmlFor="slug" className="text-default flex text-sm font-medium">
                 {field.required ? `${field.label}*` : field.label}
               </label>

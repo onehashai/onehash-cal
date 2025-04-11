@@ -7,10 +7,11 @@ export const uploadAvatar = async ({ userId, avatar: data }: { userId: number; a
 
   await prisma.avatar.upsert({
     where: {
-      teamId_userId_isBanner: {
+      teamId_userId_isBanner_isFavicon: {
         teamId: 0,
         userId,
         isBanner: false,
+        isFavicon: false,
       },
     },
     create: {
@@ -18,6 +19,7 @@ export const uploadAvatar = async ({ userId, avatar: data }: { userId: number; a
       data,
       objectKey,
       isBanner: false,
+      isFavicon: false,
     },
     update: {
       data,
@@ -40,7 +42,7 @@ export const uploadLogo = async ({
   logo: string;
   isBanner?: boolean;
   isFavicon?: boolean;
-}): Promise<string> => {
+}): Promise<string | null> => {
   if (data === "delete") {
     await prisma.avatar.deleteMany({
       where: {

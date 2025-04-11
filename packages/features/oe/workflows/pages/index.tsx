@@ -87,7 +87,7 @@ function WorkflowsPage({ filteredList }: PageProps) {
           }>
           <>
             <FilterResults
-              queryRes={{ isPending, data: filteredWorkflows }}
+              queryRes={{ isLoading: isPending, data: filteredWorkflows }}
               emptyScreen={<EmptyScreen isFilteredView={false} />}
               noResultsScreen={<EmptyScreen isFilteredView={true} />}
               SkeletonLoader={SkeletonLoader}>

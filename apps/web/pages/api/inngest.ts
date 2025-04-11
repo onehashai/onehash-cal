@@ -1,9 +1,9 @@
-import { handleCalendlyImportEvent } from "@pages/api/import/calendly";
 import { Inngest } from "inngest";
 import { serve } from "inngest/next";
 
 import { INNGEST_ID } from "@calcom/lib/constants";
 import { handleBookingExportEvent } from "@calcom/trpc/server/routers/viewer/bookings/export.handler";
+import { handleCalendlyImportEvent } from "@calcom/web/pages/api/import/calendly";
 
 export const inngestClient = new Inngest({ id: INNGEST_ID });
 

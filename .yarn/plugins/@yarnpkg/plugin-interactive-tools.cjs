@@ -539,4 +539,3 @@ module.exports = {
     return plugin;
     }
     };
-    

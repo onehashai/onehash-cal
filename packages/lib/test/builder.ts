@@ -3,6 +3,7 @@ import type { Booking, EventType, Prisma, Webhook, BookingReference } from "@pri
 import type { TFunction } from "next-i18next";
 
 import getICalUID from "@calcom/emails/lib/getICalUID";
+import { CaptchaType } from "@calcom/prisma/enums";
 import { BookingStatus } from "@calcom/prisma/enums";
 import type { CalendarEvent, Person, VideoCallData } from "@calcom/types/Calendar";
 
@@ -142,6 +143,7 @@ export const buildEventType = (eventType?: Partial<EventType>): EventType => {
     assignRRMembersUsingSegment: false,
     rrSegmentQueryValue: null,
     autoTranslateDescriptionEnabled: false,
+    captchaType: CaptchaType.OFF,
     ...eventType,
   };
 };

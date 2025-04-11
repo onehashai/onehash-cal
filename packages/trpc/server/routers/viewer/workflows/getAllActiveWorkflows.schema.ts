@@ -28,6 +28,7 @@ const ZWorkflow = z.object({
       sender: z.string().nullable(),
       includeCalendarEvent: z.boolean(),
       numberVerificationPending: z.boolean(),
+      disableOnMarkNoShow: z.boolean().nullable(),
     })
     .array(),
 });

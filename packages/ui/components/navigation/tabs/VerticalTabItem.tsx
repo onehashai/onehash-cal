@@ -61,7 +61,7 @@ const VerticalTabItem = ({
             target={props.isExternalLink ? "_blank" : "_self"}
             className={classNames(
               props.textClassNames || "text-default text-sm font-medium leading-none",
-              "hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default group flex min-h-7 w-64 flex-row items-center rounded-md px-3 py-2 transition",
+              "hover:bg-subtle [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default min-h-7 group flex w-64 flex-row items-center rounded-md px-3 py-2 transition",
               props.disabled && "pointer-events-none !opacity-30",
               (isChild || !props.icon) && "ml-7 w-auto ltr:mr-5 rtl:ml-5",
               !info ? "h-6" : "h-auto",
@@ -73,7 +73,7 @@ const VerticalTabItem = ({
               <Icon
                 name={props.icon}
                 className={classNames(
-                  "mr-2 h-[16px] w-[16px] stroke-[2px] md:mt-0 ltr:mr-2 rtl:ml-2",
+                  "mr-2 h-[16px] w-[16px] stroke-[2px] ltr:mr-2 rtl:ml-2 md:mt-0",
                   props.iconClassName
                 )}
                 data-testid="icon-component"
@@ -91,7 +91,7 @@ const VerticalTabItem = ({
                   data-testid="apps-info"
                   as="p"
                   title={t(info)}
-                  className="mt-1 max-w-44 truncate text-xs font-normal">
+                  className="max-w-44 mt-1 truncate text-xs font-normal">
                   {t(info)}
                 </Skeleton>
               )}

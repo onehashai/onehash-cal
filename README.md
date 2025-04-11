@@ -138,6 +138,7 @@ Here is what you need to be able to run Cal.
    ```sh
    sudo yarn
    ```
+
    Note: Incorrect node version may cause issues in running yarn.
 
 4. Set up your `.env` file

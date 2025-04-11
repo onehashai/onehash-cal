@@ -10,7 +10,7 @@ jobs:
   cron-scheduleSMSReminders:
     env:
       APP_URL: ${{ secrets.APP_URL }}
-      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}  # Assuming you have a separate secret for the STAG URL
+      APP_URL_STAG: ${{ secrets.APP_URL_STAG }} # Assuming you have a separate secret for the STAG URL
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
     runs-on: ubuntu-latest
     steps:

@@ -61,7 +61,7 @@ const HorizontalTabItem = function ({
           name={props.icon}
           className={classNames(
             isCurrent ? "text-emphasis" : "group-hover:text-subtle text-muted",
-            "-ml-0.5 hidden h-4 w-4 sm:inline-block ltr:mr-2 rtl:ml-2"
+            "-ml-0.5 hidden h-4 w-4 ltr:mr-2 rtl:ml-2 sm:inline-block"
           )}
           aria-hidden="true"
         />

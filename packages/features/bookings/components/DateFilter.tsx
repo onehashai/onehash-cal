@@ -20,20 +20,26 @@ export const DateFilter = () => {
     return formattedDate;
   };
 
-  const handleDateChange = (newStartDate: string, newEndDate: string) => {
-    const formattedStartDate = formatAndValidateDate(newStartDate, true);
-    const formattedEndDate = formatAndValidateDate(newEndDate, false);
+  const handleDateChange = (newStartDate: Date | undefined, newEndDate: Date | undefined) => {
+    if (!newStartDate || !newEndDate) return;
+
+    const formattedStartDate = formatAndValidateDate(newStartDate.toISOString(), true);
+    const formattedEndDate = formatAndValidateDate(newEndDate.toISOString(), false);
 
     setDateRange(formattedStartDate, formattedEndDate);
   };
 
+  const minDate = dayjs("2019-01-01").toDate();
+  const startDate = query.afterStartDate ? dayjs(query.afterStartDate).toDate() : new Date();
+  const endDate = query.beforeEndDate ? dayjs(query.beforeEndDate).toDate() : undefined;
+
   return (
     <DateRangePicker
       dates={{
-        startDate: query.afterStartDate && dayjs(query.afterStartDate).toDate(),
-        endDate: query.beforeEndDate && dayjs(query.beforeEndDate).toDate(),
+        startDate,
+        endDate,
       }}
-      minDate={dayjs("2019-01-01").utc()}
+      minDate={minDate}
       onDatesChange={({ startDate: newStartDate, endDate: newEndDate }) => {
         handleDateChange(newStartDate, newEndDate);
       }}

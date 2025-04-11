@@ -129,7 +129,7 @@ export function Setup(props: PageProps) {
   });
 
   return (
-    <main className="bg-subtle flex items-center md:h-screen print:h-full">
+    <main className="bg-subtle flex items-center print:h-full md:h-screen">
       <WizardForm
         href="/auth/setup"
         steps={steps}

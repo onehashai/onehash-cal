@@ -136,6 +136,7 @@ const InfiniteTeamsTab: FC<InfiniteTeamsTabProps> = (props) => {
           value={searchTerm}
           autoComplete="false"
           onChange={(e) => {
+            console.log("e.target.value", e.target.value);
             setSearchTerm(e.target.value);
           }}
           placeholder={t("search")}

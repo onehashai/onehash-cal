@@ -33,7 +33,7 @@ export interface SliderUser {
   timeZone: string;
   defaultScheduleId: number | null;
   dateRanges: DateRange[];
-  profile?: UserProfile;
+  profile: UserProfile;
   teamName: string[];
 }
 
@@ -168,7 +168,10 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
         const existingUser = userMap.get(user.username) as SliderUser;
         existingUser.teamName.push(user.teamName);
       } else {
-        userMap.set(user.username, { ...user, teamName: [user.teamName] });
+        userMap.set(user.username, {
+          ...user,
+          teamName: [user.teamName],
+        });
       }
     });
 
@@ -275,7 +278,7 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
                   username,
                   name,
                   avatarUrl: avatarUrl ?? null,
-                  profile,
+                  profile: profile,
                 }}
               />
               <div className="">

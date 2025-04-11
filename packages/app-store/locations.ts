@@ -63,6 +63,8 @@ export const JitsiLocationType = "integrations:jitsi";
 
 export const MeetLocationType = "integrations:google:meet";
 
+export const ZoomLocationType = "integrations:zoom";
+
 /**
  * This isn't an actual location app type. It is a special value that informs to use the Organizer's default conferencing app during booking
  */

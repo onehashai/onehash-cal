@@ -2,7 +2,7 @@ import type {
   ScheduleAvailabilityInput_2024_06_11,
   UpdateScheduleInput_2024_06_11,
   WeekDay,
-} from "@calcom/platform-types";
+} from "@calcom/platform-types/schedules/index";
 
 import type { AvailabilityFormValues } from "../types";
 

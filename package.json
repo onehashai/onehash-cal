@@ -27,7 +27,7 @@
     "create-app-template": "yarn app-store create-template",
     "edit-app-template": "yarn app-store edit-template",
     "delete-app-template": "yarn app-store delete-template",
-    "build": "turbo run build --filter=@calcom/web --concurrency=1",
+    "build": "turbo run build --filter=@calcom/web",
     "build:ai": "turbo run build --scope=\"@calcom/ai\"",
     "clean": "find . -name node_modules -o -name .next -o -name .turbo -o -name dist -type d -prune | xargs rm -rf",
     "db-deploy": "turbo run db-deploy",
@@ -62,7 +62,7 @@
     "pre-commit": "lint-staged",
     "predev": "echo 'Checking env files'",
     "prisma": "yarn workspace @calcom/prisma prisma",
-    "start": "turbo run start --scope=\"@calcom/web\"",
+    "start": "turbo run start --filter=@calcom/web ",
     "tdd": "vitest watch",
     "e2e": "NEXT_PUBLIC_IS_E2E=1 yarn playwright test --project=@calcom/web",
     "e2e:app-store": "QUICK=true yarn playwright test --project=@calcom/app-store",
@@ -80,7 +80,8 @@
     "web": "yarn workspace @calcom/web",
     "docker-build-api": "docker build -t cal-api -f ./infra/docker/api/Dockerfile .",
     "docker-run-api": "docker run -p 80:80 cal-api",
-    "docker-stop-api": "docker ps --filter 'ancestor=cal-api' -q | xargs docker stop"
+    "docker-stop-api": "docker ps --filter 'ancestor=cal-api' -q | xargs docker stop",
+    "platform-types:build": "turbo run @calcom/platform-types#build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.1",

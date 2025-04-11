@@ -1,4 +1,4 @@
-name: Cron 
+name: Cron
 
 on:
   schedule:
@@ -9,7 +9,7 @@ jobs:
   cron-scheduleSMSReminders:
     env:
       APP_URL: ${{ secrets.APP_URL }}
-      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}  
+      APP_URL_STAG: ${{ secrets.APP_URL_STAG }}
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
     runs-on: ubuntu-latest
     steps:

@@ -1,5 +1,6 @@
 import type { calendar_v3 } from "@googleapis/calendar";
-import type GoogleCalendarService from "googlecalendar/lib/CalendarService";
+// eslint-disable-next-line no-restricted-imports
+import isEqual from "lodash/isEqual";
 import type { NextApiRequest, NextApiResponse } from "next";
 import short from "short-uuid";
 
@@ -11,18 +12,35 @@ import { defaultHandler } from "@calcom/lib/server";
 import { SelectedCalendarRepository } from "@calcom/lib/server/repository/selectedCalendar";
 import { getServerTimezone } from "@calcom/lib/timezone";
 import prisma from "@calcom/prisma";
-import type { Prisma } from "@calcom/prisma/client";
+import { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
 
 import { getCalendar } from "../../_utils/getCalendar";
 import { MeetLocationType } from "../../locations";
+import { ZoomLocationType } from "./../../locations";
+import type { GoogleCalendarServiceType } from "./../lib/CalendarService";
 
 const log = logger.getSubLogger({ prefix: ["api/integrations/googlecalendar/webhook"] });
 type FindByGoogleChannelIdReturnType = Awaited<
   ReturnType<typeof SelectedCalendarRepository.findByGoogleChannelId>
 >;
 type CredentialType = NonNullable<FindByGoogleChannelIdReturnType>["credential"];
-
+export type ExistingBookingType = Prisma.BookingGetPayload<{
+  select: {
+    attendees: true;
+    uid: true;
+    id: true;
+    title: true;
+    description: true;
+    startTime: true;
+    endTime: true;
+    location: true;
+    metadata: true;
+    iCalUID: true;
+    recurringEventId: true;
+    responses: true;
+  };
+}>;
 async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (req.headers["x-goog-channel-token"] !== process.env.GOOGLE_WEBHOOK_TOKEN) {
@@ -42,10 +60,11 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
     const { credential } = selectedCalendar;
-    if (!credential)
+    if (!credential) {
       return res.status(200).json({
         message: `No credential found for selected calendar for googleChannelId: ${req.headers["x-goog-channel-id"]}`,
       });
+    }
     const { selectedCalendars } = credential;
     const calendar = await getCalendar(credential);
     if (
@@ -56,7 +75,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       await calendar?.fetchAvailabilityAndSetCache?.(selectedCalendars);
     }
 
-    await handleCalendarSync(calendar as GoogleCalendarService, credential);
+    await handleCalendarSync(calendar as GoogleCalendarServiceType, credential);
 
     return res.status(200).json({ message: "ok" });
   } catch (e) {
@@ -65,9 +84,32 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-const handleCalendarSync = async (calendar: GoogleCalendarService, credential: CredentialType) => {
+const checkIfBookingDataChanged = (
+  existingBooking: ExistingBookingType,
+  bookingUpdateData: Prisma.BookingCreateInput
+) => {
+  const isDateEqual = (date1: Date | string, date2: Date | string) =>
+    new Date(date1).getTime() === new Date(date2).getTime();
+
+  return (
+    existingBooking.title !== bookingUpdateData.title ||
+    existingBooking.description !== bookingUpdateData.description ||
+    existingBooking.location !== bookingUpdateData.location ||
+    existingBooking.iCalUID !== bookingUpdateData.iCalUID ||
+    !isEqual(existingBooking.responses, bookingUpdateData.responses) ||
+    !isEqual(existingBooking.metadata, bookingUpdateData.metadata) ||
+    !isDateEqual(existingBooking.startTime, bookingUpdateData.startTime) ||
+    !isDateEqual(existingBooking.endTime, bookingUpdateData.endTime) ||
+    (bookingUpdateData.recurringEventId !== undefined &&
+      existingBooking.recurringEventId !== bookingUpdateData.recurringEventId)
+  );
+};
+const handleCalendarSync = async (calendar: GoogleCalendarServiceType, credential: CredentialType) => {
   try {
-    if (!credential) return log.error("No credential found for selected calendar for googleChannelId");
+    if (!credential) {
+      log.error("No credential found for selected calendar for googleChannelId");
+      return;
+    }
     log.info("Handling Gcal sync");
     const currentTime = `${new Date().toISOString().slice(0, 19)}Z`;
     const externalEvents: {
@@ -109,39 +151,33 @@ function getCancelledEvtPromises({
       cancelledEvents: calendar_v3.Schema$Event[];
     };
   };
-}): // credential: {
-//   user: { email: string } | null;
-//   id: number;
-//   userId: number | null;
-//   selectedCalendars: {
-//     userId: number;
-//     googleChannelId: string | null;
-//     externalId: string;
-//     integration: string;
-//     credentialId: number | null;
-//     googleChannelKind: string | null;
-//     googleChannelResourceId: string | null;
-//     googleChannelResourceUri: string | null;
-//     googleChannelExpiration: string | null;
-//     domainWideDelegationCredentialId: string | null;
-//     googleSyncEnabled: boolean;
-//   }[];
-//   type: string;
-//   key: Prisma.JsonValue;
-//   teamId: number | null;
-//   appId: string | null;
-//   invalid: boolean | null;
-// } | null
-Promise<any>[] {
+}): Promise<
+  | Prisma.BookingGetPayload<{
+      select: {
+        id: true;
+        uid: true;
+        status: true;
+        metadata: true;
+      };
+    }>
+  | undefined
+>[] {
   return ext.events.cancelledEvents.map(async (evt) => {
-    if (!evt.id) return;
+    if (!evt.id) return undefined;
 
     const existingBooking = await prisma.booking.findUnique({
       where: { uid: evt.id },
+      select: {
+        id: true,
+        uid: true,
+        status: true,
+        metadata: true,
+      },
     });
 
     if (!existingBooking) {
-      return log.warn("Recurrence Booking not found to update recurrence pattern");
+      log.warn("Booking to be cancelled not found");
+      return undefined;
     }
 
     if (evt.recurrence) {
@@ -152,19 +188,31 @@ Promise<any>[] {
         },
       };
 
-      return prisma.booking.update({
-        where: { uid: evt.id },
-        data: updateData,
-      });
+      const hasMetadataChanged = !isEqual(existingBooking.metadata, updateData.metadata);
+
+      if (hasMetadataChanged) {
+        return prisma.booking.update({
+          where: { uid: evt.id },
+          data: updateData,
+        });
+      }
+
+      return existingBooking;
+    }
+
+    //check if booking is already cancelled
+    if (existingBooking.status === BookingStatus.CANCELLED) {
+      return existingBooking;
     }
 
     // If not recurring, update we simply update status to CANCELLED
-    return prisma.booking
-      .update({
-        where: { uid: evt.id },
-        data: { status: BookingStatus.CANCELLED },
-      })
-      .then((res) => console.log(`Marked as cancelled: ${res.id}`));
+    const updatedBooking = await prisma.booking.update({
+      where: { uid: evt.id },
+      data: { status: BookingStatus.CANCELLED },
+    });
+
+    log.info(`Marked as cancelled: ${updatedBooking.id}`);
+    return updatedBooking;
   });
 }
 
@@ -182,203 +230,222 @@ async function getConfirmedEvtPromises({
     };
   };
 }) {
-  return ext.events.confirmedEvents.map(async (evt) => {
-    if (!evt.id) {
-      return Promise.resolve();
-    }
-    const { booker, guests } = (evt.attendees ?? []).reduce(
-      (acc, attendee) => {
-        // if (attendee.email === credential?.user?.email) {
-        //   acc.currentUser = attendee;
-        // } else
-        if (attendee.organizer === true) {
-          acc.booker = attendee;
-        } else {
-          acc.guests.push(attendee);
-        }
-        return acc;
+  try {
+    // Fetch all existing bookings with their attendees in bulk
+    const eventIds = ext.events.confirmedEvents.map((evt) => evt.id).filter(Boolean) as string[];
+
+    const existingBookings = await prisma.booking.findMany({
+      where: {
+        uid: { in: eventIds },
       },
-      {
-        booker: {} as calendar_v3.Schema$EventAttendee,
-        // currentUser: {} as calendar_v3.Schema$EventAttendee,
-        guests: [] as calendar_v3.Schema$EventAttendee[],
-      }
-    );
-
-    //check if event was booked by a cal.id user, if yes we will associate this event with the corresponding user.id
-    const bookerFromDb = booker.email
-      ? await prisma.user.findFirst({ where: { email: booker.email } })
-      : null;
-
-    // const finalAttendees = await fetchOrCreateAttendees(bookerFromDb, booker, guests, evt);
-    const attendeesData = [...(bookerFromDb ? [] : [booker]), ...guests]
-      .filter((at) => at.email)
-      .map(
-        (at) =>
-          ({
-            name: at.displayName ?? at.email?.split("@")[0] ?? "",
-            email: at.email,
-            timeZone: evt.start?.timeZone ?? getServerTimezone(),
-          } as Prisma.AttendeeCreateWithoutBookingSeatInput)
-      );
-    const bookingData: Prisma.BookingCreateInput = {
-      // ...(credential?.user?.email && { userPrimaryEmail: credential.user.email }),
-      uid: evt.id ?? short.generate(),
-      responses: {
-        name: booker.displayName,
-        email: booker.email,
-        guests: [...(attendeesData.map((at) => at?.email).filter(Boolean) || [])],
-        location: {
-          value: evt.location ? evt.location : evt.hangoutLink,
-          optionValue: "",
-        },
-      } as Prisma.InputJsonValue,
-      title: `Google Calendar Event : ${evt.summary ?? ""}`,
-      destinationCalendar: {
-        connect: {
-          externalId: ext.selectedCalendar.externalId,
-          userId: ext.selectedCalendar.userId,
-          credentialId: ext.selectedCalendar.credentialId,
-        },
+      select: {
+        attendees: true,
+        uid: true,
+        id: true,
+        title: true,
+        description: true,
+        startTime: true,
+        endTime: true,
+        location: true,
+        metadata: true,
+        iCalUID: true,
+        recurringEventId: true,
+        responses: true,
       },
-      startTime: dayjs(evt.start?.dateTime).utc().toDate(),
-      endTime: dayjs(evt.end?.dateTime).utc().toDate(),
-      description: evt.description ?? "",
-      customInputs: {},
-      status: BookingStatus.ACCEPTED,
-      location: evt.location ? evt.location : MeetLocationType,
-      // eventType: {
-      //   create: {},
-      // },
-      metadata: {
-        videoCallUrl: evt.location ? evt.location : evt.hangoutLink,
-
-        isExternalEvent: true,
-        ...(evt.recurrence && {
-          recurrencePattern: parseRecurrenceDetails(evt.recurrence),
-        }),
-      },
-      ...(evt.recurrence && { recurringEventId: `recur_${evt.id}` }),
-      iCalUID: evt.iCalUID ?? "",
-
-      ...(bookerFromDb && {
-        user: {
-          connect: {
-            id: bookerFromDb.id,
-          },
-        },
-      }),
-    };
-
-    const { uid, ...bookingUpdateData } = bookingData;
-    return prisma.$transaction(async (tx) => {
-      const booking = await tx.booking.upsert({
-        where: { uid: evt.id as string },
-        update: { ...bookingUpdateData },
-        create: { ...bookingData },
-      });
-
-      // Avoid delete if there are no changes
-      const existingAttendees = await tx.attendee.findMany({
-        where: { bookingId: booking.id },
-        select: { email: true }, // Only select a unique identifier
-      });
-
-      const existingEmails = new Set(existingAttendees.map((a) => a.email));
-      const newEmails = new Set(attendeesData.map((a) => a.email));
-
-      if (
-        existingEmails.size !== newEmails.size ||
-        Array.from(newEmails).some((email) => !existingEmails.has(email))
-      ) {
-        await tx.attendee.deleteMany({
-          where: { bookingId: booking.id },
-        });
-
-        await tx.attendee.createMany({
-          skipDuplicates: true,
-          data: attendeesData.map((at) => ({
-            ...at,
-            bookingId: booking.id,
-          })),
-        });
-      }
-
-      return booking;
     });
 
-    // return prisma.$transaction(async (tx) => {
-    //   const booking = await tx.booking.upsert({
-    //     where: { uid: evt.id as string },
-    //     update: { ...bookingData },
-    //     create: { ...bookingData },
-    //   });
+    // Create a map for quick lookup
+    const bookingsMap = new Map(existingBookings.map((booking) => [booking.uid, booking]));
 
-    //   await tx.attendee.deleteMany({
-    //     where: { bookingId: booking.id },
-    //   });
+    return ext.events.confirmedEvents.map(async (evt) => {
+      try {
+        if (!evt.id) {
+          return;
+        }
 
-    //   await tx.attendee.createMany({
-    //     skipDuplicates: true,
-    //     data: attendeesData.map((at) => ({
-    //       ...at,
-    //       bookingId: booking.id,
-    //     })),
-    //   });
+        const { booker, guests } = (evt.attendees ?? []).reduce(
+          (acc, attendee) => {
+            if (attendee.organizer === true) {
+              acc.booker = attendee;
+            } else {
+              acc.guests.push(attendee);
+            }
+            return acc;
+          },
+          {
+            booker: {} as calendar_v3.Schema$EventAttendee,
+            guests: [] as calendar_v3.Schema$EventAttendee[],
+          }
+        );
 
-    //   return booking;
-    // });
+        //check if event was booked by a cal.id user, if yes we will associate this event with the corresponding user.id
+        const bookerFromDb = booker.email
+          ? await prisma.user.findFirst({ where: { email: booker.email } })
+          : null;
 
-    // return prisma.$transaction(async (tx) => {
-    //   const existingBooking = await tx.booking.findUnique({
-    //     where: { uid: evt.id as string },
-    //   });
+        const attendeesData = [...(bookerFromDb ? [] : [booker]), ...guests]
+          .filter((at) => at.email)
+          .map(
+            (at) =>
+              ({
+                name: at.displayName ?? at.email?.split("@")[0] ?? "",
+                email: at.email,
+                timeZone: evt.start?.timeZone ?? getServerTimezone(),
+              } as Prisma.AttendeeCreateWithoutBookingSeatInput)
+          );
 
-    //   if (existingBooking) {
-    //     await tx.attendee.deleteMany({
-    //       where: { bookingId: existingBooking.id },
-    //     });
+        const location = getLocation(evt.location ? evt.location : evt.hangoutLink);
+        const bookingData: Prisma.BookingCreateInput = {
+          uid: evt.id ?? short.generate(),
+          responses: {
+            ...(booker.displayName && { name: booker.displayName }),
+            ...(booker.email && { email: booker.email }),
+            guests: [...(attendeesData.map((at) => at?.email).filter(Boolean) || [])],
+            location: {
+              value: evt.location ? evt.location : evt.hangoutLink,
+              optionValue: "",
+            },
+          } as Prisma.InputJsonValue,
+          title: `Google Calendar Event : ${evt.summary ?? ""}`,
+          destinationCalendar: {
+            connect: {
+              externalId: ext.selectedCalendar.externalId,
+              userId: ext.selectedCalendar.userId,
+              credentialId: ext.selectedCalendar.credentialId,
+            },
+          },
+          startTime: dayjs(evt.start?.dateTime).utc().toDate(),
+          endTime: dayjs(evt.end?.dateTime).utc().toDate(),
+          description: evt.description ?? "",
+          customInputs: {},
+          status: BookingStatus.ACCEPTED,
+          location: location,
+          metadata: {
+            videoCallUrl: evt.location ? evt.location : evt.hangoutLink,
+            isExternalEvent: true,
+            ...(evt.recurrence && {
+              recurrencePattern: parseRecurrenceDetails(evt.recurrence),
+            }),
+          },
+          ...(evt.recurrence && { recurringEventId: `recur_${evt.id}` }),
+          iCalUID: evt.iCalUID ?? "",
+          ...(bookerFromDb && {
+            user: {
+              connect: {
+                id: bookerFromDb.id,
+              },
+            },
+          }),
+        };
 
-    //     const updatedBooking = await tx.booking.update({
-    //       where: { id: existingBooking.id },
-    //       data: {
-    //         ...bookingData,
-    //       },
-    //     });
+        const existingBooking = bookingsMap.get(evt.id as string);
 
-    //     await tx.attendee.createMany({
-    //       skipDuplicates: true,
-    //       data: attendeesData.map((at) => ({
-    //         ...at,
-    //         bookingId: updatedBooking.id,
-    //       })),
-    //     });
+        return prisma.$transaction(
+          async (tx) => {
+            if (existingBooking) {
+              const { uid: _, ...bookingUpdateData } = bookingData;
 
-    //     return updatedBooking;
-    //   } else {
-    //     try {
-    //       const createdBooking = await tx.booking.create({
-    //         data: {
-    //           ...bookingData,
-    //         },
-    //       });
+              // Check if booking data has changed
+              const hasBookingDataChanged = checkIfBookingDataChanged(existingBooking, bookingData);
+              let updatedBooking = existingBooking;
 
-    //       await tx.attendee.createMany({
-    //         skipDuplicates: true,
-    //         data: attendeesData.map((at) => ({
-    //           ...at,
-    //           bookingId: createdBooking.id,
-    //         })),
-    //       });
+              // Only update booking if data has changed
+              if (hasBookingDataChanged) {
+                const result = await tx.booking.update({
+                  where: { id: existingBooking.id },
+                  data: { ...bookingUpdateData },
+                  select: {
+                    attendees: true,
+                    uid: true,
+                    id: true,
+                    title: true,
+                    description: true,
+                    startTime: true,
+                    endTime: true,
+                    location: true,
+                    metadata: true,
+                    iCalUID: true,
+                    recurringEventId: true,
+                    responses: true,
+                  },
+                });
+                updatedBooking = result;
+              }
 
-    //       return createdBooking;
-    //     } catch (e) {
-    //       log.error(`Booking already created with UID: ${evt.id}`);
-    //       throw e;
-    //     }
-    //   }
-    // });
-  });
+              // Check if attendees have changed
+              const existingEmails = new Set(existingBooking.attendees.map((a) => a.email));
+              const newEmails = new Set(attendeesData.map((a) => a.email));
+              const attendeesChanged =
+                existingEmails.size !== newEmails.size ||
+                Array.from(newEmails).some((email) => !existingEmails.has(email));
+
+              // Only update attendees if they've changed
+              if (attendeesChanged) {
+                await tx.attendee.deleteMany({
+                  where: { bookingId: existingBooking.id },
+                });
+
+                await tx.attendee.createMany({
+                  skipDuplicates: true,
+                  data: attendeesData.map((at) => ({
+                    ...at,
+                    bookingId: existingBooking.id,
+                  })),
+                });
+              }
+
+              return updatedBooking;
+            } else {
+              try {
+                // Create new booking with attendees
+                const newBooking = await tx.booking.create({
+                  data: { ...bookingData },
+                });
+
+                await tx.attendee.createMany({
+                  skipDuplicates: true,
+                  data: attendeesData.map((at) => ({
+                    ...at,
+                    bookingId: newBooking.id,
+                  })),
+                });
+
+                return newBooking;
+              } catch (error) {
+                // Handle unique constraint violation (race condition)
+                if (
+                  error instanceof Prisma.PrismaClientKnownRequestError &&
+                  error.code === "P2002" &&
+                  (error.meta?.target as string[])?.includes("uid")
+                ) {
+                  log.info(
+                    `Race condition detected for booking with uid: ${bookingData.uid}.Skipping this event.`
+                  );
+                  return;
+                }
+                // If it's not a unique constraint violation or we couldn't find the booking, rethrow
+                throw error;
+              }
+            }
+          },
+          { timeout: 15000 }
+        );
+      } catch (error) {
+        log.error("Error in getConfirmedEvtPromises", safeStringify(error));
+        throw error;
+      }
+    });
+  } catch (error) {
+    log.error("Error in getConfirmedEvtPromises", safeStringify(error));
+    throw error;
+  }
+}
+
+function getLocation(location?: string | null) {
+  if (!location) return null;
+  if (location.includes("meet")) return MeetLocationType;
+  if (location.includes("zoom")) return ZoomLocationType;
+  return location;
 }
 
 function parseRecurrenceDetails(details: string[]): {
@@ -389,24 +456,28 @@ function parseRecurrenceDetails(details: string[]): {
     EXDATE?: string;
   };
 } {
-  const recurrencePattern: {
-    [key: string]: string | undefined;
-    RRULE?: string;
-    EXRULE?: string;
-    RDATE?: string;
-    EXDATE?: string;
-  } = {};
+  try {
+    const recurrencePattern: {
+      [key: string]: string | undefined;
+      RRULE?: string;
+      EXRULE?: string;
+      RDATE?: string;
+      EXDATE?: string;
+    } = {};
 
-  details.forEach((line) => {
-    const [key, value] = line.split(":");
-    if (!key) return;
+    details.forEach((line) => {
+      const [key, value] = line.split(":");
+      if (!key) return;
 
-    if (["RRULE", "EXRULE", "RDATE", "EXDATE"].includes(key)) {
-      recurrencePattern[key] = value || "";
-    }
-  });
+      if (["RRULE", "EXRULE", "RDATE", "EXDATE"].includes(key)) {
+        recurrencePattern[key] = value || "";
+      }
+    });
 
-  return { recurrencePattern };
+    return { recurrencePattern };
+  } catch (error) {
+    return { recurrencePattern: {} };
+  }
 }
 
 async function handleExternalEvents(
@@ -422,36 +493,53 @@ async function handleExternalEvents(
     };
   }[]
 ) {
-  const evtPromises = externalEvents.map(async (ext) => {
-    const confirmedEvtPromises = await getConfirmedEvtPromises({
-      ext: {
-        selectedCalendar: ext.selectedCalendar,
-        events: {
-          confirmedEvents: ext.events.confirmedEvents,
-        },
-      },
-    });
-    const cancelledEvtPromises = getCancelledEvtPromises({
-      ext: {
-        selectedCalendar: ext.selectedCalendar,
-        events: {
-          cancelledEvents: ext.events.cancelledEvents,
-        },
-      },
+  try {
+    const evtPromises = externalEvents.map(async (ext) => {
+      try {
+        const confirmedEvtPromises = await getConfirmedEvtPromises({
+          ext: {
+            selectedCalendar: ext.selectedCalendar,
+            events: {
+              confirmedEvents: ext.events.confirmedEvents,
+            },
+          },
+        });
+        const cancelledEvtPromises = getCancelledEvtPromises({
+          ext: {
+            selectedCalendar: ext.selectedCalendar,
+            events: {
+              cancelledEvents: ext.events.cancelledEvents,
+            },
+          },
+        });
+
+        return [...confirmedEvtPromises, ...cancelledEvtPromises];
+      } catch (error) {
+        throw error;
+      }
     });
 
-    return [...confirmedEvtPromises, ...cancelledEvtPromises];
-  });
-  try {
-    const res = await Promise.allSettled(evtPromises);
-    log.info("Successfully synced google calendar", safeStringify(res));
+    try {
+      const results = await Promise.allSettled(evtPromises);
+      const successful = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      log.info(`Successfully synced ${successful} google calendar events, ${failed} failed`);
+
+      // Log any rejected promises
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          log.error(`Failed to sync event at index ${index}:`, safeStringify(result.reason));
+        }
+      });
+    } catch (error) {
+      throw error;
+    }
   } catch (e) {
-    console.error("Failed to sync google calendar", safeStringify(e));
     log.error("Failed to sync google calendar", safeStringify(e));
   }
 }
 
 export default defaultHandler({
-  // POST: Promise.resolve({ default: defaultResponder(postHandler) }),
   POST: Promise.resolve({ default: postHandler }),
 });

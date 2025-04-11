@@ -443,7 +443,7 @@ export const getOptions = ({
   res,
   keycloak_token,
 }: {
-  res: NextApiResponse;
+  res?: NextApiResponse;
   keycloak_token?: string;
 }): AuthOptions => ({
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -1061,17 +1061,17 @@ export const getOptions = ({
         });
         const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
         const useSecureCookies = WEBAPP_URL?.startsWith("https://");
-
-        res.setHeader("Set-Cookie", [
-          `keycloak_token=${browser_token}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
-            useSecureCookies ? "None" : "Lax"
-          }; Max-Age=${7776000}`,
-          `loggedInUserId=${encodeURIComponent(
-            account?.userId || ""
-          )}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; SameSite=${
-            useSecureCookies ? "None" : "Lax"
-          }; Expires=Fri, 31 Dec 9999 23:59:59 GMT`,
-        ]);
+        if (res)
+          res.setHeader("Set-Cookie", [
+            `keycloak_token=${browser_token}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
+              useSecureCookies ? "None" : "Lax"
+            }; Max-Age=${7776000}`,
+            `loggedInUserId=${encodeURIComponent(
+              account?.userId || ""
+            )}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; SameSite=${
+              useSecureCookies ? "None" : "Lax"
+            }; Expires=Fri, 31 Dec 9999 23:59:59 GMT`,
+          ]);
       }
     },
     async signOut(_) {
@@ -1084,15 +1084,15 @@ export const getOptions = ({
         });
         const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
         const useSecureCookies = WEBAPP_URL?.startsWith("https://");
-
-        res.setHeader("Set-Cookie", [
-          `keycloak_token=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
-            useSecureCookies ? "None" : "Lax"
-          }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
-          `loggedInUserId=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; SameSite=${
-            useSecureCookies ? "None" : "Lax"
-          }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
-        ]);
+        if (res)
+          res.setHeader("Set-Cookie", [
+            `keycloak_token=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
+              useSecureCookies ? "None" : "Lax"
+            }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+            `loggedInUserId=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; SameSite=${
+              useSecureCookies ? "None" : "Lax"
+            }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+          ]);
       }
     },
   },

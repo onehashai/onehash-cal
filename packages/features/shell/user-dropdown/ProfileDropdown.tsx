@@ -69,7 +69,7 @@ export function ProfileDropdown() {
           onInteractOutside={() => {
             setMenuOpen(false);
           }}
-          className="hariom group min-w-56 overflow-hidden rounded-md">
+          className="hariom min-w-56 group overflow-hidden rounded-md">
           <DropdownMenuItem className="p-3 uppercase">
             <span>Switch to</span>
           </DropdownMenuItem>

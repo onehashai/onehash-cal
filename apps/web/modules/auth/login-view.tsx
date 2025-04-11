@@ -7,7 +7,6 @@ import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 
 import type { inferSSRProps } from "@lib/types/inferSSRProps";
-import type { WithNonceProps } from "@lib/withNonce";
 
 import type { getServerSideProps } from "@server/lib/auth/login/getServerSideProps";
 
@@ -24,15 +23,17 @@ const GoogleIcon = () => (
 );
 export type PageProps = inferSSRProps<typeof getServerSideProps>;
 
-export default function Login({
-  csrfToken,
-  isGoogleLoginEnabled,
-  isSAMLLoginEnabled,
-  samlTenantID,
-  samlProductID,
-  totpEmail,
-}: // eslint-disable-next-line @typescript-eslint/ban-types
-PageProps & WithNonceProps<{}>) {
+// export default function Login({
+//   csrfToken,
+//   isGoogleLoginEnabled,
+//   isSAMLLoginEnabled,
+//   samlTenantID,
+//   samlProductID,
+//   totpEmail,
+// }: // eslint-disable-next-line @typescript-eslint/ban-types
+// PageProps & WithNonceProps<{}>) {
+
+export default function Login() {
   const searchParams = useCompatSearchParams();
   let callbackUrl = searchParams?.get("callbackUrl") || "";
 

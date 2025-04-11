@@ -20,6 +20,7 @@ import {
 } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { isPrismaObjOrUndefined } from "@calcom/lib/isPrismaObj";
 import { trpc } from "@calcom/trpc/react";
 import type { App as AppType } from "@calcom/types/App";
 import {
@@ -65,6 +66,14 @@ export type AppPageProps = {
   dependencies?: string[];
   concurrentMeetings: AppType["concurrentMeetings"];
   paid?: AppType["paid"];
+};
+
+type OHChatAppCredential = {
+  account_user_id: number;
+  account_name: string;
+  user_email: string;
+  user_name: string;
+  credentialId: number;
 };
 
 export const AppPage = ({
@@ -157,7 +166,7 @@ export const AppPage = ({
 
   const [existingCredentials, setExistingCredentials] = useState<number[]>([]);
   const [showDisconnectIntegration, setShowDisconnectIntegration] = useState(false);
-  const [ohChatAppCredentials, setOhChatAppCredentials] = useState(undefined);
+  const [ohChatAppCredentials, setOhChatAppCredentials] = useState<OHChatAppCredential[]>([]);
   const appDbQuery = trpc.viewer.appCredentialsByType.useQuery({ appType: type });
 
   useEffect(
@@ -172,7 +181,8 @@ export const AppPage = ({
       if (slug === "onehash-chat") {
         setOhChatAppCredentials(
           data?.credentials.map((c) => {
-            return { ...c.key, credentialId: c.id };
+            const key = isPrismaObjOrUndefined(c.key) ? (c.key as Record<string, number | string>) : {};
+            return { ...key, credentialId: c.id } as OHChatAppCredential;
           }) || []
         );
       }

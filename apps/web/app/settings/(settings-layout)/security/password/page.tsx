@@ -30,8 +30,9 @@ const Page = async () => {
         <Button href={userHref} target="_blank" color="secondary" EndIcon="external-link">
           {t("visit")}
         </Button>
-      }
-    />
+      }>
+      <></>
+    </SettingsHeader>
   );
 };
 

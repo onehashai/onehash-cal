@@ -9,9 +9,21 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { AnimatedPopover, Avatar, Divider, FilterSearchField } from "@calcom/ui";
 
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
+type Attendee = {
+  id: number;
+  name: string | null;
+  username?: string | null;
+  email: string;
+  timeZone: string;
+  locale: string | null;
+  phoneNumber: string | null;
+  bookingId: number | null;
+  noShow: boolean | null;
+};
+
+const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
       func(...args);
@@ -23,7 +35,7 @@ export const AttendeeFilter = () => {
   const { t } = useLocale();
   const { data: query, pushItemToKey, removeItemByKeyAndValue } = useFilterQuery();
   const [searchText, setSearchText] = useState("");
-  const [attendees, setAttendees] = useState([]);
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
 
   const { mutate: getAttendees } = trpc.viewer.getAttendees.useMutation({
     onSuccess: (data) => {
@@ -34,7 +46,7 @@ export const AttendeeFilter = () => {
     },
   });
 
-  const handleSearch = debounce((name) => {
+  const handleSearch = debounce((name: string) => {
     getAttendees({ name });
   }, 300);
 
@@ -61,12 +73,12 @@ export const AttendeeFilter = () => {
             key={member.id}
             id={member.id.toString()}
             label={member.name ?? member.username ?? t("no_name")}
-            checked={query.attendees?.includes(member.name)}
+            checked={query.attendees?.includes(member.name ?? "")}
             onChange={(e) => {
               if (e.target.checked) {
-                pushItemToKey("attendees", member.name);
+                pushItemToKey("attendees", member.name ?? "");
               } else {
-                removeItemByKeyAndValue("attendees", member.name);
+                removeItemByKeyAndValue("attendees", member.name ?? "");
               }
             }}
             icon={<Avatar alt={`${member.id} avatar`} size="xs" />}

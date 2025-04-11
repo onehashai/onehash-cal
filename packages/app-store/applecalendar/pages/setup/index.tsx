@@ -21,7 +21,7 @@ export default function AppleCalendarSetup() {
 
   return (
     <div className="bg-emphasis flex h-screen dark:bg-inherit">
-      <div className="bg-default dark:bg-muted border-subtle m-auto rounded p-5 md:w-[560px] md:p-10 dark:border">
+      <div className="bg-default dark:bg-muted border-subtle m-auto rounded p-5 dark:border md:w-[560px] md:p-10">
         <div className="flex flex-col space-y-5 md:flex-row md:space-x-5 md:space-y-0">
           <div>
             {/* eslint-disable @next/next/no-img-element */}
@@ -93,7 +93,7 @@ export default function AppleCalendarSetup() {
                 </fieldset>
 
                 {errorMessage && <Alert severity="error" title={errorMessage} className="my-4" />}
-                <div className="mt-5 justify-end space-x-2 sm:mt-4 sm:flex rtl:space-x-reverse">
+                <div className="mt-5 justify-end space-x-2 rtl:space-x-reverse sm:mt-4 sm:flex">
                   <Button type="button" color="secondary" onClick={() => router.back()}>
                     {t("cancel")}
                   </Button>

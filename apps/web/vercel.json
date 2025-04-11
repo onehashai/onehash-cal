@@ -1,7 +1,8 @@
 {
   "crons": [],
   "regions": ["sfo1"],
-
+  "buildCommand": "(cd ../.. && yarn run deploy)",
+  "outputDirectory": ".next",
   "functions": {
     "pages/api/trpc/public/[trpc].ts": {
       "memory": 1769

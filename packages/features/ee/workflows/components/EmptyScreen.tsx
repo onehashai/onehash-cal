@@ -67,7 +67,7 @@ export default function EmptyScreen(props: { isFilteredView: boolean }) {
 
   return (
     <>
-      <div className="flex min-h-80 w-full flex-col items-center justify-center rounded-md ">
+      <div className="min-h-80 flex w-full flex-col items-center justify-center rounded-md ">
         <div className="bg-emphasis flex h-[72px] w-[72px] items-center justify-center rounded-full">
           <Icon name="zap" className="dark:text-default inline-block h-10 w-10 stroke-[1.3px]" />
         </div>
