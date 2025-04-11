@@ -709,7 +709,7 @@ export function expectSuccessfulRoundRobinReschedulingEmails({
     });
 
     vi.waitFor(() => {
-      // old organizer should receive cancelled emails
+      // old organizer should recieve cancelled emails
       expect(emails).toHaveEmail(
         {
           heading: "event_request_cancelled",
@@ -720,7 +720,7 @@ export function expectSuccessfulRoundRobinReschedulingEmails({
     });
   } else {
     vi.waitFor(() => {
-      // organizer should receive rescheduled emails
+      // organizer should recieve rescheduled emails
       expect(emails).toHaveEmail(
         {
           heading: "event_has_been_rescheduled",
@@ -745,6 +745,7 @@ export function expectSuccessfulBookingRescheduledEmails({
   iCalUID: string;
   appsStatus?: AppsStatus[];
 }) {
+  //log the emails
   expect(emails).toHaveEmail(
     {
       titleTag: "event_type_has_been_rescheduled_on_time_date",
