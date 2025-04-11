@@ -29,6 +29,7 @@ export function getMockRequestDataForBooking({
     rescheduledBy?: string;
     cancelledBy?: string;
     schedulingType?: SchedulingType;
+    routedTeamMemberIds?: number[];
     responses: {
       email: string;
       name: string;
