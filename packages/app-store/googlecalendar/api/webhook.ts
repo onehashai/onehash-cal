@@ -42,6 +42,9 @@ export type ExistingBookingType = Prisma.BookingGetPayload<{
   };
 }>;
 async function postHandler(req: NextApiRequest, res: NextApiResponse) {
+  return res.status(200).json({
+    message: `Temporarily disabled`,
+  });
   try {
     if (req.headers["x-goog-channel-token"] !== process.env.GOOGLE_WEBHOOK_TOKEN) {
       return res.status(403).json({ message: "Invalid Channel Token" });
