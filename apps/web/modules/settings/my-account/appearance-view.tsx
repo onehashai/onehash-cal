@@ -37,6 +37,9 @@ import {
   Avatar,
 } from "@calcom/ui";
 
+import LinkPreview from "./preview-components/link-preview";
+import UserFoundUI from "./preview-components/my-page";
+
 const SkeletonLoader = () => {
   return (
     <SkeletonContainer>
@@ -93,7 +96,10 @@ const AppearanceView = ({
   hasPaidPlan: boolean;
 }) => {
   const { t } = useLocale();
+  console.log(user.bannerUrl);
   const utils = trpc.useUtils();
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [orgBase64, setOrgBase64] = useState<string>(user.bannerUrl || "");
   const session = useSession();
   const isApartOfOrganization = session.data?.user.org?.id;
   const [darkModeError, setDarkModeError] = useState(false);
@@ -474,13 +480,18 @@ const AppearanceView = ({
                         "border-subtle flex justify-between space-x-3 rounded-lg border px-4 py-6 sm:px-6",
                         "rounded-b-none"
                       )}>
-                      <div>
-                        <div className="flex items-center  gap-x-2">
+                      <div className="w-full">
+                        <div className="flex w-full items-center gap-x-2">
                           <Label
-                            className={classNames("mt-0.5 text-base font-semibold leading-none")}
+                            className={classNames("mt-0.5 w-full text-base font-semibold leading-none")}
                             htmlFor="">
                             {t("custom_brand_logo")}
                           </Label>
+                          <div
+                            onClick={() => setShowPreview(!showPreview)}
+                            className="flex w-full cursor-pointer items-center justify-end text-base font-semibold leading-none">
+                            Preview
+                          </div>
                         </div>
                         <p className={classNames("text-default -mt-1.5 text-sm leading-normal")}>
                           {t("customize_your_brand_logo")}
@@ -548,6 +559,12 @@ const AppearanceView = ({
               }
               mutation.mutate(values);
             }}>
+            {showPreview && (
+              <div className="flex flex-col justify-end gap-4">
+                <UserFoundUI base64={orgBase64} />
+                <LinkPreview base64={orgBase64} />
+              </div>
+            )}
             <Controller
               control={faviconFormMethods.control}
               name="faviconUrl"
@@ -589,7 +606,9 @@ const AppearanceView = ({
                                 id="avatar-upload"
                                 buttonMsg={t("upload_favicon")}
                                 handleAvatarChange={(newAvatar) => {
+                                  setOrgBase64(newAvatar);
                                   onChange(newAvatar);
+                                  console.log(newAvatar);
                                 }}
                                 imageSrc={getBrandLogoUrl({ bannerUrl: value }, true)}
                               />
