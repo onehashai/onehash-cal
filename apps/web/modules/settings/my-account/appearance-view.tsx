@@ -504,7 +504,11 @@ const AppearanceView = ({
                                 uploadInstruction={t("org_banner_instructions", { height: 100, width: 300 })}
                                 id="avatar-upload"
                                 buttonMsg={t("upload_logo")}
-                                handleAvatarChange={onChange}
+                                handleAvatarChange={(newAvatar) => {
+                                  onChange(newAvatar);
+                                  setOrgBase64(newAvatar);
+                                  console.log(newAvatar);
+                                }}
                                 imageSrc={getBrandLogoUrl({ bannerUrl: value })}
                               />
 
