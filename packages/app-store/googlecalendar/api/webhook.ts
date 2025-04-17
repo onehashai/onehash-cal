@@ -9,13 +9,12 @@ import { isPrismaObjOrUndefined } from "@calcom/lib";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { defaultHandler } from "@calcom/lib/server";
-import { SelectedCalendarRepository } from "@calcom/lib/server/repository/selectedCalendar";
+import type { SelectedCalendarRepository } from "@calcom/lib/server/repository/selectedCalendar";
 import { getServerTimezone } from "@calcom/lib/timezone";
 import prisma from "@calcom/prisma";
 import { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
 
-import { getCalendar } from "../../_utils/getCalendar";
 import { MeetLocationType } from "../../locations";
 import { ZoomLocationType } from "./../../locations";
 import type { GoogleCalendarServiceType } from "./../lib/CalendarService";
@@ -45,46 +44,46 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   return res.status(200).json({
     message: `Temporarily disabled`,
   });
-  try {
-    if (req.headers["x-goog-channel-token"] !== process.env.GOOGLE_WEBHOOK_TOKEN) {
-      return res.status(403).json({ message: "Invalid Channel Token" });
-    }
-    if (typeof req.headers["x-goog-channel-id"] !== "string") {
-      return res.status(403).json({ message: "Missing Channel ID" });
-    }
+  // try {
+  //   if (req.headers["x-goog-channel-token"] !== process.env.GOOGLE_WEBHOOK_TOKEN) {
+  //     return res.status(403).json({ message: "Invalid Channel Token" });
+  //   }
+  //   if (typeof req.headers["x-goog-channel-id"] !== "string") {
+  //     return res.status(403).json({ message: "Missing Channel ID" });
+  //   }
 
-    const selectedCalendar = await SelectedCalendarRepository.findByGoogleChannelId(
-      req.headers["x-goog-channel-id"]
-    );
+  //   const selectedCalendar = await SelectedCalendarRepository.findByGoogleChannelId(
+  //     req.headers["x-goog-channel-id"]
+  //   );
 
-    if (!selectedCalendar) {
-      return res.status(200).json({
-        message: `No selected calendar found for googleChannelId: ${req.headers["x-goog-channel-id"]}`,
-      });
-    }
-    const { credential } = selectedCalendar;
-    if (!credential) {
-      return res.status(200).json({
-        message: `No credential found for selected calendar for googleChannelId: ${req.headers["x-goog-channel-id"]}`,
-      });
-    }
-    const { selectedCalendars } = credential;
-    const calendar = await getCalendar(credential);
-    if (
-      selectedCalendar.user.teams
-        .flatMap((team) => team.team.features)
-        .some((f) => f.featureId === "calendar-cache")
-    ) {
-      await calendar?.fetchAvailabilityAndSetCache?.(selectedCalendars);
-    }
+  //   if (!selectedCalendar) {
+  //     return res.status(200).json({
+  //       message: `No selected calendar found for googleChannelId: ${req.headers["x-goog-channel-id"]}`,
+  //     });
+  //   }
+  //   const { credential } = selectedCalendar;
+  //   if (!credential) {
+  //     return res.status(200).json({
+  //       message: `No credential found for selected calendar for googleChannelId: ${req.headers["x-goog-channel-id"]}`,
+  //     });
+  //   }
+  //   const { selectedCalendars } = credential;
+  //   const calendar = await getCalendar(credential);
+  //   if (
+  //     selectedCalendar.user.teams
+  //       .flatMap((team) => team.team.features)
+  //       .some((f) => f.featureId === "calendar-cache")
+  //   ) {
+  //     await calendar?.fetchAvailabilityAndSetCache?.(selectedCalendars);
+  //   }
 
-    await handleCalendarSync(calendar as GoogleCalendarServiceType, credential);
+  //   await handleCalendarSync(calendar as GoogleCalendarServiceType, credential);
 
-    return res.status(200).json({ message: "ok" });
-  } catch (e) {
-    log.error(safeStringify(e));
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
+  //   return res.status(200).json({ message: "ok" });
+  // } catch (e) {
+  //   log.error(safeStringify(e));
+  //   return res.status(500).json({ message: "Internal Server Error" });
+  // }
 }
 
 const checkIfBookingDataChanged = (

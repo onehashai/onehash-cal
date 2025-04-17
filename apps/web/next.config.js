@@ -179,7 +179,6 @@ const nextConfig = {
     optimizePackageImports: ["@calcom/ui"],
     instrumentationHook: true,
     serverActions: true,
-    outputFileTracingIgnores: ["**/.next/cache/**"],
   },
   i18n: {
     ...i18n,
