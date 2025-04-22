@@ -96,7 +96,9 @@ const AppearanceView = ({
   hasPaidPlan: boolean;
 }) => {
   const { t } = useLocale();
+  // console.log(user);
   console.log(user.bannerUrl);
+  const name = "name" in user.profile ? user.profile.name : user.profile.username;
   const utils = trpc.useUtils();
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [orgBase64, setOrgBase64] = useState<string>(user.bannerUrl || "");
@@ -561,8 +563,20 @@ const AppearanceView = ({
             }}>
             {showPreview && (
               <div className="flex flex-col justify-end gap-4">
-                <UserFoundUI base64={orgBase64} />
-                <LinkPreview base64={orgBase64} />
+                <UserFoundUI
+                  base64={orgBase64}
+                  name={name || undefined}
+                  username={user.profile.username || undefined}
+                  bio={user.bio || undefined}
+                  avatarUrl={user.avatarUrl || undefined}
+                />
+                <LinkPreview
+                  base64={orgBase64}
+                  name={name || undefined}
+                  username={user.profile.username || undefined}
+                  bio={user.bio || undefined}
+                  avatarUrl={user.avatarUrl || undefined}
+                />
               </div>
             )}
             <Controller

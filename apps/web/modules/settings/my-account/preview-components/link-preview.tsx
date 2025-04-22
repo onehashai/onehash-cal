@@ -1,8 +1,12 @@
 interface Props {
   base64?: string;
+  avatarUrl?: string;
+  bio?: string;
+  name?: string;
+  username?: string;
 }
 
-export default function LinkPreview({ base64 }: Props) {
+export default function LinkPreview({ base64, avatarUrl, bio, name, username }: Props) {
   return (
     <>
       <div className="border-subtle rounded-md border" />
@@ -24,15 +28,19 @@ export default function LinkPreview({ base64 }: Props) {
 
               {/* User Icon */}
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
-                <svg className="h-6 w-6 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm0 2c-5.33 0-8 2.667-8 4v2h16v-2c0-1.333-2.67-4-8-4z" />
-                </svg>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={name} />
+                ) : (
+                  <svg className="h-6 w-6 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm0 2c-5.33 0-8 2.667-8 4v2h16v-2c0-1.333-2.67-4-8-4z" />
+                  </svg>
+                )}
               </div>
             </div>
 
             {/* Center Text */}
             <div className="mt-8">
-              <h2 className="text-xl font-semibold">Meet Manas Santosh Laud</h2>
+              <h2 className="text-xl font-semibold">Meet {name}</h2>
               <p className="mt-1 text-sm text-gray-700">Quick Chat</p>
             </div>
 
@@ -41,7 +49,7 @@ export default function LinkPreview({ base64 }: Props) {
         </div>
         <div className="mt-auto h-[120px] w-[300px] border border-gray-300 bg-white bg-opacity-80 pt-4">
           <p className="text-xs text-gray-500">CAL.ID</p>
-          <h3 className="mt-1 font-semibold text-gray-800">Quick Chat | Manas Santosh Laud | OneHash Cal</h3>
+          <h3 className="mt-1 font-semibold text-gray-800">Quick Chat | {name} | OneHash Cal</h3>
           <p className="mt-1 text-sm text-gray-500">Quick Chat</p>
         </div>
       </div>

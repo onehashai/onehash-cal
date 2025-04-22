@@ -4,14 +4,19 @@ import { Icon, UserAvatar } from "@calcom/ui";
 
 interface Props {
   base64?: string;
+  avatarUrl?: string;
+  bio?: string;
+  name?: string;
+  username?: string;
 }
 
-const UserFoundUI = ({ base64 }: Props) => {
+const UserFoundUI = ({ base64, avatarUrl, bio, name, username }: Props) => {
+  console.log(name, username);
   const user = {
-    name: "Manas Laud",
-    username: "manaslaud",
-    avatarUrl: "https://via.placeholder.com/150",
-    bio: "This is a sample bio for Manas Laud.",
+    name: name || "Manas Laud",
+    username: username || "manaslaud",
+    avatarUrl: avatarUrl || "https://via.placeholder.com/150",
+    bio: bio || "This is a sample bio for Manas Laud.",
     verified: true,
     profile: {
       organization: null,
@@ -22,8 +27,8 @@ const UserFoundUI = ({ base64 }: Props) => {
   };
 
   const profile = {
-    name: "Manas Laud",
-    username: "manaslaud",
+    name: name || "Manas Laud",
+    username: username || "manaslaud",
     allowSEOIndexing: true,
   };
 
@@ -91,7 +96,7 @@ const UserFoundUI = ({ base64 }: Props) => {
       </div>
       <div className="mt-12 flex flex-col items-center justify-center gap-4">
         <img
-          src="/preview/calendar.png"
+          src="/links-preview/calendar.png"
           alt="Calendar Preview"
           className="rounded-md shadow-md"
           style={{ maxWidth: "100%", height: "auto" }}
