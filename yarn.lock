@@ -4886,6 +4886,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@calcom/test@workspace:packages/app-store/test":
+  version: 0.0.0-use.local
+  resolution: "@calcom/test@workspace:packages/app-store/test"
+  dependencies:
+    "@calcom/lib": "*"
+    "@calcom/types": "*"
+  languageName: unknown
+  linkType: soft
+
 "@calcom/trpc@*, @calcom/trpc@workspace:packages/trpc":
   version: 0.0.0-use.local
   resolution: "@calcom/trpc@workspace:packages/trpc"

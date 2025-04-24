@@ -32,6 +32,8 @@ export const AppForm = ({
     category: "",
     publisher: "",
     email: "",
+    privacyPolicyUrl: "",
+    termsOfServiceUrl: "",
   };
 
   const [app] = useState(() => getApp(givenSlug, isTemplate));
@@ -115,6 +117,22 @@ export const AppForm = ({
       explainer: "Let users know how they can contact you.",
       defaultValue: "email@example.com",
     },
+    {
+      optional: true,
+      label: "Privacy Policy URL",
+      name: "privacyPolicyUrl",
+      type: "text",
+      explainer: "Link to your privacy policy",
+      defaultValue: "",
+    },
+    {
+      optional: true,
+      label: "Terms of Service URL",
+      name: "termsOfServiceUrl",
+      type: "text",
+      explainer: "Link to your terms of service",
+      defaultValue: "",
+    },
   ].filter((f) => f);
   const [appInputData, setAppInputData] = useState(initialConfig);
   const [inputIndex, setInputIndex] = useState(0);
@@ -125,7 +143,8 @@ export const AppForm = ({
   const fieldName = field?.name || "";
   let fieldValue = appInputData[fieldName as keyof typeof appInputData] || "";
   let validationResult: Parameters<typeof Message>[0]["message"] | null = null;
-  const { name, category, description, publisher, email, template } = appInputData;
+  const { name, category, description, publisher, email, template, privacyPolicyUrl, termsOfServiceUrl } =
+    appInputData;
 
   const [status, setStatus] = useState<"inProgress" | "done">("inProgress");
   const formCompleted = inputIndex === fields.length;
@@ -150,6 +169,8 @@ export const AppForm = ({
           editMode: isEditAction,
           isTemplate,
           oldSlug: givenSlug,
+          termsOfServiceUrl,
+          privacyPolicyUrl,
         });
 
         await generateAppFiles();
@@ -243,6 +264,14 @@ export const AppForm = ({
               <Box flexDirection="row">
                 <Text color="green">Publisher Email: </Text>
                 <Text>{email}</Text>
+              </Box>
+              <Box flexDirection="row">
+                <Text color="green">Privacy Policy URL: </Text>
+                <Text>{privacyPolicyUrl}</Text>
+              </Box>
+              <Box flexDirection="row">
+                <Text color="green">Terms of Service URL: </Text>
+                <Text>{termsOfServiceUrl}</Text>
               </Box>
               <Text bold>
                 Next Step: Enable the app from http://localhost:3000/settings/admin/apps as admin user (Email:
