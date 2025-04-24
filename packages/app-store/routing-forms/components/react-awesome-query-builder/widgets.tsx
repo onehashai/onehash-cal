@@ -387,7 +387,7 @@ const DatePickerWidget = ({
   return (
     <div className="w-full">
       <DatePicker
-        date={dateValue || new Date()}
+        date={dateValue || null}
         onDatesChange={(date) => onChange(date)}
         disabled={readOnly}
         // name={name}

@@ -115,6 +115,7 @@ export default function Success(props: PageProps) {
   const pathname = usePathname();
   const searchParams = useCompatSearchParams();
   const { eventType, bookingInfo, requiresLoginToUpdate, orgSlug, rescheduledToUid } = props;
+  const disableCancelAndRescheduleMeeting = eventType.metadata?.disableCancelAndRescheduleMeeting || false;
 
   const { bannerUrl, faviconUrl, hideBranding } = eventType;
 
@@ -788,7 +789,7 @@ export default function Success(props: PageProps) {
                         isReschedulable &&
                         !isRerouting &&
                         (!isCancellationMode ? (
-                          <>
+                          <div className={`${disableCancelAndRescheduleMeeting ? "hidden" : "block"}`}>
                             <hr className="border-subtle mb-8" />
                             <div className="text-center last:pb-0">
                               <span className="text-emphasis ltr:mr-2 rtl:ml-2">
@@ -824,7 +825,7 @@ export default function Success(props: PageProps) {
                                 </button>
                               </>
                             </div>
-                          </>
+                          </div>
                         ) : (
                           <>
                             <hr className="border-subtle" />
