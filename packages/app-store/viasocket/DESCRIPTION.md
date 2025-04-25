@@ -1,8 +1,8 @@
 ---
 items:
-  - 1.jpeg
-  - 2.jpeg
-  - 3.jpeg
+  - 1.jpg
+  - 2.jpg
+  - 3.jpg
 ---
 
 {DESCRIPTION}
