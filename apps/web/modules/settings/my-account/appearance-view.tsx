@@ -37,7 +37,10 @@ import {
   Avatar,
 } from "@calcom/ui";
 
+import Carousel from "~/settings/my-account/preview-components/carousel";
+
 import LinkPreview from "./preview-components/link-preview";
+import Modal from "./preview-components/modal";
 import UserFoundUI from "./preview-components/my-page";
 
 const SkeletonLoader = () => {
@@ -492,7 +495,18 @@ const AppearanceView = ({
                           <div
                             onClick={() => setShowPreview(!showPreview)}
                             className="flex w-full cursor-pointer items-center justify-end text-base font-semibold leading-none">
-                            Preview
+                            <svg
+                              width={32}
+                              height={32}
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              preserveAspectRatio="xMidYMid meet">
+                              <path
+                                d="M12 5C7 5 2.73 8.11 1 12C2.73 15.89 7 19 12 19C17 19 21.27 15.89 23 12C21.27 8.11 17 5 12 5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z"
+                                fill="white"
+                              />
+                            </svg>
                           </div>
                         </div>
                         <p className={classNames("text-default -mt-1.5 text-sm leading-normal")}>
@@ -562,22 +576,30 @@ const AppearanceView = ({
               mutation.mutate(values);
             }}>
             {showPreview && (
-              <div className="flex flex-col justify-end gap-4">
-                <UserFoundUI
-                  base64={orgBase64}
-                  name={name || undefined}
-                  username={user.profile.username || undefined}
-                  bio={user.bio || undefined}
-                  avatarUrl={user.avatarUrl || undefined}
-                />
-                <LinkPreview
-                  base64={orgBase64}
-                  name={name || undefined}
-                  username={user.profile.username || undefined}
-                  bio={user.bio || undefined}
-                  avatarUrl={user.avatarUrl || undefined}
-                />
-              </div>
+              <Modal onClose={() => setShowPreview(false)}>
+                <div className="z-10000000000000000000000 flex flex-col justify-end gap-4">
+                  <Carousel
+                    slides={[
+                      <UserFoundUI
+                        base64={orgBase64}
+                        name={name || undefined}
+                        username={user.profile.username || undefined}
+                        bio={user.bio || undefined}
+                        avatarUrl={user.avatarUrl || undefined}
+                        key={1}
+                      />,
+                      <LinkPreview
+                        base64={orgBase64}
+                        name={name || undefined}
+                        username={user.profile.username || undefined}
+                        bio={user.bio || undefined}
+                        avatarUrl={user.avatarUrl || undefined}
+                        key={2}
+                      />,
+                    ]}
+                  />
+                </div>
+              </Modal>
             )}
             <Controller
               control={faviconFormMethods.control}

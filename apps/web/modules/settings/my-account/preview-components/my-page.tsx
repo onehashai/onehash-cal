@@ -51,7 +51,7 @@ const UserFoundUI = ({ base64, avatarUrl, bio, name, username }: Props) => {
   const isOrg = !!user.profile.organization;
 
   return (
-    <div className="border-subtle border ">
+    <div className="border ">
       <Head>
         <title>{profile.name}</title>
         <link rel="icon" href="https://via.placeholder.com/32" type="image/x-icon" />
@@ -86,10 +86,7 @@ const UserFoundUI = ({ base64, avatarUrl, bio, name, username }: Props) => {
           {user.bio && <div className="text-subtle break-words text-sm">{user.bio}</div>}
         </div>
 
-        <div
-          className={`rounded-md ${!isEventListEmpty ? "border-subtle border" : ""}`}
-          data-testid="event-types"
-        />
+        <div className={`rounded-md ${!isEventListEmpty ? "" : ""}`} data-testid="event-types" />
         {isEventListEmpty && (
           <div className="text-subtle text-center text-sm">No events available for {profile.name}.</div>
         )}

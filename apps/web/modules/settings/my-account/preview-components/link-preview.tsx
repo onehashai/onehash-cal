@@ -9,8 +9,8 @@ interface Props {
 export default function LinkPreview({ base64, avatarUrl, bio, name, username }: Props) {
   return (
     <>
-      <div className="border-subtle rounded-md border" />
-      <div className="border-subtle flex w-full flex-col items-center justify-end border p-4">
+      <div className="rounded-md border" />
+      <div className="flex w-full flex-col items-center justify-end border p-4">
         <div className="relative aspect-square w-[300px] overflow-hidden shadow-lg">
           {/* Background image */}
           <img
