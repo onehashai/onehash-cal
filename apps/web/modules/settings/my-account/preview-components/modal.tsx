@@ -20,7 +20,7 @@ export default function Modal({ children, onClose }: ModalProps) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex translate-x-20 items-center justify-center bg-black/50">
       <div ref={modalRef} className="relative w-[75%] rounded-md bg-black p-6 text-white">
         <div className="absolute right-1 top-[1px] cursor-pointer text-2xl" onClick={onClose}>
           ✕
