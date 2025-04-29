@@ -10,12 +10,16 @@ on:
   # Trigger the workflow manually
   # This allows you to run the workflow without a code change
   workflow_dispatch:
+    inputs:
+      branch:
+        description: "Target branch"
+        required: false
+        default: "develop"
     
-
 jobs:
   # ONLY RUN JOB ON PR MERGE on MAIN OR DEVELOP BRANCH
   build-push-deploy:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +35,7 @@ jobs:
 
       - name: Set environment variables based on branch
         run: |
-          BRANCH_NAME="${GITHUB_REF##*/}"
+          BRANCH_NAME="${{ github.event.inputs.branch || github.ref_name }}"
       
           if [[ "$BRANCH_NAME" == "main" ]]; then
             DOMAIN_NAME="${{ secrets.DOMAIN_NAME }}"
