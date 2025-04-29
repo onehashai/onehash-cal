@@ -1,0 +1,197 @@
+name: Build, Push Docker Image, Deploy to EC2
+
+on:
+  pull_request:
+    types:
+      - closed  
+    branches:
+      - main
+      - develop
+  # Trigger the workflow manually
+  # This allows you to run the workflow without a code change
+  workflow_dispatch:
+    
+
+jobs:
+  # ONLY RUN JOB ON PR MERGE on MAIN OR DEVELOP BRANCH
+  build-push-deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Fetch only the latest commit to speed up the process
+
+      # SETTING NECESSARY ENV VARIABLES
+      - name: Extract Git commit hash
+        id: vars
+        run: echo "GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Set environment variables based on branch
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+      
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            DOMAIN_NAME="${{ secrets.DOMAIN_NAME }}"
+            EC2_HOST="${{ secrets.EC2_HOST_PROD }}"
+            EC2_SSH_KEY="${{ secrets.EC2_SSH_PROD }}"
+            BRANCH="main"
+            IMAGE_TAG="latest-prod"
+          else
+            DOMAIN_NAME="${{ secrets.DOMAIN_NAME_STAG }}"
+            EC2_HOST="${{ secrets.EC2_HOST_STAG }}"
+            EC2_SSH_KEY="${{ secrets.EC2_SSH_KEY_STAG }}"
+            BRANCH="develop"
+            IMAGE_TAG="latest-stag"
+          fi
+      
+          cat <<EOF >> $GITHUB_ENV
+          DOMAIN_NAME=$DOMAIN_NAME
+          EC2_HOST=$EC2_HOST
+          EC2_SSH_KEY=$EC2_SSH_KEY
+          BRANCH=$BRANCH
+          IMAGE_TAG=$IMAGE_TAG
+          EOF
+      
+      # BUILDING AND PUSHING DOCKER IMAGE
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ env.GIT_HASH }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ env.IMAGE_TAG}}
+
+      # DEPLOYING TO EC2
+      - name: SSH into EC2 and Deploy
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: "ubuntu"
+          key: ${{ env.EC2_SSH_KEY }}
+          script: |
+
+            # Change user to "cal-id"
+            sudo -i -u calid
+
+            # Setting up onehash-cal repo locally and pulling the latest changes
+            if [ ! -d "~/onehash-cal" ]; then
+              echo "Directory 'onehash-cal' does not exist. Cloning the repository."
+              mkdir -p ~/onehash-cal
+              cd ~/onehash-cal
+              git init
+              git config core.sparseCheckout true
+              # PULLING  ONLY  THE "infra" DIRECTORY TO SAVE TIME/SPACE
+              echo ".infra/*" >> .git/info/sparse-checkout
+
+              # ADDING THE REMOTE REPO
+              git remote add origin ${{ secrets.GITHUB_REPO }}
+              git pull origin ${{ env.BRANCH }}
+              git checkout ${{ env.BRANCH }}
+
+            else
+              echo "Directory 'onehash-cal' exists. Pulling the latest changes."
+              cd ~/onehash-cal
+              git pull origin ${{ env.BRANCH }}
+              git checkout ${{ env.BRANCH }}
+            fi
+            
+
+            # DOCKER LOGIN
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+            CURRENT_PORT=$(sudo cat /etc/nginx/conf.d/default.conf | grep proxy_pass | grep -oP '127.0.0.1:\K[0-9]+')
+            echo "Current port: $CURRENT_PORT"
+
+            # BLUE/GREEN DEPLOYMENT STRATEGY
+            # Check the current port and switch to the other one
+            if [ "$CURRENT_PORT" == "3001" ]; then
+              echo "NEW_PORT"=3002 >> $GITHUB_ENV
+              echo "CONTAINER_NAME"="Green" >> $GITHUB_ENV
+              echo "Switching to port 3002(Green)"
+            else
+              echo "NEW_PORT"=3001 >> $GITHUB_ENV
+              echo "CONTAINER_NAME"="Blue" >> $GITHUB_ENV
+              echo "Switching to port 3001(Blue)"
+            fi
+
+            # Build the Docker image with the new port
+            echo "Building Docker image with new port: $NEW_PORT"
+            cd ~/onehash-cal/infra/docker/web
+
+            # Spinning up docker container with "DOCKER_USERNAME", "DOCKER_IMAGE_NAME", "DOCKER_IMAGE_TAG","CONTAINER_NAME", "CURRENT_PORT"
+            AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }} \
+            AWS_REGION=${{ secrets.AWS_REGION }} \
+            REPO_NAME=${{ secrets.REPO_NAME }} \
+            DOCKER_IMAGE_TAG=${{ env.GIT_HASH }} \
+            CONTAINER_NAME=${{ env.CONTAINER_NAME }} \
+            NEW_PORT=${{ env.NEW_PORT }} \
+            docker compose -f docker-compose-start.yml up -d --build --remove-orphans --force-recreate --no-deps app
+            echo "Docker container started with new port: $NEW_PORT"
+
+            #HEALTH CHECK
+            echo "Waiting for the application to be healthy..."
+            for i in {1..30}; do
+              if curl -s -o /dev/null -w "%{http_code}" http://
+                localhost:${NEW_PORT}/api/health | grep -q "200"; then
+                echo "Application is healthy!"
+                break
+              fi
+              echo "Waiting for the application to be healthy..."
+              sleep 5
+            done
+            if [ $i -eq 30 ]; then
+              echo "Application did not become healthy in time. Exiting."
+              exit 1
+            fi
+
+
+            # MOVING THE TEMPLATE NGINX CONFIG FILE FROM REPO TO /etc/nginx/conf.d/default.conf
+            echo "Moving nginx config file to /etc/nginx/conf.d/default.conf"
+            sudo cp -f infra/docker/web/nginx.config /etc/nginx/conf.d/default.conf
+            echo "Nginx config file moved to /etc/nginx/conf.d/default.conf"
+
+            # REPLACING TEMPLATES PLACEHOLDER IN NGINX CONFIG FILE
+            echo "Replacing placeholders 'PORT_PLACEHOLDER' and 'DOMAIN_PLACEHOLDER' in nginx config file"
+            sudo sed -i "s/PORT_PLACEHOLDER/${{ env.NEW_PORT }}/g" /etc/nginx/conf.d/default.conf
+            sudo sed -i "s/DOMAIN_PLACEHOLDER/${{ env.DOMAIN_NAME }}/g" /etc/nginx/conf.d/default.conf
+            echo "Placeholders replaced in nginx config file"
+
+            # GENERATING NEW SSL CERTIFICATE USING CERTBOT
+            echo "Generating new SSL certificate using certbot"
+            sudo certbot --nginx -d ${{ env.DOMAIN_NAME }} --non-interactive --agree-tos -m ${{ secrets.CERTBOT_EMAIL }} --redirect
+            echo "New SSL certificate generated using certbot"
+
+            # RELOADING NGINX CONFIGURATION
+            echo "Reloading nginx configuration"
+            sudo nginx -s reload
+            echo "Nginx configuration reloaded"
+
+            # STOPPING THE OLD DOCKER CONTAINER
+            echo "Stopping the old Docker container"
+            if [ "$CURRENT_PORT" == "3001" ]; then
+              docker stop Blue
+            else
+              docker stop Green
+            fi
+
+            # Prune unused Docker images and containers older than 72 hours
+            docker system prune -af --filter "until=72h"

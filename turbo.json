@@ -40,6 +40,7 @@
       "inputs": ["./schema.prisma", "./prisma/schema.prisma"],
       "env": ["PRISMA_GENERATE_DATAPROXY"]
     },
+
     "lint": {
       "cache": false
     },
