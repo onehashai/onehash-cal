@@ -90,17 +90,12 @@ else
     echo "Docker Compose is already installed."
 fi
 
-# Creating user 'calid'
-echo "Creating user 'calid'..."
-sudo useradd -m -s /bin/bash calid
+# Configure passwordless sudo for the default 'ubuntu' user
+echo "Giving 'ubuntu' permission to run sudo without a password..."
+echo "ubuntu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/ubuntu
 
-# Add the user to the 'sudo' group
-echo "Adding 'calid' to the sudo group..."
-sudo usermod -aG sudo calid
-
-# Allow the user to run sudo commands without a password
-echo "Giving 'calid' permission to run sudo without a password..."
-echo "calid ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/calid
+# Set correct permissions for the sudoers file
+sudo chmod 0440 /etc/sudoers.d/ubuntu
 
 # Done
 echo "EC2 instance setup complete!"

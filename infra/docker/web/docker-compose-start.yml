@@ -9,5 +9,5 @@ services:
     ports:
       - "${NEW_PORT}:3001" 
     env_file:
-    - path: ./.env
+    - path: /home/ubuntu/.env
       required: true 
