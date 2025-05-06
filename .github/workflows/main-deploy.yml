@@ -15,12 +15,16 @@ on:
         description: "Target branch"
         required: false
         default: "develop"
+      git_hash:
+        description: "Override Git commit hash"
+        required: false
+        default: ""
     
 jobs:
   # ONLY RUN JOB ON PR MERGE on MAIN OR DEVELOP BRANCH
   build-push-deploy:
     if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest      
 
     steps:
       - name: Checkout Code
@@ -28,174 +32,489 @@ jobs:
         with:
           fetch-depth: 1 # Fetch only the latest commit to speed up the process
 
+      - name: Initialize Global Log File
+        run: |
+          echo "LOG_FILE=workflow.log" >> $GITHUB_ENV
+          echo "Logging started" > workflow.log
+      
+      - name: Confirm secrets are present
+        run: |
+          check() {
+            if [ -z "$1" ]; then
+              echo "$2 is EMPTY ❌" | tee -a $LOG_FILE
+              exit 1
+            else
+              echo "$2 is SET ✅"
+            fi
+          }
+          check "${{ secrets.DOMAIN_NAME_STAG }}" "DOMAIN_NAME_STAG"
+          check "${{ secrets.EC2_HOST_STAG }}" "EC2_HOST_STAG"
+          check "${{ secrets.EC2_SSH_KEY_STAG }}" "EC2_SSH_KEY_STAG"
+          check "${{ secrets.DOMAIN_NAME_PROD }}" "DOMAIN_NAME_PROD"
+          check "${{ secrets.EC2_HOST_PROD }}" "EC2_HOST_PROD"
+          check "${{ secrets.EC2_SSH_KEY_PROD }}" "EC2_SSH_KEY_PROD"
+          check "${{ secrets.AWS_REGION }}" "AWS_REGION"
+          check "${{ secrets.AWS_ACCESS_KEY_ID }}" "AWS_ACCESS_KEY_ID"
+          check "${{ secrets.AWS_SECRET_ACCESS_KEY }}" "AWS_SECRET_ACCESS_KEY"
+          check "${{ secrets.REPO_NAME }}" "REPO_NAME"
+          check "${{ secrets.REPO_URL }}" "REPO_URL"
+          check "${{ secrets.AWS_ACCOUNT_ID }}" "AWS_ACCOUNT_ID"
+          check "${{ secrets.CERTBOT_EMAIL }}" "CERTBOT_EMAIL"
+          check "${{ secrets.NEXTAUTH_URL }}" "NEXTAUTH_URL"
+          check "${{ secrets.NEXTAUTH_SECRET }}" "NEXTAUTH_SECRET"
+          check "${{ secrets.CALENDSO_ENCRYPTION_KEY }}" "CALENDSO_ENCRYPTION_KEY"
+          check "${{ secrets.NEXT_PUBLIC_WEBAPP_URL }}" "NEXT_PUBLIC_WEBAPP_URL"
+          check "${{ secrets.NEXT_PUBLIC_API_V2_URL }}" "NEXT_PUBLIC_API_V2_URL"
+          check "${{ secrets.DATABASE_DIRECT_URL_PROD }}" "DATABASE_DIRECT_URL_PROD"
+          check "${{ secrets.DATABASE_DIRECT_URL_STAG }}" "DATABASE_DIRECT_URL_STAG"
+          check "${{ secrets.SENDGRID_API_KEY }}" "SENDGRID_API_KEY"
+          check "${{ secrets.EMAIL_TO }}" "EMAIL_TO"
+          check "${{ secrets.EMAIL_FROM }}" "EMAIL_FROM"
+          
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
-        id: vars
-        run: echo "GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-
-      - name: Set environment variables based on branch
+        id: hash
         run: |
-          BRANCH_NAME="${{ github.event.inputs.branch || github.ref_name }}"
-      
-          if [[ "$BRANCH_NAME" == "main" ]]; then
-            DOMAIN_NAME="${{ secrets.DOMAIN_NAME }}"
-            EC2_HOST="${{ secrets.EC2_HOST_PROD }}"
-            EC2_SSH_KEY="${{ secrets.EC2_SSH_PROD }}"
-            BRANCH="main"
-            IMAGE_TAG="latest-prod"
+          if [ -n "${{ github.event.inputs.git_hash }}" ]; then
+            hash="${{ github.event.inputs.git_hash }}"
           else
-            DOMAIN_NAME="${{ secrets.DOMAIN_NAME_STAG }}"
-            EC2_HOST="${{ secrets.EC2_HOST_STAG }}"
-            EC2_SSH_KEY="${{ secrets.EC2_SSH_KEY_STAG }}"
-            BRANCH="develop"
-            IMAGE_TAG="latest-stag"
+            hash="$(git rev-parse HEAD)"
           fi
-      
-          cat <<EOF >> $GITHUB_ENV
-          DOMAIN_NAME=$DOMAIN_NAME
-          EC2_HOST=$EC2_HOST
-          EC2_SSH_KEY=$EC2_SSH_KEY
-          BRANCH=$BRANCH
-          IMAGE_TAG=$IMAGE_TAG
-          EOF
-      
+          echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
+        
+      - name: Set environment variables based on branch
+        env:
+          BRANCH_NAME: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
+          IMAGE_TAG: ${{ github.event.inputs.branch == 'main' && 'latest-prod' || 'latest-stag' }}
+        run: |         
+          echo "BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+   
       # BUILDING AND PUSHING DOCKER IMAGE
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
+        id: configure-aws
+        continue-on-error: true
         with:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - name: Check AWS Configure status
+        shell: bash
+        run: |
+          if [ "${{ steps.configure-aws.outcome }}" != "success" ]; then
+            echo "ERROR: ❌ AWS Configure failed" >> "$LOG_FILE"
+            exit 1
+          else
+            echo "INFO: ✅ AWS Configure successful" >> "$LOG_FILE"
+          fi
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        continue-on-error: true
 
+      - name: Check ECR login status
+        shell: bash
+        run: |
+          if [ "${{ steps.login-ecr.outcome }}" != "success" ]; then
+            echo "ERROR: ❌ ECR login failed" >> "$LOG_FILE"
+            exit 1
+          else
+            echo "INFO: ✅ ECR login successful" >> "$LOG_FILE"
+          fi
+
+      - name: Set Docker tag suffix
+        id: tag
+        run: echo "tag_suffix=${{ github.event.inputs.branch == 'main' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
 
       - name: Build and Push Docker image
+        id: docker_build
         uses: docker/build-push-action@v5
+        continue-on-error: true
         with:
           context: .
           file: ./Dockerfile
+          platforms: linux/amd64
           push: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ env.GIT_HASH }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ env.IMAGE_TAG}}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.tag.outputs.tag_suffix }}
+          build-args: |
+            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+            CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
+            NEXT_PUBLIC_WEBAPP_URL=${{ secrets.NEXT_PUBLIC_WEBAPP_URL }}
+            NEXT_PUBLIC_API_V2_URL=${{ secrets.NEXT_PUBLIC_API_V2_URL }}
+            DATABASE_DIRECT_URL=${{ github.event.inputs.branch == 'main' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
 
+      - name: Log Docker build result
+        shell: bash
+        run: |
+          if [ "${{ steps.docker_build.outcome }}" != "success" ]; then
+            echo "ERROR: ❌ Docker build & push failed" >> "$LOG_FILE"
+            exit 1
+          else
+            echo "INFO: ✅ Docker build & push succeeded" >> "$LOG_FILE"
+          fi
+          
       # DEPLOYING TO EC2
       - name: SSH into EC2 and Deploy
         uses: appleboy/ssh-action@v0.1.10
+        env:
+          DOMAIN_NAME: ${{ github.event.inputs.branch == 'main' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
+          EC2_HOST: ${{ github.event.inputs.branch == 'main' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
+          EC2_SSH_KEY: ${{ github.event.inputs.branch == 'main' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
+          REPO_URL: ${{secrets.REPO_URL}}
+          BRANCH_NAME: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          REPO_NAME: ${{ secrets.REPO_NAME }}
+          CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
+          GIT_HASH: ${{ steps.hash.outputs.git_hash }}
         with:
           host: ${{ env.EC2_HOST }}
           username: "ubuntu"
           key: ${{ env.EC2_SSH_KEY }}
+          command_timeout: 1500s # 25 minutes
+          envs: DOMAIN_NAME, AWS_REGION, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, CERTBOT_EMAIL, GIT_HASH
           script: |
+            #!/bin/bash
 
-            # Change user to "cal-id"
-            sudo -i -u calid
+            #Initialize log file 
+            LOG_FILE="/home/ubuntu/deployment.log"
+            : > "$LOG_FILE"
+
+            # Function for logging with timestamp
+            log_message() {
+              local level=$1
+              local message=$2
+              echo "[$level] $message" >> "$LOG_FILE"
+              # Echo to stdout for GitHub Actions logs
+              echo "[$level] $message"
+            }
+
+            # Function to execute a command and check its status
+            exec_command() {
+              local command_name=$1
+              shift
+              local command_to_run="$1"
+
+              log_message "INFO" "Executing: $command_name"
+              log_message "DEBUG" "Command: $command_to_run"
+
+              eval "$command_to_run"
+              local status=$?
+
+              if [ $status -ne 0 ]; then
+                log_message "ERROR" "❌ $command_name failed with status $status"
+                return 1
+              else
+                log_message "INFO" "✅ $command_name completed successfully"
+                return 0
+              fi
+            }
+
+            log_message "INFO" "== Deployment Started =="
 
             # Setting up onehash-cal repo locally and pulling the latest changes
-            if [ ! -d "~/onehash-cal" ]; then
-              echo "Directory 'onehash-cal' does not exist. Cloning the repository."
+            if [ ! -d "$HOME/onehash-cal" ]; then
+              log_message "INFO" "Directory 'onehash-cal' does not exist. Cloning the repository."
               mkdir -p ~/onehash-cal
-              cd ~/onehash-cal
-              git init
-              git config core.sparseCheckout true
-              # PULLING  ONLY  THE "infra" DIRECTORY TO SAVE TIME/SPACE
-              echo ".infra/*" >> .git/info/sparse-checkout
+              cd ~/onehash-cal || { log_message "ERROR" "Failed to cd into ~/onehash-cal"; exit 1; }
+              
+              if ! exec_command "Git init" "git init"; then
+                exit 1
+              fi
+              
+              exec_command "Git sparse checkout setup" "git config core.sparseCheckout true"
+              # PULLING ONLY THE "infra" DIRECTORY TO SAVE TIME/SPACE
+              echo "infra/*" >> .git/info/sparse-checkout
 
               # ADDING THE REMOTE REPO
-              git remote add origin ${{ secrets.GITHUB_REPO }}
-              git pull origin ${{ env.BRANCH }}
-              git checkout ${{ env.BRANCH }}
-
+              if ! exec_command "Git remote add" "git remote add origin ${{env.REPO_URL}}"; then
+                exit 1
+              fi
+              
+              # Fetch the branch explicitly rather than pull
+              if ! exec_command "Git fetch" "git fetch origin ${{env.BRANCH_NAME}} --depth=1"; then
+                exit 1
+              fi
+              
+              if ! exec_command "Git checkout" "git checkout ${{env.BRANCH_NAME}}"; then
+                exit 1
+              fi
             else
-              echo "Directory 'onehash-cal' exists. Pulling the latest changes."
-              cd ~/onehash-cal
-              git pull origin ${{ env.BRANCH }}
-              git checkout ${{ env.BRANCH }}
+              log_message "INFO" "Directory 'onehash-cal' exists. Pulling the latest changes."
+              cd ~/onehash-cal || { log_message "ERROR" "Failed to cd into ~/onehash-cal"; exit 1; }
+              
+              # Fetch changes first to see what's new
+              if ! exec_command "Git fetch" "git fetch origin ${{env.BRANCH_NAME}}"; then
+                exit 1
+              fi
+              
+              # Reset to the remote branch to avoid merge conflicts
+              if ! exec_command "Git reset" "git reset --hard origin/${{env.BRANCH_NAME}}"; then
+                exit 1
+              fi
             fi
-            
 
-            # DOCKER LOGIN
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-            CURRENT_PORT=$(sudo cat /etc/nginx/conf.d/default.conf | grep proxy_pass | grep -oP '127.0.0.1:\K[0-9]+')
-            echo "Current port: $CURRENT_PORT"
+            # Set timeout for aws command to prevent hanging
+            export AWS_CLI_TIMEOUT=60
+            export AWS_SDK_TIMEOUT=60
+
+            # Login to AWS ECR with timeout
+            log_message "INFO" "Logging into AWS ECR..."
+            if ! exec_command "AWS ECR Login" "timeout 60s aws ecr get-login-password --region \"${AWS_REGION}\" | timeout 60s docker login --username AWS --password-stdin \"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com\" >> \"$LOG_FILE\" 2>&1"; then
+              log_message "ERROR" "Failed to log into ECR - exiting deployment"
+              exit 1
+            else
+              log_message "INFO" "Logged into ECR successfully."
+            fi
+
+            # Determine current and new ports
+            if [ -f /etc/nginx/conf.d/default.conf ]; then
+              if ! CURRENT_PORT=$(exec_command "Reading current port" "sudo cat /etc/nginx/conf.d/default.conf | grep proxy_pass | grep -oP '127.0.0.1:\K[0-9]+'"); then
+                CURRENT_PORT=3001
+              fi
+            else
+              CURRENT_PORT=3001
+            fi
+            log_message "INFO" "Current port: $CURRENT_PORT"
 
             # BLUE/GREEN DEPLOYMENT STRATEGY
             # Check the current port and switch to the other one
-            if [ "$CURRENT_PORT" == "3001" ]; then
-              echo "NEW_PORT"=3002 >> $GITHUB_ENV
-              echo "CONTAINER_NAME"="Green" >> $GITHUB_ENV
-              echo "Switching to port 3002(Green)"
+            if [ "$CURRENT_PORT" = "3001" ]; then
+              NEW_PORT=3002
+              CONTAINER_NAME=Green
+              log_message "INFO" "Switching to port 3002(Green)"
             else
-              echo "NEW_PORT"=3001 >> $GITHUB_ENV
-              echo "CONTAINER_NAME"="Blue" >> $GITHUB_ENV
-              echo "Switching to port 3001(Blue)"
+              NEW_PORT=3001
+              CONTAINER_NAME=Blue
+              log_message "INFO" "Switching to port 3001(Blue)"
             fi
 
             # Build the Docker image with the new port
-            echo "Building Docker image with new port: $NEW_PORT"
-            cd ~/onehash-cal/infra/docker/web
+            log_message "INFO" "Building Docker image with new port: $NEW_PORT"
+            cd ~/onehash-cal/infra/docker/web || { log_message "ERROR" "Failed to cd into ~/onehash-cal/infra/docker/web"; exit 1; }
 
-            # Spinning up docker container with "DOCKER_USERNAME", "DOCKER_IMAGE_NAME", "DOCKER_IMAGE_TAG","CONTAINER_NAME", "CURRENT_PORT"
-            AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }} \
-            AWS_REGION=${{ secrets.AWS_REGION }} \
-            REPO_NAME=${{ secrets.REPO_NAME }} \
-            DOCKER_IMAGE_TAG=${{ env.GIT_HASH }} \
-            CONTAINER_NAME=${{ env.CONTAINER_NAME }} \
-            NEW_PORT=${{ env.NEW_PORT }} \
-            docker compose -f docker-compose-start.yml up -d --build --remove-orphans --force-recreate --no-deps app
-            echo "Docker container started with new port: $NEW_PORT"
-
-            #HEALTH CHECK
-            echo "Waiting for the application to be healthy..."
-            for i in {1..30}; do
-              if curl -s -o /dev/null -w "%{http_code}" http://
-                localhost:${NEW_PORT}/api/health | grep -q "200"; then
-                echo "Application is healthy!"
-                break
-              fi
-              echo "Waiting for the application to be healthy..."
-              sleep 5
-            done
-            if [ $i -eq 30 ]; then
-              echo "Application did not become healthy in time. Exiting."
+            if [ ! -d "$HOME/onehash-cal/infra/docker/web" ]; then
+              log_message "ERROR" "Directory 'onehash-cal/infra/docker/web' does not exist. Exiting."
               exit 1
             fi
 
+            # Stop and remove any existing container with the same name
+            docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            log_message "INFO" "Removed any existing container with name $CONTAINER_NAME"
 
-            # MOVING THE TEMPLATE NGINX CONFIG FILE FROM REPO TO /etc/nginx/conf.d/default.conf
-            echo "Moving nginx config file to /etc/nginx/conf.d/default.conf"
-            sudo cp -f infra/docker/web/nginx.config /etc/nginx/conf.d/default.conf
-            echo "Nginx config file moved to /etc/nginx/conf.d/default.conf"
+            #Running container
+            log_message "INFO" "Starting Docker container '$CONTAINER_NAME' on port $NEW_PORT"
 
-            # REPLACING TEMPLATES PLACEHOLDER IN NGINX CONFIG FILE
-            echo "Replacing placeholders 'PORT_PLACEHOLDER' and 'DOMAIN_PLACEHOLDER' in nginx config file"
-            sudo sed -i "s/PORT_PLACEHOLDER/${{ env.NEW_PORT }}/g" /etc/nginx/conf.d/default.conf
-            sudo sed -i "s/DOMAIN_PLACEHOLDER/${{ env.DOMAIN_NAME }}/g" /etc/nginx/conf.d/default.conf
-            echo "Placeholders replaced in nginx config file"
+            AWS_ACCOUNT_ID=${{ env.AWS_ACCOUNT_ID }}
+            AWS_REGION=${{ env.AWS_REGION }}
+            REPO_NAME=${{ env.REPO_NAME }}
+            DOCKER_IMAGE_TAG=${{ env.GIT_HASH }}
 
-            # GENERATING NEW SSL CERTIFICATE USING CERTBOT
-            echo "Generating new SSL certificate using certbot"
-            sudo certbot --nginx -d ${{ env.DOMAIN_NAME }} --non-interactive --agree-tos -m ${{ secrets.CERTBOT_EMAIL }} --redirect
-            echo "New SSL certificate generated using certbot"
-
-            # RELOADING NGINX CONFIGURATION
-            echo "Reloading nginx configuration"
-            sudo nginx -s reload
-            echo "Nginx configuration reloaded"
-
-            # STOPPING THE OLD DOCKER CONTAINER
-            echo "Stopping the old Docker container"
-            if [ "$CURRENT_PORT" == "3001" ]; then
-              docker stop Blue
+            if ! exec_command "Docker run" "docker run -d -it --name \"$CONTAINER_NAME\" --env-file \"$HOME/.env\" -p ${NEW_PORT}:3001 \"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:${DOCKER_IMAGE_TAG}\""; then
+              log_message "ERROR" "❌ Failed to start Docker container '$CONTAINER_NAME' - aborting deployment"
+              exit 1
             else
-              docker stop Green
+              log_message "INFO" "✅ Docker container '$CONTAINER_NAME' started successfully on port $NEW_PORT"
             fi
 
-            # Prune unused Docker images and containers older than 72 hours
-            docker system prune -af --filter "until=72h"
+            # HEALTH CHECK with progress tracking and better error handling
+            log_message "INFO" "Starting health checks for application on port $NEW_PORT"
+            HEALTH_CHECK_SUCCESS=false
+
+            for i in {1..30}; do
+              log_message "INFO" "Health check attempt $i/30"
+              
+              # Use timeout for curl to prevent hanging
+              STATUS_CODE=$(timeout 10s curl -s -o /dev/null -w "%{http_code}" "http://localhost:${NEW_PORT}/api/health" || echo "FAILED")
+              
+              if [ "$STATUS_CODE" = "200" ]; then
+                log_message "INFO" "✅ Application is healthy! Status code: $STATUS_CODE"
+                HEALTH_CHECK_SUCCESS=true
+                break
+              fi
+              log_message "WARN" "⏳ Still waiting... Attempt $i/30 - Status code: $STATUS_CODE"
+              sleep 30
+            done
+              
+            if [ "$HEALTH_CHECK_SUCCESS" != "true" ]; then
+              log_message "ERROR" "❌ Application did not become healthy after 30 attempts. Checking container logs..."
+              docker logs "$CONTAINER_NAME" >> "$LOG_FILE" 2>&1
+              log_message "ERROR" "Deployment failed - application didn't pass health checks"
+              exit 1
+            fi
+
+            # NGINX configuration
+            log_message "INFO" "Configuring NGINX"
+
+            NGINX_CONF_PATH="/etc/nginx/conf.d/default.conf"
+            TEMPLATE_PATH="$HOME/onehash-cal/infra/docker/web/nginx.template.conf"
+
+            # Check if template exists
+            if [ ! -f "$TEMPLATE_PATH" ]; then
+              log_message "ERROR" "❌ NGINX template not found at $TEMPLATE_PATH"
+              exit 1
+            fi
+
+            # Remove default site
+            log_message "INFO" "Removing default NGINX site (if any)"
+            if ! exec_command "Removing default site" "sudo rm -f /etc/nginx/sites-enabled/default"; then
+              log_message "WARN" "⚠️ Could not remove default site, continuing anyway"
+            fi
+
+            # Copy template
+            log_message "INFO" "Copying nginx template to $NGINX_CONF_PATH"
+            if ! exec_command "Copy nginx config" "sudo cp -f \"$TEMPLATE_PATH\" \"$NGINX_CONF_PATH\""; then
+              log_message "ERROR" "Failed to copy NGINX config template"
+              exit 1
+            fi
+
+            # Replace placeholders
+            log_message "INFO" "Replacing 'PORT_PLACEHOLDER' and 'DOMAIN_PLACEHOLDER'"
+            if ! exec_command "Replace PORT" "sudo sed -i \"s/PORT_PLACEHOLDER/$NEW_PORT/g\" \"$NGINX_CONF_PATH\""; then
+              exit 1
+            fi
+
+            if ! exec_command "Replace DOMAIN" "sudo sed -i \"s/DOMAIN_PLACEHOLDER/$DOMAIN_NAME/g\" \"$NGINX_CONF_PATH\""; then
+              exit 1
+            fi
+
+            # Test NGINX config
+            log_message "INFO" "Testing NGINX config before reload"
+            if ! exec_command "NGINX config test" "sudo nginx -t >> \"$LOG_FILE\" 2>&1"; then
+              log_message "ERROR" "NGINX configuration test failed"
+              cat "$LOG_FILE"
+              exit 1
+            fi
+
+            # Reload NGINX
+            log_message "INFO" "Reloading NGINX (pre-certbot)"
+            if ! exec_command "NGINX reload" "sudo nginx -s reload"; then
+              exit 1
+            fi
+
+            # SSL Certificate with certbot
+            log_message "INFO" "Generating SSL cert for $DOMAIN_NAME"
+            # Add a timeout to certbot to prevent hanging
+            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx -d \"$DOMAIN_NAME\" --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect >> \"$LOG_FILE\" 2>&1"; then
+              log_message "WARN" "⚠️ Certbot SSL generation may have issues, but continuing with deployment"
+            fi
+
+            # Final NGINX test & reload
+            log_message "INFO" "Testing final nginx config after certbot changes"
+            if ! exec_command "NGINX config test post-certbot" "sudo nginx -t >> \"$LOG_FILE\" 2>&1"; then
+              exit 1
+            fi
+
+            log_message "INFO" "Reloading nginx configuration"
+            if ! exec_command "NGINX final reload" "sudo nginx -s reload"; then
+              exit 1
+            fi
+
+            # Clean up old container
+            log_message "INFO" "Stopping the old Docker container"
+            if [ "$CURRENT_PORT" == "3001" ]; then
+              exec_command "Remove old Blue container" "docker rm -f Blue >> \"$LOG_FILE\" 2>&1" || log_message "WARN" "⚠️ Failed to remove old Blue container (might not exist)"
+            else
+              exec_command "Remove old Green container" "docker rm -f Green >> \"$LOG_FILE\" 2>&1" || log_message "WARN" "⚠️ Failed to remove old Green container (might not exist)"
+            fi
+
+            # Cleanup Docker images
+            log_message "INFO" "Pruning unused Docker images and containers older than 72 hours"
+            if ! exec_command "Docker pruning" "docker system prune -af --filter \"until=72h\" >> \"$LOG_FILE\" 2>&1"; then
+              log_message "WARN" "⚠️ Docker pruning had issues but deployment completed"
+            fi
+
+            log_message "INFO" "✅ == Deployment Completed Successfully =="
+
+            # Output log summary at the end for GitHub Actions log
+            echo "========= DEPLOYMENT LOG SUMMARY ========="
+            grep -E "ERROR|WARN" "$LOG_FILE" || echo "No errors or warnings found in deployment"
+            echo "======================================="
+
+      # APPENDING EC2 LOG FILE INTO CURRENT RUNNER LOGFILE
+      - name: Copy VPC logs to runner environment
+        uses: nicklasfrahm/scp-action@main
+        env:
+          EC2_HOST: ${{ github.event.inputs.branch == 'main' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
+          EC2_SSH_KEY: ${{ github.event.inputs.branch == 'main' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
+        with:
+          direction:  download
+          host: ${{ env.EC2_HOST }}
+
+          fingerprint: ${{ secrets.SSH_TARGET_FINGERPRINT }}
+          insecure_ignore_fingerprint : true
+          
+          username: "ubuntu"
+          key: ${{ env.EC2_SSH_KEY }}
+          source: '/home/ubuntu/deployment.log'
+          target: './deployment.log'
+       
+      # NOTIFY LOGS ACTION
+      - name: Send deployment status email
+        if: always()
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO}}
+          EMAIL_FROM: ${{secrets.EMAIL_FROM}}
+          LOG_FILE: ${{ env.LOG_FILE }}
+        run: |
+
+          # Appending vpc logs to runner logs
+          [ -f ./deployment.log ] && cat ./deployment.log >> "$LOG_FILE"
+
+          LOG_SNIPPET=$(cat "$LOG_FILE" | jq -Rs .)
+          echo "LOG_SNIPPET $LOG_SNIPPET"
+
+          ENVIRONMENT=$([ "${{ github.event.inputs.branch }}" = "main" ] && echo "PRODUCTION" || echo "STAGING")
+          SUBJECT="CAL ID $ENVIRONMENT Deployment Status "
+          BODY=$(jq -Rs --arg sha "${{ github.sha }}" \
+                  --arg status "$([ '${{ job.status }}' = 'success' ] && echo 'Successful' || echo 'Failed')" \
+                  --arg actor "${{ github.actor }}" \
+                  --arg branch "${{ github.ref_name }}" \
+                  --arg runid "${{ github.run_id }}" \
+                  --arg logs "$LOG_SNIPPET" '
+                  "✅ DEPLOYMENT Notification\n\nCommit: \($sha)\nStatus: \($status)\nUser: \($actor)\nBranch: \($branch)\n\nLogs: https://github.com/${{ github.repository }}/actions/runs/\($runid)\n\n--- Workflow Log Snippet ---\n\($logs | fromjson)"
+                ' <<< "")
+
+          echo "Log_body $BODY"
+
+          curl --request POST \
+            --url https://api.sendgrid.com/v3/mail/send \
+            --header "Authorization: Bearer $SENDGRID_API_KEY" \
+            --header 'Content-Type: application/json' \
+            --data @- <<EOF
+            {
+              "personalizations": [
+                {
+                  "to": [
+                    {
+                      "email": "${EMAIL_TO}"
+                    }
+                  ]
+                }
+              ],
+              "from": {
+                "email": "${EMAIL_FROM}"
+              },
+              "subject": "${SUBJECT}",
+              "content": [
+                {
+                  "type": "text/plain",
+                  "value": $BODY
+                }
+              ]
+            }
+          EOF
+
+          echo "Email sent successfully!"
