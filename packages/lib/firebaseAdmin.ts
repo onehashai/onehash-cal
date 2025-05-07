@@ -56,6 +56,19 @@ class FirebaseService {
         android: {
           priority: "high" as "high" | "normal",
         },
+        // APNS (Apple) config
+        apns: {
+          payload: {
+            aps: {
+              contentAvailable: true,
+            },
+          },
+          headers: {
+            "apns-push-type": "background",
+            "apns-priority": "5", // Must be `5` when `contentAvailable` is set to true.
+            "apns-topic": "io.flutter.plugins.firebase.messaging", // bundle identifier
+          },
+        },
       };
       const response = await admin.messaging().send(message);
       return response;

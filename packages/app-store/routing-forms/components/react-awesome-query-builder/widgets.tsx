@@ -9,7 +9,7 @@ import type {
 } from "react-awesome-query-builder";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { Button as CalButton, TextField, TextArea } from "@calcom/ui";
+import { Button as CalButton, TextField, TextArea, DatePicker } from "@calcom/ui";
 import { Icon } from "@calcom/ui";
 
 const Select = dynamic(
@@ -362,6 +362,44 @@ const FieldSelect = function FieldSelect(props: FieldProps) {
 
 const Provider = ({ children }: ProviderProps) => children;
 
+const DatePickerWidget = ({
+  value,
+  setValue,
+  readOnly,
+  placeholder,
+  customProps,
+  type,
+  name,
+  ...remainingProps
+}: TextLikeComponentPropsRAQB) => {
+  const onChange = (date: Date | null) => {
+    if (date) {
+      console.log(value);
+      console.log(name);
+      setValue(date.toDateString());
+    } else {
+      setValue("");
+    }
+  };
+
+  const dateValue = value ? new Date(value) : null;
+
+  return (
+    <div className="w-full">
+      <DatePicker
+        date={dateValue || new Date()}
+        onDatesChange={(date) => onChange(date)}
+        disabled={readOnly}
+        // name={name}
+        // type={type}
+        // onChange={(date: any) => onChange(date)}
+        {...customProps}
+        {...remainingProps}
+      />
+    </div>
+  );
+};
+
 const widgets = {
   TextWidget,
   TextAreaWidget,
@@ -373,6 +411,7 @@ const widgets = {
   ButtonGroup,
   Conjs,
   Provider,
+  DatePickerWidget,
 };
 
 export default widgets;
