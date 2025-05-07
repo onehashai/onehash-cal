@@ -107,10 +107,10 @@ jobs:
         shell: bash
         run: |
           if [ "${{ steps.configure-aws.outcome }}" != "success" ]; then
-            echo "ERROR: ❌ AWS Configure failed" >> "$LOG_FILE"
+            echo "[ERROR]: ❌ AWS Configure failed" >> "$LOG_FILE"
             exit 1
           else
-            echo "INFO: ✅ AWS Configure successful" >> "$LOG_FILE"
+            echo "[INFO]: ✅ AWS Configure successful" >> "$LOG_FILE"
           fi
 
       - name: Login to Amazon ECR
@@ -122,10 +122,10 @@ jobs:
         shell: bash
         run: |
           if [ "${{ steps.login-ecr.outcome }}" != "success" ]; then
-            echo "ERROR: ❌ ECR login failed" >> "$LOG_FILE"
+            echo "[ERROR]: ❌ ECR login failed" >> "$LOG_FILE"
             exit 1
           else
-            echo "INFO: ✅ ECR login successful" >> "$LOG_FILE"
+            echo "[INFO]: ✅ ECR login successful" >> "$LOG_FILE"
           fi
 
       - name: Set Docker tag suffix
@@ -156,10 +156,10 @@ jobs:
         shell: bash
         run: |
           if [ "${{ steps.docker_build.outcome }}" != "success" ]; then
-            echo "ERROR: ❌ Docker build & push failed" >> "$LOG_FILE"
+            echo "[ERROR]: ❌ Docker build & push failed" >> "$LOG_FILE"
             exit 1
           else
-            echo "INFO: ✅ Docker build & push succeeded" >> "$LOG_FILE"
+            echo "[INFO]: ✅ Docker build & push succeeded" >> "$LOG_FILE"
           fi
           
       # DEPLOYING TO EC2
@@ -195,7 +195,7 @@ jobs:
             log_message() {
               local level=$1
               local message=$2
-              echo "[$level] $message" >> "$LOG_FILE"
+              echo "[VPC][$level] $message" >> "$LOG_FILE"
               # Echo to stdout for GitHub Actions logs
               echo "[$level] $message"
             }
@@ -221,7 +221,7 @@ jobs:
               fi
             }
 
-            log_message "INFO" "== Deployment Started =="
+            log_message "INFO" "==VPC LOGS =="
 
             # Setting up onehash-cal repo locally and pulling the latest changes
             if [ ! -d "$HOME/onehash-cal" ]; then
