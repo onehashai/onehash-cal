@@ -25,7 +25,7 @@ export const ZUpdateInputSchema = z.object({
       sender: z.string().nullable(),
       senderName: z.string().nullable(),
       includeCalendarEvent: z.boolean(),
-      disableOnMarkNoShow: z.boolean().nullable(),
+      disableOnMarkNoShow: z.boolean().nullable().optional(),
     })
     .array(),
   trigger: z.enum(WORKFLOW_TRIGGER_EVENTS),
