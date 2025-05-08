@@ -58,6 +58,8 @@ RUN set -eux; \
     apt-get update -qq && \
     apt-get install -y build-essential openssl pkg-config python-is-python3 && \
     apt-get clean && \
+    # required for accessing psql inside of container, when running psql on host ,rather than on remote service like RDS
+    apt-get update && apt-get install -y postgresql-client && \ 
     rm -rf /var/lib/apt/lists /var/cache/apt/archives && \
     yarn config set httpTimeout 1200000
 
