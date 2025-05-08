@@ -22,7 +22,11 @@ export const DateSelect = () => {
 
   const { filter, setConfigFilters } = useFilterContext();
   const currentDate = dayjs();
-  const [initialStartDate, initialEndDate, range] = filter?.dateRange || [null, null, null];
+  const [initialStartDate, initialEndDate, range] = filter?.dateRange || [
+    dayjs().subtract(1, "week").startOf("day"),
+    dayjs().endOf("day"),
+    "w",
+  ];
   const [startDate, setStartDate] = useState<Dayjs>(initialStartDate);
   const [endDate, setEndDate] = useState<Dayjs | undefined>(initialEndDate);
   const startValue = startDate.toDate();

@@ -24,9 +24,10 @@ export const WorkflowStatusLineChart = () => {
     selectedType,
   } = filter;
   const initialConfigIsReady = !!(initialConfig?.teamId || initialConfig?.userId || initialConfig?.isAll);
-  const [startDate, endDate] = dateRange;
-
-  if (!startDate || !endDate) return null;
+  let [startDate, endDate] = dateRange;
+  if (!startDate || !endDate) {
+    (startDate = dayjs().subtract(1, "week").startOf("day")), (endDate = dayjs().endOf("day"));
+  }
 
   const {
     data: eventsTimeLine,
@@ -34,7 +35,7 @@ export const WorkflowStatusLineChart = () => {
     isPending,
   } = trpc.viewer.insights.workflowsTimeline.useQuery(
     {
-      timeView: selectedTimeView,
+      timeView: selectedTimeView || "week",
       startDate: dayjs.utc(startDate).toISOString(),
       endDate: dayjs.utc(endDate).toISOString(),
       teamId: selectedTeamId ?? undefined,
@@ -64,7 +65,7 @@ export const WorkflowStatusLineChart = () => {
         data={eventsTimeLine ?? []}
         categories={["Sent", "Read", "Failed", "Total"]}
         index="formattedDate"
-        colors={["purple", "green", "blue", "red"]}
+        colors={["green", "blue", "red", "purple"]}
         valueFormatter={valueFormatter}
       />
     </CardInsights>

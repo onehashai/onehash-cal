@@ -22,7 +22,6 @@ export const WorkflowKPICards = () => {
   } = filter;
   const initialConfigIsReady = !!(initialConfig?.teamId || initialConfig?.userId || initialConfig?.isAll);
   const [startDate, endDate] = dateRange;
-
   const { data, isSuccess, isPending } = trpc.viewer.insights.workflowsByStatus.useQuery(
     {
       startDate: startDate.toISOString(),
@@ -40,7 +39,6 @@ export const WorkflowKPICards = () => {
       enabled: initialConfigIsReady,
     }
   );
-
   const categories: {
     title: string;
     index: "total" | "sentCount" | "readCount" | "failedCount";
