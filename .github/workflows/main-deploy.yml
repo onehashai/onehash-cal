@@ -22,7 +22,9 @@ on:
         description: "Override Git commit hash"
         required: false
         default: ""
-    
+concurrency:
+  group: ${{ github.workflow }}
+  
 jobs:
   # ONLY RUN JOB ON PR MERGE on MAIN OR DEVELOP BRANCH
   build-push-deploy:
