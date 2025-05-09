@@ -14,24 +14,9 @@ ARG NEXTAUTH_SECRET
 ARG CALENDSO_ENCRYPTION_KEY
 ARG NEXT_PUBLIC_WEBAPP_URL
 ARG NEXT_PUBLIC_API_V2_URL
-ARG DATABASE_DIRECT_URL
-
 ARG MAX_OLD_SPACE_SIZE=8192
 
-ENV NEXTAUTH_URL=${NEXTAUTH_URL} \
-    NEXTAUTH_SECRET=${NEXTAUTH_SECRET} \
-    CALENDSO_ENCRYPTION_KEY=${CALENDSO_ENCRYPTION_KEY} \
-    NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL} \
-    NEXT_PUBLIC_API_V2_URL=${NEXT_PUBLIC_API_V2_URL} \
-    DATABASE_DIRECT_URL=$DATABASE_DIRECT_URL \
-    NODE_OPTIONS=--max-old-space-size=${MAX_OLD_SPACE_SIZE} \
-    BUILD_STANDALONE=true \
-    NODE_ENV=production \
-    CI=1
-
-
 COPY . .
-
 
 # Install env dependencies
 RUN set -eux; \
@@ -41,18 +26,23 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives && \
     yarn config set httpTimeout 1200000
 
-
-RUN   yarn install && yarn build
+RUN export NEXTAUTH_URL=${NEXTAUTH_URL} && \
+export NEXTAUTH_SECRET=${NEXTAUTH_SECRET} && \
+export CALENDSO_ENCRYPTION_KEY=${CALENDSO_ENCRYPTION_KEY} && \
+export NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL} && \
+export NEXT_PUBLIC_API_V2_URL=${NEXT_PUBLIC_API_V2_URL} && \
+export NODE_OPTIONS=--max-old-space-size=${MAX_OLD_SPACE_SIZE} && \
+export BUILD_STANDALONE=true && \
+export NODE_ENV=production && \
+export CI=1 && \
+yarn install && yarn build
 
 RUN rm -rf node_modules/.cache .yarn/cache apps/web/.next/cache
-
 
 # ---------- Stage 2: Production ----------
 
 FROM node:${NODE_VERSION}-slim AS production
 
-# Enabling Corepack + specific Yarn version
-# RUN corepack enable && corepack prepare yarn@3.4.1 --activate
 
 RUN set -eux; \
     apt-get update -qq && \

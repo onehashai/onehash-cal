@@ -37,12 +37,13 @@ jobs:
           echo "LOG_FILE=workflow.log" >> $GITHUB_ENV
           echo "Logging started" > workflow.log
       
-      - name: Confirm secrets are present
+      - name: Check for required secrets
+        id: check_required_secrets_status
         run: |
           check() {
             if [ -z "$1" ]; then
               echo "$2 is EMPTY ❌" | tee -a $LOG_FILE
-              exit 1
+              echo "passed=failure" >> $GITHUB_OUTPUT
             else
               echo "$2 is SET ✅"
             fi
@@ -60,19 +61,16 @@ jobs:
           check "${{ secrets.REPO_URL }}" "REPO_URL"
           check "${{ secrets.AWS_ACCOUNT_ID }}" "AWS_ACCOUNT_ID"
           check "${{ secrets.CERTBOT_EMAIL }}" "CERTBOT_EMAIL"
-          check "${{ secrets.NEXTAUTH_URL }}" "NEXTAUTH_URL"
           check "${{ secrets.NEXTAUTH_SECRET }}" "NEXTAUTH_SECRET"
           check "${{ secrets.CALENDSO_ENCRYPTION_KEY }}" "CALENDSO_ENCRYPTION_KEY"
-          check "${{ secrets.NEXT_PUBLIC_WEBAPP_URL }}" "NEXT_PUBLIC_WEBAPP_URL"
           check "${{ secrets.NEXT_PUBLIC_API_V2_URL }}" "NEXT_PUBLIC_API_V2_URL"
-          check "${{ secrets.DATABASE_DIRECT_URL_PROD }}" "DATABASE_DIRECT_URL_PROD"
-          check "${{ secrets.DATABASE_DIRECT_URL_STAG }}" "DATABASE_DIRECT_URL_STAG"
           check "${{ secrets.SENDGRID_API_KEY }}" "SENDGRID_API_KEY"
           check "${{ secrets.EMAIL_TO }}" "EMAIL_TO"
           check "${{ secrets.EMAIL_FROM }}" "EMAIL_FROM"
           
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
+        if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
         id: hash
         run: |
           if [ -n "${{ github.event.inputs.git_hash }}" ]; then
@@ -83,18 +81,21 @@ jobs:
           echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
         
       - name: Set environment variables based on branch
+        if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
         env:
           BRANCH_NAME: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
           IMAGE_TAG: ${{ github.event.inputs.branch == 'main' && 'latest-prod' || 'latest-stag' }}
         run: |         
           echo "BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-   
+
       # BUILDING AND PUSHING DOCKER IMAGE
       - name: Set up Docker Buildx
+        id: setup_docker
         uses: docker/setup-buildx-action@v3
 
       - name: Configure AWS Credentials
+        if: ${{ steps.setup_docker.outcome == 'success' }}
         uses: aws-actions/configure-aws-credentials@v1
         id: configure-aws
         continue-on-error: true
@@ -108,31 +109,35 @@ jobs:
         run: |
           if [ "${{ steps.configure-aws.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ AWS Configure failed" >> "$LOG_FILE"
-            exit 1
           else
             echo "[INFO]: ✅ AWS Configure successful" >> "$LOG_FILE"
           fi
 
       - name: Login to Amazon ECR
+        if: ${{steps.configure-aws.outcome == 'success'}}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         continue-on-error: true
 
       - name: Check ECR login status
         shell: bash
+        if: ${{steps.configure-aws.outcome == 'success'}}
         run: |
           if [ "${{ steps.login-ecr.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ ECR login failed" >> "$LOG_FILE"
-            exit 1
           else
             echo "[INFO]: ✅ ECR login successful" >> "$LOG_FILE"
+            echo "passed=success" >> $GITHUB_OUTPUT
           fi
 
       - name: Set Docker tag suffix
+        if: ${{ steps.login-ecr.outcome == 'success' }}
         id: tag
-        run: echo "tag_suffix=${{ github.event.inputs.branch == 'main' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
+        run: |
+          echo "tag_suffix=${{ github.event.inputs.branch == 'main' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
 
       - name: Build and Push Docker image
+        if: ${{ steps.login-ecr.outcome == 'success' }}
         id: docker_build
         uses: docker/build-push-action@v5
         continue-on-error: true
@@ -145,28 +150,29 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.tag.outputs.tag_suffix }}
           build-args: |
-            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+            NEXTAUTH_URL=${{ github.event.inputs.branch == 'main' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
             NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
             CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
-            NEXT_PUBLIC_WEBAPP_URL=${{ secrets.NEXT_PUBLIC_WEBAPP_URL }}
+            NEXT_PUBLIC_WEBAPP_URL=${{ format('https://{0}', github.event.inputs.branch == 'main' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG) }}
             NEXT_PUBLIC_API_V2_URL=${{ secrets.NEXT_PUBLIC_API_V2_URL }}
-            DATABASE_DIRECT_URL=${{ github.event.inputs.branch == 'main' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
 
-      - name: Log Docker build result
+      - name: Check Docker build status
         shell: bash
+        id : check_docker_build_status
+        if: ${{ steps.login-ecr.outcome == 'success' }}
         run: |
           if [ "${{ steps.docker_build.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ Docker build & push failed" >> "$LOG_FILE"
-            exit 1
           else
             echo "[INFO]: ✅ Docker build & push succeeded" >> "$LOG_FILE"
           fi
           
       # DEPLOYING TO EC2
       - name: SSH into EC2 and Deploy
+        if: ${{ steps.docker_build.outcome == 'success' }}
         uses: appleboy/ssh-action@v0.1.10
         env:
-          DOMAIN_NAME: ${{ github.event.inputs.branch == 'main' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
+          DOMAIN_NAME: ${{github.event.inputs.branch == 'main' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
           EC2_HOST: ${{ github.event.inputs.branch == 'main' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
           EC2_SSH_KEY: ${{ github.event.inputs.branch == 'main' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
           REPO_URL: ${{secrets.REPO_URL}}
@@ -279,12 +285,11 @@ jobs:
             fi
 
             # Determine current and new ports
-            if [ -f /etc/nginx/conf.d/default.conf ]; then
-              if ! CURRENT_PORT=$(exec_command "Reading current port" "sudo cat /etc/nginx/conf.d/default.conf | grep proxy_pass | grep -oP '127.0.0.1:\K[0-9]+'"); then
-                CURRENT_PORT=3001
-              fi
-            else
+            PORT=$(sudo grep -oP '127.0.0.1:\K[0-9]+' /etc/nginx/conf.d/default.conf 2>/dev/null || echo "")
+            if [ -z "$PORT" ]; then
               CURRENT_PORT=3001
+            else
+              CURRENT_PORT=$PORT
             fi
             log_message "INFO" "Current port: $CURRENT_PORT"
 
@@ -321,7 +326,7 @@ jobs:
             REPO_NAME=${{ env.REPO_NAME }}
             DOCKER_IMAGE_TAG=${{ env.GIT_HASH }}
 
-            if ! exec_command "Docker run" "docker run -d -it --name \"$CONTAINER_NAME\" --env-file \"$HOME/.env\" -p ${NEW_PORT}:3001 \"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:${DOCKER_IMAGE_TAG}\""; then
+            if ! exec_command "Docker run" "docker run -d -it --name \"$CONTAINER_NAME\" --env-file \"$HOME/.env\" -p ${NEW_PORT}:3001 --add-host=host.docker.internal:host-gateway \"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:${DOCKER_IMAGE_TAG}\""; then
               log_message "ERROR" "❌ Failed to start Docker container '$CONTAINER_NAME' - aborting deployment"
               exit 1
             else
@@ -391,9 +396,8 @@ jobs:
 
             # Test NGINX config
             log_message "INFO" "Testing NGINX config before reload"
-            if ! exec_command "NGINX config test" "sudo nginx -t >> \"$LOG_FILE\" 2>&1"; then
+            if ! exec_command "NGINX config test" "sudo nginx -t"; then
               log_message "ERROR" "NGINX configuration test failed"
-              cat "$LOG_FILE"
               exit 1
             fi
 
@@ -406,13 +410,13 @@ jobs:
             # SSL Certificate with certbot
             log_message "INFO" "Generating SSL cert for $DOMAIN_NAME"
             # Add a timeout to certbot to prevent hanging
-            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx -d \"$DOMAIN_NAME\" --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect >> \"$LOG_FILE\" 2>&1"; then
+            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx -d \"$DOMAIN_NAME\" --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect"; then
               log_message "WARN" "⚠️ Certbot SSL generation may have issues, but continuing with deployment"
             fi
 
             # Final NGINX test & reload
             log_message "INFO" "Testing final nginx config after certbot changes"
-            if ! exec_command "NGINX config test post-certbot" "sudo nginx -t >> \"$LOG_FILE\" 2>&1"; then
+            if ! exec_command "NGINX config test post-certbot" "sudo nginx -t"; then
               exit 1
             fi
 
@@ -424,14 +428,14 @@ jobs:
             # Clean up old container
             log_message "INFO" "Stopping the old Docker container"
             if [ "$CURRENT_PORT" == "3001" ]; then
-              exec_command "Remove old Blue container" "docker rm -f Blue >> \"$LOG_FILE\" 2>&1" || log_message "WARN" "⚠️ Failed to remove old Blue container (might not exist)"
+              exec_command "Remove old Blue container" "docker rm -f Blue" || log_message "WARN" "⚠️ Failed to remove old Blue container (might not exist)"
             else
-              exec_command "Remove old Green container" "docker rm -f Green >> \"$LOG_FILE\" 2>&1" || log_message "WARN" "⚠️ Failed to remove old Green container (might not exist)"
+              exec_command "Remove old Green container" "docker rm -f Green" || log_message "WARN" "⚠️ Failed to remove old Green container (might not exist)"
             fi
 
             # Cleanup Docker images
             log_message "INFO" "Pruning unused Docker images and containers older than 72 hours"
-            if ! exec_command "Docker pruning" "docker system prune -af --filter \"until=72h\" >> \"$LOG_FILE\" 2>&1"; then
+            if ! exec_command "Docker pruning" "docker system prune -af --filter \"until=72h\""; then
               log_message "WARN" "⚠️ Docker pruning had issues but deployment completed"
             fi
 
@@ -445,6 +449,7 @@ jobs:
       # APPENDING EC2 LOG FILE INTO CURRENT RUNNER LOGFILE
       - name: Copy VPC logs to runner environment
         uses: nicklasfrahm/scp-action@main
+        if: ${{ steps.docker_build.outcome == 'success' }}
         env:
           EC2_HOST: ${{ github.event.inputs.branch == 'main' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
           EC2_SSH_KEY: ${{ github.event.inputs.branch == 'main' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
