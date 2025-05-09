@@ -24,11 +24,11 @@ on:
         default: ""
 concurrency:
   group: ${{ github.workflow }}
-  
+
 jobs:
   # ONLY RUN JOB ON PR MERGE on MAIN OR DEVELOP BRANCH
   build-push-deploy:
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/deploy'
     runs-on: ubuntu-latest      
 
     steps:
