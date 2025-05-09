@@ -1,6 +1,9 @@
 name: Build, Push Docker Image, Deploy to EC2
 
 on:
+  push:
+      branches:
+        - deploy
   pull_request:
     types:
       - closed  
