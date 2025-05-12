@@ -17,12 +17,12 @@
     },
     "@calcom/prisma#db-deploy": {
       "cache": false,
-      "dependsOn": ["@calcom/web#build"],
+      "dependsOn": [],
       "inputs": ["./schema.prisma", "./migrations/**/*.sql"]
     },
     "@calcom/web#start": {
       "cache": false,
-      "dependsOn": []
+      "dependsOn": ["@calcom/prisma#db-deploy"]
     },
     "type-check": {
       "cache": false

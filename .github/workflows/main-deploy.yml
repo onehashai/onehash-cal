@@ -2,16 +2,14 @@ name: Build, Push Docker Image, Deploy to EC2
 
 on:
   push:
-      branches:
-        - deploy
+    branches:
+      - deploy
   pull_request:
     types:
       - closed  
     branches:
       - main
       - develop
-  # Trigger the workflow manually
-  # This allows you to run the workflow without a code change
   workflow_dispatch:
     inputs:
       branch:
@@ -22,6 +20,7 @@ on:
         description: "Override Git commit hash"
         required: false
         default: ""
+
 concurrency:
   group: ${{ github.workflow }}
 
