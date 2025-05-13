@@ -107,7 +107,14 @@ export async function getConnectedApps({
       return teamApp.credentials ? teamApp.credentials.flat() : [];
     });
     if (!includeTeamInstalledApps || teamId) {
-      credentials = teamAppCredentials;
+      const isOwnerOfEventTeam = userTeams.some(
+        (t) => t?.id === teamId && t.members.some((m) => m.role === "OWNER")
+      );
+
+      //BYPASS Razorpay for team owner into the available app for event types
+      credentials = isOwnerOfEventTeam
+        ? credentials.filter((cr) => cr.appId === "razorpay").concat(teamAppCredentials)
+        : teamAppCredentials;
     } else {
       credentials = credentials.concat(teamAppCredentials);
     }
