@@ -55,9 +55,11 @@ jobs:
           check "${{ secrets.DOMAIN_NAME_STAG }}" "DOMAIN_NAME_STAG"
           check "${{ secrets.EC2_HOST_STAG }}" "EC2_HOST_STAG"
           check "${{ secrets.EC2_SSH_KEY_STAG }}" "EC2_SSH_KEY_STAG"
+          check "${{ secrets.DATABASE_DIRECT_URL_STAG}}" "DATABASE_DIRECT_URL_STAG"
           check "${{ secrets.DOMAIN_NAME_PROD }}" "DOMAIN_NAME_PROD"
           check "${{ secrets.EC2_HOST_PROD }}" "EC2_HOST_PROD"
           check "${{ secrets.EC2_SSH_KEY_PROD }}" "EC2_SSH_KEY_PROD"
+          check "${{ secrets.DATABASE_DIRECT_URL_PROD}}" "DATABASE_DIRECT_URL_PROD"
           check "${{ secrets.AWS_REGION }}" "AWS_REGION"
           check "${{ secrets.AWS_ACCESS_KEY_ID }}" "AWS_ACCESS_KEY_ID"
           check "${{ secrets.AWS_SECRET_ACCESS_KEY }}" "AWS_SECRET_ACCESS_KEY"
@@ -88,7 +90,7 @@ jobs:
         if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
         env:
           BRANCH_NAME: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
-          IMAGE_TAG: ${{ github.event.inputs.branch == 'main' && 'latest-prod' || 'latest-stag' }}
+          IMAGE_TAG: ${{ env.BRANCH_NAME == 'main' && 'latest-prod' || 'latest-stag' }}
         run: |         
           echo "BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
@@ -118,14 +120,14 @@ jobs:
           fi
 
       - name: Login to Amazon ECR
-        if: ${{steps.configure-aws.outcome == 'success'}}
+        if: ${{ steps.configure-aws.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         continue-on-error: true
 
       - name: Check ECR login status
         shell: bash
-        if: ${{steps.configure-aws.outcome == 'success'}}
+        if: ${{ steps.configure-aws.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
         run: |
           if [ "${{ steps.login-ecr.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ ECR login failed" >> "$LOG_FILE"
@@ -135,13 +137,14 @@ jobs:
           fi
 
       - name: Set Docker tag suffix
-        if: ${{ steps.login-ecr.outcome == 'success' }}
+        if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
         id: tag
         run: |
           echo "tag_suffix=${{ github.event.inputs.branch == 'main' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
 
+
       - name: Build and Push Docker image
-        if: ${{ steps.login-ecr.outcome == 'success' }}
+        if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
         id: docker_build
         uses: docker/build-push-action@v5
         continue-on-error: true
@@ -163,18 +166,24 @@ jobs:
       - name: Check Docker build status
         shell: bash
         id : check_docker_build_status
-        if: ${{ steps.login-ecr.outcome == 'success' }}
+        if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
         run: |
           if [ "${{ steps.docker_build.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ Docker build & push failed" >> "$LOG_FILE"
           else
             echo "[INFO]: ✅ Docker build & push succeeded" >> "$LOG_FILE"
           fi
+
+      - name: ROLLBACK CHECK
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
+        run: |
+          echo "[INFO]: ↩️ Rollback step: Skipping building docker images" >> "$LOG_FILE"
           
       # DEPLOYING TO EC2
       - name: SSH into EC2 and Deploy
         if: ${{ steps.docker_build.outcome == 'success' }}
         uses: appleboy/ssh-action@v0.1.10
+        id: ssh_deploy
         env:
           DOMAIN_NAME: ${{github.event.inputs.branch == 'main' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
           EC2_HOST: ${{ github.event.inputs.branch == 'main' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
@@ -188,12 +197,13 @@ jobs:
           REPO_NAME: ${{ secrets.REPO_NAME }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
           GIT_HASH: ${{ steps.hash.outputs.git_hash }}
+          IS_ROLLBACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
         with:
           host: ${{ env.EC2_HOST }}
           username: "ubuntu"
           key: ${{ env.EC2_SSH_KEY }}
           command_timeout: 1500s # 25 minutes
-          envs: DOMAIN_NAME, AWS_REGION, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, CERTBOT_EMAIL, GIT_HASH
+          envs: DOMAIN_NAME, AWS_REGION, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
           script: |
             #!/bin/bash
 
@@ -330,7 +340,7 @@ jobs:
             REPO_NAME=${{ env.REPO_NAME }}
             DOCKER_IMAGE_TAG=${{ env.GIT_HASH }}
 
-            if ! exec_command "Docker run" "docker run -d -it --name \"$CONTAINER_NAME\" --env-file \"$HOME/.env\" -p ${NEW_PORT}:3001 --add-host=host.docker.internal:host-gateway \"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:${DOCKER_IMAGE_TAG}\""; then
+            if ! exec_command "Docker run" "docker run -d -it -e IS_ROLLBACK=\"$IS_ROLLBACK"\ --name \"$CONTAINER_NAME\" --env-file \"$HOME/.env\" -p ${NEW_PORT}:3001 --add-host=host.docker.internal:host-gateway \"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:${DOCKER_IMAGE_TAG}\""; then
               log_message "ERROR" "❌ Failed to start Docker container '$CONTAINER_NAME' - aborting deployment"
               exit 1
             else
@@ -449,6 +459,92 @@ jobs:
             echo "========= DEPLOYMENT LOG SUMMARY ========="
             grep -E "ERROR|WARN" "$LOG_FILE" || echo "No errors or warnings found in deployment"
             echo "======================================="
+
+      - name: Rollback new Prisma migrations (with logging)
+        if: ${{ steps.ssh_deploy.outcome == 'success' && (github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        env:
+          BRANCH: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
+          DATABASE_URL: ${{ env.BRANCH == 'main' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
+          ROLLBACK_COMMIT: ${{ github.event.inputs.git_hash }}
+        run: |
+          set -e
+      
+          echo "[INFO]: ↩️ Starting rollback to commit $ROLLBACK_COMMIT from branch $BRANCH" >> "$LOG_FILE"
+      
+          mkdir -p rollback_migrations latest_migrations
+      
+          echo "[INFO]: 📦 Fetching commits..." >> "$LOG_FILE"
+          git fetch origin $BRANCH || { echo "[ERROR]: ❌ Failed to fetch branch $BRANCH" >> "$LOG_FILE"; exit 1; }
+      
+          LATEST_COMMIT=$(git rev-parse origin/$BRANCH 2>>"$LOG_FILE") || {
+            echo "[ERROR]: ❌ Could not determine latest commit from $BRANCH" >> "$LOG_FILE"
+            exit 1
+          }
+          echo "[INFO]: ✅ Latest commit on $BRANCH is $LATEST_COMMIT" >> "$LOG_FILE"
+      
+          echo "[INFO]: 🔍 Checking out sparse migrations directory from latest commit..." >> "$LOG_FILE"
+          mkdir latest-checkout
+          git --work-tree=latest-checkout sparse-checkout set packages/prisma/migrations || {
+            echo "[ERROR]: ❌ Sparse-checkout setup failed for latest commit" >> "$LOG_FILE"; exit 1;
+          }
+          git --work-tree=latest-checkout checkout $LATEST_COMMIT -- packages/prisma/migrations || {
+            echo "[ERROR]: ❌ Could not checkout migrations from latest commit $LATEST_COMMIT" >> "$LOG_FILE"; exit 1;
+          }
+          cp -r latest-checkout/packages/prisma/migrations/* latest_migrations/
+          rm -rf latest-checkout
+          echo "[INFO]: ✅ Fetched latest migrations" >> "$LOG_FILE"
+      
+          echo "[INFO]: 🔍 Checking out sparse migrations directory from rollback commit $ROLLBACK_COMMIT..." >> "$LOG_FILE"
+          mkdir rollback-checkout
+          git --work-tree=rollback-checkout sparse-checkout set packages/prisma/migrations || {
+            echo "[ERROR]: ❌ Sparse-checkout setup failed for rollback commit" >> "$LOG_FILE"; exit 1;
+          }
+          git --work-tree=rollback-checkout checkout $ROLLBACK_COMMIT -- packages/prisma/migrations || {
+            echo "[ERROR]: ❌ Could not checkout migrations from rollback commit $ROLLBACK_COMMIT" >> "$LOG_FILE"; exit 1;
+          }
+          cp -r rollback-checkout/packages/prisma/migrations/* rollback_migrations/
+          rm -rf rollback-checkout
+          echo "[INFO]: ✅ Fetched rollback migrations" >> "$LOG_FILE"
+      
+          echo "[INFO]: 🔁 Comparing migrations..." >> "$LOG_FILE"
+          comm -13 <(ls rollback_migrations | sort) <(ls latest_migrations | sort) | sort -r > new_migrations_list.txt
+      
+          if [ ! -s new_migrations_list.txt ]; then
+            echo "[INFO]: ✅ No new migrations to rollback" >> "$LOG_FILE"
+            exit 0
+          fi
+      
+          echo "[INFO]: ⏬ Migrations to rollback:" >> "$LOG_FILE"
+          cat new_migrations_list.txt >> "$LOG_FILE"
+      
+          while read -r mig; do
+            MIG_DIR="latest_migrations/$mig"
+            DOWN_SQL="$MIG_DIR/down.sql"
+      
+            echo "[INFO]: 🔁 Rolling back migration: $mig" >> "$LOG_FILE"
+      
+            if [ ! -f "$DOWN_SQL" ]; then
+              echo "[ERROR]: ❌ down.sql not found for $mig, skipping." >> "$LOG_FILE"
+              continue
+            fi
+      
+            echo "[INFO]: ▶️ Running down.sql for $mig..." >> "$LOG_FILE"
+            if ! psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$DOWN_SQL" >> "$LOG_FILE" 2>&1; then
+              echo "[ERROR]: ❌ Failed executing down.sql for $mig" >> "$LOG_FILE"
+              exit 1
+            fi
+      
+            echo "[INFO]: 🧹 Deleting $mig from _prisma_migrations..." >> "$LOG_FILE"
+            if ! psql "$DATABASE_URL" -c "DELETE FROM _prisma_migrations WHERE migration_name = '$mig';" >> "$LOG_FILE" 2>&1; then
+              echo "[ERROR]: ❌ Failed to delete $mig from _prisma_migrations" >> "$LOG_FILE"
+              exit 1
+            fi
+      
+            echo "[INFO]: ✅ Successfully rolled back $mig" >> "$LOG_FILE"
+          done < new_migrations_list.txt
+      
+          echo "[INFO]: ✅ Rollback completed successfully" >> "$LOG_FILE"
+      
 
       # APPENDING EC2 LOG FILE INTO CURRENT RUNNER LOGFILE
       - name: Copy VPC logs to runner environment
