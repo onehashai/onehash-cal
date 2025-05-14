@@ -1,15 +1,6 @@
 name: Build, Push Docker Image, Deploy to EC2
 
 on:
-  push:
-    branches:
-      - deploy
-  pull_request:
-    types:
-      - closed  
-    branches:
-      - main
-      - develop
   workflow_dispatch:
     inputs:
       branch:
@@ -20,6 +11,7 @@ on:
         description: "Override Git commit hash"
         required: false
         default: ""
+  
 
 concurrency:
   group: ${{ github.workflow }}
