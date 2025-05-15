@@ -69,11 +69,17 @@ COPY --from=builder /calid/.yarn ./.yarn
 # Copying the build output from the builder stage
 COPY --from=builder /calid/apps/web/ ./apps/web/
 
+COPY ./entrypoint.sh ./
+RUN chmod +x ./entrypoint.sh
+
+ARG IS_ROLLBACK=false
+ENV IS_ROLLBACK=$IS_ROLLBACK
+
 # Allowing mutable installs
 RUN yarn config set enableImmutableInstalls false
 
 # EXPOSING PORT
 EXPOSE 3001
 
-CMD ["sh", "-c", "yarn install && yarn start"]
+CMD ["sh", "./entrypoint.sh"]
 
