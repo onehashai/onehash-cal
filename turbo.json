@@ -25,7 +25,7 @@
       "dependsOn": [],
       "inputs": ["./schema.prisma", "./migrations/**/*.sql"]
     },
-    "@calcom/prisma#db-create-migration": {
+    "@calcom/prisma#db-rollback": {
       "cache": false,
       "dependsOn": [],
       "inputs": ["./schema.prisma", "./migrations/**/*.sql"]

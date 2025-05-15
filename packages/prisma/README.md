@@ -9,7 +9,7 @@ Enhances Prisma's `migrate dev` by auto-generating a `down.sql` for each migrati
 Run the script instead of `prisma migrate dev`:
 
 ```bash
-yarn db-migrate-dev
+yarn db-migrate
 
 ```
 
@@ -21,3 +21,16 @@ prisma/
           ├── migration.sql      # Prisma's up migration
           ├── down.sql           # Auto-generated rollback SQL
           └── schema.prisma
+
+
+## For revert most recent migration 
+
+Run the following script
+
+```bash
+yarn db-rollback
+
+```
+
+This will run down.sql on the Database, remove the migration from _prisma_migrations table and remove it from local directory as well.
+

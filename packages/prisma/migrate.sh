@@ -22,3 +22,8 @@ fi
 npx prisma migrate diff --from-schema-datamodel ./schema.prisma --to-schema-datasource ./schema.prisma --script > "$migration_dir/down.sql"
 
 echo "Up and down migrations created successfully in $migration_dir"
+
+echo "Applying migration to DB in dev env"
+npx prisma migrate dev
+
+echo "Migration applied successfully."
