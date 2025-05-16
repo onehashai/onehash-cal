@@ -53,10 +53,12 @@ jobs:
             fi
           }
           check "${{ secrets.DOMAIN_NAME_STAG }}" "DOMAIN_NAME_STAG"
+          check "${{ secrets.NAMESERVERS_STAG }}" "NAMESERVERS_STAG"
           check "${{ secrets.EC2_HOST_STAG }}" "EC2_HOST_STAG"
           check "${{ secrets.EC2_SSH_KEY_STAG }}" "EC2_SSH_KEY_STAG"
           check "${{ secrets.DATABASE_DIRECT_URL_STAG}}" "DATABASE_DIRECT_URL_STAG"
           check "${{ secrets.DOMAIN_NAME_PROD }}" "DOMAIN_NAME_PROD"
+          check "${{ secrets.NAMESERVERS_PROD }}" "NAMESERVERS_PROD"
           check "${{ secrets.EC2_HOST_PROD }}" "EC2_HOST_PROD"
           check "${{ secrets.EC2_SSH_KEY_PROD }}" "EC2_SSH_KEY_PROD"
           check "${{ secrets.DATABASE_DIRECT_URL_PROD}}" "DATABASE_DIRECT_URL_PROD"
@@ -185,7 +187,7 @@ jobs:
         uses: appleboy/ssh-action@v0.1.10
         id: ssh_deploy
         env:
-          DOMAIN_NAME: ${{github.event.inputs.branch == 'main' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
+          NAMESERVERS: ${{github.event.inputs.branch == 'main' && secrets.NAMESERVERS_PROD || secrets.NAMESERVERS_STAG }}
           EC2_HOST: ${{ github.event.inputs.branch == 'main' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
           EC2_SSH_KEY: ${{ github.event.inputs.branch == 'main' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
           REPO_URL: ${{secrets.REPO_URL}}
@@ -203,7 +205,7 @@ jobs:
           username: "ubuntu"
           key: ${{ env.EC2_SSH_KEY }}
           command_timeout: 1500s # 25 minutes
-          envs: DOMAIN_NAME, AWS_REGION, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
+          envs: NAMESERVERS, AWS_REGION, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
           script: |
             #!/bin/bash
 
@@ -405,7 +407,7 @@ jobs:
               exit 1
             fi
 
-            if ! exec_command "Replace DOMAIN" "sudo sed -i \"s/DOMAIN_PLACEHOLDER/$DOMAIN_NAME/g\" \"$NGINX_CONF_PATH\""; then
+            if ! exec_command "Replace DOMAIN" "sudo sed -i \"s/DOMAIN_PLACEHOLDER/$NAMESERVERS/g\" \"$NGINX_CONF_PATH\""; then
               exit 1
             fi
 
@@ -423,9 +425,10 @@ jobs:
             fi
 
             # SSL Certificate with certbot
-            log_message "INFO" "Generating SSL cert for $DOMAIN_NAME"
+            log_message "INFO" "Generating SSL cert for $NAMESERVERS"
             # Add a timeout to certbot to prevent hanging
-            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx -d \"$DOMAIN_NAME\" --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect"; then
+            # if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx -d \"$NAMESERVERS\" --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect"; then
+            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx $(for d in $NAMESERVERS; do echo -n "-d $d "; done) --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect"; then
               log_message "WARN" "⚠️ Certbot SSL generation may have issues, but continuing with deployment"
             fi
 
