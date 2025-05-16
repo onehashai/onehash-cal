@@ -428,7 +428,7 @@ jobs:
             log_message "INFO" "Generating SSL cert for $NAMESERVERS"
             # Add a timeout to certbot to prevent hanging
             # if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx -d \"$NAMESERVERS\" --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect"; then
-            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx $(for d in $NAMESERVERS; do echo -n "-d $d "; done) --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect"; then
+            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx $(for d in $NAMESERVERS; do echo -n "-d $d "; done) --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect --expand"; then
               log_message "WARN" "⚠️ Certbot SSL generation may have issues, but continuing with deployment"
             fi
 
