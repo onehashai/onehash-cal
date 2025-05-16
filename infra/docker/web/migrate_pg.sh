@@ -31,17 +31,19 @@ check_connection() {
 
 check_connection "$SOURCE_DB_URL"
 check_connection "$TARGET_DB_URL"
+# Get the directory of the script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Create a temp file for the dump
-DUMP_FILE=$(mktemp)
+# Create a temporary file
+DUMP_FILE=$(mktemp /tmp/db_dump_XXXXXX.dump)
 
-echo "Backing up source database..."
+
+echo "📦 Backing up source database to $DUMP_FILE..."
 pg_dump "$SOURCE_DB_URL" -F c -f "$DUMP_FILE"
 
-echo "Restoring into target database..."
-pg_restore -c -d "$TARGET_DB_URL" "$DUMP_FILE"
+echo "📥 Restoring into target database..."
+pg_restore --clean --no-owner --dbname="$TARGET_DB_URL" "$DUMP_FILE"
 
 echo "Cleaning up..."
-rm "$DUMP_FILE"
-
+rm -f "$DUMP_FILE"
 echo "✅ Migration complete."

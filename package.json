@@ -35,6 +35,7 @@
     "db-rollback": "yarn workspace @calcom/prisma run db-rollback",
     "db-seed": "turbo run db-seed",
     "db-studio": "yarn prisma studio",
+    "db-tunnel": "bash ./scripts/tunnel-rds.sh",
     "deploy": "turbo run deploy",
     "dev:all": "turbo run dev --scope=\"@calcom/web\" --scope=\"@calcom/website\" --scope=\"@calcom/console\"",
     "dev:ai": "turbo run dev --scope=\"@calcom/web\" --scope=\"@calcom/api-proxy\" --scope=\"@calcom/api\" --scope=\"@calcom/ai\"",
