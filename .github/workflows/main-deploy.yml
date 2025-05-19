@@ -411,24 +411,25 @@ jobs:
               exit 1
             fi
 
-            # Test NGINX config
-            log_message "INFO" "Testing NGINX config before reload"
-            if ! exec_command "NGINX config test" "sudo nginx -t"; then
-              log_message "ERROR" "NGINX configuration test failed"
-              exit 1
-            fi
+            # # Test NGINX config
+            # log_message "INFO" "Testing NGINX config before reload"
+            # if ! exec_command "NGINX config test" "sudo nginx -t"; then
+            #   log_message "ERROR" "NGINX configuration test failed"
+            #   exit 1
+            # fi
 
-            # Reload NGINX
-            log_message "INFO" "Reloading NGINX (pre-certbot)"
-            if ! exec_command "NGINX reload" "sudo nginx -s reload"; then
-              exit 1
-            fi
+            # # Reload NGINX
+            # log_message "INFO" "Reloading NGINX (pre-certbot)"
+            # if ! exec_command "NGINX reload" "sudo nginx -s reload"; then
+            #   exit 1
+            # fi
 
             # SSL Certificate with certbot
             log_message "INFO" "Generating SSL cert for $NAMESERVERS"
             # Add a timeout to certbot to prevent hanging
             # if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx -d \"$NAMESERVERS\" --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect"; then
-            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx $(for d in $NAMESERVERS; do echo -n "-d $d "; done) --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect --expand"; then
+            # if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx $(for d in $NAMESERVERS; do echo -n "-d $d "; done) --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect --expand"; then
+            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot certonly -a dns-multi --dns-multi-credentials=/etc/letsencrypt/dns-multi.ini -d \"*.${NAMESERVERS}\" -d \"${NAMESERVERS}\" -m \"${CERTBOT_EMAIL}\" --non-interactive --agree-tos"; then
               log_message "WARN" "⚠️ Certbot SSL generation may have issues, but continuing with deployment"
             fi
 

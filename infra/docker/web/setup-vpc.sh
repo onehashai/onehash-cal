@@ -68,7 +68,11 @@ then
     echo "Certbot not found. Installing Certbot..."
     
     # Install Certbot
-    sudo apt-get install -y certbot python3-certbot-nginx
+    # sudo apt-get install -y certbot python3-certbot-nginx
+    sudo snap install --classic certbot
+    sudo snap install certbot-dns-multi
+    sudo snap set certbot trust-plugin-with-root=ok
+    sudo snap connect certbot:plugin certbot-dns-multi
     echo "Certbot installed successfully!"
 else
     echo "Certbot is already installed."
