@@ -486,7 +486,7 @@ jobs:
           source: '/home/ubuntu/deployment.log'
           target: './deployment.log'
 
-      - name: Send deployment status email
+      - name: Append VPC logs to runner log file
         if: ${{ steps.download_vpc_logs.outcome == 'success'}}
         env:
           LOG_FILE: ${{ env.LOG_FILE }}
