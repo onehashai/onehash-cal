@@ -152,6 +152,7 @@ export const bookingResponses = z
     smsReminderNumber: z.string().optional(),
     rescheduleReason: z.string().optional(),
     phone: z.string().optional(),
+    date: z.string().optional(),
   })
   .nullable();
 

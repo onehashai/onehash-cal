@@ -1732,8 +1732,21 @@ export const insightsRouter = router({
       };
 
       const whereConditions = [
-        startDate ? { createdAt: { gte: new Date(startDate) } } : null,
-        endDate ? { createdAt: { lte: new Date(endDate) } } : null,
+        startDate
+          ? {
+              createdAt: {
+                gte: dayjs.utc(startDate).startOf("day"),
+              },
+            }
+          : null,
+
+        endDate
+          ? {
+              createdAt: {
+                lte: dayjs.utc(endDate).endOf("day"),
+              },
+            }
+          : null,
         eventTypeId ? { eventTypeId } : null,
 
         type ? { type } : null,
@@ -1772,7 +1785,7 @@ export const insightsRouter = router({
 
       stats.total = workflowInsights.length;
       workflowInsights.forEach((insight) => {
-        if (insight.status === WorkflowStatus.DELIVERED || insight.status === WorkflowStatus.READ) {
+        if (insight.status === WorkflowStatus.DELIVERED) {
           stats.sentCount += 1;
         }
         if (insight.status === WorkflowStatus.READ) {
@@ -1803,7 +1816,6 @@ export const insightsRouter = router({
         endDate: endDateString,
         timeView: inputTimeView,
       } = input;
-
       // Convert to UTC
       let startDate = dayjs.utc(startDateString).startOf("day");
       let endDate = dayjs.utc(endDateString).endOf("day");
@@ -1878,6 +1890,7 @@ export const insightsRouter = router({
           formattedDate: startOfRange.format(dateFormat),
         };
       });
+
       // Fetch aggregated counts
       const countsByStatus = await EventsInsights.countGroupedWorkflowByStatusForRanges(
         whereQuery,
@@ -1897,8 +1910,7 @@ export const insightsRouter = router({
 
         const countsForDateRange = countsByStatus[formattedDate];
         if (countsForDateRange) {
-          WorkflowData["Sent"] =
-            countsForDateRange[WorkflowStatus.DELIVERED] + countsForDateRange[WorkflowStatus.READ] || 0;
+          WorkflowData["Sent"] = countsForDateRange[WorkflowStatus.DELIVERED] || 0;
           WorkflowData["Read"] = countsForDateRange[WorkflowStatus.READ] || 0;
           WorkflowData["Failed"] = countsForDateRange[WorkflowStatus.FAILED] || 0;
           WorkflowData["Total"] = WorkflowData["Sent"] + WorkflowData["Read"] + WorkflowData["Failed"];

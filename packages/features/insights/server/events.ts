@@ -662,6 +662,9 @@ class EventsInsights {
             conditions.push(`"eventTypeId" = ${condition.eventTypeId}`);
           }
         }
+        if (condition.type) {
+          conditions.push(`"type" = '${condition.type}'`);
+        }
       });
     }
 

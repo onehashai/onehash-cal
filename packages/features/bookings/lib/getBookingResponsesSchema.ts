@@ -277,7 +277,21 @@ function preprocess<T extends z.ZodType>({
           }
           continue;
         }
-
+        if (bookingField.type === "date") {
+          const schema = z.string().refine(
+            (val) => {
+              const parsed = new Date(val);
+              return !isNaN(parsed.getTime()) && val === parsed.toDateString();
+            },
+            {
+              message: m("Invalid Date"),
+            }
+          );
+          if (!schema.safeParse(value).success) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid Date") });
+          }
+          continue;
+        }
         if (bookingField.type === "radioInput") {
           if (bookingField.optionsInputs) {
             const optionValue = value?.optionValue;

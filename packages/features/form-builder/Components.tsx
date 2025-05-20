@@ -35,6 +35,7 @@ export const isValidValueProp: Record<Component["propsType"], (val: unknown) => 
   text: (val) => typeof val === "string",
   textList: (val) => val instanceof Array && val.every((v) => typeof v === "string"),
   variants: (val) => (typeof val === "object" && val !== null) || typeof val === "string",
+  date: (val) => typeof val === "string",
 };
 
 type Component =
@@ -85,6 +86,17 @@ type Component =
           variants: z.infer<typeof variantsConfigSchema>["variants"];
           value: Record<string, string> | string | undefined;
           setValue: (value: string | Record<string, string>) => void;
+        }
+      >(
+        props: TProps
+      ) => JSX.Element;
+    }
+  | {
+      propsType: "date";
+      factory: <
+        TProps extends TextLikeComponentProps<string> & {
+          dateFormat?: string;
+          timeFormat?: string;
         }
       >(
         props: TProps
@@ -546,6 +558,21 @@ export const Components: Record<FieldType, Component> = {
     propsType: propsTypes.url,
     factory: (props) => {
       return <Widgets.TextWidget type="url" noLabel={true} {...props} />;
+    },
+  },
+  date: {
+    propsType: propsTypes.date,
+    factory: (props: any) => {
+      return (
+        <Widgets.DatePickerWidget
+          type="date"
+          id={props.name}
+          noLabel={true}
+          dateFormat="yyyy-MM-dd"
+          timeFormat="HH:mm"
+          {...props}
+        />
+      );
     },
   },
 } as const;

@@ -38,6 +38,11 @@ export function UpgradeTip({
 
   const hasUnpublishedTeam = !!data?.[0];
 
+  //TODO : remove this when we have a way to check if the user is on a team plan
+  if (true) {
+    return <>{children}</>;
+  }
+
   if (plan === "team" && (hasTeamPlan || hasUnpublishedTeam)) return <>{children}</>;
 
   if (plan === "enterprise" && hasEnterprisePlan) return <>{children}</>;
