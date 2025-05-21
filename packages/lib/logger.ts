@@ -61,10 +61,13 @@ const logger = new Logger({
 
   attachedTransports: [
     (logObject) => {
-      const message = getLogMessage(logObject);
-      Sentry.captureMessage(message, {
-        level: logLevelToSentry(logObject._meta.logLevelId),
-      });
+      // Only forward errors to Sentry
+      if (logObject._meta.logLevelId >= parseInt(process.env.NEXT_PUBLIC_SENTRY_LOG_LEVEL || "5")) {
+        const message = getLogMessage(logObject);
+        Sentry.captureMessage(message, {
+          level: logLevelToSentry(logObject._meta.logLevelId),
+        });
+      }
     },
   ],
 });
