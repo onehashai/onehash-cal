@@ -88,14 +88,6 @@ jobs:
           fi
           echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
         
-      # - name: Set environment variables based on branch
-      #   if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
-      #   run: |  
-      #     BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
-      #     IMAGE_TAG=$( [ "$BRANCH_NAME" = "main" ] && echo "latest-prod" || echo "latest-stag" )
-      #     echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-      #     echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV       
-
       # BUILDING AND PUSHING DOCKER IMAGE
       - name: Set up Docker Buildx
         id: setup_docker
@@ -184,7 +176,8 @@ jobs:
       - name: Set branch name
         id: set_branch
         run: |
-          BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
+          # BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
+          BRANCH_NAME="main"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           
       # DEPLOYING TO EC2
@@ -459,8 +452,8 @@ jobs:
             log_message "INFO" "Generating SSL cert for $NAMESERVERS"
             # Add a timeout to certbot to prevent hanging
             # if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx -d \"$NAMESERVERS\" --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect"; then
-            # if ! exec_command "Certbot SSL" "timeout 300s sudo certbot --nginx $(for d in $NAMESERVERS; do echo -n "-d $d "; done) --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect --expand"; then
-            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot certonly -a dns-multi --dns-multi-credentials=/etc/letsencrypt/dns-multi.ini -d \"*.${NAMESERVERS}\" -d \"${NAMESERVERS}\" -m \"${CERTBOT_EMAIL}\" --non-interactive --agree-tos"; then
+            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot certonly --nginx $(for d in $NAMESERVERS; do echo -n "-d $d "; done) --non-interactive --agree-tos -m \"$CERTBOT_EMAIL\" --redirect --expand"; then
+            # if ! exec_command "Certbot SSL" "timeout 300s sudo certbot certonly -a dns-multi --dns-multi-credentials=/etc/letsencrypt/dns-multi.ini -d \"*.${NAMESERVERS}\" -d \"${NAMESERVERS}\" -m \"${CERTBOT_EMAIL}\" --non-interactive --agree-tos"; then
               log_message "WARN" "⚠️ Certbot SSL generation may have issues, but continuing with deployment"
             fi
 
