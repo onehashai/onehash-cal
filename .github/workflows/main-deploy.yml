@@ -128,12 +128,19 @@ jobs:
             echo "[INFO]: ✅ ECR login successful" >> "$LOG_FILE"
             echo "passed=success" >> $GITHUB_OUTPUT
           fi
+      
+      # Setting current branch name
+      - name: Set branch name
+        id: set_branch
+        run: |
+          BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Set Docker tag suffix
         if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
         id: tag
         run: |
-          echo "tag_suffix=${{ github.event.inputs.branch == 'deploy' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
+          echo "tag_suffix=${{ steps.set_branch.outputs.branch_name == 'deploy' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
 
 
       - name: Build and Push Docker image
@@ -150,10 +157,10 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.tag.outputs.tag_suffix }}
           build-args: |
-            NEXTAUTH_URL=${{ github.event.inputs.branch == 'deploy' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
+            NEXTAUTH_URL=${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
             NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
             CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
-            NEXT_PUBLIC_WEBAPP_URL=${{ format('https://{0}', github.event.inputs.branch == 'deploy' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG) }}
+            NEXT_PUBLIC_WEBAPP_URL=${{ format('https://{0}', steps.set_branch.outputs.branch_name == 'deploy' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG) }}
             NEXT_PUBLIC_API_V2_URL=${{ secrets.NEXT_PUBLIC_API_V2_URL }}
 
       - name: Check Docker build status
@@ -172,12 +179,6 @@ jobs:
         run: |
           echo "[INFO]: ↩️ Rollback step: Skipping building docker images" >> "$LOG_FILE"
 
-      # Setting current branch name
-      - name: Set branch name
-        id: set_branch
-        run: |
-          BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           
       # DEPLOYING TO EC2
       - name: SSH into EC2 and Deploy
@@ -185,9 +186,9 @@ jobs:
         uses: appleboy/ssh-action@v0.1.10
         id: ssh_deploy
         env:
-          NAMESERVERS: ${{github.event.inputs.branch == 'deploy' && secrets.NAMESERVERS_PROD || secrets.NAMESERVERS_STAG }}
-          EC2_HOST: ${{ github.event.inputs.branch == 'deploy' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
-          EC2_SSH_KEY: ${{ github.event.inputs.branch == 'deploy' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
+          NAMESERVERS: ${{steps.set_branch.outputs.branch_name == 'deploy' && secrets.NAMESERVERS_PROD || secrets.NAMESERVERS_STAG }}
+          EC2_HOST: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
+          EC2_SSH_KEY: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
           REPO_URL: ${{secrets.REPO_URL}}
           BRANCH_NAME: ${{ steps.set_branch.outputs.branch_name }}
           DATABASE_URL: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
@@ -645,8 +646,8 @@ jobs:
         if: always()
         id : download_vpc_logs
         env:
-          EC2_HOST: ${{ github.event.inputs.branch == 'deploy' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
-          EC2_SSH_KEY: ${{ github.event.inputs.branch == 'deploy' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
+          EC2_HOST: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
+          EC2_SSH_KEY: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
         with:
           direction:  download
           host: ${{ env.EC2_HOST }}
@@ -767,7 +768,7 @@ jobs:
           LOG_SNIPPET=$(cat "$LOG_FILE" | jq -Rs .)
           echo "LOG_SNIPPET $LOG_SNIPPET"
 
-          ENVIRONMENT=$([ "${{ github.event.inputs.branch }}" = "deploy" ] && echo "PRODUCTION" || echo "STAGING")
+          ENVIRONMENT=$([ "${{ steps.set_branch.outputs.branch_name }}" = "deploy" ] && echo "PRODUCTION" || echo "STAGING")
           SUBJECT="CAL ID $ENVIRONMENT Deployment Status "
           BODY=$(jq -Rs --arg sha "${{ github.sha }}" \
                   --arg status "$([ '${{ job.status }}' = 'success' ] && echo 'Successful' || echo 'Failed')" \
