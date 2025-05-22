@@ -142,6 +142,22 @@ jobs:
         run: |
           echo "tag_suffix=${{ steps.set_branch.outputs.branch_name == 'deploy' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
 
+      - name: Set dynamic key values for  DOMAIN_NAME , NAMESERVERS ,EC2_HOST ,EC2_SSH_KEY , DATABASE_URL
+        id : key_values
+        run: | 
+          if [ "${{ steps.set_branch.outputs.branch_name }}" == "deploy" ]; then
+            echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_PROD }}" >> $GITHUB_OUTPUT
+            echo "NAMESERVERS=${{ secrets.NAMESERVERS_PROD }}" >> $GITHUB_OUTPUT
+            echo "EC2_HOST=${{ secrets.EC2_HOST_PROD }}" >> $GITHUB_OUTPUT
+            echo "EC2_SSH_KEY=${{ secrets.EC2_SSH_PROD }}" >> $GITHUB_OUTPUT
+            echo "DATABASE_URL=${{ secrets.DATABASE_DIRECT_URL_PROD}}" >> $GITHUB_OUTPUT
+          else
+            echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_STAG }}" >> $GITHUB_OUTPUT
+            echo "NAMESERVERS=${{ secrets.NAMESERVERS_STAG }}" >> $GITHUB_OUTPUT
+            echo "EC2_HOST=${{ secrets.EC2_HOST_STAG }}" >> $GITHUB_OUTPUT
+            echo "EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY_STAG }}" >> $GITHUB_OUTPUT
+            echo "DATABASE_URL=${{ secrets.DATABASE_DIRECT_URL_STAG}}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build and Push Docker image
         if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
@@ -157,10 +173,10 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.tag.outputs.tag_suffix }}
           build-args: |
-            NEXTAUTH_URL=${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG }}
+            NEXTAUTH_URL=${{ steps.key_values.outputs.DOMAIN_NAME }}
             NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
             CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
-            NEXT_PUBLIC_WEBAPP_URL=${{ format('https://{0}', steps.set_branch.outputs.branch_name == 'deploy' && secrets.DOMAIN_NAME_PROD || secrets.DOMAIN_NAME_STAG) }}
+            NEXT_PUBLIC_WEBAPP_URL=${{ format('https://{0}', steps.key_values.outputs.DOMAIN_NAME) }}
             NEXT_PUBLIC_API_V2_URL=${{ secrets.NEXT_PUBLIC_API_V2_URL }}
 
       - name: Check Docker build status
@@ -186,12 +202,12 @@ jobs:
         uses: appleboy/ssh-action@v0.1.10
         id: ssh_deploy
         env:
-          NAMESERVERS: ${{steps.set_branch.outputs.branch_name == 'deploy' && secrets.NAMESERVERS_PROD || secrets.NAMESERVERS_STAG }}
-          EC2_HOST: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
-          EC2_SSH_KEY: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
+          NAMESERVERS: ${{ steps.key_values.outputs.NAMESERVERS }}
+          EC2_HOST: ${{ steps.key_values.outputs.EC2_HOST }}
+          EC2_SSH_KEY: ${{ steps.key_values.outputs.EC2_SSH_KEY }}
           REPO_URL: ${{secrets.REPO_URL}}
           BRANCH_NAME: ${{ steps.set_branch.outputs.branch_name }}
-          DATABASE_URL: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
+          DATABASE_URL: ${{ steps.key_values.outputs.DATABASE_URL }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -646,8 +662,8 @@ jobs:
         if: always()
         id : download_vpc_logs
         env:
-          EC2_HOST: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
-          EC2_SSH_KEY: ${{ steps.set_branch.outputs.branch_name == 'deploy' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
+          EC2_HOST: ${{ steps.key_values.outputs.EC2_HOST }}
+          EC2_SSH_KEY: ${{ steps.key_values.outputs.EC2_SSH_KEY }}
         with:
           direction:  download
           host: ${{ env.EC2_HOST }}
@@ -668,93 +684,6 @@ jobs:
           [ -f ./deployment.log ] && cat ./deployment.log >> "$LOG_FILE"
 
       
-      # #HANDLING THE DB ROLLBACK MECHANISM
-      # - name: Rollback new Prisma migrations (with logging)
-      #   if: ${{ steps.ssh_deploy.outcome == 'success' && github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
-      #   env:
-      #     BRANCH: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
-          # DATABASE_URL: ${{ env.BRANCH == 'main' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
-      #     ROLLBACK_COMMIT: ${{ github.event.inputs.git_hash }}
-      #   run: |
-      #     set -e
-
-      #     echo "[INFO]: ↩️ Starting rollback to commit $ROLLBACK_COMMIT from branch $BRANCH" >> "$LOG_FILE"
-      
-      #     mkdir -p rollback_migrations latest_migrations
-      
-      #     echo "[INFO]: 📦 Fetching commits..." >> "$LOG_FILE"
-      #     git fetch origin $BRANCH || { echo "[ERROR]: ❌ Failed to fetch branch $BRANCH" >> "$LOG_FILE"; exit 1; }
-      
-      #     LATEST_COMMIT=$(git rev-parse origin/$BRANCH 2>>"$LOG_FILE") || {
-      #       echo "[ERROR]: ❌ Could not determine latest commit from $BRANCH" >> "$LOG_FILE"
-      #       exit 1
-      #     }
-      #     echo "[INFO]: ✅ Latest commit on $BRANCH is $LATEST_COMMIT" >> "$LOG_FILE"
-      
-      #     echo "[INFO]: 🔍 Checking out sparse migrations directory from latest commit" >> "$LOG_FILE"
-      #     mkdir latest-checkout
-      #     git --work-tree=latest-checkout sparse-checkout set packages/prisma/migrations || {
-      #       echo "[ERROR]: ❌ Sparse-checkout setup failed for latest commit" >> "$LOG_FILE"; exit 1;
-      #     }
-      #     git --work-tree=latest-checkout checkout $LATEST_COMMIT -- packages/prisma/migrations || {
-      #       echo "[ERROR]: ❌ Could not checkout migrations from latest commit $LATEST_COMMIT" >> "$LOG_FILE"; exit 1;
-      #     }
-      #     cp -r latest-checkout/packages/prisma/migrations/* latest_migrations/
-      #     rm -rf latest-checkout
-      #     echo "[INFO]: ✅ Fetched latest migrations" >> "$LOG_FILE"
-      
-      #     echo "[INFO]: 🔍 Checking out sparse migrations directory from rollback commit $ROLLBACK_COMMIT" >> "$LOG_FILE"
-      #     mkdir rollback-checkout
-      #     git --work-tree=rollback-checkout sparse-checkout set packages/prisma/migrations || {
-      #       echo "[ERROR]: ❌ Sparse-checkout setup failed for rollback commit" >> "$LOG_FILE"; exit 1;
-      #     }
-      #     git --work-tree=rollback-checkout checkout $ROLLBACK_COMMIT -- packages/prisma/migrations || {
-      #       echo "[ERROR]: ❌ Could not checkout migrations from rollback commit $ROLLBACK_COMMIT" >> "$LOG_FILE"; exit 1;
-      #     }
-      #     cp -r rollback-checkout/packages/prisma/migrations/* rollback_migrations/
-      #     rm -rf rollback-checkout
-      #     echo "[INFO]: ✅ Fetched rollback migrations" >> "$LOG_FILE"
-      
-      #     echo "[INFO]: 🔁 Comparing migrations..." >> "$LOG_FILE"
-      #     comm -13 <(ls rollback_migrations | sort) <(ls latest_migrations | sort) | sort -r > new_migrations_list.txt
-      
-      #     if [ ! -s new_migrations_list.txt ]; then
-      #       echo "[INFO]: ✅ No new migrations to rollback" >> "$LOG_FILE"
-      #       exit 0
-      #     fi
-      
-      #     echo "[INFO]: ⏬ Migrations to rollback:" >> "$LOG_FILE"
-      #     cat new_migrations_list.txt >> "$LOG_FILE"
-      
-      #     while read -r mig; do
-      #       MIG_DIR="latest_migrations/$mig"
-      #       DOWN_SQL="$MIG_DIR/down.sql"
-      
-      #       echo "[INFO]: 🔁 Rolling back migration: $mig" >> "$LOG_FILE"
-      
-      #       if [ ! -f "$DOWN_SQL" ]; then
-      #         echo "[ERROR]: ❌ down.sql not found for $mig, skipping." >> "$LOG_FILE"
-      #         continue
-      #       fi
-      
-      #       echo "[INFO]: ▶️ Running down.sql for $mig..." >> "$LOG_FILE"
-      #       if ! psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$DOWN_SQL" >> "$LOG_FILE" 2>&1; then
-      #         echo "[ERROR]: ❌ Failed executing down.sql for $mig" >> "$LOG_FILE"
-      #         exit 1
-      #       fi
-      
-      #       echo "[INFO]: 🧹 Deleting $mig from _prisma_migrations..." >> "$LOG_FILE"
-      #       if ! psql "$DATABASE_URL" -c "DELETE FROM _prisma_migrations WHERE migration_name = '$mig';" >> "$LOG_FILE" 2>&1; then
-      #         echo "[ERROR]: ❌ Failed to delete $mig from _prisma_migrations" >> "$LOG_FILE"
-      #         exit 1
-      #       fi
-      
-      #       echo "[INFO]: ✅ Successfully rolled back $mig" >> "$LOG_FILE"
-      #     done < new_migrations_list.txt
-      
-      #     echo "[INFO]: ✅ Rollback completed successfully" >> "$LOG_FILE"
-      
-
       # NOTIFY LOGS ACTION
       - name: Send deployment status email
         if: always()
@@ -763,12 +692,11 @@ jobs:
           EMAIL_TO: ${{ secrets.EMAIL_TO}}
           EMAIL_FROM: ${{secrets.EMAIL_FROM}}
           LOG_FILE: ${{ env.LOG_FILE }}
+          ENVIRONMENT: ${{ steps.set_branch.outputs.branch_name == 'deploy' && 'PRODUCTION' || 'STAGING' }}
         run: |
 
           LOG_SNIPPET=$(cat "$LOG_FILE" | jq -Rs .)
           echo "LOG_SNIPPET $LOG_SNIPPET"
-
-          ENVIRONMENT=$([ "${{ steps.set_branch.outputs.branch_name }}" = "deploy" ] && echo "PRODUCTION" || echo "STAGING")
           SUBJECT="CAL ID $ENVIRONMENT Deployment Status "
           BODY=$(jq -Rs --arg sha "${{ github.sha }}" \
                   --arg status "$([ '${{ job.status }}' = 'success' ] && echo 'Successful' || echo 'Failed')" \
