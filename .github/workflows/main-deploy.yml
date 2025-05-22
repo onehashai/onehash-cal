@@ -156,10 +156,10 @@ jobs:
           else
             echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_STAG }}" >> $GITHUB_OUTPUT
             echo "NAMESERVERS=${{ secrets.NAMESERVERS_STAG }}" >> $GITHUB_OUTPUT
+            echo "EC2_HOST=${{ secrets.EC2_HOST_STAG }}" >> $GITHUB_OUTPUT
             echo "EC2_SSH_KEY<<EOF" >> $GITHUB_OUTPUT
             echo "${{ secrets.EC2_SSH_KEY_STAG }}" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
-            echo "EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY_STAG }}" >> $GITHUB_OUTPUT
             echo "DATABASE_URL=${{ secrets.DATABASE_DIRECT_URL_STAG}}" >> $GITHUB_OUTPUT
           fi
 
