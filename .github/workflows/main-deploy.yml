@@ -200,6 +200,8 @@ jobs:
           BRANCH_NAME: ${{ steps.set_branch.outputs.branch_name }}
           DATABASE_URL: ${{ steps.set_branch.outputs.branch_name == 'main' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           REPO_NAME: ${{ secrets.REPO_NAME }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
@@ -210,7 +212,7 @@ jobs:
           username: "ubuntu"
           key: ${{ env.EC2_SSH_KEY }}
           command_timeout: 1500s # 25 minutes
-          envs: NAMESERVERS, AWS_REGION, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
+          envs: NAMESERVERS, AWS_REGION,AWS_ACCESS_KEY_ID,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
           script: |
             #!/bin/bash
 
@@ -295,6 +297,30 @@ jobs:
             # Set timeout for aws command to prevent hanging
             export AWS_CLI_TIMEOUT=60
             export AWS_SDK_TIMEOUT=60
+
+            # Configure AWS credentials non-interactively
+            log_message "INFO" "Configuring AWS credentials..."
+            if ! exec_command "AWS Configure Access Key" "aws configure set aws_access_key_id \"${AWS_ACCESS_KEY_ID}\" >> \"$LOG_FILE\" 2>&1"; then
+              log_message "ERROR" "Failed to configure AWS access key - exiting deployment"
+              exit 1
+            fi
+
+            if ! exec_command "AWS Configure Secret Key" "aws configure set aws_secret_access_key \"${AWS_SECRET_ACCESS_KEY}\" >> \"$LOG_FILE\" 2>&1"; then
+              log_message "ERROR" "Failed to configure AWS secret key - exiting deployment"
+              exit 1
+            fi
+
+            if ! exec_command "AWS Configure Region" "aws configure set default.region \"${AWS_REGION}\" >> \"$LOG_FILE\" 2>&1"; then
+              log_message "ERROR" "Failed to configure AWS region - exiting deployment"
+              exit 1
+            fi
+
+            if ! exec_command "AWS Configure Output" "aws configure set default.output json >> \"$LOG_FILE\" 2>&1"; then
+              log_message "ERROR" "Failed to configure AWS output format - exiting deployment"
+              exit 1
+            else
+              log_message "INFO" "AWS credentials configured successfully."
+            fi
 
             # Login to AWS ECR with timeout
             log_message "INFO" "Logging into AWS ECR..."
@@ -624,7 +650,7 @@ jobs:
       # APPENDING EC2 LOG FILE INTO CURRENT RUNNER LOGFILE
       - name: Copy VPC logs to runner environment
         uses: nicklasfrahm/scp-action@main
-        if: ${{ steps.ssh_deploy.outcome == 'success' }}
+        if: always()
         id : download_vpc_logs
         env:
           EC2_HOST: ${{ github.event.inputs.branch == 'main' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
