@@ -179,6 +179,13 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
         run: |
           echo "[INFO]: ↩️ Rollback step: Skipping building docker images" >> "$LOG_FILE"
+
+      # Setting current branch name
+      - name: Set branch name
+        id: set_branch
+        run: |
+          BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           
       # DEPLOYING TO EC2
       - name: SSH into EC2 and Deploy
@@ -190,7 +197,8 @@ jobs:
           EC2_HOST: ${{ github.event.inputs.branch == 'main' && secrets.EC2_HOST_PROD || secrets.EC2_HOST_STAG }}
           EC2_SSH_KEY: ${{ github.event.inputs.branch == 'main' && secrets.EC2_SSH_PROD || secrets.EC2_SSH_KEY_STAG }}
           REPO_URL: ${{secrets.REPO_URL}}
-          BRANCH_NAME: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
+          BRANCH_NAME: ${{ steps.set_branch.outputs.branch_name }}
+          DATABASE_URL: ${{ steps.set_branch.outputs.branch_name == 'main' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           REPO_NAME: ${{ secrets.REPO_NAME }}
@@ -646,7 +654,7 @@ jobs:
       #   if: ${{ steps.ssh_deploy.outcome == 'success' && github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
       #   env:
       #     BRANCH: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
-      #     DATABASE_URL: ${{ env.BRANCH == 'main' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
+          # DATABASE_URL: ${{ env.BRANCH == 'main' && secrets.DATABASE_DIRECT_URL_PROD || secrets.DATABASE_DIRECT_URL_STAG }}
       #     ROLLBACK_COMMIT: ${{ github.event.inputs.git_hash }}
       #   run: |
       #     set -e
