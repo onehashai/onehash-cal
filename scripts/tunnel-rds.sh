@@ -11,7 +11,7 @@ STAGING_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
 STAGING_PEM_PATH=/Users/apple/Documents/OneHash/ec2/cal_stag.pem
 
 # 🔸 PRODUCTION CONFIG
-PROD_EC2_DNS=ubuntu@ec2-15-206-99-88.ap-south-1.compute.amazonaws.com
+PROD_EC2_DNS=ubuntu@ec2-43-205-81-36.ap-south-1.compute.amazonaws.com
 PROD_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
 PROD_PEM_PATH=/Users/apple/Documents/OneHash/ec2/cal_prod.pem
 

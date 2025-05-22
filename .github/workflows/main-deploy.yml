@@ -88,14 +88,13 @@ jobs:
           fi
           echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
         
-      - name: Set environment variables based on branch
-        if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
-        env:
-          BRANCH_NAME: ${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}
-          IMAGE_TAG: ${{ env.BRANCH_NAME == 'main' && 'latest-prod' || 'latest-stag' }}
-        run: |         
-          echo "BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+      # - name: Set environment variables based on branch
+      #   if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
+      #   run: |  
+      #     BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
+      #     IMAGE_TAG=$( [ "$BRANCH_NAME" = "main" ] && echo "latest-prod" || echo "latest-stag" )
+      #     echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+      #     echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV       
 
       # BUILDING AND PUSHING DOCKER IMAGE
       - name: Set up Docker Buildx
