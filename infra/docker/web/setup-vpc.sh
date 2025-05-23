@@ -73,6 +73,7 @@ then
     sudo snap install certbot-dns-multi
     sudo snap set certbot trust-plugin-with-root=ok
     sudo snap connect certbot:plugin certbot-dns-multi
+    sudo mkdir -p /etc/letsencrypt
     sudo wget https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem -O /etc/letsencrypt/ssl-dhparams.pem
     sudo wget https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf -O /etc/letsencrypt/options-ssl-nginx.conf
     echo "Certbot installed successfully!"
