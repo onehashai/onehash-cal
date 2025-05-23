@@ -140,12 +140,12 @@ jobs:
         if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
         id: tag
         run: |
-          echo "tag_suffix=${{ steps.set_branch.outputs.branch_name == 'main' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
+          echo "tag_suffix=${{ steps.set_branch.outputs.branch_name == 'deploy' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
 
       - name: Set dynamic key values for  DOMAIN_NAME , NAMESERVERS ,EC2_HOST ,EC2_SSH_KEY , DATABASE_URL
         id : key_values
         run: | 
-          if [ "${{ steps.set_branch.outputs.branch_name }}" == "main" ]; then
+          if [ "${{ steps.set_branch.outputs.branch_name }}" == "deploy" ]; then
             echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_PROD }}" >> $GITHUB_OUTPUT
             echo "NAMESERVERS=${{ secrets.NAMESERVERS_PROD }}" >> $GITHUB_OUTPUT
             echo "EC2_HOST=${{ secrets.EC2_HOST_PROD }}" >> $GITHUB_OUTPUT
@@ -696,7 +696,7 @@ jobs:
           EMAIL_TO: ${{ secrets.EMAIL_TO}}
           EMAIL_FROM: ${{secrets.EMAIL_FROM}}
           LOG_FILE: ${{ env.LOG_FILE }}
-          ENVIRONMENT: ${{ steps.set_branch.outputs.branch_name == 'main' && 'PRODUCTION' || 'STAGING' }}
+          ENVIRONMENT: ${{ steps.set_branch.outputs.branch_name == 'deploy' && 'PRODUCTION' || 'STAGING' }}
         run: |
 
           LOG_SNIPPET=$(cat "$LOG_FILE" | jq -Rs .)
