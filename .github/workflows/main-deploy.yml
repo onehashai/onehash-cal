@@ -171,7 +171,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64
+          platforms: linux/arm64
           push: true
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
