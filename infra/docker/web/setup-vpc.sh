@@ -97,15 +97,5 @@ else
     echo "Docker Compose is already installed."
 fi
 
-# Configure passwordless sudo for the default 'ubuntu' user
-echo "Giving 'ubuntu' permission to run sudo without a password..."
-echo "ubuntu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/ubuntu
 
-# Set correct permissions for the sudoers file
-sudo chmod 0440 /etc/sudoers.d/ubuntu
-
-# Done
-echo "EC2 instance setup complete!"
-
-# Done
 echo "EC2 instance setup complete!"

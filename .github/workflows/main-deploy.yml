@@ -171,7 +171,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/arm64
+          platforms: linux/amd64
           push: true
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
@@ -222,7 +222,7 @@ jobs:
           IS_ROLLBACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
         with:
           host: ${{ env.EC2_HOST }}
-          username: "ubuntu"
+          username: "onehash"
           key: ${{ env.EC2_SSH_KEY }}
           command_timeout: 1500s # 25 minutes
           envs: NAMESERVERS, AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
@@ -230,7 +230,7 @@ jobs:
             #!/bin/bash
 
             #Initialize log file 
-            LOG_FILE="/home/ubuntu/deployment.log"
+            LOG_FILE="/home/onehash/deployment.log"
             : > "$LOG_FILE"
 
             # Function for logging with timestamp
@@ -673,9 +673,9 @@ jobs:
           fingerprint: ${{ secrets.SSH_TARGET_FINGERPRINT }}
           insecure_ignore_fingerprint : true
           
-          username: "ubuntu"
+          username: "onehash"
           key: ${{ env.EC2_SSH_KEY }}
-          source: '/home/ubuntu/deployment.log'
+          source: '/home/onehash/deployment.log'
           target: './deployment.log'
 
       - name: Append VPC logs to runner log file
