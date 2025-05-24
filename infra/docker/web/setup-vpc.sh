@@ -97,5 +97,10 @@ else
     echo "Docker Compose is already installed."
 fi
 
+# Adding current user to the Docker group
+sudo usermod -aG docker $USER
+# Apply changes to groups
+newgrp docker
+
 
 echo "EC2 instance setup complete!"
