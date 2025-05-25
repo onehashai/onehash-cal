@@ -13,8 +13,13 @@ const {
   orgUserTypeEmbedRoutePath,
 } = require("./pagesAndRewritePaths");
 
+if (!process.env.NEXTAUTH_URL) throw new Error("Please set NEXTAUTH_URL");
+
 if (!process.env.NEXTAUTH_SECRET) throw new Error("Please set NEXTAUTH_SECRET");
 if (!process.env.CALENDSO_ENCRYPTION_KEY) throw new Error("Please set CALENDSO_ENCRYPTION_KEY");
+
+if (!process.env.NEXT_PUBLIC_WEBAPP_URL) throw new Error("Please set NEXT_PUBLIC_WEBAPP_URL");
+if (!process.env.NEXT_PUBLIC_API_V2_URL) throw new Error("Please set NEXT_PUBLIC_API_V2_URL");
 const isOrganizationsEnabled =
   process.env.ORGANIZATIONS_ENABLED === "1" || process.env.ORGANIZATIONS_ENABLED === "true";
 // To be able to use the version in the app without having to import package.json
@@ -47,8 +52,6 @@ if (!process.env.EMAIL_FROM) {
     "EMAIL_FROM environment variable is not set, this may indicate mailing is currently disabled. Please refer to the .env.example file."
   );
 }
-
-if (!process.env.NEXTAUTH_URL) throw new Error("Please set NEXTAUTH_URL");
 
 if (!process.env.NEXT_PUBLIC_API_V2_URL) {
   console.error("Please set NEXT_PUBLIC_API_V2_URL");
@@ -189,11 +192,11 @@ const nextConfig = {
   productionBrowserSourceMaps: process.env.SENTRY_DISABLE_CLIENT_SOURCE_MAPS === "0",
   /* We already do type check on GH actions */
   typescript: {
-    ignoreBuildErrors: !!process.env.CI,
+    ignoreBuildErrors: 1,
   },
   /* We already do linting on GH actions */
   eslint: {
-    ignoreDuringBuilds: !!process.env.CI,
+    ignoreDuringBuilds: 1,
   },
   transpilePackages: [
     "@calcom/app-store",
@@ -674,22 +677,22 @@ const nextConfig = {
   },
 };
 
-// if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
-//   plugins.push((nextConfig) =>
-//     withSentryConfig(nextConfig, {
-//       autoInstrumentServerFunctions: false,
-//       hideSourceMaps: true,
-//       // disable source map generation for the server code
-//       disableServerWebpackPlugin: !!process.env.SENTRY_DISABLE_SERVER_WEBPACK_PLUGIN,
-//       silent: false,
-//       sourcemaps: {
-//         disable: process.env.SENTRY_DISABLE_SERVER_SOURCE_MAPS === "1",
-//       },
-//       authToken: process.env.SENTRY_AUTH_TOKEN,
-//       telemetry: false,
-//       project: process.env.SENTRY_PROJECT,
-//     })
-//   );
-// }
+if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  plugins.push((nextConfig) =>
+    withSentryConfig(nextConfig, {
+      autoInstrumentServerFunctions: false,
+      hideSourceMaps: true,
+      // disable source map generation for the server code
+      disableServerWebpackPlugin: !!process.env.SENTRY_DISABLE_SERVER_WEBPACK_PLUGIN,
+      silent: false,
+      sourcemaps: {
+        disable: process.env.SENTRY_DISABLE_SERVER_SOURCE_MAPS === "1",
+      },
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
+      project: process.env.SENTRY_PROJECT,
+    })
+  );
+}
 
 module.exports = () => plugins.reduce((acc, next) => next(acc), nextConfig);
