@@ -9,7 +9,7 @@ import {
 } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 
-// import { default as Razorpay } from "./Razorpay";
+import { default as Razorpay } from "./Razorpay";
 
 const handleRazorpayOAuthRedirect = async (query: ParsedUrlQuery, userId: number) => {
   const { code, state } = query;
@@ -37,18 +37,18 @@ const handleRazorpayOAuthRedirect = async (query: ParsedUrlQuery, userId: number
   }
   const { access_token, refresh_token, public_token, razorpay_account_id } = await res.json();
 
-  // //TODO:razorpay webhook setup
-  // //setting up webhooks on user account programmatically
-  // const razorpay = new Razorpay({
-  //   access_token,
-  //   refresh_token,
-  //   user_id: userId,
-  // });
+  //TODO:razorpay webhook setup
+  //setting up webhooks on user account programmatically
+  const razorpay = new Razorpay({
+    access_token,
+    refresh_token,
+    user_id: userId,
+  });
 
-  // const didCreate = await razorpay.createWebhooks(razorpay_account_id);
-  // if (!didCreate) {
-  //   throw new Error("Failed to create webhooks for user");
-  // }
+  const didCreate = await razorpay.createWebhooks(razorpay_account_id);
+  if (!didCreate) {
+    throw new Error("Failed to create webhooks for user");
+  }
   const installation = await prisma.credential.create({
     data: {
       type: "razorpay_payment",

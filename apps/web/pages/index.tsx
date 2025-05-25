@@ -23,7 +23,7 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
       const hostnameParts = url.hostname.split(".");
 
       if (hostnameParts.length === 2) {
-        hostnameParts.unshift("app");
+        // hostnameParts.unshift("app");
         url.hostname = hostnameParts.join(".");
       }
 

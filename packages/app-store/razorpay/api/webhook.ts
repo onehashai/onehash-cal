@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { buffer } from "micro";
 //WEBHOOK EVENTS ASSOCIATED EXAMPLE PAYLOADS : https://razorpay.com/docs/webhooks/payloads/payments/
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
@@ -110,10 +111,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method !== "POST") {
       throw new HttpCode({ statusCode: 405, message: "Method Not Allowed" });
     }
+
+    const rawBody = (await buffer(req)).toString("utf8");
+    const signature = req.headers["x-razorpay-signature"];
+
     const parsedVerifyWebhook = verifyWebhookSchema.safeParse({
-      body: JSON.stringify(req.body),
-      signature: req.headers["x-razorpay-signature"],
+      body: rawBody,
+      signature: signature,
     });
+
     if (!parsedVerifyWebhook.success) {
       console.error("Razorpay webhook malformed");
       log.error("Razorpay webhook malformed");
@@ -125,15 +131,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       log.error("Razorpay webhook signature mismatch");
       throw new HttpCode({ statusCode: 400, message: "Bad Request" });
     }
-    const { event, account_id } = req.body;
+    // Parse the request body
+    const parsedBody = JSON.parse(rawBody);
+    console.log("razorpay_parsed_body", parsedBody);
+    const { event, account_id } = parsedBody;
     switch (event) {
       case WebhookEvents.APP_REVOKED:
         await handleAppRevoked(account_id);
         break;
       case WebhookEvents.PAYMENT_LINK_PAID:
         await handlePaymentLinkPaid({
-          paymentId: req.body.payload.payment.entity.id,
-          paymentLinkId: req.body.payload.payment_link.entity.id,
+          paymentId: parsedBody.payload.payment.entity.id,
+          paymentLinkId: parsedBody.payload.payment_link.entity.id,
         });
         break;
       default:
