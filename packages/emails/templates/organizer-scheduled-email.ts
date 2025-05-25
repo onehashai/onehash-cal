@@ -19,6 +19,7 @@ export default class OrganizerScheduledEmail extends BaseEmail {
   newSeat?: boolean;
   teamMember?: Person;
   reassigned?: Reassigned;
+  disableCancelAndRescheduleMeeting?: boolean;
 
   constructor(input: {
     calEvent: CalendarEvent;

@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  web:
+    container_name: cal-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        CALENDSO_ENCRYPTION_KEY: ${CALENDSO_ENCRYPTION_KEY}
+        NEXT_PUBLIC_WEBAPP_URL: ${NEXT_PUBLIC_WEBAPP_URL}
+        NEXT_PUBLIC_API_V2_URL: ${NEXT_PUBLIC_API_V2_URL}
+        DATABASE_DIRECT_URL: ${DATABASE_DIRECT_URL}
+

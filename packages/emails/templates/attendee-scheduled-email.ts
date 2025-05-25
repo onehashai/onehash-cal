@@ -15,6 +15,7 @@ export default class AttendeeScheduledEmail extends BaseEmail {
   attendee: Person;
   showAttendees: boolean | undefined;
   t: TFunction;
+  disableCancelAndRescheduleMeeting: boolean | undefined;
 
   constructor(
     calEvent: CalendarEvent,

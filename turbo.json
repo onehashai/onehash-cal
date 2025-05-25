@@ -17,7 +17,17 @@
     },
     "@calcom/prisma#db-deploy": {
       "cache": false,
-      "dependsOn": ["@calcom/web#build"],
+      "dependsOn": [],
+      "inputs": ["./schema.prisma", "./migrations/**/*.sql"]
+    },
+    "@calcom/prisma#db-migrate": {
+      "cache": false,
+      "dependsOn": [],
+      "inputs": ["./schema.prisma", "./migrations/**/*.sql"]
+    },
+    "@calcom/prisma#db-rollback": {
+      "cache": false,
+      "dependsOn": [],
       "inputs": ["./schema.prisma", "./migrations/**/*.sql"]
     },
     "@calcom/web#start": {
@@ -40,6 +50,7 @@
       "inputs": ["./schema.prisma", "./prisma/schema.prisma"],
       "env": ["PRISMA_GENERATE_DATAPROXY"]
     },
+
     "lint": {
       "cache": false
     },
@@ -363,7 +374,6 @@
     "RECAPTCHA_SECRET_MEDIUM",
     "RECAPTCHA_SECRET_HIGH",
     "RECAPTCHA_SECRET_LOW",
-    "NEW_RELIC_LICENSE_KEY",
-    "NEW_RELIC_APP_NAME"
+    "NEXT_PUBLIC_SENTRY_LOG_LEVEL"
   ]
 }
