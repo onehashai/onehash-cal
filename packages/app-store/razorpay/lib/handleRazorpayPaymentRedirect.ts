@@ -72,12 +72,17 @@ const handleRazorpayPaymentRedirect = async (params: PaymentParams): Promise<str
 
     const payment = await prisma.payment.findUnique({
       where: { externalId: razorpay_payment_link_id },
-      select: { id: true, bookingId: true },
+      select: { id: true, bookingId: true, success: true },
     });
 
     if (!payment) {
       log.error("error:Payment not found");
       return "error";
+    }
+
+    if (payment.success) {
+      log.warn(`Payment with id '${payment.id}' was already paid and confirmed.`);
+      return "success";
     }
 
     await handlePaymentSuccess(payment.id, payment.bookingId, { paymentId: razorpay_payment_id });
