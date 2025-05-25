@@ -112,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const parsedVerifyWebhook = verifyWebhookSchema.safeParse({
       body: JSON.stringify(req.body),
-      signature: req.headers["x-razorpay-signature"],
+      signature: req.headers["X-Razorpay-Signature"],
     });
     if (!parsedVerifyWebhook.success) {
       console.error("Razorpay webhook malformed");
