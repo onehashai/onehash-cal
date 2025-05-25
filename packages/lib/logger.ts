@@ -4,6 +4,8 @@ import { Logger } from "tslog";
 
 import { IS_PRODUCTION } from "./constants";
 
+// const stream = fs.createWriteStream("/tmp/nextjs-app.log", { flags: "a" });
+
 // import { newRelicTransport } from "./newrelic-transporter";
 
 // const stream = fs.createWriteStream("/tmp/nextjs-app.log", { flags: "a" });
@@ -52,12 +54,6 @@ const logger = new Logger({
     dateIsoStr: "blue",
   },
   argumentsArrayName: "args",
-  // attachedTransports: [
-  //   (logObject) => {
-  //     // stream.write(`${JSON.stringify(logObject)}\n`);
-  //     newRelicTransport(logObject);
-  //   },
-  // ],
 
   attachedTransports: [
     (logObject) => {
@@ -71,5 +67,7 @@ const logger = new Logger({
     },
   ],
 });
+
+// const formatLogService = (logObject: ILogObjMeta) => {};
 
 export default logger;

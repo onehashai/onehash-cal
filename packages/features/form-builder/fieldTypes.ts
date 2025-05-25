@@ -157,10 +157,16 @@ const configMap: Record<FieldType, Omit<z.infer<typeof fieldTypeConfigSchema>, "
     value: "url",
     isTextType: true,
   },
+  date: {
+    label: "Date",
+    value: "date",
+    isTextType: true,
+    needsOptions: false,
+  },
 };
 
 export const fieldTypesConfigMap = configMap as Record<FieldType, z.infer<typeof fieldTypeConfigSchema>>;
 
 Object.entries(fieldTypesConfigMap).forEach(([fieldType, config]) => {
-  config.propsType = propsTypes[fieldType as keyof typeof fieldTypesConfigMap];
+  config.propsType = propsTypes[fieldType as keyof typeof propsTypes];
 });
