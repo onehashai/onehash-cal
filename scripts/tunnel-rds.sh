@@ -5,15 +5,29 @@
 set -e
 
 
-# 🔹 STAGING CONFIG
-STAGING_EC2_DNS=ubuntu@ec2-3-7-112-146.ap-south-1.compute.amazonaws.com
-STAGING_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
-STAGING_PEM_PATH=/Users/apple/Documents/OneHash/ec2/cal_stag.pem
+ROOT_DIR=/Users/apple/Documents/OneHash/ec2/
 
-# 🔸 PRODUCTION CONFIG
-PROD_EC2_DNS=ubuntu@ec2-43-205-81-36.ap-south-1.compute.amazonaws.com
-PROD_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
-PROD_PEM_PATH=/Users/apple/Documents/OneHash/ec2/cal_prod.pem
+# 🔹CAL  STAGING CONFIG
+CALSTAGING_EC2_DNS=ubuntu@ec2-3-7-112-146.ap-south-1.compute.amazonaws.com
+CALSTAGING_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
+CALSTAGING_PEM_PATH="$ROOT_DIR/cal_stag.pem"
+
+# 🔸CAL PRODUCTION CONFIG
+CALPROD_EC2_DNS=ubuntu@ec2-15-206-99-88.ap-south-1.compute.amazonaws.com
+CALPROD_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
+CALPROD_PEM_PATH="$ROOT_DIR/cal_prod.pem"
+
+# 🔹 CHAT STAGING CONFIG
+CHATSTAGING_EC2_DNS=ubuntu@ec2-13-127-187-131.ap-south-1.compute.amazonaws.com
+CHATSTAGING_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
+CHATSTAGING_PEM_PATH="$ROOT_DIR/chat_stag.pem"
+
+# 🔸 CHAT PRODUCTION CONFIG
+CHATPROD_EC2_DNS=ubuntu@ec2-13-127-190-229.ap-south-1.compute.amazonaws.com
+CHATPROD_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
+CHATPROD_PEM_PATH="$ROOT_DIR/chat_prod.pem"
+
+
 
 # Defaults
 PORT_LOCAL=5433
@@ -21,28 +35,42 @@ RDS_ENDPOINT=""
 EC2_DNS=""
 PEM_KEY=""
 
-# Parse flags
-while getopts ":ps" opt; do
-  case ${opt} in
-    p )
-      RDS_ENDPOINT=$PROD_RDS_ENDPOINT
-      EC2_DNS=$PROD_EC2_DNS
-      PEM_KEY=$PROD_PEM_PATH
-      ;;
-    s )
-      RDS_ENDPOINT=$STAGING_RDS_ENDPOINT
-      EC2_DNS=$STAGING_EC2_DNS
-      PEM_KEY=$STAGING_PEM_PATH
-      ;;
-    \? )
-      echo "Usage: $0 [-p|-s]"
-      exit 1
-      ;;
-  esac
-done
+# Parse single argument
+case "$1" in
+  -calp )
+    RDS_ENDPOINT=$CALPROD_RDS_ENDPOINT
+    EC2_DNS=$CALPROD_EC2_DNS
+    PEM_KEY=$CALPROD_PEM_PATH
+    ;;
+  -cals )
+    RDS_ENDPOINT=$CALSTAGING_RDS_ENDPOINT
+    EC2_DNS=$CALSTAGING_EC2_DNS
+    PEM_KEY=$CALSTAGING_PEM_PATH
+    ;;
+  -chatp )
+    RDS_ENDPOINT=$CHATPROD_RDS_ENDPOINT
+    EC2_DNS=$CHATPROD_EC2_DNS
+    PEM_KEY=$CHATPROD_PEM_PATH
+    ;;
+  -chats )
+    RDS_ENDPOINT=$CHATSTAGING_RDS_ENDPOINT
+    EC2_DNS=$CHATSTAGING_EC2_DNS
+    PEM_KEY=$CHATSTAGING_PEM_PATH
+    ;;
+  * )
+    echo "Usage: $0 [-calp|-cals|-chatp|-chats]"
+    exit 1
+    ;;
+esac
 
+# Validate
 if [[ -z "$RDS_ENDPOINT" || -z "$EC2_DNS" || -z "$PEM_KEY" ]]; then
-  echo "❌ Missing config. Make sure you pass -p or -s ."
+  echo "❌ Missing config."
+  exit 1
+fi
+
+if [ ! -f "$PEM_KEY" ]; then
+  echo "❌ PEM file not found: $PEM_KEY"
   exit 1
 fi
 
