@@ -62,7 +62,6 @@ jobs:
           check "${{ secrets.AWS_REGION }}" "AWS_REGION"
           check "${{ secrets.AWS_ACCESS_KEY_ID }}" "AWS_ACCESS_KEY_ID"
           check "${{ secrets.AWS_SECRET_ACCESS_KEY }}" "AWS_SECRET_ACCESS_KEY"
-          check "${{ secrets.REPO_NAME }}" "REPO_NAME"
           check "${{ secrets.REPO_URL }}" "REPO_URL"
           check "${{ secrets.AWS_ACCOUNT_ID }}" "AWS_ACCOUNT_ID"
           check "${{ secrets.CERTBOT_EMAIL }}" "CERTBOT_EMAIL"
@@ -150,6 +149,7 @@ jobs:
             echo "${{ secrets.EC2_SSH_KEY_PROD }}" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "DATABASE_URL=${{ secrets.DATABASE_DIRECT_URL_PROD}}" >> $GITHUB_OUTPUT
+            echo "REPO_NAME"="cal_prod" >> $GITHUB_OUTPUT
           else
             echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_STAG }}" >> $GITHUB_OUTPUT
             echo "NAMESERVERS=${{ secrets.NAMESERVERS_STAG }}" >> $GITHUB_OUTPUT
@@ -158,6 +158,7 @@ jobs:
             echo "${{ secrets.EC2_SSH_KEY_STAG }}" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "DATABASE_URL=${{ secrets.DATABASE_DIRECT_URL_STAG}}" >> $GITHUB_OUTPUT
+            echo "REPO_NAME"="cal_stag" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and Push Docker image
@@ -171,8 +172,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.REPO_NAME }}:${{ steps.tag.outputs.tag_suffix }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:latest
           build-args: |
             NEXTAUTH_URL=${{ steps.key_values.outputs.DOMAIN_NAME }}
             NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
@@ -213,7 +214,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-          REPO_NAME: ${{ secrets.REPO_NAME }}
+          REPO_NAME: ${{ steps.key_values.outputs.REPO_NAME }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
           GIT_HASH: ${{ steps.hash.outputs.git_hash }}
           IS_ROLLBACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
