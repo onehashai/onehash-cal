@@ -342,12 +342,13 @@ jobs:
             fi
 
             # Determine current and new ports
-            PORT=$(sudo grep -oP '127.0.0.1:\K[0-9]+' /etc/nginx/conf.d/default.conf 2>/dev/null || echo "")
+            PORT=$(sudo grep -oP '127.0.0.1:\K[0-9]+' /etc/nginx/conf.d/default.conf 2>/dev/null | head -1)
             if [ -z "$PORT" ]; then
               CURRENT_PORT=3002 # Default to 3002 if not found
             else
               CURRENT_PORT=$PORT
             fi
+            CURRENT_PORT=$(echo "$CURRENT_PORT" | tr -d '[:space:]')
             log_message "INFO" "Current port: $CURRENT_PORT"
 
             # BLUE/GREEN DEPLOYMENT STRATEGY
