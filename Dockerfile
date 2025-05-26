@@ -69,6 +69,9 @@ COPY --from=builder /calid/.yarn ./.yarn
 # Copying the build output from the builder stage
 COPY --from=builder /calid/apps/web/ ./apps/web/
 
+# Copying node_modules from builder stage
+COPY --from=builder /calid/node_modules ./node_modules
+
 COPY ./entrypoint.sh ./
 RUN chmod +x ./entrypoint.sh
 
@@ -76,7 +79,7 @@ ARG IS_ROLLBACK=false
 ENV IS_ROLLBACK=$IS_ROLLBACK
 
 # Allowing mutable installs
-RUN yarn config set enableImmutableInstalls false
+# RUN yarn config set enableImmutableInstalls false
 
 # EXPOSING PORT
 EXPOSE 3001

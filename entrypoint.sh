@@ -2,7 +2,7 @@
 
 set -e
 
-yarn install
+# yarn install
 
 
 if [ "$IS_ROLLBACK" = true ]; then
