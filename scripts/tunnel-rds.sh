@@ -1,41 +1,52 @@
 #!/bin/bash
 
-# Usage: ./connect-rds.sh -p|-s
+# Usage: ./connect-rds.sh -calp|-cals|-chatp|-chats
 
 set -e
 
+ENV_FILE=".env"
 
-ROOT_DIR=/Users/apple/Documents/OneHash/ec2/
+# Validate flag and set required keys
+case "$1" in
+  -calp )
+    REQUIRED_KEYS=(CALPROD_EC2_DNS CALPROD_RDS_ENDPOINT CALPROD_PEM_PATH)
+    ;;
+  -cals )
+    REQUIRED_KEYS=(CALSTAGING_EC2_DNS CALSTAGING_RDS_ENDPOINT CALSTAGING_PEM_PATH)
+    ;;
+  -chatp )
+    REQUIRED_KEYS=(CHATPROD_EC2_DNS CHATPROD_RDS_ENDPOINT CHATPROD_PEM_PATH)
+    ;;
+  -chats )
+    REQUIRED_KEYS=(CHATSTAGING_EC2_DNS CHATSTAGING_RDS_ENDPOINT CHATSTAGING_PEM_PATH)
+    ;;
+  * )
+    echo "Usage: $0 [-calp|-cals|-chatp|-chats]"
+    exit 1
+    ;;
+esac
 
-# 🔹CAL  STAGING CONFIG
-CALSTAGING_EC2_DNS=ubuntu@ec2-3-7-112-146.ap-south-1.compute.amazonaws.com
-CALSTAGING_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
-CALSTAGING_PEM_PATH="$ROOT_DIR/cal_stag.pem"
+# Check that each required key exists in the .env file
+MISSING_KEYS=()
 
-# 🔸CAL PRODUCTION CONFIG
-CALPROD_EC2_DNS=ubuntu@ec2-15-206-99-88.ap-south-1.compute.amazonaws.com
-CALPROD_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
-CALPROD_PEM_PATH="$ROOT_DIR/cal_prod.pem"
+for KEY in "${REQUIRED_KEYS[@]}"; do
+  if ! grep -q "^$KEY=" "$ENV_FILE"; then
+    MISSING_KEYS+=("$KEY")
+  fi
+done
 
-# 🔹 CHAT STAGING CONFIG
-CHATSTAGING_EC2_DNS=ubuntu@ec2-13-127-187-131.ap-south-1.compute.amazonaws.com
-CHATSTAGING_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
-CHATSTAGING_PEM_PATH="$ROOT_DIR/chat_stag.pem"
+if [ ${#MISSING_KEYS[@]} -ne 0 ]; then
+  echo "❌ Missing keys in $ENV_FILE:"
+  for KEY in "${MISSING_KEYS[@]}"; do
+    echo "  - $KEY"
+  done
+  exit 1
+fi
 
-# 🔸 CHAT PRODUCTION CONFIG
-CHATPROD_EC2_DNS=ubuntu@ec2-13-127-190-229.ap-south-1.compute.amazonaws.com
-CHATPROD_RDS_ENDPOINT=postgres-db.ch8bjhtexpql.ap-south-1.rds.amazonaws.com
-CHATPROD_PEM_PATH="$ROOT_DIR/chat_prod.pem"
+# Export only the required keys from .env
+eval $(grep -E "^($(IFS='|'; echo "${REQUIRED_KEYS[*]}"))=" "$ENV_FILE")
 
-
-
-# Defaults
-PORT_LOCAL=5433
-RDS_ENDPOINT=""
-EC2_DNS=""
-PEM_KEY=""
-
-# Parse single argument
+# Map env variables to script variables
 case "$1" in
   -calp )
     RDS_ENDPOINT=$CALPROD_RDS_ENDPOINT
@@ -57,15 +68,11 @@ case "$1" in
     EC2_DNS=$CHATSTAGING_EC2_DNS
     PEM_KEY=$CHATSTAGING_PEM_PATH
     ;;
-  * )
-    echo "Usage: $0 [-calp|-cals|-chatp|-chats]"
-    exit 1
-    ;;
 esac
 
-# Validate
+# Validation
 if [[ -z "$RDS_ENDPOINT" || -z "$EC2_DNS" || -z "$PEM_KEY" ]]; then
-  echo "❌ Missing config."
+  echo "❌ Missing config values after loading .env"
   exit 1
 fi
 
@@ -76,6 +83,8 @@ fi
 
 # Ensure permissions are correct
 chmod 400 "$PEM_KEY"
+
+PORT_LOCAL=5433
 
 echo "🔐 Connecting to $RDS_ENDPOINT via $EC2_DNS"
 echo "🛡️ Using key: $PEM_KEY"
