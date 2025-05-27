@@ -15,7 +15,7 @@
     "test": "yarn test",
     "type-check": "tsc --pretty --noEmit",
     "type-check:ci": "tsc-absolute --pretty --noEmit",
-    "build": "next build --debug",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 next build --debug",
     "start": "next start --port 3001",
     "lint": "eslint . --ignore-path .gitignore",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
