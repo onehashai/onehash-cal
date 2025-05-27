@@ -51,4 +51,5 @@ const handleBookingExportFn = inngestClient.createFunction(
 export default serve({
   client: inngestClient,
   functions: [handleCalendlyImportFn, handleBookingExportFn],
+  signingKey: process.env.INNGEST_SIGNING_KEY || "",
 });
