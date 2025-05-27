@@ -5,7 +5,10 @@ import { INNGEST_ID } from "@calcom/lib/constants";
 import { handleBookingExportEvent } from "@calcom/trpc/server/routers/viewer/bookings/export.handler";
 import { handleCalendlyImportEvent } from "@calcom/web/pages/api/import/calendly";
 
-export const inngestClient = new Inngest({ id: INNGEST_ID });
+export const inngestClient = new Inngest({
+  id: INNGEST_ID,
+  eventKey: process.env.INNGEST_EVENT_KEY || "",
+});
 
 const key = INNGEST_ID === "onehash-cal" ? "prod" : "stag";
 
@@ -51,4 +54,5 @@ const handleBookingExportFn = inngestClient.createFunction(
 export default serve({
   client: inngestClient,
   functions: [handleCalendlyImportFn, handleBookingExportFn],
+  signingKey: process.env.INNGEST_SIGNING_KEY || "",
 });
