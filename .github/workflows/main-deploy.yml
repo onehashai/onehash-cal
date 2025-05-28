@@ -1,6 +1,10 @@
 name: Build, Push Docker Image, Deploy to EC2
 
 on:
+  #trigger on push on "deploy" branch
+  push:
+    branches:
+      - deploy  
   pull_request:
     types:
       - closed  
@@ -24,7 +28,7 @@ concurrency:
 jobs:
   # ONLY RUN JOB ON PR MERGE on MAIN OR DEVELOP BRANCH
   build-push-deploy:
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/deploy'
     runs-on: ubuntu-latest      
 
     steps:
@@ -111,14 +115,14 @@ jobs:
           fi
 
       - name: Login to Amazon ECR
-        if: ${{ steps.configure-aws.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.configure-aws.outcome == 'success' }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         continue-on-error: true
 
       - name: Check ECR login status
         shell: bash
-        if: ${{ steps.configure-aws.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.configure-aws.outcome == 'success' }}
         run: |
           if [ "${{ steps.login-ecr.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ ECR login failed" >> "$LOG_FILE"
@@ -169,6 +173,16 @@ jobs:
           access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      # Log image does not exist, hence rollback step
+      - name: Log ECR image existence status
+        shell: bash
+        run: |
+          if [ "${{ steps.check-ecr-image.outputs.image-exists }}" == "1" ]; then
+            echo "[INFO]: ✅ ECR image already exists" >> "$LOG_FILE"
+          else
+            echo "[INFO]: ❌ ECR image does not exist, proceeding to build and push" >> "$LOG_FILE"
+          fi
+
       # If the image does not exist, build and push the Docker image
       - name: Build and Push Docker image
         if: ${{ steps.check-ecr-image.outputs.image-exists == '0' }}
@@ -193,7 +207,7 @@ jobs:
       - name: Check Docker build status
         shell: bash
         id : check_docker_build_status
-        if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.check-ecr-image.outputs.image-exists == '0' }}
         run: |
           if [ "${{ steps.docker_build.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ Docker build & push failed" >> "$LOG_FILE"
@@ -201,9 +215,9 @@ jobs:
             echo "[INFO]: ✅ Docker build & push succeeded" >> "$LOG_FILE"
           fi
           
-      # DEPLOYING TO EC2
+      # DEPLOYING TO EC2 , if the image build was successful or the image already exists in ECR
       - name: SSH into EC2 and Deploy
-        if: ${{ steps.docker_build.outcome == 'success' || (github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.docker_build.outcome == 'success' ||  steps.check-ecr-image.outputs.image-exists == '1'  }}
         uses: appleboy/ssh-action@v0.1.10
         id: ssh_deploy
         env:
@@ -267,46 +281,44 @@ jobs:
             log_message "INFO" "==== VPC LOGS ===="
 
             # Setting up onehash-cal repo locally and pulling the latest changes
-            if [ ! -d "/home/onehash/onehash-cal" ]; then
-              log_message "INFO" "Directory 'onehash-cal' does not exist. Cloning the repository."
+            if [ ! -d "/home/onehash/onehash-cal/infra" ]; then
+              log_message "INFO" "Directory 'onehash-cal/infra' does not exist. Cloning the repository."
               mkdir -p ~/onehash-cal
               cd ~/onehash-cal || { log_message "ERROR" "Failed to cd into ~/onehash-cal"; exit 1; }
-              
+
               if ! exec_command "Git init" "git init"; then
                 exit 1
               fi
-              
-              exec_command "Git sparse checkout setup" "git config core.sparseCheckout true"
-              # PULLING ONLY THE "infra" DIRECTORY TO SAVE TIME/SPACE
-              echo "infra/*" > .git/info/sparse-checkout
 
-              # ADDING THE REMOTE REPO
+              # Only need infra/*
+              if ! exec_command "Git sparse-checkout set infra" "git sparse-checkout set infra"; then
+                exit 1
+              fi
+
               if ! exec_command "Git remote add" "git remote add origin ${{env.REPO_URL}}"; then
                 exit 1
               fi
-              
-              # Fetch the branch explicitly rather than pull
+
               if ! exec_command "Git fetch" "git fetch origin ${{env.BRANCH_NAME}} --depth=1"; then
                 exit 1
               fi
-              
+
               if ! exec_command "Git checkout" "git checkout ${{env.BRANCH_NAME}}"; then
                 exit 1
               fi
             else
               log_message "INFO" "Directory 'onehash-cal' exists. Pulling the latest changes."
               cd ~/onehash-cal || { log_message "ERROR" "Failed to cd into ~/onehash-cal"; exit 1; }
-              
-              # Fetch changes first to see what's new
+
               if ! exec_command "Git fetch" "git fetch origin ${{env.BRANCH_NAME}}"; then
                 exit 1
               fi
-              
-              # Reset to the remote branch to avoid merge conflicts
+
               if ! exec_command "Git reset" "git reset --hard origin/${{env.BRANCH_NAME}}"; then
                 exit 1
               fi
             fi
+
 
             # Set timeout for aws command to prevent hanging
             export AWS_CLI_TIMEOUT=60
@@ -514,71 +526,60 @@ jobs:
                 exit 1
               fi
 
-              # Change to repo directory for git operations
-              cd ~/onehash-cal || { log_message "ERROR" "Failed to cd into ~/onehash-cal for rollback"; exit 1; }
+              # Helper function to fetch migrations from a specific commit
+              fetch_migrations_from_commit() {
+                local commit_hash=$1
+                local out_dir=$2
+                local temp_dir
+                temp_dir=$(mktemp -d /tmp/migrations-checkout-XXXXXX)
 
-              # Update sparse-checkout to include migrations
-              log_message "INFO" "Updating sparse-checkout to include migrations"
-              if ! exec_command "Update sparse-checkout for migrations" "git sparse-checkout set packages/prisma/migrations"; then
-                exit 1
-              fi
+                if ! exec_command "Sparse clone migrations" \
+                  "git clone --no-checkout --depth 1 --branch $BRANCH_NAME ${{env.REPO_URL}} $temp_dir"; then
+                  rm -rf "$temp_dir"
+                  exit 1
+                fi
 
-              # Fetch all necessary commits
-              log_message "INFO" "📦 Fetching commits for rollback..."
-              if ! exec_command "Git fetch for rollback" "git fetch origin $BRANCH_NAME"; then
-                exit 1
-              fi
+                cd "$temp_dir" || { log_message "ERROR" "Failed to cd into $temp_dir"; rm -rf "$temp_dir"; exit 1; }
 
-              # Get latest commit
-              LATEST_COMMIT=$(git rev-parse origin/$BRANCH_NAME 2>>"$LOG_FILE")
+                if ! exec_command "Init sparse-checkout" "git sparse-checkout set packages/prisma/migrations"; then
+                  rm -rf "$temp_dir"
+                  exit 1
+                fi
+
+                # Fetch the specific commit
+                if ! exec_command "Fetch commit $commit_hash" "git fetch origin $commit_hash"; then
+                  rm -rf "$temp_dir"
+                  exit 1
+                fi
+
+                if ! exec_command "Checkout commit $commit_hash" "git checkout $commit_hash"; then
+                  rm -rf "$temp_dir"
+                  exit 1
+                fi
+
+                if ! exec_command "Copy migrations" "cp -r packages/prisma/migrations/* $out_dir/ 2>/dev/null || true"; then
+                  log_message "WARN" "⚠️ No migrations found in commit $commit_hash or copy failed"
+                fi
+
+                cd /
+                rm -rf "$temp_dir"
+              }
+
+              # Get latest commit hash
+              LATEST_COMMIT=$(git -C ~/onehash-cal rev-parse origin/$BRANCH_NAME 2>>"$LOG_FILE")
               if [ $? -ne 0 ]; then
                 log_message "ERROR" "❌ Could not determine latest commit from $BRANCH_NAME"
                 exit 1
               fi
               log_message "INFO" "✅ Latest commit on $BRANCH_NAME is $LATEST_COMMIT"
 
-              # Checkout migrations from latest commit
-              log_message "INFO" "🔍 Checking out migrations from latest commit"
-              if ! exec_command "Create latest checkout dir" "mkdir -p /tmp/latest-checkout"; then
-                exit 1
-              fi
-
-              if ! exec_command "Checkout latest migrations" "git --work-tree=/tmp/latest-checkout checkout $LATEST_COMMIT -- packages/prisma/migrations"; then
-                log_message "ERROR" "❌ Could not checkout migrations from latest commit $LATEST_COMMIT"
-                exit 1
-              fi
-
-              if ! exec_command "Copy latest migrations" "cp -r /tmp/latest-checkout/packages/prisma/migrations/* /tmp/latest_migrations/ 2>/dev/null || true"; then
-                log_message "WARN" "⚠️ No migrations found in latest commit or copy failed"
-              fi
-
-              if ! exec_command "Cleanup latest checkout" "rm -rf /tmp/latest-checkout"; then
-                log_message "WARN" "⚠️ Could not cleanup latest checkout directory"
-              fi
-
-              # Checkout migrations from rollback commit
-              log_message "INFO" "🔍 Checking out migrations from rollback commit $GIT_HASH"
-              if ! exec_command "Create rollback checkout dir" "mkdir -p /tmp/rollback-checkout"; then
-                exit 1
-              fi
-
-              if ! exec_command "Checkout rollback migrations" "git --work-tree=/tmp/rollback-checkout checkout $GIT_HASH -- packages/prisma/migrations"; then
-                log_message "ERROR" "❌ Could not checkout migrations from rollback commit $GIT_HASH"
-                exit 1
-              fi
-
-              if ! exec_command "Copy rollback migrations" "cp -r /tmp/rollback-checkout/packages/prisma/migrations/* /tmp/rollback_migrations/ 2>/dev/null || true"; then
-                log_message "WARN" "⚠️ No migrations found in rollback commit or copy failed"
-              fi
-
-              if ! exec_command "Cleanup rollback checkout" "rm -rf /tmp/rollback-checkout"; then
-                log_message "WARN" "⚠️ Could not cleanup rollback checkout directory"
-              fi
+              # Fetch migrations for latest and rollback commits
+              fetch_migrations_from_commit "$LATEST_COMMIT" "/tmp/latest_migrations"
+              fetch_migrations_from_commit "$GIT_HASH" "/tmp/rollback_migrations"
 
               # Compare migrations and find new ones to rollback
               log_message "INFO" "🔁 Comparing migrations..."
               NEW_MIGRATIONS_FILE="/tmp/new_migrations_list.txt"
-              
               if ! exec_command "Compare migrations" "comm -13 <(ls /tmp/rollback_migrations 2>/dev/null | sort) <(ls /tmp/latest_migrations 2>/dev/null | sort) | sort -r > $NEW_MIGRATIONS_FILE"; then
                 log_message "ERROR" "❌ Failed to compare migrations"
                 exit 1
@@ -649,6 +650,7 @@ jobs:
             else
               log_message "INFO" "🔄 Skipping database rollback (not a rollback deployment)"
             fi
+
 
             log_message "INFO" "✅ == Deployment Completed Successfully =="
 
