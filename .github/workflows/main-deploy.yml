@@ -115,14 +115,14 @@ jobs:
           fi
 
       - name: Login to Amazon ECR
-        if: ${{ steps.configure-aws.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.configure-aws.outcome == 'success' }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         continue-on-error: true
 
       - name: Check ECR login status
         shell: bash
-        if: ${{ steps.configure-aws.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.configure-aws.outcome == 'success' }}
         run: |
           if [ "${{ steps.login-ecr.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ ECR login failed" >> "$LOG_FILE"
@@ -173,6 +173,16 @@ jobs:
           access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      # Log image does not exist, hence rollback step
+      - name: Log ECR image existence status
+        shell: bash
+        run: |
+          if [ "${{ steps.check-ecr-image.outputs.image-exists }}" == "1" ]; then
+            echo "[INFO]: ✅ ECR image already exists" >> "$LOG_FILE"
+          else
+            echo "[INFO]: ❌ ECR image does not exist, proceeding to build and push" >> "$LOG_FILE"
+          fi
+
       # If the image does not exist, build and push the Docker image
       - name: Build and Push Docker image
         if: ${{ steps.check-ecr-image.outputs.image-exists == '0' }}
@@ -197,7 +207,7 @@ jobs:
       - name: Check Docker build status
         shell: bash
         id : check_docker_build_status
-        if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.check-ecr-image.outputs.image-exists == '0' }}
         run: |
           if [ "${{ steps.docker_build.outcome }}" != "success" ]; then
             echo "[ERROR]: ❌ Docker build & push failed" >> "$LOG_FILE"
@@ -205,9 +215,9 @@ jobs:
             echo "[INFO]: ✅ Docker build & push succeeded" >> "$LOG_FILE"
           fi
           
-      # DEPLOYING TO EC2
+      # DEPLOYING TO EC2 , if the image build was successful or the image already exists in ECR
       - name: SSH into EC2 and Deploy
-        if: ${{ steps.docker_build.outcome == 'success' || (github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.docker_build.outcome == 'success' ||  steps.check-ecr-image.outputs.image-exists == '1'  }}
         uses: appleboy/ssh-action@v0.1.10
         id: ssh_deploy
         env:
