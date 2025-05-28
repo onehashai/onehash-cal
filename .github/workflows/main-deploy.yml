@@ -79,8 +79,10 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.git_hash }}" ]; then
             hash="${{ github.event.inputs.git_hash }}"
+            echo "[INFO]: ↩️ Rollback Step" >> "$LOG_FILE"
           else
             hash="$(git rev-parse HEAD)"
+            echo "[INFO]: 🆕 New Deployment Step" >> "$LOG_FILE"
           fi
           echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
         
@@ -132,12 +134,6 @@ jobs:
           BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - name: Set Docker tag suffix
-        if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
-        id: tag
-        run: |
-          echo "tag_suffix=${{ steps.set_branch.outputs.branch_name == 'main' && 'latest-prod' || 'latest-stag' }}" >> $GITHUB_OUTPUT
-
       - name: Set dynamic key values for  DOMAIN_NAME , NAMESERVERS ,EC2_HOST ,EC2_SSH_KEY , DATABASE_URL
         id : key_values
         run: | 
@@ -161,8 +157,21 @@ jobs:
             echo "REPO_NAME"="cal_stag" >> $GITHUB_OUTPUT
           fi
 
+      # Checking if the image already exists in ECR
+      - name: Check if image already exists in ECR
+        if: ${{ steps.login-ecr.outcome == 'success' }}
+        id: check-ecr-image
+        uses: mnmandahalf/check-ecr-image-exists@v0.1.5
+        with:
+          region: ${{ secrets.AWS_REGION }}
+          repository-name: ${{ steps.key_values.outputs.REPO_NAME }}
+          image-tag: ${{ steps.hash.outputs.git_hash }}
+          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # If the image does not exist, build and push the Docker image
       - name: Build and Push Docker image
-        if: ${{ steps.login-ecr.outcome == 'success' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '') }}
+        if: ${{ steps.check-ecr-image.outputs.image-exists == '0' }}
         id: docker_build
         uses: docker/build-push-action@v5
         continue-on-error: true
@@ -191,12 +200,6 @@ jobs:
           else
             echo "[INFO]: ✅ Docker build & push succeeded" >> "$LOG_FILE"
           fi
-
-      - name: ROLLBACK CHECK
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
-        run: |
-          echo "[INFO]: ↩️ Rollback step: Skipping building docker images" >> "$LOG_FILE"
-
           
       # DEPLOYING TO EC2
       - name: SSH into EC2 and Deploy
@@ -517,13 +520,6 @@ jobs:
               # Update sparse-checkout to include migrations
               log_message "INFO" "Updating sparse-checkout to include migrations"
               if ! exec_command "Update sparse-checkout for migrations" "git sparse-checkout set packages/prisma/migrations"; then
-                exit 1
-              fi
-
-
-              # Apply sparse-checkout
-              if ! exec_command "Apply sparse-checkout" "git read-tree -mu HEAD"; then
-                log_message "ERROR" "❌ Failed to apply sparse-checkout for migrations"
                 exit 1
               fi
 
