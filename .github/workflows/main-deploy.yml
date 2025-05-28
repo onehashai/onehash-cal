@@ -510,7 +510,7 @@ jobs:
 
             # Cleanup Docker images
             log_message "INFO" "Pruning unused Docker images and containers older than 72 hours"
-            if ! exec_command "Docker pruning" "docker system prune -af --filter \"until=72h\""; then
+            if ! exec_command "Docker pruning" "docker system prune -af --volumes --filter \"until=72h\""; then
               log_message "WARN" "⚠️ Docker pruning had issues but deployment completed"
             fi
 
