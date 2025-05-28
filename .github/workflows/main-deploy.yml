@@ -546,6 +546,12 @@ jobs:
                   exit 1
                 fi
 
+                # Fetch the specific commit
+                if ! exec_command "Fetch commit $commit_hash" "git fetch origin $commit_hash"; then
+                  rm -rf "$temp_dir"
+                  exit 1
+                fi
+
                 if ! exec_command "Checkout commit $commit_hash" "git checkout $commit_hash"; then
                   rm -rf "$temp_dir"
                   exit 1
