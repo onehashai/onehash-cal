@@ -516,7 +516,14 @@ jobs:
 
               # Update sparse-checkout to include migrations
               log_message "INFO" "Updating sparse-checkout to include migrations"
-              if ! exec_command "Update sparse-checkout for migrations" "echo 'packages/prisma/migrations/*' > .git/info/sparse-checkout"; then
+              if ! exec_command "Update sparse-checkout for migrations" "git sparse-checkout set packages/prisma/migrations"; then
+                exit 1
+              fi
+
+
+              # Apply sparse-checkout
+              if ! exec_command "Apply sparse-checkout" "git read-tree -mu HEAD"; then
+                log_message "ERROR" "❌ Failed to apply sparse-checkout for migrations"
                 exit 1
               fi
 
