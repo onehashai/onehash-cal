@@ -203,6 +203,7 @@ jobs:
             CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
             NEXT_PUBLIC_WEBAPP_URL=${{ format('https://app.{0}', steps.key_values.outputs.DOMAIN_NAME) }}
             NEXT_PUBLIC_API_V2_URL=${{ secrets.NEXT_PUBLIC_API_V2_URL }}
+            NEXT_PUBLIC_WEBSITE_URL=${{steps.key_values.outputs.DOMAIN_NAME}}
 
       - name: Check Docker build status
         shell: bash
