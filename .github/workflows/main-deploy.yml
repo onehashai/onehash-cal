@@ -201,7 +201,7 @@ jobs:
             NEXTAUTH_URL=${{ steps.key_values.outputs.DOMAIN_NAME }}
             NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
             CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
-            NEXT_PUBLIC_WEBAPP_URL=${{ format('https://{0}', steps.key_values.outputs.DOMAIN_NAME) }}
+            NEXT_PUBLIC_WEBAPP_URL=${{ format('https://app.{0}', steps.key_values.outputs.DOMAIN_NAME) }}
             NEXT_PUBLIC_API_V2_URL=${{ secrets.NEXT_PUBLIC_API_V2_URL }}
 
       - name: Check Docker build status
@@ -388,9 +388,29 @@ jobs:
               exit 1
             fi
 
-            # Stop and remove any existing container with the same name
-            docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-            log_message "INFO" "Removed any existing container with name $CONTAINER_NAME"
+            #Check if we have enough space to start a new container in GB
+            AVAILABLE_SPACE=$(df -BG / | tail -1 | awk '{print $4}' | sed 's/G//')
+
+            # Log available space
+            log_message "INFO" "Available disk space: ${AVAILABLE_SPACE}GB"
+
+            #If available space is less than 10GB, lets try to prune unused Docker images and containers
+            if [ "$AVAILABLE_SPACE" -lt 10 ]; then 
+              log_message "WARN" "⚠️ Available disk space is low: ${AVAILABLE_SPACE}GB. Pruning unused Docker images and containers older than 72 hours."
+              if ! exec_command "Docker system prune" "docker system prune -af --volumes && docker volume prune -af"; then
+                log_message "ERROR" "❌ Failed to prune unused Docker images and containers"
+                exit 1
+              fi
+              AVAILABLE_SPACE=$(df -BG / | tail -1 | awk '{print $4}' | sed 's/G//')
+              if [ "$AVAILABLE_SPACE" -lt 10 ]; then
+                log_message "ERROR" "❌ Still insufficient disk space after pruning: ${AVAILABLE_SPACE}GB. Aborting deployment."
+                exit 1
+              else
+                log_message "INFO" "✅ Disk space after pruning: ${AVAILABLE_SPACE}GB"
+              fi
+            else
+              log_message "INFO" "✅ Sufficient disk space available: ${AVAILABLE_SPACE}GB"
+            fi
 
             #Running container
             log_message "INFO" "Starting Docker container '$CONTAINER_NAME' on port $NEW_PORT"
