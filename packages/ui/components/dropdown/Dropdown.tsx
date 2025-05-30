@@ -139,19 +139,24 @@ type ButtonOrLinkProps = ComponentProps<"button"> & ComponentProps<"a">;
 
 export function ButtonOrLink({ href, ...props }: ButtonOrLinkProps) {
   const isLink = typeof href !== "undefined";
-  const ButtonOrLink = isLink ? "a" : "button";
+  const isExternalLink = href?.startsWith("http");
 
-  const content = <ButtonOrLink {...props} />;
+  if (isLink && isExternalLink) {
+    // For external links,we will use regular anchor tag as Next.js Link does not support external links
+    // with legacyBehavior, which is required for compatibility with older versions of Next.js.
+    // This is a workaround to ensure that external links open in a new tab.
+    return <a href={href} {...props} />;
+  }
 
   if (isLink) {
     return (
       <Link href={href} legacyBehavior>
-        {content}
+        <a {...props} />
       </Link>
     );
   }
 
-  return content;
+  return <button {...props} />;
 }
 
 export const DropdownItem = (props: DropdownItemProps) => {
