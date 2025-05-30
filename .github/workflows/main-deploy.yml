@@ -308,7 +308,7 @@ jobs:
           username: "onehash"
           key: ${{ env.EC2_SSH_KEY }}
           command_timeout: 1500s # 25 minutes
-          envs:  AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
+          envs:  AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK ,DOMAIN_NAME
           script: |
             #!/bin/bash
 
