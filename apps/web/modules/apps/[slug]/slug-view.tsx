@@ -69,8 +69,8 @@ function SingleAppPage(props: PageProps) {
       concurrentMeetings={data.concurrentMeetings}
       paid={data.paid}
       dirName={data.dirName}
-      //   tos="https://zoom.us/terms"
-      //   privacy="https://zoom.us/privacy"
+      tos={data.tosUrl}
+      privacy={data.privacyUrl}
       body={
         <>
           {/* eslint-disable-next-line react/no-danger */}

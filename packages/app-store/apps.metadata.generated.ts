@@ -88,6 +88,7 @@ import link_as_an_app_config_json from "./templates/link-as-an-app/config.json";
 import twipla_config_json from "./twipla/config.json";
 import typeform_config_json from "./typeform/config.json";
 import umami_config_json from "./umami/config.json";
+import viasocket_config_json from "./viasocket/config.json";
 import vimcal_config_json from "./vimcal/config.json";
 import { metadata as vital__metadata_ts } from "./vital/_metadata";
 import weather_in_your_calendar_config_json from "./weather_in_your_calendar/config.json";
@@ -189,6 +190,7 @@ export const appStoreMetadata = {
   twipla: twipla_config_json,
   typeform: typeform_config_json,
   umami: umami_config_json,
+  viasocket: viasocket_config_json,
   vimcal: vimcal_config_json,
   vital: vital__metadata_ts,
   weather_in_your_calendar: weather_in_your_calendar_config_json,
