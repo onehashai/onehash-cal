@@ -102,6 +102,8 @@ jobs:
           check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_LOW }}" "NEXT_PUBLIC_RECAPTCHA_LOW"
           check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_MEDIUM }}" "NEXT_PUBLIC_RECAPTCHA_MEDIUM"
           check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_HARD }}" "NEXT_PUBLIC_RECAPTCHA_HARD"
+          check "${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" "NEXT_PUBLIC_POSTHOG_KEY"
+          check "${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" "NEXT_PUBLIC_POSTHOG_HOST"
           
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
@@ -269,8 +271,8 @@ jobs:
             NEXT_PUBLIC_RECAPTCHA_MEDIUM=${{ secrets.NEXT_PUBLIC_RECAPTCHA_MEDIUM }}
             NEXT_PUBLIC_RECAPTCHA_HARD=${{ secrets.NEXT_PUBLIC_RECAPTCHA_HARD }}
             NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS=${{ secrets.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS }}
-
-
+            NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+            NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
 
       - name: Check Docker build status
         shell: bash
