@@ -54,12 +54,10 @@ jobs:
             fi
           }
           check "${{ secrets.DOMAIN_NAME_STAG }}" "DOMAIN_NAME_STAG"
-          check "${{ secrets.NAMESERVERS_STAG }}" "NAMESERVERS_STAG"
           check "${{ secrets.EC2_HOST_STAG }}" "EC2_HOST_STAG"
           check "${{ secrets.EC2_SSH_KEY_STAG }}" "EC2_SSH_KEY_STAG"
           check "${{ secrets.DATABASE_DIRECT_URL_STAG}}" "DATABASE_DIRECT_URL_STAG"
           check "${{ secrets.DOMAIN_NAME_PROD }}" "DOMAIN_NAME_PROD"
-          check "${{ secrets.NAMESERVERS_PROD }}" "NAMESERVERS_PROD"
           check "${{ secrets.EC2_HOST_PROD }}" "EC2_HOST_PROD"
           check "${{ secrets.EC2_SSH_KEY_PROD }}" "EC2_SSH_KEY_PROD"
           check "${{ secrets.DATABASE_DIRECT_URL_PROD}}" "DATABASE_DIRECT_URL_PROD"
@@ -75,6 +73,35 @@ jobs:
           check "${{ secrets.SENDGRID_API_KEY }}" "SENDGRID_API_KEY"
           check "${{ secrets.EMAIL_TO }}" "EMAIL_TO"
           check "${{ secrets.EMAIL_FROM }}" "EMAIL_FROM"
+          check "${{ secrets.NEXT_PUBLIC_ONEHASH_URL }}" "NEXT_PUBLIC_ONEHASH_URL"
+          check "${{ secrets.BRAND_NAME }}" "BRAND_NAME"
+          check "${{ secrets.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS }}" "NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS"
+          check "${{ secrets.NEXT_PUBLIC_SENTRY_DSN_PROD }}" "NEXT_PUBLIC_SENTRY_DSN_PROD"
+          check "${{ secrets.NEXT_PUBLIC_SENTRY_DSN_STAG }}" "NEXT_PUBLIC_SENTRY_DSN_STAG"
+          check "${{ secrets.NEXT_PUBLIC_LOGGER_LEVEL }}" "NEXT_PUBLIC_LOGGER_LEVEL"
+          check "${{ secrets.NEXT_PUBLIC_TEAM_IMPERSONATION }}" "NEXT_PUBLIC_TEAM_IMPERSONATION"
+          check "${{ secrets.NEXT_PUBLIC_MINUTES_TO_BOOK }}" "NEXT_PUBLIC_MINUTES_TO_BOOK"
+          check "${{ secrets.NEXT_PUBLIC_BOOKER_NUMBER_OF_DAYS_TO_LOAD }}" "NEXT_PUBLIC_BOOKER_NUMBER_OF_DAYS_TO_LOAD"
+          check "${{ secrets.NEXT_PUBLIC_CALENDLY_OAUTH_URL }}" "NEXT_PUBLIC_CALENDLY_OAUTH_URL"
+          check "${{ secrets.NEXT_PUBLIC_CALENDLY_API_BASE_URL }}" "NEXT_PUBLIC_CALENDLY_API_BASE_URL"
+          check "${{ secrets.NEXT_PUBLIC_CALENDLY_CLIENT_ID_STAG }}" "NEXT_PUBLIC_CALENDLY_CLIENT_ID_STAG"
+          check "${{ secrets.NEXT_PUBLIC_CALENDLY_CLIENT_ID_PROD }}" "NEXT_PUBLIC_CALENDLY_CLIENT_ID_PROD"
+          check "${{ secrets.NEXT_PUBLIC_CALENDLY_REDIRECT_URI_STAG }}" "NEXT_PUBLIC_CALENDLY_REDIRECT_URI_STAG"
+          check "${{ secrets.NEXT_PUBLIC_CALENDLY_REDIRECT_URI_PROD }}" "NEXT_PUBLIC_CALENDLY_REDIRECT_URI_PROD"
+          check "${{ secrets.NEXT_PUBLIC_STRIPE_PUBLIC_KEY_STAG }}" "NEXT_PUBLIC_STRIPE_PUBLIC_KEY_STAG"
+          check "${{ secrets.NEXT_PUBLIC_STRIPE_PUBLIC_KEY_PROD }}" "NEXT_PUBLIC_STRIPE_PUBLIC_KEY_PROD"
+          check "${{ secrets.NEXT_PUBLIC_ONEHASH_CHAT_URL_STAG }}" "NEXT_PUBLIC_ONEHASH_CHAT_URL_STAG"
+          check "${{ secrets.NEXT_PUBLIC_ONEHASH_CHAT_URL_PROD }}" "NEXT_PUBLIC_ONEHASH_CHAT_URL_PROD"
+          check "${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_STAG }}" "NEXT_PUBLIC_RAZORPAY_CLIENT_ID_STAG"
+          check "${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_PROD }}" "NEXT_PUBLIC_RAZORPAY_CLIENT_ID_PROD"
+          check "${{ secrets.NEXT_PUBLIC_SIGNUP_URL_STAG }}" "NEXT_PUBLIC_SIGNUP_URL_STAG"
+          check "${{ secrets.NEXT_PUBLIC_SIGNUP_URL_PROD }}" "NEXT_PUBLIC_SIGNUP_URL_PROD"
+          check "${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}" "NEXT_PUBLIC_VAPID_PUBLIC_KEY"
+          check "${{ secrets.NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL }}" "NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL"
+          check "${{ secrets.NEXT_PUBLIC_WEBSITE_TERMS_URL }}" "NEXT_PUBLIC_WEBSITE_TERMS_URL"
+          check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_LOW }}" "NEXT_PUBLIC_RECAPTCHA_LOW"
+          check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_MEDIUM }}" "NEXT_PUBLIC_RECAPTCHA_MEDIUM"
+          check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_HARD }}" "NEXT_PUBLIC_RECAPTCHA_HARD"
           
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
@@ -138,27 +165,39 @@ jobs:
           BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - name: Set dynamic key values for  DOMAIN_NAME , NAMESERVERS ,EC2_HOST ,EC2_SSH_KEY , DATABASE_URL
+      - name: Set dynamic key values based on deployment environment
         id : key_values
         run: | 
           if [ "${{ steps.set_branch.outputs.branch_name }}" == "main" ]; then
             echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_PROD }}" >> $GITHUB_OUTPUT
-            echo "NAMESERVERS=${{ secrets.NAMESERVERS_PROD }}" >> $GITHUB_OUTPUT
             echo "EC2_HOST=${{ secrets.EC2_HOST_PROD }}" >> $GITHUB_OUTPUT
             echo "EC2_SSH_KEY<<EOF" >> $GITHUB_OUTPUT
             echo "${{ secrets.EC2_SSH_KEY_PROD }}" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "DATABASE_URL=${{ secrets.DATABASE_DIRECT_URL_PROD}}" >> $GITHUB_OUTPUT
             echo "REPO_NAME"="cal_prod" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN_PROD }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_CALENDLY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_CALENDLY_CLIENT_ID_PROD }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_CALENDLY_REDIRECT_URI=${{ secrets.NEXT_PUBLIC_CALENDLY_REDIRECT_URI_PROD }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_STRIPE_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLIC_KEY_PROD }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_ONEHASH_CHAT_URL=${{ secrets.NEXT_PUBLIC_ONEHASH_CHAT_URL_PROD }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_PROD }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_SIGNUP_URL=${{ secrets.NEXT_PUBLIC_SIGNUP_URL_PROD }}" >> $GITHUB_OUTPUT
           else
             echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_STAG }}" >> $GITHUB_OUTPUT
-            echo "NAMESERVERS=${{ secrets.NAMESERVERS_STAG }}" >> $GITHUB_OUTPUT
             echo "EC2_HOST=${{ secrets.EC2_HOST_STAG }}" >> $GITHUB_OUTPUT
             echo "EC2_SSH_KEY<<EOF" >> $GITHUB_OUTPUT
             echo "${{ secrets.EC2_SSH_KEY_STAG }}" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "DATABASE_URL=${{ secrets.DATABASE_DIRECT_URL_STAG}}" >> $GITHUB_OUTPUT
             echo "REPO_NAME"="cal_stag" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN_STAG }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_CALENDLY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_CALENDLY_CLIENT_ID_STAG }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_CALENDLY_REDIRECT_URI=${{ secrets.NEXT_PUBLIC_CALENDLY_REDIRECT_URI_STAG }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_STRIPE_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLIC_KEY_STAG }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_ONEHASH_CHAT_URL=${{ secrets.NEXT_PUBLIC_ONEHASH_CHAT_URL_STAG }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_STAG }}" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_SIGNUP_URL=${{ secrets.NEXT_PUBLIC_SIGNUP_URL_STAG }}" >> $GITHUB_OUTPUT
           fi
 
       # Checking if the image already exists in ECR
@@ -198,12 +237,40 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
             ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:latest
           build-args: |
-            NEXTAUTH_URL=${{ steps.key_values.outputs.DOMAIN_NAME }}
-            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
             CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
             NEXT_PUBLIC_WEBAPP_URL=${{ format('https://app.{0}', steps.key_values.outputs.DOMAIN_NAME) }}
+            NEXT_PUBLIC_WEBSITE_URL=${{ steps.key_values.outputs.DOMAIN_NAME }}
             NEXT_PUBLIC_API_V2_URL=${{ secrets.NEXT_PUBLIC_API_V2_URL }}
-            NEXT_PUBLIC_WEBSITE_URL=${{steps.key_values.outputs.DOMAIN_NAME}}
+            NEXT_PUBLIC_EMBED_LIB_URL=${{ format('https://{0}/embed/embed.js', steps.key_values.outputs.DOMAIN_NAME) }}
+            NEXT_PUBLIC_ONEHASH_URL=${{ secrets.NEXT_PUBLIC_ONEHASH_URL }}
+            NEXTAUTH_URL=${{ steps.key_values.outputs.DOMAIN_NAME }}
+            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+            NEXT_PUBLIC_SENDGRID_SENDER_NAME=${{ secrets.BRAND_NAME }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ steps.key_values.outputs.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_LOGGER_LEVEL=${{ secrets.NEXT_PUBLIC_LOGGER_LEVEL }}
+            NEXT_PUBLIC_TEAM_IMPERSONATION=${{ secrets.NEXT_PUBLIC_TEAM_IMPERSONATION }}
+            NEXT_PUBLIC_APP_NAME=${{format('{0} Cal', secrets.BRAND_NAME)  }}
+            NEXT_PUBLIC_COMPANY_NAME=${{ secrets.BRAND_NAME }}
+            NEXT_PUBLIC_MINUTES_TO_BOOK=${{ secrets.NEXT_PUBLIC_MINUTES_TO_BOOK }}
+            NEXT_PUBLIC_BOOKER_NUMBER_OF_DAYS_TO_LOAD=${{ secrets.NEXT_PUBLIC_BOOKER_NUMBER_OF_DAYS_TO_LOAD }}
+            NEXT_PUBLIC_CALENDLY_OAUTH_URL=${{ secrets.NEXT_PUBLIC_CALENDLY_OAUTH_URL }}
+            NEXT_PUBLIC_CALENDLY_API_BASE_URL=${{ secrets.NEXT_PUBLIC_CALENDLY_API_BASE_URL }}
+            NEXT_PUBLIC_CALENDLY_CLIENT_ID=${{ steps.key_values.outputs.NEXT_PUBLIC_CALENDLY_CLIENT_ID }}
+            NEXT_PUBLIC_CALENDLY_REDIRECT_URI=${{ steps.key_values.outputs.NEXT_PUBLIC_CALENDLY_REDIRECT_URI }}
+            NEXT_PUBLIC_STRIPE_PUBLIC_KEY=${{ steps.key_values.outputs.NEXT_PUBLIC_STRIPE_PUBLIC_KEY }}
+            NEXT_PUBLIC_ONEHASH_CHAT_URL=${{ steps.key_values.outputs.NEXT_PUBLIC_ONEHASH_CHAT_URL }}
+            NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ steps.key_values.outputs.NEXT_PUBLIC_RAZORPAY_CLIENT_ID }}
+            NEXT_PUBLIC_SIGNUP_URL=${{ steps.key_values.outputs.NEXT_PUBLIC_SIGNUP_URL }}
+            NEXT_PUBLIC_VAPID_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+            NEXT_PUBLIC_WEBSITE_TERMS_URL=${{ secrets.NEXT_PUBLIC_WEBSITE_TERMS_URL }}
+            NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL=${{ secrets.NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL }}
+            NEXT_PUBLIC_ONEHASH_CHAT_ORIGIN=${{ steps.key_values.outputs.NEXT_PUBLIC_ONEHASH_CHAT_URL }}
+            NEXT_PUBLIC_RECAPTCHA_LOW=${{ secrets.NEXT_PUBLIC_RECAPTCHA_LOW }}
+            NEXT_PUBLIC_RECAPTCHA_MEDIUM=${{ secrets.NEXT_PUBLIC_RECAPTCHA_MEDIUM }}
+            NEXT_PUBLIC_RECAPTCHA_HARD=${{ secrets.NEXT_PUBLIC_RECAPTCHA_HARD }}
+            NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS=${{ secrets.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS }}
+
+
 
       - name: Check Docker build status
         shell: bash
@@ -222,7 +289,7 @@ jobs:
         uses: appleboy/ssh-action@v0.1.10
         id: ssh_deploy
         env:
-          NAMESERVERS: ${{ steps.key_values.outputs.NAMESERVERS }}
+          DOMAIN_NAME: ${{ steps.key_values.outputs.DOMAIN_NAME }}
           EC2_HOST: ${{ steps.key_values.outputs.EC2_HOST }}
           EC2_SSH_KEY: ${{ steps.key_values.outputs.EC2_SSH_KEY }}
           REPO_URL: ${{secrets.REPO_URL}}
@@ -241,7 +308,7 @@ jobs:
           username: "onehash"
           key: ${{ env.EC2_SSH_KEY }}
           command_timeout: 1500s # 25 minutes
-          envs: NAMESERVERS, AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
+          envs:  AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK
           script: |
             #!/bin/bash
 
@@ -486,7 +553,7 @@ jobs:
               exit 1
             fi
 
-            if ! exec_command "Replace DOMAIN" "sudo sed -i \"s/DOMAIN_PLACEHOLDER/$NAMESERVERS/g\" \"$NGINX_CONF_PATH\""; then
+            if ! exec_command "Replace DOMAIN" "sudo sed -i \"s/DOMAIN_PLACEHOLDER/$DOMAIN_NAME/g\" \"$NGINX_CONF_PATH\""; then
               exit 1
             fi
 
@@ -504,9 +571,9 @@ jobs:
             # fi
 
             # SSL Certificate with certbot
-            log_message "INFO" "Generating SSL cert for $NAMESERVERS"
+            log_message "INFO" "Generating SSL cert for $DOMAIN_NAME"
             # Add a timeout to certbot to prevent hanging
-            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot certonly -a dns-multi --dns-multi-credentials=/etc/letsencrypt/dns-multi.ini -d \"*.${NAMESERVERS}\" -d \"${NAMESERVERS}\" -m \"${CERTBOT_EMAIL}\" --non-interactive --agree-tos"; then
+            if ! exec_command "Certbot SSL" "timeout 300s sudo certbot certonly -a dns-multi --dns-multi-credentials=/etc/letsencrypt/dns-multi.ini -d \"*.${DOMAIN_NAME}\" -d \"${DOMAIN_NAME}\" -m \"${CERTBOT_EMAIL}\" --non-interactive --agree-tos"; then
               log_message "WARN" "⚠️ Certbot SSL generation may have issues, but continuing with deployment"
             fi
 
