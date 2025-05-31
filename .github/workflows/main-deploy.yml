@@ -102,9 +102,6 @@ jobs:
           check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_LOW }}" "NEXT_PUBLIC_RECAPTCHA_LOW"
           check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_MEDIUM }}" "NEXT_PUBLIC_RECAPTCHA_MEDIUM"
           check "${{ secrets.NEXT_PUBLIC_RECAPTCHA_HARD }}" "NEXT_PUBLIC_RECAPTCHA_HARD"
-          check "${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_STAG }}" "NEXT_PUBLIC_POSTHOG_KEY_STAG"
-          check "${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_PROD }}" "NEXT_PUBLIC_POSTHOG_KEY_PROD"
-          check "${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" "NEXT_PUBLIC_POSTHOG_HOST"
           
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
@@ -186,7 +183,6 @@ jobs:
             echo "NEXT_PUBLIC_ONEHASH_CHAT_URL=${{ secrets.NEXT_PUBLIC_ONEHASH_CHAT_URL_PROD }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_PROD }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_SIGNUP_URL=${{ secrets.NEXT_PUBLIC_SIGNUP_URL_PROD }}" >> $GITHUB_OUTPUT
-            echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_PROD }}" >> $GITHUB_OUTPUT
           else
             echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_STAG }}" >> $GITHUB_OUTPUT
             echo "EC2_HOST=${{ secrets.EC2_HOST_STAG }}" >> $GITHUB_OUTPUT
@@ -202,7 +198,6 @@ jobs:
             echo "NEXT_PUBLIC_ONEHASH_CHAT_URL=${{ secrets.NEXT_PUBLIC_ONEHASH_CHAT_URL_STAG }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_STAG }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_SIGNUP_URL=${{ secrets.NEXT_PUBLIC_SIGNUP_URL_STAG }}" >> $GITHUB_OUTPUT
-            echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_STAG }}" >> $GITHUB_OUTPUT
           fi
 
       # Checking if the image already exists in ECR
@@ -274,8 +269,8 @@ jobs:
             NEXT_PUBLIC_RECAPTCHA_MEDIUM=${{ secrets.NEXT_PUBLIC_RECAPTCHA_MEDIUM }}
             NEXT_PUBLIC_RECAPTCHA_HARD=${{ secrets.NEXT_PUBLIC_RECAPTCHA_HARD }}
             NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS=${{ secrets.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS }}
-            NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
-            NEXT_PUBLIC_POSTHOG_HOST=${{ steps.key_values.outputs.NEXT_PUBLIC_POSTHOG_KEY }}
+
+
 
       - name: Check Docker build status
         shell: bash
