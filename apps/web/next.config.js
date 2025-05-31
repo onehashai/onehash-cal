@@ -399,11 +399,29 @@ const nextConfig = {
       }, */
     ];
 
+    // PostHog rewrites
+    afterFiles.push(
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+      {
+        source: "/ingest/decide",
+        destination: "https://us.i.posthog.com/decide",
+      }
+    );
+
     return {
       beforeFiles,
       afterFiles,
     };
   },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
   async headers() {
     // This header can be set safely as it ensures the browser will load the resources even when COEP is set.
     // But this header must be set only on those resources that are safe to be loaded in a cross-origin context e.g. all embeddable pages's resources
@@ -587,7 +605,7 @@ const nextConfig = {
             type: "query",
             key: "callbackUrl",
             // prettier-ignore
-            value: "^(?!https?:\/\/).*$",
+            value: "^(?!https?:\\/\\/).*$",
           },
         ],
         destination: "/404",
@@ -620,11 +638,7 @@ const nextConfig = {
         destination: "/apps/installed/conferencing",
         permanent: true,
       },
-      {
-        source: "/apps/installed",
-        destination: "/apps/installed/calendar",
-        permanent: true,
-      },
+      { source: "/apps/installed", destination: "/apps/installed/calendar", permanent: true },
       {
         source: "/settings/organizations/platform/:path*",
         destination: "/settings/platform",
