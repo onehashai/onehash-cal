@@ -1,10 +1,6 @@
 import type { IncomingMessage } from "http";
 import { signOut } from "next-auth/react";
 import type { AppContextType, AppInitialProps } from "next/dist/shared/lib/utils";
-// eslint-disable-next-line @calcom/eslint/deprecated-imports-next-router
-import { Router } from "next/router";
-import posthog from "posthog-js";
-import { PostHogProvider } from "posthog-js/react";
 import React, { useEffect } from "react";
 
 import { trpc } from "@calcom/trpc/react";
@@ -56,36 +52,13 @@ function MyApp(props: AppProps) {
   return content;
 }
 
-// Wraps MyApp with SessionManager to handle session expiration and integrates PostHog
+// Wraps MyApp with SessionManager to handle session expiration
 function AppWithSessionManager(props: AppProps) {
-  useEffect(() => {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "/ingest",
-      ui_host: "https://us.posthog.com",
-      capture_exceptions: true,
-      loaded: (ph) => {
-        if (process.env.NODE_ENV === "development") ph.debug();
-      },
-      debug: process.env.NODE_ENV === "development",
-    });
-
-    const handleRouteChange = () => {
-      posthog.capture("$pageview");
-    };
-    Router.events.on("routeChangeComplete", handleRouteChange);
-
-    return () => {
-      Router.events.off("routeChangeComplete", handleRouteChange);
-    };
-  }, []);
-
-  const content = (
+  return (
     <SessionManager>
       <MyApp {...props} />
     </SessionManager>
   );
-
-  return <PostHogProvider client={posthog}>{content}</PostHogProvider>;
 }
 
 declare global {
