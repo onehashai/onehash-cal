@@ -180,7 +180,7 @@ class MyDocument extends Document<Props> {
               strategy="beforeInteractive"
             />
           )}
-          {allowScript && (
+          {/* {allowScript && (
             <Script
               src="https://cdn.amplitude.com/script/ca8f70a47b97a98998c9b476e4977212.js"
               strategy="afterInteractive"
@@ -207,7 +207,7 @@ class MyDocument extends Document<Props> {
               src="https://www.googletagmanager.com/gtag/js?id=AW-613079827"
               async
             />
-          )}
+          )} */}
 
           {allowScript && (
             <Script
@@ -229,6 +229,90 @@ class MyDocument extends Document<Props> {
               }}
             />
           )}
+
+          {/* Brand details json for SEO  */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: "OneHash",
+                alternateName: "Cal ID",
+                legalName: "OneHash Technologies Limited",
+                url: "https://www.onehash.ai",
+                logo: "https://cdn.prod.website-files.com/5e53d34464688e6f5960a338/610a36c2792530d601aaf35f_OneHash_Logo.svg",
+                description:
+                  "A Robust, Scalable, Economical, AI Powered & Fully- Featured platform with CRM, ERP, Meeting Scheduling and Chat Solution.",
+                sameAs: [
+                  "https://www.linkedin.com/company/onehash/",
+                  "https://www.instagram.com/onehash.ai/",
+                  "https://x.com/onehash",
+                  "https://www.facebook.com/OneHashAI/",
+                ],
+                founder: {
+                  "@type": "Person",
+                  name: "Rohit Gadia",
+                  sameAs: "https://www.linkedin.com/in/rohitgadia",
+                },
+                foundingDate: "2021",
+                address: {
+                  "@type": "PostalAddress",
+                  streetAddress: "903 NRK Business Park, Vijay Nagar Square",
+                  addressLocality: "Indore",
+                  addressRegion: "Madhya Pradesh",
+                  postalCode: "452010",
+                  addressCountry: "IN",
+                },
+                contactPoint: {
+                  "@type": "ContactPoint",
+                  telephone: "+91 8827 000 000",
+                  contactType: "Customer Support",
+                  email: "support@onehash.ai",
+                  areaServed: "Worldwide",
+                  availableLanguage: [
+                    "en",
+                    "hi",
+                    "es",
+                    "zh",
+                    "ar",
+                    "fr",
+                    "ru",
+                    "pt",
+                    "de",
+                    "ja",
+                    "ko",
+                    "it",
+                    "nl",
+                    "tr",
+                    "sv",
+                    "pl",
+                    "uk",
+                    "vi",
+                    "th",
+                    "id",
+                  ],
+                },
+              }),
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                name: "OneHash",
+                url: "https://www.onehash.ai",
+                alternateName: "Cal ID",
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: "https://www.onehash.ai/search?q={search_term_string}",
+                  "query-input": "required name=search_term_string",
+                },
+              }),
+            }}
+          />
         </Head>
 
         <body
