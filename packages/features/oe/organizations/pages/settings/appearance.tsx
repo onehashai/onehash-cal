@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 
-import BrandColorsForm from "@calcom/features/ee/components/BrandColorsForm";
-import { AppearanceSkeletonLoader } from "@calcom/features/ee/components/CommonSkeletonLoaders";
+import { AppearanceSkeletonLoader } from "@calcom/features/oe/components/AppearanceSkeletonLoader";
+import BrandThemeEditor from "@calcom/features/oe/components/BrandThemeEditor";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import ThemeLabel from "@calcom/features/settings/ThemeLabel";
 import { DEFAULT_LIGHT_BRAND_COLOR, DEFAULT_DARK_BRAND_COLOR } from "@calcom/lib/constants";
-import { APP_NAME } from "@calcom/lib/constants";
+import { COMPANY_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
@@ -140,7 +140,7 @@ const OrgAppearanceView = ({
         handleSubmit={(values) => {
           onBrandColorsFormSubmit(values);
         }}>
-        <BrandColorsForm
+        <BrandThemeEditor
           onSubmit={onBrandColorsFormSubmit}
           brandColor={currentOrg?.brandColor ?? DEFAULT_LIGHT_BRAND_COLOR}
           darkBrandColor={currentOrg?.darkBrandColor ?? DEFAULT_DARK_BRAND_COLOR}
@@ -149,9 +149,9 @@ const OrgAppearanceView = ({
 
       <SettingsToggle
         toggleSwitchAtTheEnd={true}
-        title={t("disable_cal_branding", { appName: APP_NAME })}
+        title={t("disable_cal_branding", { appName: COMPANY_NAME })}
         disabled={mutation?.isPending}
-        description={t("removes_cal_branding", { appName: APP_NAME })}
+        description={t("removes_cal_branding", { appName: COMPANY_NAME })}
         checked={hideBrandingValue}
         onCheckedChange={(checked) => {
           setHideBrandingValue(checked);

@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 
-import { AppearanceSkeletonLoader } from "@calcom/features/ee/components/CommonSkeletonLoaders";
 import { IntervalLimitsManager } from "@calcom/features/eventtypes/components/tabs/limits/EventLimitsTab";
+import { AppearanceSkeletonLoader } from "@calcom/features/oe/components/AppearanceSkeletonLoader";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { classNames, validateIntervalLimitOrder } from "@calcom/lib";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
