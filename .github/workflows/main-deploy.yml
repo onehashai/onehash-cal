@@ -21,6 +21,10 @@ on:
         description: "Override Git commit hash"
         required: false
         default: ""
+      rebuild:
+        description: "Rebuild the Docker image even if it exists"
+        required: false
+        default: "false"
 
 concurrency:
   group: ${{ github.workflow }}
@@ -207,7 +211,7 @@ jobs:
 
       # Checking if the image already exists in ECR
       - name: Check if image already exists in ECR
-        if: ${{ steps.login-ecr.outcome == 'success' }}
+        if: ${{ steps.login-ecr.outcome == 'success' &&  github.event.inputs.rebuild != 'true' }}
         id: check-ecr-image
         uses: mnmandahalf/check-ecr-image-exists@v0.1.5
         with:
@@ -219,6 +223,7 @@ jobs:
 
       # Log image does not exist, hence rollback step
       - name: Log ECR image existence status
+        if: ${{github.event.inputs.rebuild != 'true' }}
         shell: bash
         run: |
           if [ "${{ steps.check-ecr-image.outputs.image-exists }}" == "1" ]; then
@@ -227,9 +232,9 @@ jobs:
             echo "[INFO]: ❌ ECR image does not exist, proceeding to build and push" >> "$LOG_FILE"
           fi
 
-      # If the image does not exist, build and push the Docker image
+      # If the image does not exist, build and push the Docker image OR if rebuild is true
       - name: Build and Push Docker image
-        if: ${{ steps.check-ecr-image.outputs.image-exists == '0' }}
+        if: ${{ steps.check-ecr-image.outputs.image-exists == '0' || github.event.inputs.rebuild == 'true' }}
         id: docker_build
         uses: docker/build-push-action@v5
         continue-on-error: true
