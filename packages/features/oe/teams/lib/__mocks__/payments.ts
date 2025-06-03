@@ -3,19 +3,19 @@ import { mockReset, mockDeep } from "vitest-mock-extended";
 
 import type * as payments from "@calcom/features/oe/teams/lib/payments";
 
-vi.mock("@calcom/features/oe/teams/lib/payments", () => paymentsMock);
+vi.mock("@calcom/features/oe/teams/lib/payments", () => mockedPaymentService);
 
 beforeEach(() => {
-  mockReset(paymentsMock);
+  mockReset(mockedPaymentService);
 });
 
-const paymentsMock = mockDeep<typeof payments>();
+const mockedPaymentService = mockDeep<typeof payments>();
 
 export const paymentsScenarios = {};
 export const paymentsExpects = {
-  expectQuantitySubscriptionToBeUpdatedForTeam: (teamId: number) => {
-    expect(paymentsMock.updateQuantitySubscriptionFromStripe).toHaveBeenCalledWith(teamId);
+  expectQuantitySubscriptionToBeUpdatedForTeam: (organizationId: number) => {
+    expect(mockedPaymentService.updateQuantitySubscriptionFromStripe).toHaveBeenCalledWith(organizationId);
   },
 };
 
-export default paymentsMock;
+export default mockedPaymentService;

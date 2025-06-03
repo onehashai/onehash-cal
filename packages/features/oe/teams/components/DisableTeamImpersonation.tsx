@@ -4,42 +4,55 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { showToast, SettingsToggle } from "@calcom/ui";
 
-const DisableTeamImpersonation = ({
-  teamId,
-  memberId,
-  disabled,
-}: {
+interface ImpersonationControlProps {
   teamId: number;
   memberId: number;
   disabled: boolean;
-}) => {
+}
+
+const DisableTeamImpersonation = (props: ImpersonationControlProps) => {
+  const { teamId: organizationId, memberId: userId, disabled: isDisabled } = props;
   const { t } = useLocale();
+  const trpcUtils = trpc.useUtils();
 
-  const utils = trpc.useUtils();
+  const membershipQuery = trpc.viewer.teams.getMembershipbyUser.useQuery({
+    teamId: organizationId,
+    memberId: userId,
+  });
 
-  const query = trpc.viewer.teams.getMembershipbyUser.useQuery({ teamId, memberId });
-
-  const mutation = trpc.viewer.teams.updateMembership.useMutation({
+  const membershipUpdateMutation = trpc.viewer.teams.updateMembership.useMutation({
     onSuccess: async () => {
       showToast(t("your_user_profile_updated_successfully"), "success");
-      await utils.viewer.teams.getMembershipbyUser.invalidate();
+      await trpcUtils.viewer.teams.getMembershipbyUser.invalidate();
     },
   });
-  const [allowImpersonation, setAllowImpersonation] = useState(!query.data?.disableImpersonation ?? true);
-  if (query.isPending) return <></>;
+
+  const [impersonationEnabled, setImpersonationEnabled] = useState<boolean>(
+    !membershipQuery.data?.disableImpersonation ?? true
+  );
+
+  if (membershipQuery.isPending) {
+    return <></>;
+  }
+
+  const handleToggleChange = (enabledState: boolean) => {
+    setImpersonationEnabled(enabledState);
+    membershipUpdateMutation.mutate({
+      teamId: organizationId,
+      memberId: userId,
+      disableImpersonation: !enabledState,
+    });
+  };
 
   return (
     <>
       <SettingsToggle
         toggleSwitchAtTheEnd={true}
         title={t("user_impersonation_heading")}
-        disabled={disabled || mutation?.isPending}
+        disabled={isDisabled || membershipUpdateMutation?.isPending}
         description={t("team_impersonation_description")}
-        checked={allowImpersonation}
-        onCheckedChange={(_allowImpersonation) => {
-          setAllowImpersonation(_allowImpersonation);
-          mutation.mutate({ teamId, memberId, disableImpersonation: !_allowImpersonation });
-        }}
+        checked={impersonationEnabled}
+        onCheckedChange={handleToggleChange}
       />
     </>
   );

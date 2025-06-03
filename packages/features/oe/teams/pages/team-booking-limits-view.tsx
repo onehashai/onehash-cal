@@ -16,13 +16,18 @@ import type { RouterOutputs } from "@calcom/trpc/react";
 import type { IntervalLimit } from "@calcom/types/Calendar";
 import { Button, CheckboxField, Form, SettingsToggle, showToast } from "@calcom/ui";
 
-type ProfileViewProps = { team: RouterOutputs["viewer"]["teams"]["get"] };
+interface TeamProfileConfig {
+  team: RouterOutputs["viewer"]["teams"]["get"];
+}
 
-const BookingLimitsView = ({ team }: ProfileViewProps) => {
+const TeamReservationLimitsController = ({ team }: TeamProfileConfig) => {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const trpcUtilities = trpc.useUtils();
 
-  const form = useForm<{ bookingLimits?: IntervalLimit; includeManagedEventsInLimits: boolean }>({
+  const formController = useForm<{
+    bookingLimits?: IntervalLimit;
+    includeManagedEventsInLimits: boolean;
+  }>({
     defaultValues: {
       bookingLimits: team?.bookingLimits || undefined,
       includeManagedEventsInLimits: team?.includeManagedEventsInLimits ?? false,
@@ -31,83 +36,89 @@ const BookingLimitsView = ({ team }: ProfileViewProps) => {
 
   const {
     formState: { isSubmitting, isDirty },
-    reset,
-  } = form;
+    reset: resetFormState,
+  } = formController;
 
-  const mutation = trpc.viewer.teams.update.useMutation({
-    onError: (err) => {
-      showToast(err.message, "error");
+  const updateTeamMutation = trpc.viewer.teams.update.useMutation({
+    onError: (errorResponse) => {
+      showToast(errorResponse.message, "error");
     },
-    async onSuccess(res) {
-      await utils.viewer.teams.get.invalidate();
-      if (res) {
-        reset({
-          bookingLimits: res.bookingLimits,
-          includeManagedEventsInLimits: res.includeManagedEventsInLimits,
+    async onSuccess(responseData) {
+      await trpcUtilities.viewer.teams.get.invalidate();
+      if (responseData) {
+        resetFormState({
+          bookingLimits: responseData.bookingLimits,
+          includeManagedEventsInLimits: responseData.includeManagedEventsInLimits,
         });
       }
       showToast(t("booking_limits_updated_successfully"), "success");
     },
   });
 
-  const isAdmin =
+  const hasAdminPrivileges =
     team && (team.membership.role === MembershipRole.OWNER || team.membership.role === MembershipRole.ADMIN);
 
   return (
     <>
-      {isAdmin ? (
+      {hasAdminPrivileges ? (
         <>
           <Form
-            form={form}
-            handleSubmit={(values) => {
-              if (values.bookingLimits) {
-                const isValid = validateIntervalLimitOrder(values.bookingLimits);
-                if (!isValid) {
-                  reset();
+            form={formController}
+            handleSubmit={(formValues) => {
+              if (formValues.bookingLimits) {
+                const orderValidation = validateIntervalLimitOrder(formValues.bookingLimits);
+                if (!orderValidation) {
+                  resetFormState();
                   throw new Error(t("event_setup_booking_limits_error"));
                 }
               }
-              mutation.mutate({ ...values, id: team.id });
+              updateTeamMutation.mutate({ ...formValues, id: team.id });
             }}>
             <Controller
               name="bookingLimits"
-              render={({ field: { value } }) => {
-                const isChecked = Object.keys(value ?? {}).length > 0;
+              render={({ field: { value: fieldValue } }) => {
+                const hasActiveLimits = Object.keys(fieldValue ?? {}).length > 0;
                 return (
                   <SettingsToggle
                     toggleSwitchAtTheEnd={true}
                     labelClassName="text-sm"
                     title={t("limit_booking_frequency")}
                     description={t("limit_team_booking_frequency_description")}
-                    checked={isChecked}
-                    onCheckedChange={(active) => {
-                      if (active) {
-                        form.setValue("bookingLimits", {
+                    checked={hasActiveLimits}
+                    onCheckedChange={(toggleState) => {
+                      if (toggleState) {
+                        formController.setValue("bookingLimits", {
                           PER_DAY: 1,
                         });
                       } else {
-                        form.setValue("bookingLimits", {});
-                        form.setValue("includeManagedEventsInLimits", false);
+                        formController.setValue("bookingLimits", {});
+                        formController.setValue("includeManagedEventsInLimits", false);
                       }
-                      const bookingLimits = form.getValues("bookingLimits");
-                      const includeManagedEventsInLimits = form.getValues("includeManagedEventsInLimits");
+                      const currentBookingLimits = formController.getValues("bookingLimits");
+                      const currentManagedEventsFlag = formController.getValues(
+                        "includeManagedEventsInLimits"
+                      );
 
-                      mutation.mutate({ bookingLimits, includeManagedEventsInLimits, id: team.id });
+                      updateTeamMutation.mutate({
+                        bookingLimits: currentBookingLimits,
+                        includeManagedEventsInLimits: currentManagedEventsFlag,
+                        id: team.id,
+                      });
                     }}
                     switchContainerClassName={classNames(
                       "border-subtle mt-6 rounded-lg border py-6 px-4 sm:px-6",
-                      isChecked && "rounded-b-none"
+                      hasActiveLimits && "rounded-b-none"
                     )}
                     childrenClassName="lg:ml-0">
                     <div className="border-subtle border border-y-0 p-6">
                       <Controller
                         name="includeManagedEventsInLimits"
-                        render={({ field: { value, onChange } }) => (
+                        render={({ field: { value: checkboxValue, onChange: handleCheckboxChange } }) => (
                           <CheckboxField
                             description={t("count_managed_to_limit")}
                             descriptionAsLabel
-                            onChange={(e) => onChange(e)}
-                            checked={value}
+                            onChange={(eventTarget) => handleCheckboxChange(eventTarget)}
+                            checked={checkboxValue}
                           />
                         )}
                       />
@@ -137,34 +148,34 @@ const BookingLimitsView = ({ team }: ProfileViewProps) => {
 };
 
 const BookingLimitsViewWrapper = () => {
-  const router = useRouter();
-  const params = useParamsWithFallback();
+  const navigationRouter = useRouter();
+  const routeParameters = useParamsWithFallback();
 
   const {
-    data: team,
-    isPending,
-    error,
+    data: teamData,
+    isPending: isLoadingTeam,
+    error: fetchError,
   } = trpc.viewer.teams.get.useQuery(
-    { teamId: Number(params.id) },
+    { teamId: Number(routeParameters.id) },
     {
-      enabled: !!Number(params.id),
+      enabled: !!Number(routeParameters.id),
     }
   );
 
   useEffect(
-    function refactorMeWithoutEffect() {
-      if (error) {
-        router.replace("/teams");
+    function redirectOnErrorEffect() {
+      if (fetchError) {
+        navigationRouter.replace("/teams");
       }
     },
-    [error]
+    [fetchError]
   );
 
-  if (isPending) return <AppearanceSkeletonLoader />;
+  if (isLoadingTeam) return <AppearanceSkeletonLoader />;
 
-  if (!team) return null;
+  if (!teamData) return null;
 
-  return <BookingLimitsView team={team} />;
+  return <TeamReservationLimitsController team={teamData} />;
 };
 
 export default BookingLimitsViewWrapper;

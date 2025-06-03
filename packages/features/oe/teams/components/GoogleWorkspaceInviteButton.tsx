@@ -7,7 +7,7 @@ import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
 import { trpc } from "@calcom/trpc";
 import { Button, showToast, Tooltip } from "@calcom/ui";
 
-const GoogleIcon = () => (
+const GoogleWorkspaceIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g clip-path="url(#clip0_4178_176214)">
       <path
@@ -23,71 +23,106 @@ const GoogleIcon = () => (
   </svg>
 );
 
-function gotoUrl(url: string, newTab?: boolean) {
-  if (newTab) {
-    window.open(url, "_blank");
-    return;
+const navigateToUrl = (targetUrl: string, openInNewTab?: boolean) => {
+  if (openInNewTab) {
+    window.open(targetUrl, "_blank");
+  } else {
+    window.location.href = targetUrl;
   }
-  window.location.href = url;
-}
+};
+
+const performWorkspaceConnection = async (
+  teamIdentifier: number,
+  setLoadingState: (loading: boolean) => void
+) => {
+  setLoadingState(true);
+
+  const queryParameters = new URLSearchParams({
+    teamId: teamIdentifier.toString(),
+  });
+
+  try {
+    const response = await fetch(`/api/teams/googleworkspace/add?${queryParameters}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Something went wrong");
+    }
+
+    const responseData = await response.json();
+    navigateToUrl(responseData.url, responseData.newTab);
+  } finally {
+    setLoadingState(false);
+  }
+};
 
 export function GoogleWorkspaceInviteButton(
   props: PropsWithChildren<{ onSuccess: (data: string[]) => void }>
 ) {
-  const featureFlags = useFlagMap();
-  const utils = trpc.useUtils();
+  const flagsConfiguration = useFlagMap();
+  const trpcUtilities = trpc.useUtils();
   const { t } = useLocale();
-  const params = useParamsWithFallback();
-  const teamId = Number(params.id);
-  const [googleWorkspaceLoading, setGoogleWorkspaceLoading] = useState(false);
-  const { data: credential } = trpc.viewer.googleWorkspace.checkForGWorkspace.useQuery();
-  const { data: hasGcalInstalled } = trpc.viewer.appsRouter.checkGlobalKeys.useQuery({
+  const routeParams = useParamsWithFallback();
+  const currentTeamId = Number(routeParams.id);
+  const [isWorkspaceConnectionLoading, setIsWorkspaceConnectionLoading] = useState(false);
+
+  const { data: workspaceCredential } = trpc.viewer.googleWorkspace.checkForGWorkspace.useQuery();
+  const { data: isGoogleCalendarInstalled } = trpc.viewer.appsRouter.checkGlobalKeys.useQuery({
     slug: "google-calendar",
   });
-  const mutation = trpc.viewer.googleWorkspace.getUsersFromGWorkspace.useMutation({
-    onSuccess: (data) => {
-      if (Array.isArray(data) && data.length !== 0) {
-        props.onSuccess(data);
+
+  const workspaceUsersFetcher = trpc.viewer.googleWorkspace.getUsersFromGWorkspace.useMutation({
+    onSuccess: (responseData) => {
+      if (Array.isArray(responseData) && responseData.length !== 0) {
+        props.onSuccess(responseData);
       }
     },
   });
 
-  const removeConnectionMutation =
+  const connectionRemovalHandler =
     trpc.viewer.googleWorkspace.removeCurrentGoogleWorkspaceConnection.useMutation({
       onSuccess: () => {
         showToast(t("app_removed_successfully"), "success");
       },
     });
 
-  if (featureFlags["google-workspace-directory"] == false || !hasGcalInstalled) {
+  const isFeatureEnabled =
+    flagsConfiguration["google-workspace-directory"] !== false && isGoogleCalendarInstalled;
+
+  if (!isFeatureEnabled) {
     return null;
   }
 
-  // Show populate input button if they do
-  if (credential && credential?.id) {
+  const hasValidCredential = workspaceCredential?.id;
+
+  if (hasValidCredential) {
+    const handleWorkspaceImport = () => {
+      workspaceUsersFetcher.mutate();
+    };
+
+    const handleConnectionRemoval = () => {
+      connectionRemovalHandler.mutate();
+      trpcUtilities.viewer.googleWorkspace.checkForGWorkspace.invalidate();
+    };
+
     return (
       <div className="flex gap-2">
         <Tooltip content={t("google_workspace_admin_tooltip")}>
           <Button
             color="secondary"
-            onClick={() => {
-              mutation.mutate();
-            }}
+            onClick={handleWorkspaceImport}
             className="w-full justify-center gap-2"
             StartIcon="users"
-            loading={mutation.isPending}>
+            loading={workspaceUsersFetcher.isPending}>
             {t("import_from_google_workspace")}
           </Button>
         </Tooltip>
         <Tooltip content="Remove workspace connection">
           <Button
             color="secondary"
-            loading={removeConnectionMutation.isPending}
+            loading={connectionRemovalHandler.isPending}
             StartIcon="x"
-            onClick={() => {
-              removeConnectionMutation.mutate();
-              utils.viewer.googleWorkspace.checkForGWorkspace.invalidate();
-            }}
+            onClick={handleConnectionRemoval}
             variant="icon"
           />
         </Tooltip>
@@ -95,29 +130,17 @@ export function GoogleWorkspaceInviteButton(
     );
   }
 
-  // else show invite button
+  const initiateWorkspaceConnection = () => {
+    performWorkspaceConnection(currentTeamId, setIsWorkspaceConnectionLoading);
+  };
+
   return (
     <Button
       type="button"
       color="secondary"
-      loading={googleWorkspaceLoading}
-      CustomStartIcon={<GoogleIcon />}
-      onClick={async () => {
-        setGoogleWorkspaceLoading(true);
-        const params = new URLSearchParams({
-          teamId: teamId.toString(),
-        });
-        const res = await fetch(`/api/teams/googleworkspace/add?${params}`);
-
-        if (!res.ok) {
-          const errorBody = await res.json();
-          throw new Error(errorBody.message || "Something went wrong");
-        }
-        setGoogleWorkspaceLoading(false);
-
-        const json = await res.json();
-        gotoUrl(json.url, json.newTab);
-      }}
+      loading={isWorkspaceConnectionLoading}
+      CustomStartIcon={<GoogleWorkspaceIcon />}
+      onClick={initiateWorkspaceConnection}
       className="justify-center gap-2">
       {t("connect_google_workspace")}
     </Button>

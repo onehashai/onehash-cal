@@ -5,89 +5,108 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc";
 import { Button, Dialog, DialogContent, DialogFooter, Form, Label, Select, showToast } from "@calcom/ui";
 
-type InvitationLinkSettingsModalProps = {
+interface TeamInviteModalConfiguration {
   isOpen: boolean;
   teamId: number;
   token: string;
   expiresInDays?: number;
   onExit: () => void;
-};
+}
 
 export interface LinkSettingsForm {
   expiresInDays: number | undefined;
 }
 
-export default function InviteLinkSettingsModal(props: InvitationLinkSettingsModalProps) {
-  const { t } = useLocale();
-  const trpcContext = trpc.useUtils();
+const createExpirationOptions = (translator: any) => [
+  { value: 1, label: translator("one_day") },
+  { value: 7, label: translator("seven_days") },
+  { value: 30, label: translator("thirty_days") },
+  { value: undefined, label: translator("never_expires") },
+];
 
-  const deleteInviteMutation = trpc.viewer.teams.deleteInvite.useMutation({
+const useInviteDeletion = (onComplete: () => void, utils: any) => {
+  const { t } = useLocale();
+
+  return trpc.viewer.teams.deleteInvite.useMutation({
     onSuccess: () => {
       showToast(t("invite_link_deleted"), "success");
-      trpcContext.viewer.teams.get.invalidate();
-      trpcContext.viewer.teams.list.invalidate();
-      props.onExit();
+      utils.viewer.teams.get.invalidate();
+      utils.viewer.teams.list.invalidate();
+      onComplete();
     },
-    onError: (e) => {
-      showToast(e.message, "error");
+    onError: (error) => {
+      showToast(error.message, "error");
     },
   });
+};
 
-  const setInviteExpirationMutation = trpc.viewer.teams.setInviteExpiration.useMutation({
+const useExpirationUpdate = (utils: any) => {
+  const { t } = useLocale();
+
+  return trpc.viewer.teams.setInviteExpiration.useMutation({
     onSuccess: () => {
       showToast(t("invite_link_updated"), "success");
-      trpcContext.viewer.teams.get.invalidate();
-      trpcContext.viewer.teams.list.invalidate();
+      utils.viewer.teams.get.invalidate();
+      utils.viewer.teams.list.invalidate();
     },
-    onError: (e) => {
-      showToast(e.message, "error");
+    onError: (error) => {
+      showToast(error.message, "error");
     },
   });
+};
 
-  const expiresInDaysOption = useMemo(() => {
-    return [
-      { value: 1, label: t("one_day") },
-      { value: 7, label: t("seven_days") },
-      { value: 30, label: t("thirty_days") },
-      { value: undefined, label: t("never_expires") },
-    ];
-  }, [t]);
+export default function InviteLinkSettingsModal(config: TeamInviteModalConfiguration) {
+  const { t } = useLocale();
+  const queryUtils = trpc.useUtils();
 
-  const linkSettingsFormMethods = useForm<LinkSettingsForm>({
+  const removeLinkMutation = useInviteDeletion(config.onExit, queryUtils);
+  const updateExpirationMutation = useExpirationUpdate(queryUtils);
+
+  const expirationChoices = useMemo(() => createExpirationOptions(t), [t]);
+
+  const formHandler = useForm<LinkSettingsForm>({
     defaultValues: {
-      expiresInDays: props.expiresInDays,
+      expiresInDays: config.expiresInDays,
     },
   });
 
-  const handleSubmit = (values: LinkSettingsForm) => {
-    setInviteExpirationMutation.mutate({
-      token: props.token,
-      expiresInDays: values.expiresInDays,
+  const processFormSubmission = (formData: LinkSettingsForm) => {
+    updateExpirationMutation.mutate({
+      token: config.token,
+      expiresInDays: formData.expiresInDays,
     });
   };
 
+  const handleModalClose = () => {
+    config.onExit();
+    formHandler.reset();
+  };
+
+  const executeInviteDeletion = () => {
+    removeLinkMutation.mutate({ token: config.token });
+  };
+
+  const getSelectedOption = () => {
+    return expirationChoices.find((choice) => choice.value === config.expiresInDays);
+  };
+
   return (
-    <Dialog
-      open={props.isOpen}
-      onOpenChange={() => {
-        props.onExit();
-        linkSettingsFormMethods.reset();
-      }}>
+    <Dialog open={config.isOpen} onOpenChange={handleModalClose}>
       <DialogContent type="creation" title="Invite link settings">
-        <Form form={linkSettingsFormMethods} handleSubmit={handleSubmit}>
+        <Form form={formHandler} handleSubmit={processFormSubmission}>
           <Controller
             name="expiresInDays"
-            control={linkSettingsFormMethods.control}
+            control={formHandler.control}
             render={({ field: { onChange } }) => (
               <div className="-mt-2">
                 <Label className="text-emphasis font-medium" htmlFor="expiresInDays">
                   {t("link_expires_after")}
                 </Label>
                 <Select
-                  options={expiresInDaysOption}
-                  defaultValue={expiresInDaysOption.find((option) => option.value === props.expiresInDays)}
+                  options={expirationChoices}
+                  defaultValue={getSelectedOption()}
                   className="w-full"
-                  onChange={(val) => onChange(val?.value)}
+                  onChange={(selection) => onChange(selection?.value)}
                 />
               </div>
             )}
@@ -96,12 +115,12 @@ export default function InviteLinkSettingsModal(props: InvitationLinkSettingsMod
             <Button
               type="button"
               color="secondary"
-              onClick={() => deleteInviteMutation.mutate({ token: props.token })}
+              onClick={executeInviteDeletion}
               className="mr-auto"
               data-testid="copy-invite-link-button">
               {t("delete")}
             </Button>
-            <Button type="button" color="minimal" onClick={props.onExit}>
+            <Button type="button" color="minimal" onClick={config.onExit}>
               {t("back")}
             </Button>
             <Button

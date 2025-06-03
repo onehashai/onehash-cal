@@ -18,63 +18,66 @@ import TeamInviteList from "../components/TeamInviteList";
 
 const MembersView = () => {
   const { t } = useLocale();
-  const [showMemberInvitationModal, setShowMemberInvitationModal] = useState(false);
-  const [showInviteLinkSettingsModal, setInviteLinkSettingsModal] = useState(false);
-  const router = useRouter();
-  const session = useSession();
-  const org = session?.data?.user.org;
-  const params = useParamsWithFallback();
+  const [memberInviteModalVisible, setMemberInviteModalVisible] = useState(false);
+  const [inviteLinkConfigModalVisible, setInviteLinkConfigModalVisible] = useState(false);
+  const navigationRouter = useRouter();
+  const currentSession = useSession();
+  const organizationContext = currentSession?.data?.user.org;
+  const routeParams = useParamsWithFallback();
 
-  const teamId = Number(params.id);
+  const extractedTeamId = Number(routeParams.id);
 
   const {
-    data: team,
-    isPending: isTeamsLoading,
-    error: teamError,
+    data: teamDetails,
+    isPending: teamDataLoading,
+    error: teamFetchError,
   } = trpc.viewer.teams.get.useQuery(
-    { teamId },
+    { teamId: extractedTeamId },
     {
-      enabled: !!teamId,
+      enabled: !!extractedTeamId,
     }
   );
   useEffect(
-    function refactorMeWithoutEffect() {
-      if (teamError) {
-        router.replace("/teams");
+    function handleErrorRedirect() {
+      if (teamFetchError) {
+        navigationRouter.replace("/teams");
       }
     },
-    [teamError]
+    [teamFetchError]
   );
 
-  const isPending = isTeamsLoading;
+  const isDataLoading = teamDataLoading;
 
-  const isInviteOpen = !team?.membership.accepted;
+  const pendingInvitationExists = !teamDetails?.membership.accepted;
 
-  const isAdmin =
-    team && (team.membership.role === MembershipRole.OWNER || team.membership.role === MembershipRole.ADMIN);
+  const hasAdministrativeRights =
+    teamDetails &&
+    (teamDetails.membership.role === MembershipRole.OWNER ||
+      teamDetails.membership.role === MembershipRole.ADMIN);
 
-  const isOrgAdminOrOwner = org?.role === MembershipRole.OWNER || org?.role === MembershipRole.ADMIN;
+  const isOrganizationAdministrator =
+    organizationContext?.role === MembershipRole.OWNER || organizationContext?.role === MembershipRole.ADMIN;
 
-  const hideInvitationModal = () => {
-    setShowMemberInvitationModal(false);
+  const closeMemberInviteModal = () => {
+    setMemberInviteModalVisible(false);
   };
 
   return (
     <>
-      {!isPending && (
+      {!isDataLoading && (
         <>
           <div>
-            {team && (
+            {teamDetails && (
               <>
-                {isInviteOpen && (
+                {pendingInvitationExists && (
                   <TeamInviteList
                     teams={[
                       {
-                        id: team.id,
-                        accepted: team.membership.accepted || false,
-                        name: team.name,
-                        slug: team.slug,
-                        role: team.membership.role,
+                        id: teamDetails.id,
+                        accepted: teamDetails.membership.accepted || false,
+                        name: teamDetails.name,
+                        slug: teamDetails.slug,
+                        role: teamDetails.membership.role,
                       },
                     ]}
                   />
@@ -82,52 +85,55 @@ const MembersView = () => {
               </>
             )}
 
-            {((team?.isPrivate && isAdmin) || !team?.isPrivate || isOrgAdminOrOwner) && team && (
-              <div className="mb-6">
-                <MemberList
-                  team={team}
-                  isOrgAdminOrOwner={isOrgAdminOrOwner}
-                  setShowMemberInvitationModal={setShowMemberInvitationModal}
-                />
-              </div>
-            )}
-            {showMemberInvitationModal && team && team.id && (
+            {((teamDetails?.isPrivate && hasAdministrativeRights) ||
+              !teamDetails?.isPrivate ||
+              isOrganizationAdministrator) &&
+              teamDetails && (
+                <div className="mb-6">
+                  <MemberList
+                    team={teamDetails}
+                    isOrgAdminOrOwner={isOrganizationAdministrator}
+                    setShowMemberInvitationModal={setMemberInviteModalVisible}
+                  />
+                </div>
+              )}
+            {memberInviteModalVisible && teamDetails && teamDetails.id && (
               <MemberInvitationModalWithoutMembers
-                hideInvitationModal={hideInvitationModal}
-                showMemberInvitationModal={showMemberInvitationModal}
-                teamId={team.id}
-                token={team.inviteToken?.token}
-                onSettingsOpen={() => setInviteLinkSettingsModal(true)}
+                hideInvitationModal={closeMemberInviteModal}
+                showMemberInvitationModal={memberInviteModalVisible}
+                teamId={teamDetails.id}
+                token={teamDetails.inviteToken?.token}
+                onSettingsOpen={() => setInviteLinkConfigModalVisible(true)}
               />
             )}
 
-            {showInviteLinkSettingsModal && team?.inviteToken && team.id && (
+            {inviteLinkConfigModalVisible && teamDetails?.inviteToken && teamDetails.id && (
               <InviteLinkSettingsModal
-                isOpen={showInviteLinkSettingsModal}
-                teamId={team.id}
-                token={team.inviteToken.token}
-                expiresInDays={team.inviteToken.expiresInDays || undefined}
+                isOpen={inviteLinkConfigModalVisible}
+                teamId={teamDetails.id}
+                token={teamDetails.inviteToken.token}
+                expiresInDays={teamDetails.inviteToken.expiresInDays || undefined}
                 onExit={() => {
-                  setInviteLinkSettingsModal(false);
-                  setShowMemberInvitationModal(true);
+                  setInviteLinkConfigModalVisible(false);
+                  setMemberInviteModalVisible(true);
                 }}
               />
             )}
 
-            {team && session.data && (
+            {teamDetails && currentSession.data && (
               <DisableTeamImpersonation
-                teamId={team.id}
-                memberId={session.data.user.id}
-                disabled={isInviteOpen}
+                teamId={teamDetails.id}
+                memberId={currentSession.data.user.id}
+                disabled={pendingInvitationExists}
               />
             )}
 
-            {team && team.id && (isAdmin || isOrgAdminOrOwner) && (
+            {teamDetails && teamDetails.id && (hasAdministrativeRights || isOrganizationAdministrator) && (
               <MakeTeamPrivateSwitch
                 isOrg={false}
-                teamId={team.id}
-                isPrivate={team.isPrivate ?? false}
-                disabled={isInviteOpen}
+                teamId={teamDetails.id}
+                isPrivate={teamDetails.isPrivate ?? false}
+                disabled={pendingInvitationExists}
               />
             )}
           </div>

@@ -5,27 +5,32 @@ import { ConfirmationDialogContent, Dialog, DialogTrigger, showToast } from "@ca
 
 import type { User } from "./MemberList";
 
-interface Props {
+interface BulkRemovalProps {
   users: User[];
   onRemove: () => void;
   isOrg: boolean;
   teamId: number;
 }
 
-export default function DeleteBulkTeamMembers({ users, onRemove, isOrg, teamId }: Props) {
+export default function DeleteBulkTeamMembers({
+  users: membersList,
+  onRemove: handleRemoval,
+  isOrg: organizationFlag,
+  teamId: organizationId,
+}: BulkRemovalProps) {
   const { t } = useLocale();
-  const selectedRows = users; // Get selected rows from table
-  const utils = trpc.useUtils();
-  const deleteMutation = trpc.viewer.teams.removeMember.useMutation({
+  const chosenMembers = membersList;
+  const trpcUtils = trpc.useUtils();
+  const removalMutation = trpc.viewer.teams.removeMember.useMutation({
     async onSuccess() {
-      await utils.viewer.teams.get.invalidate();
-      await utils.viewer.eventTypes.invalidate();
-      await utils.viewer.organizations.listMembers.invalidate();
-      await utils.viewer.organizations.getMembers.invalidate();
+      await trpcUtils.viewer.teams.get.invalidate();
+      await trpcUtils.viewer.eventTypes.invalidate();
+      await trpcUtils.viewer.organizations.listMembers.invalidate();
+      await trpcUtils.viewer.organizations.getMembers.invalidate();
       showToast("Deleted Users", "success");
     },
-    async onError(err) {
-      showToast(err.message, "error");
+    async onError(error) {
+      showToast(error.message, "error");
     },
   });
   return (
@@ -37,18 +42,18 @@ export default function DeleteBulkTeamMembers({ users, onRemove, isOrg, teamId }
         variety="danger"
         title={t("remove_users_from_team")}
         confirmBtnText={t("remove")}
-        isPending={deleteMutation.isPending}
+        isPending={removalMutation.isPending}
         onConfirm={() => {
-          deleteMutation.mutate({
-            teamIds: [teamId],
-            memberIds: selectedRows.map((user) => user.id),
-            isOrg,
+          removalMutation.mutate({
+            teamIds: [organizationId],
+            memberIds: chosenMembers.map((member) => member.id),
+            isOrg: organizationFlag,
           });
-          onRemove();
+          handleRemoval();
         }}>
         <p className="mt-5">
           {t("remove_users_from_team_confirm", {
-            userCount: selectedRows.length,
+            userCount: chosenMembers.length,
           })}
         </p>
       </ConfirmationDialogContent>

@@ -6,9 +6,9 @@ import { TRPCError } from "@trpc/server";
 
 import { deleteWorkfowRemindersOfRemovedMember } from "./deleteWorkflowRemindersOfRemovedMember";
 
-const log = logger.getSubLogger({ prefix: ["removeMember"] });
+const loggerInstance = logger.getSubLogger({ prefix: ["removeMember"] });
 
-const removeMember = async ({
+const expelOrganizationMember = async ({
   memberId,
   teamId,
   isOrg,
@@ -17,7 +17,7 @@ const removeMember = async ({
   teamId: number;
   isOrg: boolean;
 }) => {
-  const [membership] = await prisma.$transaction([
+  const [removedMembership] = await prisma.$transaction([
     prisma.membership.delete({
       where: {
         userId_teamId: { userId: memberId, teamId: teamId },
@@ -27,7 +27,6 @@ const removeMember = async ({
         team: true,
       },
     }),
-    // remove user as host from team events associated with this membership
     prisma.host.deleteMany({
       where: {
         userId: memberId,
@@ -38,7 +37,7 @@ const removeMember = async ({
     }),
   ]);
 
-  const team = await prisma.team.findUnique({
+  const organizationData = await prisma.team.findUnique({
     where: { id: teamId },
     select: {
       isOrganization: true,
@@ -50,7 +49,7 @@ const removeMember = async ({
     },
   });
 
-  const foundUser = await prisma.user.findUnique({
+  const targetUser = await prisma.user.findUnique({
     where: { id: memberId },
     select: {
       id: true,
@@ -71,49 +70,45 @@ const removeMember = async ({
     },
   });
 
-  if (!team || !foundUser) throw new TRPCError({ code: "NOT_FOUND" });
+  if (!organizationData || !targetUser) throw new TRPCError({ code: "NOT_FOUND" });
 
   if (isOrg) {
-    log.debug("Removing a member from the organization");
-    // Deleting membership from all child teams
-    // Delete all sub-team memberships where this team is the organization
+    loggerInstance.debug("Removing a member from the organization");
+
     await prisma.membership.deleteMany({
       where: {
         team: {
           parentId: teamId,
         },
-        userId: membership.userId,
+        userId: removedMembership.userId,
       },
     });
 
-    const userToDeleteMembershipOf = foundUser;
+    const userForRemoval = targetUser;
 
-    const profileToDelete = await ProfileRepository.findByUserIdAndOrgId({
-      userId: userToDeleteMembershipOf.id,
-      organizationId: team.id,
+    const userProfile = await ProfileRepository.findByUserIdAndOrgId({
+      userId: userForRemoval.id,
+      organizationId: organizationData.id,
     });
 
-    if (
-      userToDeleteMembershipOf.username &&
-      userToDeleteMembershipOf.movedToProfileId === profileToDelete?.id
-    ) {
-      log.debug("Cleaning up tempOrgRedirect for user", userToDeleteMembershipOf.username);
+    if (userForRemoval.username && userForRemoval.movedToProfileId === userProfile?.id) {
+      loggerInstance.debug("Cleaning up tempOrgRedirect for user", userForRemoval.username);
 
       await prisma.tempOrgRedirect.deleteMany({
         where: {
-          from: userToDeleteMembershipOf.username,
+          from: userForRemoval.username,
         },
       });
     }
 
     await prisma.$transaction([
       prisma.user.update({
-        where: { id: membership.userId },
+        where: { id: removedMembership.userId },
         data: { organizationId: null },
       }),
       ProfileRepository.delete({
-        userId: membership.userId,
-        organizationId: team.id,
+        userId: removedMembership.userId,
+        organizationId: organizationData.id,
       }),
       prisma.host.deleteMany({
         where: {
@@ -128,14 +123,13 @@ const removeMember = async ({
     ]);
   }
 
-  // Deleted managed event types from this team from this member
   await prisma.eventType.deleteMany({
-    where: { parent: { teamId: teamId }, userId: membership.userId },
+    where: { parent: { teamId: teamId }, userId: removedMembership.userId },
   });
 
-  await deleteWorkfowRemindersOfRemovedMember(team, memberId, isOrg);
+  await deleteWorkfowRemindersOfRemovedMember(organizationData, memberId, isOrg);
 
-  return { membership };
+  return { membership: removedMembership };
 };
 
-export default removeMember;
+export default expelOrganizationMember;

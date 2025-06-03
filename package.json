@@ -86,7 +86,7 @@
     "docker-run-api": "docker run -p 80:80 cal-api",
     "docker-stop-api": "docker ps --filter 'ancestor=cal-api' -q | xargs docker stop",
     "platform-types:build": "turbo run @calcom/platform-types#build",
-    "sim-check": "bash ./scripts/sim.sh"
+    "sim": "python3 ./scripts/sim.py"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.1",
