@@ -127,7 +127,7 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <img
-                    src="/cal-logo-word.svg"
+                    src="/oh-logo-word.svg"
                     alt="OneHash Logo"
                     className="w-[100px] scale-150 transform md:w-[153px]"
                   />

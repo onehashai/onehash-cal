@@ -9,7 +9,7 @@ import { BookerLayoutSelector } from "@calcom/features/settings/BookerLayoutSele
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import ThemeLabel from "@calcom/features/settings/ThemeLabel";
 import { classNames } from "@calcom/lib";
-import { DEFAULT_LIGHT_BRAND_COLOR, DEFAULT_DARK_BRAND_COLOR, APP_NAME } from "@calcom/lib/constants";
+import { DEFAULT_LIGHT_BRAND_COLOR, DEFAULT_DARK_BRAND_COLOR, COMPANY_NAME } from "@calcom/lib/constants";
 import { getBrandLogoUrl } from "@calcom/lib/getAvatarUrl";
 import { checkWCAGContrastColor } from "@calcom/lib/getBrandColours";
 import useGetBrandingColours from "@calcom/lib/getBrandColours";
@@ -448,9 +448,9 @@ const AppearanceView = ({
 
           <SettingsToggle
             toggleSwitchAtTheEnd={true}
-            title={t("disable_cal_branding", { appName: APP_NAME })}
+            title={t("disable_cal_branding", { appName: COMPANY_NAME })}
             disabled={!hasPaidPlan || mutation?.isPending}
-            description={t("removes_cal_branding", { appName: APP_NAME })}
+            description={t("removes_cal_branding", { appName: COMPANY_NAME })}
             checked={hasPaidPlan ? hideBrandingValue : false}
             onCheckedChange={(checked) => {
               setHideBrandingValue(checked);

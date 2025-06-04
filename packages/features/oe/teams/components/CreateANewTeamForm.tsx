@@ -11,7 +11,7 @@ import { useOrgBranding } from "../../organizations/context/provider";
 import { subdomainSuffix } from "../../organizations/lib/orgDomains";
 import type { NewTeamFormValues } from "../lib/types";
 
-interface CreateANewTeamFormProps {
+interface TeamCreationFormProps {
   onCancel: () => void;
   submitLabel: string;
   onSuccess: (data: RouterOutputs["viewer"]["teams"]["create"]) => void;
@@ -19,46 +19,52 @@ interface CreateANewTeamFormProps {
   slug?: string;
 }
 
-export const CreateANewTeamForm = (props: CreateANewTeamFormProps) => {
-  const { inDialog, onCancel, slug, submitLabel, onSuccess } = props;
-  const { t, isLocaleReady } = useLocale();
-  const [serverErrorMessage, setServerErrorMessage] = useState<string | null>(null);
-  const orgBranding = useOrgBranding();
+export const CreateANewTeamForm = (formProps: TeamCreationFormProps) => {
+  const {
+    inDialog: isModalView,
+    onCancel: handleCancel,
+    slug: initialSlug,
+    submitLabel: buttonText,
+    onSuccess: handleSuccess,
+  } = formProps;
+  const { t, isLocaleReady: localeLoaded } = useLocale();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const brandingConfiguration = useOrgBranding();
 
-  const newTeamFormMethods = useForm<NewTeamFormValues>({
+  const teamFormController = useForm<NewTeamFormValues>({
     defaultValues: {
-      slug,
+      slug: initialSlug,
     },
   });
 
-  const createTeamMutation = trpc.viewer.teams.create.useMutation({
-    onSuccess: (data) => onSuccess(data),
-    onError: (err) => {
-      if (err.message === "team_url_taken") {
-        newTeamFormMethods.setError("slug", { type: "custom", message: t("url_taken") });
+  const teamCreationMutation = trpc.viewer.teams.create.useMutation({
+    onSuccess: (result) => handleSuccess(result),
+    onError: (error) => {
+      if (error.message === "team_url_taken") {
+        teamFormController.setError("slug", { type: "custom", message: t("url_taken") });
       } else {
-        setServerErrorMessage(err.message);
+        setErrorMessage(error.message);
       }
     },
   });
 
-  const FormButtons = () => (
+  const ActionButtons = () => (
     <>
       <Button
-        disabled={createTeamMutation.isPending}
+        disabled={teamCreationMutation.isPending}
         color="secondary"
-        onClick={onCancel}
+        onClick={handleCancel}
         className="w-full justify-center">
         {t("cancel")}
       </Button>
       <Button
-        disabled={newTeamFormMethods.formState.isSubmitting || createTeamMutation.isPending}
+        disabled={teamFormController.formState.isSubmitting || teamCreationMutation.isPending}
         color="primary"
         EndIcon="arrow-right"
         type="submit"
         className="w-full justify-center"
         data-testid="continue-button">
-        {t(submitLabel)}
+        {t(buttonText)}
       </Button>
     </>
   );
@@ -66,43 +72,40 @@ export const CreateANewTeamForm = (props: CreateANewTeamFormProps) => {
   return (
     <>
       <Form
-        form={newTeamFormMethods}
-        handleSubmit={(v) => {
-          if (!createTeamMutation.isPending) {
-            setServerErrorMessage(null);
-            createTeamMutation.mutate(v);
+        form={teamFormController}
+        handleSubmit={(formValues) => {
+          if (!teamCreationMutation.isPending) {
+            setErrorMessage(null);
+            teamCreationMutation.mutate(formValues);
           }
         }}>
         <div className="mb-8">
-          {serverErrorMessage && (
+          {errorMessage && (
             <div className="mb-4">
-              <Alert severity="error" message={t(serverErrorMessage)} />
+              <Alert severity="error" message={t(errorMessage)} />
             </div>
           )}
 
           <Controller
             name="name"
-            control={newTeamFormMethods.control}
+            control={teamFormController.control}
             defaultValue=""
             rules={{
               required: t("must_enter_team_name"),
             }}
-            render={({ field: { value } }) => (
+            render={({ field: { value: fieldValue } }) => (
               <>
                 <TextField
-                  disabled={
-                    /* E2e is too fast and it tries to fill this way before the form is ready */
-                    !isLocaleReady || createTeamMutation.isPending
-                  }
+                  disabled={!localeLoaded || teamCreationMutation.isPending}
                   className="mt-2"
                   placeholder="Acme Inc."
                   name="name"
                   label={t("team_name")}
-                  defaultValue={value}
-                  onChange={(e) => {
-                    newTeamFormMethods.setValue("name", e?.target.value);
-                    if (newTeamFormMethods.formState.touchedFields["slug"] === undefined) {
-                      newTeamFormMethods.setValue("slug", slugify(e?.target.value));
+                  defaultValue={fieldValue}
+                  onChange={(event) => {
+                    teamFormController.setValue("name", event?.target.value);
+                    if (teamFormController.formState.touchedFields["slug"] === undefined) {
+                      teamFormController.setValue("slug", slugify(event?.target.value));
                     }
                   }}
                   autoComplete="off"
@@ -116,41 +119,41 @@ export const CreateANewTeamForm = (props: CreateANewTeamFormProps) => {
         <div className="mb-8">
           <Controller
             name="slug"
-            control={newTeamFormMethods.control}
+            control={teamFormController.control}
             rules={{ required: t("team_url_required") }}
-            render={({ field: { value } }) => (
+            render={({ field: { value: slugValue } }) => (
               <TextField
                 className="mt-2"
                 name="slug"
                 placeholder="acme"
                 label={t("team_url")}
                 addOnLeading={`${
-                  orgBranding
-                    ? `${orgBranding.fullDomain.replace("https://", "").replace("http://", "")}/`
+                  brandingConfiguration
+                    ? `${brandingConfiguration.fullDomain.replace("https://", "").replace("http://", "")}/`
                     : `${subdomainSuffix()}/team/`
                 }`}
-                value={value}
-                defaultValue={value}
-                onChange={(e) => {
-                  newTeamFormMethods.setValue("slug", slugify(e?.target.value, true), {
+                value={slugValue}
+                defaultValue={slugValue}
+                onChange={(inputEvent) => {
+                  teamFormController.setValue("slug", slugify(inputEvent?.target.value, true), {
                     shouldTouch: true,
                   });
-                  newTeamFormMethods.clearErrors("slug");
+                  teamFormController.clearErrors("slug");
                 }}
               />
             )}
           />
         </div>
 
-        {inDialog ? (
+        {isModalView ? (
           <DialogFooter>
             <div className="flex space-x-2 rtl:space-x-reverse">
-              <FormButtons />
+              <ActionButtons />
             </div>
           </DialogFooter>
         ) : (
           <div className="flex space-x-2 rtl:space-x-reverse">
-            <FormButtons />
+            <ActionButtons />
           </div>
         )}
       </Form>

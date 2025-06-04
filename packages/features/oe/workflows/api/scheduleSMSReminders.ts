@@ -1,4 +1,3 @@
-/* Schedule any workflow reminder that falls within 7 days for SMS */
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import dayjs from "@calcom/dayjs";
@@ -18,7 +17,7 @@ import type { VariablesType } from "../lib/reminders/templates/customTemplate";
 import customTemplate from "../lib/reminders/templates/customTemplate";
 import smsReminderTemplate from "../lib/reminders/templates/smsReminderTemplate";
 
-async function getUnscheduledReminders() {
+const fetchPendingNotifications = async () => {
   return prisma.workflowReminder.findMany({
     where: {
       method: WorkflowMethods.SMS,
@@ -33,135 +32,136 @@ async function getUnscheduledReminders() {
       retryCount: true,
     },
   });
-}
-async function scheduleReminders() {
-  const unscheduledReminders = (await getUnscheduledReminders()) as (PartialWorkflowReminder & {
+};
+
+const processNotificationQueue = async (): Promise<number> => {
+  const pendingNotifications = (await fetchPendingNotifications()) as (PartialWorkflowReminder & {
     retryCount: number;
   })[];
 
-  for (const reminder of unscheduledReminders) {
-    if (!reminder.workflowStep || !reminder.booking) {
+  for (const notification of pendingNotifications) {
+    if (!notification.workflowStep || !notification.booking) {
       continue;
     }
-    const userId = reminder.workflowStep.workflow.userId;
-    const teamId = reminder.workflowStep.workflow.teamId;
+    const workflowUserId = notification.workflowStep.workflow.userId;
+    const workflowTeamId = notification.workflowStep.workflow.teamId;
 
     try {
-      const sendTo =
-        reminder.workflowStep.action === WorkflowActions.SMS_NUMBER
-          ? reminder.workflowStep.sendTo
-          : reminder.booking?.smsReminderNumber;
+      const recipientNumber =
+        notification.workflowStep.action === WorkflowActions.SMS_NUMBER
+          ? notification.workflowStep.sendTo
+          : notification.booking?.smsReminderNumber;
 
-      const userName =
-        reminder.workflowStep.action === WorkflowActions.SMS_ATTENDEE
-          ? reminder.booking?.attendees[0].name
+      const recipientDisplayName =
+        notification.workflowStep.action === WorkflowActions.SMS_ATTENDEE
+          ? notification.booking?.attendees[0].name
           : "";
 
-      const attendeeName =
-        reminder.workflowStep.action === WorkflowActions.SMS_ATTENDEE
-          ? reminder.booking?.user?.name
-          : reminder.booking?.attendees[0].name;
+      const participantDisplayName =
+        notification.workflowStep.action === WorkflowActions.SMS_ATTENDEE
+          ? notification.booking?.user?.name
+          : notification.booking?.attendees[0].name;
 
-      const timeZone =
-        reminder.workflowStep.action === WorkflowActions.SMS_ATTENDEE
-          ? reminder.booking?.attendees[0].timeZone
-          : reminder.booking?.user?.timeZone;
+      const participantTimeZone =
+        notification.workflowStep.action === WorkflowActions.SMS_ATTENDEE
+          ? notification.booking?.attendees[0].timeZone
+          : notification.booking?.user?.timeZone;
 
-      const senderID = getSenderId(sendTo, reminder.workflowStep.sender);
+      const messageSenderId = getSenderId(recipientNumber, notification.workflowStep.sender);
 
-      const locale =
-        reminder.workflowStep.action === WorkflowActions.EMAIL_ATTENDEE ||
-        reminder.workflowStep.action === WorkflowActions.SMS_ATTENDEE
-          ? reminder.booking?.attendees[0].locale
-          : reminder.booking?.user?.locale;
+      const participantLocale =
+        notification.workflowStep.action === WorkflowActions.EMAIL_ATTENDEE ||
+        notification.workflowStep.action === WorkflowActions.SMS_ATTENDEE
+          ? notification.booking?.attendees[0].locale
+          : notification.booking?.user?.locale;
 
-      let message: string | null = reminder.workflowStep.reminderBody || null;
+      let messageText: string | null = notification.workflowStep.reminderBody || null;
 
-      if (reminder.workflowStep.reminderBody) {
+      if (notification.workflowStep.reminderBody) {
         const { responses } = getCalEventResponses({
-          bookingFields: reminder.booking.eventType?.bookingFields ?? null,
-          booking: reminder.booking,
+          bookingFields: notification.booking.eventType?.bookingFields ?? null,
+          booking: notification.booking,
         });
 
-        const organizerOrganizationProfile = await prisma.profile.findFirst({
+        const organizerProfile = await prisma.profile.findFirst({
           where: {
-            userId: reminder.booking.user?.id,
+            userId: notification.booking.user?.id,
           },
         });
 
-        const organizerOrganizationId = organizerOrganizationProfile?.organizationId;
+        const organizerOrgId = organizerProfile?.organizationId;
 
-        const bookerUrl = await getBookerBaseUrl(
-          reminder.booking.eventType?.team?.parentId ?? organizerOrganizationId ?? null
+        const bookingBaseUrl = await getBookerBaseUrl(
+          notification.booking.eventType?.team?.parentId ?? organizerOrgId ?? null
         );
 
-        const variables: VariablesType = {
-          eventName: reminder.booking?.eventType?.title,
-          organizerName: reminder.booking?.user?.name || "",
-          attendeeName: reminder.booking?.attendees[0].name,
-          attendeeEmail: reminder.booking?.attendees[0].email,
-          eventDate: dayjs(reminder.booking?.startTime).tz(timeZone),
-          eventEndTime: dayjs(reminder.booking?.endTime).tz(timeZone),
-          timeZone: timeZone,
-          location: reminder.booking?.location || "",
-          additionalNotes: reminder.booking?.description,
+        const templateData: VariablesType = {
+          eventName: notification.booking?.eventType?.title,
+          organizerName: notification.booking?.user?.name || "",
+          attendeeName: notification.booking?.attendees[0].name,
+          attendeeEmail: notification.booking?.attendees[0].email,
+          eventDate: dayjs(notification.booking?.startTime).tz(participantTimeZone),
+          eventEndTime: dayjs(notification.booking?.endTime).tz(participantTimeZone),
+          timeZone: participantTimeZone,
+          location: notification.booking?.location || "",
+          additionalNotes: notification.booking?.description,
           responses: responses,
-          meetingUrl: bookingMetadataSchema.parse(reminder.booking?.metadata || {})?.videoCallUrl,
-          cancelLink: `${bookerUrl}/booking/${reminder.booking.uid}?cancel=true`,
-          rescheduleLink: `${bookerUrl}/reschedule/${reminder.booking.uid}`,
+          meetingUrl: bookingMetadataSchema.parse(notification.booking?.metadata || {})?.videoCallUrl,
+          cancelLink: `${bookingBaseUrl}/booking/${notification.booking.uid}?cancel=true`,
+          rescheduleLink: `${bookingBaseUrl}/reschedule/${notification.booking.uid}`,
         };
-        const customMessage = customTemplate(
-          reminder.workflowStep.reminderBody || "",
-          variables,
-          locale || "en",
-          getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat)
+        const processedMessage = customTemplate(
+          notification.workflowStep.reminderBody || "",
+          templateData,
+          participantLocale || "en",
+          getTimeFormatStringFromUserTimeFormat(notification.booking.user?.timeFormat)
         );
-        message = customMessage.text;
-      } else if (reminder.workflowStep.template === WorkflowTemplates.REMINDER) {
-        message = smsReminderTemplate(
+        messageText = processedMessage.text;
+      } else if (notification.workflowStep.template === WorkflowTemplates.REMINDER) {
+        messageText = smsReminderTemplate(
           false,
-          locale ?? "en",
-          reminder.workflowStep.action,
-          getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
-          reminder.booking?.startTime.toISOString() || "",
-          reminder.booking?.eventType?.title || "",
-          timeZone || "",
-          attendeeName || "",
-          userName
+          participantLocale ?? "en",
+          notification.workflowStep.action,
+          getTimeFormatStringFromUserTimeFormat(notification.booking.user?.timeFormat),
+          notification.booking?.startTime.toISOString() || "",
+          notification.booking?.eventType?.title || "",
+          participantTimeZone || "",
+          participantDisplayName || "",
+          recipientDisplayName
         );
       }
 
-      if (message?.length && message?.length > 0 && sendTo) {
-        const scheduledSMS = await twilio.scheduleSMS(
-          sendTo,
-          message,
-          reminder.scheduledDate,
-          senderID,
-          userId,
-          teamId,
+      if (messageText?.length && messageText?.length > 0 && recipientNumber) {
+        const dispatchedSMS = await twilio.scheduleSMS(
+          recipientNumber,
+          messageText,
+          notification.scheduledDate,
+          messageSenderId,
+          workflowUserId,
+          workflowTeamId,
           false,
           undefined,
           undefined,
-          reminder.booking?.eventTypeId ? { eventTypeId: reminder.booking?.eventTypeId } : undefined
+          notification.booking?.eventTypeId ? { eventTypeId: notification.booking?.eventTypeId } : undefined
         );
 
-        if (scheduledSMS) {
+        if (dispatchedSMS) {
           await prisma.workflowReminder.update({
             where: {
-              id: reminder.id,
+              id: notification.id,
             },
             data: {
               scheduled: true,
-              referenceId: scheduledSMS.sid,
+              referenceId: dispatchedSMS.sid,
             },
           });
         } else {
           await prisma.workflowReminder.update({
             where: {
-              id: reminder.id,
+              id: notification.id,
             },
             data: {
-              retryCount: reminder.retryCount + 1,
+              retryCount: notification.retryCount + 1,
             },
           });
         }
@@ -169,19 +169,19 @@ async function scheduleReminders() {
     } catch (error) {
       await prisma.workflowReminder.update({
         where: {
-          id: reminder.id,
+          id: notification.id,
         },
         data: {
-          retryCount: reminder.retryCount + 1,
+          retryCount: notification.retryCount + 1,
         },
       });
-      console.log(`Error scheduling SMS with error ${error}`);
+      console.log(`SMS scheduling failed with error ${error}`);
     }
   }
-  return unscheduledReminders.length;
-}
+  return pendingNotifications.length;
+};
 
-async function deletePastReminders() {
+const removeExpiredNotifications = async (): Promise<void> => {
   await prisma.workflowReminder.deleteMany({
     where: {
       OR: [
@@ -190,7 +190,6 @@ async function deletePastReminders() {
           scheduledDate: {
             lte: dayjs().toISOString(),
           },
-          //to preserve workflows that weren't scheduled due to some reason
           scheduled: false,
           OR: [{ cancelled: null }, { cancelled: false }],
         },
@@ -202,10 +201,10 @@ async function deletePastReminders() {
       ],
     },
   });
-}
+};
 
-async function invokeCancelledReminders() {
-  const scheduledSendsToCancel = await prisma.workflowReminder.findMany({
+const executeCancellationProcess = async (): Promise<void> => {
+  const messagesToCancel = await prisma.workflowReminder.findMany({
     where: {
       method: WorkflowMethods.SMS,
       scheduled: true,
@@ -216,16 +215,14 @@ async function invokeCancelledReminders() {
     },
   });
 
-  const cancellationPromises = [];
-  for (const scheduledSendToCancel of scheduledSendsToCancel) {
-    if (scheduledSendToCancel.referenceId) {
-      // Twilio cancel request promise
-      const cancellationReqPromise = twilio.cancelSMS(scheduledSendToCancel.referenceId);
+  const cancellationTasks = [];
+  for (const messageToCancel of messagesToCancel) {
+    if (messageToCancel.referenceId) {
+      const twilioRequest = twilio.cancelSMS(messageToCancel.referenceId);
 
-      // Prisma update promise
-      const statusUpdatePromise = prisma.workflowReminder.update({
+      const databaseUpdate = prisma.workflowReminder.update({
         where: {
-          id: scheduledSendToCancel.id,
+          id: messageToCancel.id,
         },
         data: {
           referenceId: null,
@@ -233,28 +230,26 @@ async function invokeCancelledReminders() {
         },
       });
 
-      cancellationPromises.push(cancellationReqPromise, statusUpdatePromise);
+      cancellationTasks.push(twilioRequest, databaseUpdate);
     }
   }
 
-  await Promise.all(cancellationPromises);
-}
-async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const authHeader = req.headers.authorization;
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  await Promise.all(cancellationTasks);
+};
+
+const handler = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+  const authorizationHeader = req.headers.authorization;
+  if (!process.env.CRON_SECRET || authorizationHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ message: "Not authenticated" });
   }
 
-  //delete all scheduled sms reminders where scheduled date is past current date
-  await deletePastReminders();
+  await removeExpiredNotifications();
 
-  // Cancel Scheduled sends whose workflow reminders are marked as Cancelled
-  await invokeCancelledReminders();
+  await executeCancellationProcess();
 
-  //find all unscheduled SMS reminders
-  const remindersToScheduleNum = await scheduleReminders();
-  res.status(200).json({ message: `${remindersToScheduleNum} SMS scheduled` });
-}
+  const scheduledMessagesCount = await processNotificationQueue();
+  res.status(200).json({ message: `${scheduledMessagesCount} SMS scheduled` });
+};
 
 export default defaultHandler({
   POST: Promise.resolve({ default: handler }),

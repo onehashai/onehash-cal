@@ -12,55 +12,64 @@ import SkeletonLoaderTeamList from "./SkeletonloaderTeamList";
 import TeamList from "./TeamList";
 
 export function TeamsListing() {
-  const searchParams = useCompatSearchParams();
-  const token = searchParams?.get("token");
+  const queryParams = useCompatSearchParams();
+  const authToken = queryParams?.get("token");
   const { t } = useLocale();
-  const trpcContext = trpc.useUtils();
-  const router = useRouter();
+  const trpcUtilities = trpc.useUtils();
+  const navigationRouter = useRouter();
 
-  const [inviteTokenChecked, setInviteTokenChecked] = useState(false);
+  const [hasValidatedInviteToken, setHasValidatedInviteToken] = useState(false);
 
-  const { data, isPending, error } = trpc.viewer.teams.list.useQuery(
+  const {
+    data: teamsData,
+    isPending: isLoadingTeams,
+    error: fetchError,
+  } = trpc.viewer.teams.list.useQuery(
     {
       includeOrgs: true,
     },
     {
-      enabled: inviteTokenChecked,
+      enabled: hasValidatedInviteToken,
     }
   );
 
-  const { data: user } = trpc.viewer.me.useQuery();
+  const { data: currentUser } = trpc.viewer.me.useQuery();
 
-  const { mutate: inviteMemberByToken } = trpc.viewer.teams.inviteMemberByToken.useMutation({
-    onSuccess: (teamName) => {
-      trpcContext.viewer.teams.list.invalidate();
-      showToast(t("team_invite_received", { teamName }), "success");
+  const { mutate: processInviteToken } = trpc.viewer.teams.inviteMemberByToken.useMutation({
+    onSuccess: (teamIdentifier) => {
+      trpcUtilities.viewer.teams.list.invalidate();
+      showToast(t("team_invite_received", { teamName: teamIdentifier }), "success");
     },
-    onError: (e) => {
-      showToast(e.message, "error");
+    onError: (errorResponse) => {
+      showToast(errorResponse.message, "error");
     },
     onSettled: () => {
-      setInviteTokenChecked(true);
+      setHasValidatedInviteToken(true);
     },
   });
 
-  const teams = useMemo(() => data?.filter((m) => m.accepted && !m.isOrganization) || [], [data]);
-
-  const teamInvites = useMemo(() => data?.filter((m) => !m.accepted && !m.isOrganization) || [], [data]);
-
-  const organizationInvites = (data?.filter((m) => !m.accepted && m.isOrganization) || []).filter(
-    (orgInvite) => {
-      const isThereASubTeamOfTheOrganizationInInvites = teamInvites.find(
-        (teamInvite) => teamInvite.parentId === orgInvite.id
-      );
-      // Accepting a subteam invite automatically accepts the invite for the parent organization. So, need to show such an organization's invite
-      return !isThereASubTeamOfTheOrganizationInInvites;
-    }
+  const acceptedTeamsList = useMemo(
+    () => teamsData?.filter((member) => member.accepted && !member.isOrganization) || [],
+    [teamsData]
   );
 
-  const isCreateTeamButtonDisabled = !!(user?.organizationId && !user?.organization?.isOrgAdmin);
+  const pendingTeamInvitations = useMemo(
+    () => teamsData?.filter((member) => !member.accepted && !member.isOrganization) || [],
+    [teamsData]
+  );
 
-  const features = [
+  const pendingOrganizationInvitations = (
+    teamsData?.filter((member) => !member.accepted && member.isOrganization) || []
+  ).filter((organizationInvite) => {
+    const hasRelatedSubTeamInvite = pendingTeamInvitations.find(
+      (teamInvitation) => teamInvitation.parentId === organizationInvite.id
+    );
+    return !hasRelatedSubTeamInvite;
+  });
+
+  const shouldDisableCreateButton = !!(currentUser?.organizationId && !currentUser?.organization?.isOrgAdmin);
+
+  const platformFeatures = [
     {
       icon: <Icon name="users" className="h-5 w-5 text-red-500" />,
       title: t("collective_scheduling"),
@@ -94,76 +103,83 @@ export function TeamsListing() {
   ];
 
   useEffect(() => {
-    if (!router) return;
-    if (token) inviteMemberByToken({ token });
-    else setInviteTokenChecked(true);
-  }, [router, inviteMemberByToken, setInviteTokenChecked, token]);
+    if (!navigationRouter) return;
 
-  if (isPending || !inviteTokenChecked) {
+    authToken ? processInviteToken({ token: authToken }) : setHasValidatedInviteToken(true);
+  }, [navigationRouter, processInviteToken, setHasValidatedInviteToken, authToken]);
+
+  if (isLoadingTeams || !hasValidatedInviteToken) {
     return <SkeletonLoaderTeamList />;
   }
 
+  const organizationInviteSection = pendingOrganizationInvitations.length > 0 && (
+    <div className="bg-subtle mb-6 rounded-md p-5">
+      <Label className="text-emphasis pb-2  font-semibold">{t("pending_organization_invites")}</Label>
+      <TeamList teams={pendingOrganizationInvitations} pending />
+    </div>
+  );
+
+  const teamInviteSection = pendingTeamInvitations.length > 0 && (
+    <div className="bg-subtle mb-6 rounded-md p-5">
+      <Label className="text-emphasis pb-2  font-semibold">{t("pending_invites")}</Label>
+      <TeamList teams={pendingTeamInvitations} pending />
+    </div>
+  );
+
+  const createTeamButtonGroup =
+    !currentUser?.organizationId || currentUser?.organization.isOrgAdmin ? (
+      <div className="space-y-2 rtl:space-x-reverse sm:space-x-2">
+        <ButtonGroup>
+          <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
+            {t("create_team")}
+          </Button>
+          <Button color="minimal" href="https://www.onehash.ai/cal" target="_blank">
+            {t("learn_more")}
+          </Button>
+        </ButtonGroup>
+      </div>
+    ) : (
+      <p>{t("org_admins_can_create_new_teams")}</p>
+    );
+
+  const emptyStateScreen = (
+    <EmptyScreen
+      Icon="users"
+      headline={t("create_team_to_get_started")}
+      description={t("create_first_team_and_invite_others")}
+      buttonRaw={
+        <Button
+          color="secondary"
+          data-testid="create-team-btn"
+          disabled={!!shouldDisableCreateButton}
+          tooltip={shouldDisableCreateButton ? t("org_admins_can_create_new_teams") : t("create_new_team")}
+          onClick={() =>
+            navigationRouter.push(`${WEBAPP_URL}/settings/teams/new?returnTo=${WEBAPP_URL}/teams`)
+          }>
+          {t(`create_new_team`)}
+        </Button>
+      }
+    />
+  );
+
+  const teamListContent =
+    acceptedTeamsList.length > 0 ? <TeamList teams={acceptedTeamsList} /> : emptyStateScreen;
+
   return (
     <>
-      {!!error && <Alert severity="error" title={error.message} />}
+      {!!fetchError && <Alert severity="error" title={fetchError.message} />}
 
-      {organizationInvites.length > 0 && (
-        <div className="bg-subtle mb-6 rounded-md p-5">
-          <Label className="text-emphasis pb-2  font-semibold">{t("pending_organization_invites")}</Label>
-          <TeamList teams={organizationInvites} pending />
-        </div>
-      )}
-
-      {teamInvites.length > 0 && (
-        <div className="bg-subtle mb-6 rounded-md p-5">
-          <Label className="text-emphasis pb-2  font-semibold">{t("pending_invites")}</Label>
-          <TeamList teams={teamInvites} pending />
-        </div>
-      )}
+      {organizationInviteSection}
+      {teamInviteSection}
 
       <UpgradeTip
         plan="team"
         title={t("calcom_is_better_with_team", { appName: APP_NAME })}
         description="add_your_team_members"
-        features={features}
+        features={platformFeatures}
         background="/tips/teams"
-        buttons={
-          !user?.organizationId || user?.organization.isOrgAdmin ? (
-            <div className="space-y-2 rtl:space-x-reverse sm:space-x-2">
-              <ButtonGroup>
-                <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
-                  {t("create_team")}
-                </Button>
-                <Button color="minimal" href="https://www.onehash.ai/cal" target="_blank">
-                  {t("learn_more")}
-                </Button>
-              </ButtonGroup>
-            </div>
-          ) : (
-            <p>{t("org_admins_can_create_new_teams")}</p>
-          )
-        }>
-        {teams.length > 0 ? (
-          <TeamList teams={teams} />
-        ) : (
-          <EmptyScreen
-            Icon="users"
-            headline={t("create_team_to_get_started")}
-            description={t("create_first_team_and_invite_others")}
-            buttonRaw={
-              <Button
-                color="secondary"
-                data-testid="create-team-btn"
-                disabled={!!isCreateTeamButtonDisabled}
-                tooltip={
-                  isCreateTeamButtonDisabled ? t("org_admins_can_create_new_teams") : t("create_new_team")
-                }
-                onClick={() => router.push(`${WEBAPP_URL}/settings/teams/new?returnTo=${WEBAPP_URL}/teams`)}>
-                {t(`create_new_team`)}
-              </Button>
-            }
-          />
-        )}
+        buttons={createTeamButtonGroup}>
+        {teamListContent}
       </UpgradeTip>
     </>
   );

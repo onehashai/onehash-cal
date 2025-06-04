@@ -57,39 +57,38 @@ export type PartialWorkflowReminder = Pick<
   attendee: Attendee | null;
 } & { workflowStep: PartialWorkflowStep };
 
-async function getWorkflowReminders<T extends Prisma.WorkflowReminderSelect>(
-  filter: Prisma.WorkflowReminderWhereInput,
-  select: T
+const BATCH_PROCESSING_SIZE = 90;
+
+async function fetchRemindersBatch<T extends Prisma.WorkflowReminderSelect>(
+  queryFilter: Prisma.WorkflowReminderWhereInput,
+  selectionCriteria: T
 ): Promise<Array<Prisma.WorkflowReminderGetPayload<{ select: T }>>> {
-  const pageSize = 90;
-  let pageNumber = 0;
-  const filteredWorkflowReminders: Array<Prisma.WorkflowReminderGetPayload<{ select: T }>> = [];
+  const collectedReminders: Array<Prisma.WorkflowReminderGetPayload<{ select: T }>> = [];
+  let batchIndex = 0;
 
   while (true) {
-    const newFilteredWorkflowReminders = await prisma.workflowReminder.findMany({
-      where: filter,
-      select: select,
-      skip: pageNumber * pageSize,
-      take: pageSize,
+    const currentBatch = await prisma.workflowReminder.findMany({
+      where: queryFilter,
+      select: selectionCriteria,
+      skip: batchIndex * BATCH_PROCESSING_SIZE,
+      take: BATCH_PROCESSING_SIZE,
     });
 
-    if (newFilteredWorkflowReminders.length === 0) {
+    if (currentBatch.length === 0) {
       break;
     }
 
-    filteredWorkflowReminders.push(
-      ...(newFilteredWorkflowReminders as Array<Prisma.WorkflowReminderGetPayload<{ select: T }>>)
-    );
-    pageNumber++;
+    collectedReminders.push(...(currentBatch as Array<Prisma.WorkflowReminderGetPayload<{ select: T }>>));
+    batchIndex++;
   }
 
-  return filteredWorkflowReminders;
+  return collectedReminders;
 }
 
 type RemindersToDeleteType = { referenceId: string | null };
 
 export async function getAllRemindersToDelete(): Promise<RemindersToDeleteType[]> {
-  const whereFilter: Prisma.WorkflowReminderWhereInput = {
+  const deletionCriteria: Prisma.WorkflowReminderWhereInput = {
     method: WorkflowMethods.EMAIL,
     cancelled: true,
     scheduledDate: {
@@ -97,35 +96,35 @@ export async function getAllRemindersToDelete(): Promise<RemindersToDeleteType[]
     },
   };
 
-  const select: Prisma.WorkflowReminderSelect = {
+  const fieldSelection: Prisma.WorkflowReminderSelect = {
     referenceId: true,
   };
 
-  const remindersToDelete = await getWorkflowReminders(whereFilter, select);
+  const candidatesForDeletion = await fetchRemindersBatch(deletionCriteria, fieldSelection);
 
-  return remindersToDelete;
+  return candidatesForDeletion;
 }
 
 type RemindersToCancelType = { referenceId: string | null; id: number };
 
 export async function getAllRemindersToCancel(): Promise<RemindersToCancelType[]> {
-  const whereFilter: Prisma.WorkflowReminderWhereInput = {
+  const cancellationCriteria: Prisma.WorkflowReminderWhereInput = {
     method: WorkflowMethods.EMAIL,
     cancelled: true,
-    scheduled: true, //if it is false then they are already cancelled
+    scheduled: true,
     scheduledDate: {
       lte: dayjs().add(1, "hour").toISOString(),
     },
   };
 
-  const select: Prisma.WorkflowReminderSelect = {
+  const requiredFields: Prisma.WorkflowReminderSelect = {
     referenceId: true,
     id: true,
   };
 
-  const remindersToCancel = await getWorkflowReminders(whereFilter, select);
+  const candidatesForCancellation = await fetchRemindersBatch(cancellationCriteria, requiredFields);
 
-  return remindersToCancel;
+  return candidatesForCancellation;
 }
 
 export const select: Prisma.WorkflowReminderSelect = {
@@ -213,7 +212,7 @@ export const select: Prisma.WorkflowReminderSelect = {
 };
 
 export async function getAllUnscheduledReminders(): Promise<PartialWorkflowReminder[]> {
-  const whereFilter: Prisma.WorkflowReminderWhereInput = {
+  const unscheduledCriteria: Prisma.WorkflowReminderWhereInput = {
     method: WorkflowMethods.EMAIL,
     scheduled: false,
     scheduledDate: {
@@ -222,7 +221,10 @@ export async function getAllUnscheduledReminders(): Promise<PartialWorkflowRemin
     OR: [{ cancelled: null }, { cancelled: false }],
   };
 
-  const unscheduledReminders = (await getWorkflowReminders(whereFilter, select)) as PartialWorkflowReminder[];
+  const pendingReminders = (await fetchRemindersBatch(
+    unscheduledCriteria,
+    select
+  )) as PartialWorkflowReminder[];
 
-  return unscheduledReminders;
+  return pendingReminders;
 }

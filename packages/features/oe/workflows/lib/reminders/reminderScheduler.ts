@@ -3,7 +3,11 @@ import {
   isSMSOrWhatsappAction,
   isWhatsappAction,
 } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
-import type { Workflow, WorkflowStep } from "@calcom/features/oe/workflows/lib/types";
+import type {
+  ScheduleEmailReminderAction,
+  Workflow,
+  WorkflowStep,
+} from "@calcom/features/oe/workflows/lib/types";
 import { checkSMSRateLimit } from "@calcom/lib/checkRateLimitAndThrowError";
 import { SENDER_NAME } from "@calcom/lib/constants";
 import { SchedulingType, WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/enums";
@@ -41,143 +45,163 @@ export interface ScheduleWorkflowRemindersArgs extends ProcessWorkflowStepParams
   isFirstRecurringEvent?: boolean;
 }
 
-const processWorkflowStep = async (
-  workflow: Workflow,
-  step: WorkflowStep,
+const executeStepLogic = async (
+  workflowConfig: Workflow,
+  stepConfig: WorkflowStep,
   {
     smsReminderNumber,
-    calendarEvent: evt,
+    calendarEvent: eventData,
     emailAttendeeSendToOverride,
     hideBranding,
     seatReferenceUid,
   }: ProcessWorkflowStepParams
 ) => {
-  if (isSMSOrWhatsappAction(step.action)) {
+  const requiresRateLimiting = isSMSOrWhatsappAction(stepConfig.action);
+
+  if (requiresRateLimiting) {
+    const rateLimitKey = workflowConfig.teamId
+      ? `sms:team:${workflowConfig.teamId}`
+      : `sms:user:${workflowConfig.userId}`;
+
     await checkSMSRateLimit({
-      identifier: `sms:${workflow.teamId ? "team:" : "user:"}${workflow.teamId || workflow.userId}`,
+      identifier: rateLimitKey,
       rateLimitingType: "sms",
     });
   }
 
-  if (isSMSAction(step.action)) {
-    const sendTo = step.action === WorkflowActions.SMS_ATTENDEE ? smsReminderNumber : step.sendTo;
+  const isTextMessage = isSMSAction(stepConfig.action);
+
+  if (isTextMessage) {
+    const recipientNumber =
+      stepConfig.action === WorkflowActions.SMS_ATTENDEE ? smsReminderNumber : stepConfig.sendTo;
+
     await scheduleSMSReminder({
-      evt,
-      reminderPhone: sendTo,
-      triggerEvent: workflow.trigger,
-      action: step.action as ScheduleTextReminderAction,
+      evt: eventData,
+      reminderPhone: recipientNumber,
+      triggerEvent: workflowConfig.trigger,
+      action: stepConfig.action as ScheduleTextReminderAction,
       timeSpan: {
-        time: workflow.time,
-        timeUnit: workflow.timeUnit,
+        time: workflowConfig.time,
+        timeUnit: workflowConfig.timeUnit,
       },
-      message: step.reminderBody || "",
-      workflowStepId: step.id,
-      template: step.template,
-      sender: step.sender,
-      userId: workflow.userId,
-      teamId: workflow.teamId,
-      isVerificationPending: step.numberVerificationPending,
+      message: stepConfig.reminderBody || "",
+      workflowStepId: stepConfig.id,
+      template: stepConfig.template,
+      sender: stepConfig.sender,
+      userId: workflowConfig.userId,
+      teamId: workflowConfig.teamId,
+      isVerificationPending: stepConfig.numberVerificationPending,
       seatReferenceUid,
     });
-  } else if (
-    step.action === WorkflowActions.EMAIL_ATTENDEE ||
-    step.action === WorkflowActions.EMAIL_HOST ||
-    step.action === WorkflowActions.EMAIL_ADDRESS
-  ) {
-    let sendTo: string[] = [];
 
-    switch (step.action) {
-      case WorkflowActions.EMAIL_ADDRESS:
-        sendTo = [step.sendTo || ""];
-        break;
-      case WorkflowActions.EMAIL_HOST:
-        sendTo = [evt.organizer?.email || ""];
+    return;
+  }
 
-        const schedulingType = evt.eventType.schedulingType;
-        const isTeamEvent =
-          schedulingType === SchedulingType.ROUND_ROBIN || schedulingType === SchedulingType.COLLECTIVE;
-        if (isTeamEvent && evt.team?.members) {
-          sendTo = sendTo.concat(evt.team.members.map((member) => member.email));
-        }
-        break;
-      case WorkflowActions.EMAIL_ATTENDEE:
-        const attendees = !!emailAttendeeSendToOverride
-          ? [emailAttendeeSendToOverride]
-          : evt.attendees?.map((attendee) => attendee.email);
+  const emailActions: WorkflowActions[] = [
+    WorkflowActions.EMAIL_ATTENDEE,
+    WorkflowActions.EMAIL_HOST,
+    WorkflowActions.EMAIL_ADDRESS,
+  ];
 
-        sendTo = attendees;
+  const isEmailAction = emailActions.includes(stepConfig.action);
 
-        break;
+  if (isEmailAction) {
+    let recipients: string[] = [];
+
+    if (stepConfig.action === WorkflowActions.EMAIL_ADDRESS) {
+      recipients = [stepConfig.sendTo || ""];
+    } else if (stepConfig.action === WorkflowActions.EMAIL_HOST) {
+      recipients = [eventData.organizer?.email || ""];
+
+      const eventSchedulingType = eventData.eventType.schedulingType;
+      const teamEventTypes: SchedulingType[] = [SchedulingType.ROUND_ROBIN, SchedulingType.COLLECTIVE];
+      const isTeamBasedEvent = teamEventTypes.includes(eventSchedulingType as SchedulingType);
+
+      if (isTeamBasedEvent && eventData.team?.members) {
+        const memberEmails = eventData.team.members.map((member) => member.email);
+        recipients = [...recipients, ...memberEmails];
+      }
+    } else if (stepConfig.action === WorkflowActions.EMAIL_ATTENDEE) {
+      recipients = emailAttendeeSendToOverride
+        ? [emailAttendeeSendToOverride]
+        : eventData.attendees?.map((attendee) => attendee.email) || [];
     }
 
-    //Need to configure separate workflowReminders for each attendee(invitee and guest) in case if "disableOnMarkNoShow" is enabled
-    if (
-      workflow.trigger == WorkflowTriggerEvents.AFTER_EVENT &&
-      step.action === WorkflowActions.EMAIL_ATTENDEE
-      //TODO:NOSHOW DYNAMIC
-      // &&
-      // step.disableOnMarkNoShow
-    ) {
-      const reminderPromises = evt.attendees.map((attendee) => {
-        const { email: sentTo, id: attendeeId } = attendee;
+    const isPostEventAttendeeEmail =
+      workflowConfig.trigger === WorkflowTriggerEvents.AFTER_EVENT &&
+      stepConfig.action === WorkflowActions.EMAIL_ATTENDEE;
+
+    if (isPostEventAttendeeEmail) {
+      const emailTasks = eventData.attendees.map((participant) => {
+        const { email: recipientEmail, id: participantId } = participant;
+
         return scheduleEmailReminder({
-          evt,
-          triggerEvent: workflow.trigger,
+          evt: eventData,
+          triggerEvent: workflowConfig.trigger,
           action: WorkflowActions.EMAIL_ATTENDEE,
           timeSpan: {
-            time: workflow.time,
-            timeUnit: workflow.timeUnit,
+            time: workflowConfig.time,
+            timeUnit: workflowConfig.timeUnit,
           },
-          sendTo: [sentTo],
-          emailSubject: step.emailSubject || "",
-          emailBody: step.reminderBody || "",
-          template: step.template,
-          sender: step.sender || SENDER_NAME,
-          workflowStepId: step.id,
+          sendTo: [recipientEmail],
+          emailSubject: stepConfig.emailSubject || "",
+          emailBody: stepConfig.reminderBody || "",
+          template: stepConfig.template,
+          sender: stepConfig.sender || SENDER_NAME,
+          workflowStepId: stepConfig.id,
           hideBranding,
           seatReferenceUid,
-          includeCalendarEvent: step.includeCalendarEvent,
-          attendeeId: attendeeId,
+          includeCalendarEvent: stepConfig.includeCalendarEvent,
+          attendeeId: participantId,
         });
       });
-      await Promise.all(reminderPromises);
+
+      await Promise.all(emailTasks);
     } else {
       await scheduleEmailReminder({
-        evt,
-        triggerEvent: workflow.trigger,
-        action: step.action,
+        evt: eventData,
+        triggerEvent: workflowConfig.trigger,
+        action: stepConfig.action as ScheduleEmailReminderAction,
         timeSpan: {
-          time: workflow.time,
-          timeUnit: workflow.timeUnit,
+          time: workflowConfig.time,
+          timeUnit: workflowConfig.timeUnit,
         },
-        sendTo,
-        emailSubject: step.emailSubject || "",
-        emailBody: step.reminderBody || "",
-        template: step.template,
-        sender: step.sender || SENDER_NAME,
-        workflowStepId: step.id,
+        sendTo: recipients,
+        emailSubject: stepConfig.emailSubject || "",
+        emailBody: stepConfig.reminderBody || "",
+        template: stepConfig.template,
+        sender: stepConfig.sender || SENDER_NAME,
+        workflowStepId: stepConfig.id,
         hideBranding,
         seatReferenceUid,
-        includeCalendarEvent: step.includeCalendarEvent,
+        includeCalendarEvent: stepConfig.includeCalendarEvent,
       });
     }
-  } else if (isWhatsappAction(step.action)) {
-    const sendTo = step.action === WorkflowActions.WHATSAPP_ATTENDEE ? smsReminderNumber : step.sendTo;
+
+    return;
+  }
+
+  const isWhatsapp = isWhatsappAction(stepConfig.action);
+
+  if (isWhatsapp) {
+    const whatsappRecipient =
+      stepConfig.action === WorkflowActions.WHATSAPP_ATTENDEE ? smsReminderNumber : stepConfig.sendTo;
+
     await scheduleWhatsappReminder({
-      evt,
-      reminderPhone: sendTo,
-      triggerEvent: workflow.trigger,
-      action: step.action as ScheduleTextReminderAction,
+      evt: eventData,
+      reminderPhone: whatsappRecipient,
+      triggerEvent: workflowConfig.trigger,
+      action: stepConfig.action as ScheduleTextReminderAction,
       timeSpan: {
-        time: workflow.time,
-        timeUnit: workflow.timeUnit,
+        time: workflowConfig.time,
+        timeUnit: workflowConfig.timeUnit,
       },
-      message: step.reminderBody || "",
-      workflowStepId: step.id,
-      template: step.template,
-      userId: workflow.userId,
-      teamId: workflow.teamId,
-      isVerificationPending: step.numberVerificationPending,
+      message: stepConfig.reminderBody || "",
+      workflowStepId: stepConfig.id,
+      template: stepConfig.template,
+      userId: workflowConfig.userId,
+      teamId: workflowConfig.teamId,
+      isVerificationPending: stepConfig.numberVerificationPending,
       seatReferenceUid,
     });
   }
@@ -187,7 +211,7 @@ export const scheduleWorkflowReminders = async (args: ScheduleWorkflowRemindersA
   const {
     workflows,
     smsReminderNumber,
-    calendarEvent: evt,
+    calendarEvent: eventData,
     isNotConfirmed = false,
     isRescheduleEvent = false,
     isFirstRecurringEvent = true,
@@ -196,37 +220,56 @@ export const scheduleWorkflowReminders = async (args: ScheduleWorkflowRemindersA
     seatReferenceUid,
   } = args;
 
-  if (isNotConfirmed || !workflows.length) return;
+  const shouldSkipProcessing = isNotConfirmed || workflows.length === 0;
 
-  for (const workflow of workflows) {
-    if (workflow.steps.length === 0) continue;
+  if (shouldSkipProcessing) return;
 
-    const isNotBeforeOrAfterEvent =
-      workflow.trigger !== WorkflowTriggerEvents.BEFORE_EVENT &&
-      workflow.trigger !== WorkflowTriggerEvents.AFTER_EVENT;
+  const workflowIterator = workflows[Symbol.iterator]();
+  let currentWorkflow = workflowIterator.next();
 
-    if (
-      isNotBeforeOrAfterEvent &&
-      // Check if the trigger is not a new event without a reschedule and is the first recurring event.
-      !(
-        workflow.trigger === WorkflowTriggerEvents.NEW_EVENT &&
-        !isRescheduleEvent &&
-        isFirstRecurringEvent
-      ) &&
-      // Check if the trigger is not a rescheduled event that is rescheduled.
-      !(workflow.trigger === WorkflowTriggerEvents.RESCHEDULE_EVENT && isRescheduleEvent)
-    ) {
+  while (!currentWorkflow.done) {
+    const workflowInstance = currentWorkflow.value;
+
+    if (workflowInstance.steps.length === 0) {
+      currentWorkflow = workflowIterator.next();
       continue;
     }
-    for (const step of workflow.steps) {
-      await processWorkflowStep(workflow, step, {
-        calendarEvent: evt,
+
+    const isTimedTrigger = (
+      [WorkflowTriggerEvents.BEFORE_EVENT, WorkflowTriggerEvents.AFTER_EVENT] as WorkflowTriggerEvents[]
+    ).includes(workflowInstance.trigger);
+
+    const isNewEventTrigger =
+      workflowInstance.trigger === WorkflowTriggerEvents.NEW_EVENT &&
+      !isRescheduleEvent &&
+      isFirstRecurringEvent;
+
+    const isRescheduleTrigger =
+      workflowInstance.trigger === WorkflowTriggerEvents.RESCHEDULE_EVENT && isRescheduleEvent;
+
+    const shouldExecuteWorkflow = isTimedTrigger || isNewEventTrigger || isRescheduleTrigger;
+
+    if (!shouldExecuteWorkflow) {
+      currentWorkflow = workflowIterator.next();
+      continue;
+    }
+
+    const stepIterator = workflowInstance.steps[Symbol.iterator]();
+    let currentStep = stepIterator.next();
+
+    while (!currentStep.done) {
+      await executeStepLogic(workflowInstance, currentStep.value, {
+        calendarEvent: eventData,
         emailAttendeeSendToOverride,
         smsReminderNumber,
         hideBranding,
         seatReferenceUid,
       });
+
+      currentStep = stepIterator.next();
     }
+
+    currentWorkflow = workflowIterator.next();
   }
 };
 
@@ -238,19 +281,38 @@ export interface SendCancelledRemindersArgs {
 }
 
 export const sendCancelledReminders = async (args: SendCancelledRemindersArgs) => {
-  const { smsReminderNumber, evt, workflows, hideBranding } = args;
+  const { smsReminderNumber, evt: eventData, workflows, hideBranding } = args;
 
-  if (!workflows.length) return;
+  const hasWorkflows = workflows.length > 0;
 
-  for (const workflow of workflows) {
-    if (workflow.trigger !== WorkflowTriggerEvents.EVENT_CANCELLED) continue;
+  if (!hasWorkflows) return;
 
-    for (const step of workflow.steps) {
-      processWorkflowStep(workflow, step, {
+  let workflowIndex = 0;
+
+  while (workflowIndex < workflows.length) {
+    const currentWorkflow = workflows[workflowIndex];
+
+    const isCancellationTrigger = currentWorkflow.trigger === WorkflowTriggerEvents.EVENT_CANCELLED;
+
+    if (!isCancellationTrigger) {
+      workflowIndex++;
+      continue;
+    }
+
+    let stepIndex = 0;
+
+    while (stepIndex < currentWorkflow.steps.length) {
+      const currentStep = currentWorkflow.steps[stepIndex];
+
+      executeStepLogic(currentWorkflow, currentStep, {
         smsReminderNumber,
         hideBranding,
-        calendarEvent: evt,
+        calendarEvent: eventData,
       });
+
+      stepIndex++;
     }
+
+    workflowIndex++;
   }
 };

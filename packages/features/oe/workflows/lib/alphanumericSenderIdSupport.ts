@@ -1,16 +1,6 @@
 import { SENDER_ID } from "@calcom/lib/constants";
 
-export function getSenderId(phoneNumber?: string | null, sender?: string | null) {
-  const isAlphanumericSenderIdSupported = !noAlphanumericSenderIdSupport.find(
-    (code) => code === phoneNumber?.substring(0, code.length)
-  );
-
-  const senderID = isAlphanumericSenderIdSupported ? sender || SENDER_ID : "";
-
-  return senderID;
-}
-
-const noAlphanumericSenderIdSupport = [
+const restrictedCountryPrefixes = [
   "+93",
   "+54",
   "+374",
@@ -89,3 +79,22 @@ const noAlphanumericSenderIdSupport = [
   "+381",
   "+65",
 ];
+
+export function getSenderId(phoneNumber?: string | null, sender?: string | null) {
+  if (!phoneNumber) {
+    return sender || SENDER_ID;
+  }
+
+  const hasRestrictedPrefix = restrictedCountryPrefixes.some((countryCode) => {
+    const prefixLength = countryCode.length;
+    const phonePrefix = phoneNumber.substring(0, prefixLength);
+    return phonePrefix === countryCode;
+  });
+
+  if (hasRestrictedPrefix) {
+    return "";
+  }
+
+  const resolvedSenderIdentifier = sender || SENDER_ID;
+  return resolvedSenderIdentifier;
+}

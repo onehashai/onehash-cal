@@ -29,65 +29,165 @@ interface Props {
   teamId: number;
 }
 
+const modifyEventSelection = (
+  eventIdCollection: Set<number>,
+  updateFunction: Dispatch<SetStateAction<Set<number>>>,
+  eventIds: number[],
+  operation: "add" | "remove"
+) => {
+  const modifiedCollection = new Set(eventIdCollection);
+
+  if (operation === "add") {
+    eventIds.forEach((id) => modifiedCollection.add(id));
+  } else {
+    eventIds.forEach((id) => modifiedCollection.delete(id));
+  }
+
+  updateFunction(modifiedCollection);
+};
+
+const SelectableEventItem = ({
+  onSelect,
+  text,
+  isSelected,
+}: {
+  text: string;
+  isSelected: boolean;
+  onSelect: () => void;
+}) => (
+  <CommandItem key={text} onSelect={onSelect}>
+    {text}
+    <div
+      className={classNames(
+        "border-subtle ml-auto flex h-4 w-4 items-center justify-center rounded-sm border",
+        isSelected ? "text-emphasis" : "opacity-50 [&_svg]:invisible"
+      )}>
+      <Icon name="check" className={classNames("h-4 w-4")} />
+    </div>
+  </CommandItem>
+);
+
 export function EventTypesList({ table, teamId }: Props) {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
-  const { data } = trpc.viewer.eventTypes.getByViewer.useQuery({
+  const trpcUtils = trpc.useUtils();
+
+  const [eventsToAdd, setEventsToAdd] = useState<Set<number>>(new Set());
+  const [eventsToRemoveFrom, setEventsToRemoveFrom] = useState<Set<number>>(new Set());
+
+  const { data: eventTypesData } = trpc.viewer.eventTypes.getByViewer.useQuery({
     filters: { teamIds: [teamId], schedulingTypes: [SchedulingType.ROUND_ROBIN] },
   });
-  const addMutation = trpc.viewer.teams.addMembersToEventTypes.useMutation({
-    onError: (error) => {
-      showToast(error.message, "error");
+
+  const eventGroupData = eventTypesData?.eventTypeGroups;
+  const selectedUsersList = table.getSelectedRowModel().flatRows.map((row) => row.original);
+
+  const hostAdditionMutation = trpc.viewer.teams.addMembersToEventTypes.useMutation({
+    onError: (err) => {
+      showToast(err.message, "error");
     },
     onSuccess: () => {
       showToast(
-        `${selectedUsers.length} users added to ${Array.from(selectedEvents).length} events`,
+        `${selectedUsersList.length} users added to ${Array.from(eventsToAdd).length} events`,
         "success"
       );
 
-      utils.viewer.teams.listMembers.invalidate();
-      utils.viewer.eventTypes.invalidate();
+      trpcUtils.viewer.teams.listMembers.invalidate();
+      trpcUtils.viewer.eventTypes.invalidate();
 
-      // Clear the selected values
-      setSelectedEvents(new Set());
+      setEventsToAdd(new Set());
       table.toggleAllRowsSelected(false);
     },
   });
-  const removeHostsMutation = trpc.viewer.teams.removeHostsFromEventTypes.useMutation({
-    onError: (error) => {
-      showToast(error.message, "error");
+
+  const hostRemovalMutation = trpc.viewer.teams.removeHostsFromEventTypes.useMutation({
+    onError: (err) => {
+      showToast(err.message, "error");
     },
     onSuccess: () => {
       showToast(
-        `${selectedUsers.length} users were removed from ${Array.from(removeHostFromEvents).length} events`,
+        `${selectedUsersList.length} users were removed from ${Array.from(eventsToRemoveFrom).length} events`,
         "success"
       );
 
-      utils.viewer.teams.listMembers.invalidate();
-      utils.viewer.eventTypes.invalidate();
+      trpcUtils.viewer.teams.listMembers.invalidate();
+      trpcUtils.viewer.eventTypes.invalidate();
 
-      // Clear the selected values
-      setRemoveHostFromEvents(new Set());
+      setEventsToRemoveFrom(new Set());
       table.toggleAllRowsSelected(false);
     },
   });
-  const [selectedEvents, setSelectedEvents] = useState<Set<number>>(new Set());
-  const [removeHostFromEvents, setRemoveHostFromEvents] = useState<Set<number>>(new Set());
-  const eventTypeGroups = data?.eventTypeGroups;
-  const selectedUsers = table.getSelectedRowModel().flatRows.map((row) => row.original);
 
-  // Add value array to the set
-  const addValue = (set: Set<number>, setSet: Dispatch<SetStateAction<Set<number>>>, value: number[]) => {
-    const updatedSet = new Set(set);
-    value.forEach((v) => updatedSet.add(v));
-    setSet(updatedSet);
+  const handleEventSelection = (eventId: number, existingHosts: any[], isCurrentlySelected: boolean) => {
+    const allUsersAreHosts = selectedUsersList.every((user) =>
+      existingHosts.some((host) => host.userId === user.id)
+    );
+
+    if (!isCurrentlySelected) {
+      if (allUsersAreHosts) {
+        modifyEventSelection(eventsToRemoveFrom, setEventsToRemoveFrom, [eventId], "remove");
+      } else {
+        modifyEventSelection(eventsToAdd, setEventsToAdd, [eventId], "add");
+      }
+    } else {
+      if (allUsersAreHosts) {
+        modifyEventSelection(eventsToRemoveFrom, setEventsToRemoveFrom, [eventId], "add");
+      } else {
+        modifyEventSelection(eventsToAdd, setEventsToAdd, [eventId], "remove");
+      }
+    }
   };
 
-  // Remove value array from the set
-  const removeValue = (set: Set<number>, setSet: Dispatch<SetStateAction<Set<number>>>, value: number[]) => {
-    const updatedSet = new Set(set);
-    value.forEach((v) => updatedSet.delete(v));
-    setSet(updatedSet);
+  const executeChanges = async () => {
+    const userIdsList = selectedUsersList.map((user) => user.id);
+
+    if (eventsToAdd.size > 0) {
+      await hostAdditionMutation.mutateAsync({
+        userIds: userIdsList,
+        eventTypeIds: Array.from(eventsToAdd),
+        teamId,
+      });
+    }
+
+    if (eventsToRemoveFrom.size > 0) {
+      await hostRemovalMutation.mutateAsync({
+        userIds: userIdsList,
+        eventTypeIds: Array.from(eventsToRemoveFrom),
+        teamId,
+      });
+    }
+  };
+
+  const renderEventTypeGroups = () => {
+    if (!eventGroupData) return null;
+
+    return eventGroupData.map((groupData) => {
+      const { eventTypes: eventsList, teamId: groupTeamId } = groupData;
+
+      if (eventsList.length === 0 || !groupTeamId) return null;
+
+      return (
+        <Fragment key={groupTeamId}>
+          {eventsList.map((eventType) => {
+            const eventHosts = eventType.hosts;
+            const usersAlreadyHosts = selectedUsersList.every((user) =>
+              eventHosts.some((host) => host.userId === user.id)
+            );
+
+            const isEventSelected =
+              (eventsToAdd.has(eventType.id) || usersAlreadyHosts) && !eventsToRemoveFrom.has(eventType.id);
+
+            return (
+              <SelectableEventItem
+                key={eventType.id}
+                text={eventType.title}
+                isSelected={isEventSelected}
+                onSelect={() => handleEventSelection(eventType.id, eventHosts, isEventSelected)}
+              />
+            );
+          })}
+        </Fragment>
+      );
+    });
   };
 
   return (
@@ -101,77 +201,11 @@ export function EventTypesList({ table, teamId }: Props) {
             <CommandInput placeholder={t("search")} />
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup>
-                {eventTypeGroups &&
-                  eventTypeGroups.map((data) => {
-                    const events = data.eventTypes;
-                    const teamId = data.teamId;
-
-                    if (events.length === 0 || !teamId) return null;
-                    return (
-                      <Fragment key={teamId}>
-                        {events.map((event) => {
-                          const hosts = event.hosts;
-                          const areAllUsersHostForEventType = selectedUsers.every((user) =>
-                            hosts.some((host) => host.userId === user.id)
-                          );
-                          const isSelected =
-                            (selectedEvents.has(event.id) || areAllUsersHostForEventType) &&
-                            !removeHostFromEvents.has(event.id);
-                          return (
-                            <ListItem
-                              onSelect={() => {
-                                if (!isSelected) {
-                                  if (areAllUsersHostForEventType) {
-                                    removeValue(removeHostFromEvents, setRemoveHostFromEvents, [event.id]);
-                                  } else {
-                                    // Add current event
-                                    addValue(selectedEvents, setSelectedEvents, [event.id]);
-                                  }
-                                } else {
-                                  if (areAllUsersHostForEventType) {
-                                    // remove selected users as hosts
-                                    addValue(removeHostFromEvents, setRemoveHostFromEvents, [event.id]);
-                                  } else {
-                                    // remove current event
-                                    removeValue(selectedEvents, setSelectedEvents, [event.id]);
-                                  }
-                                }
-                              }}
-                              key={event.id}
-                              text={event.title}
-                              isSelected={isSelected}
-                            />
-                          );
-                        })}
-                      </Fragment>
-                    );
-                  })}
-              </CommandGroup>
+              <CommandGroup>{renderEventTypeGroups()}</CommandGroup>
             </CommandList>
           </Command>
           <div className="my-1.5 flex w-full">
-            <Button
-              className="ml-auto mr-1.5 rounded-md"
-              size="sm"
-              onClick={() => {
-                const userIds = selectedUsers.map((user) => user.id);
-                if (selectedEvents.size > 0) {
-                  addMutation.mutateAsync({
-                    userIds: userIds,
-                    eventTypeIds: Array.from(selectedEvents),
-                    teamId,
-                  });
-                }
-
-                if (removeHostFromEvents.size > 0) {
-                  removeHostsMutation.mutateAsync({
-                    userIds,
-                    eventTypeIds: Array.from(removeHostFromEvents),
-                    teamId,
-                  });
-                }
-              }}>
+            <Button className="ml-auto mr-1.5 rounded-md" size="sm" onClick={executeChanges}>
               {t("apply")}
             </Button>
           </div>
@@ -180,24 +214,3 @@ export function EventTypesList({ table, teamId }: Props) {
     </>
   );
 }
-
-interface ListItemProps {
-  text: string;
-  isSelected: boolean;
-  onSelect: () => void;
-}
-
-const ListItem = ({ onSelect, text, isSelected }: ListItemProps) => {
-  return (
-    <CommandItem key={text} onSelect={onSelect}>
-      {text}
-      <div
-        className={classNames(
-          "border-subtle ml-auto flex h-4 w-4 items-center justify-center rounded-sm border",
-          isSelected ? "text-emphasis" : "opacity-50 [&_svg]:invisible"
-        )}>
-        <Icon name="check" className={classNames("h-4 w-4")} />
-      </div>
-    </CommandItem>
-  );
-};
