@@ -32,7 +32,12 @@ jobs:
     runs-on: ubuntu-latest      
 
     steps:
-
+  
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetching full history so we can checkout any commit
+          
       - name: Extract Git commit hash
         id: hash
         run: |
@@ -44,12 +49,7 @@ jobs:
             echo "[INFO]: 🆕 New Deployment Action" >> "$LOG_FILE"
           fi
           echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
-  
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetching full history so we can checkout any commit
-
+      
       - name: Checkout specific commit if git_hash is provided
         run: |
           git checkout ${{ steps.hash.outputs.git_hash }}
