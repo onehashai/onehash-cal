@@ -37,22 +37,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetching full history so we can checkout any commit
-          
-      - name: Extract Git commit hash
-        id: hash
-        run: |
-          if [ -n "${{ github.event.inputs.git_hash }}" ]; then
-            hash="${{ github.event.inputs.git_hash }}"
-            echo "[INFO]: ↩️ Old Deployment Action" >> "$LOG_FILE"
-          else
-            hash="$(git rev-parse HEAD)"
-            echo "[INFO]: 🆕 New Deployment Action" >> "$LOG_FILE"
-          fi
-          echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
+
       
       - name: Checkout specific commit if git_hash is provided
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
         run: |
-          git checkout ${{ steps.hash.outputs.git_hash }}
+          git checkout ${{ github.event.inputs.git_hash }}
+
         
       - name: Initialize Global Log File
         run: |
@@ -143,6 +134,18 @@ jobs:
           BRANCH_NAME="${{ github.event.inputs.branch != '' && github.event.inputs.branch || github.ref_name }}"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
+      - name: Extract Git commit hash
+        id: hash
+        run: |
+          if [ -n "${{ github.event.inputs.git_hash }}" ]; then
+            hash="${{ github.event.inputs.git_hash }}"
+            echo "[INFO]: ↩️ Old Deployment Action" >> "$LOG_FILE"
+          else
+            hash="$(git rev-parse HEAD)"
+            echo "[INFO]: 🆕 New Deployment Action" >> "$LOG_FILE"
+          fi
+          echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
+
       - name: Set dynamic key values for  DOMAIN_NAME , NAMESERVERS ,EC2_HOST ,EC2_SSH_KEY , DATABASE_URL
         id : key_values
         run: | 
@@ -174,7 +177,7 @@ jobs:
         with:
           region: ${{ secrets.AWS_REGION }}
           repository-name: ${{ steps.key_values.outputs.REPO_NAME }}
-          image-tag: ${{ steps.hash.outputs.git_hash }}
+          image-tag: ${{ steps.hash.outputs.GIT_HASH }}
           access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
@@ -200,7 +203,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.GIT_HASH }}
             ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:latest
           build-args: |
             NEXTAUTH_URL=${{ steps.key_values.outputs.DOMAIN_NAME }}
@@ -238,7 +241,7 @@ jobs:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           REPO_NAME: ${{ steps.key_values.outputs.REPO_NAME }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
-          GIT_HASH: ${{ steps.hash.outputs.git_hash }}
+          GIT_HASH: ${{ steps.hash.outputs.GIT_HASH }}
           IS_ROLLBACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
         with:
           host: ${{ env.EC2_HOST }}
