@@ -25,59 +25,69 @@ vi.mock("../lib/reminders/providers/twilioProvider", () => ({
 }));
 
 describe("SMS Workflow Reminders", () => {
-  const mockWorkflowReminder = {
-    id: 1,
-    method: WorkflowMethods.SMS,
-    scheduled: false,
-    scheduledDate: dayjs().add(3, "day").toISOString(),
-    workflowStep: {
-      workflow: {
-        userId: 100,
-        teamId: 200,
-      },
-      action: WorkflowActions.SMS_ATTENDEE,
-      reminderBody: "Test reminder for your upcoming event",
-      sender: "test_sender",
-      template: null,
-    },
-    booking: {
-      uid: "booking-123",
-      startTime: new Date(),
-      smsReminderNumber: "+1234567890",
-      eventType: {
-        title: "Team Meeting",
-        id: 300,
-      },
-      attendees: [
-        {
-          name: "John Doe",
-          email: "john@example.com",
-          timeZone: "UTC",
+  const createReminderData = () => {
+    const futureDate = dayjs().add(3, "day").toISOString();
+    const phoneNumber = "+1234567890";
+    const bookingIdentifier = "booking-123";
+
+    return {
+      id: 1,
+      method: WorkflowMethods.SMS,
+      scheduled: false,
+      scheduledDate: futureDate,
+      workflowStep: {
+        workflow: {
+          userId: 100,
+          teamId: 200,
         },
-      ],
-      user: {
-        name: "Jane Smith",
-        id: 500,
-        timeZone: "America/New_York",
+        action: WorkflowActions.SMS_ATTENDEE,
+        reminderBody: "Test reminder for your upcoming event",
+        sender: "test_sender",
+        template: null,
       },
-    },
-    retryCount: 0,
+      booking: {
+        uid: bookingIdentifier,
+        startTime: new Date(),
+        smsReminderNumber: phoneNumber,
+        eventType: {
+          title: "Team Meeting",
+          id: 300,
+        },
+        attendees: [
+          {
+            name: "John Doe",
+            email: "john@example.com",
+            timeZone: "UTC",
+          },
+        ],
+        user: {
+          name: "Jane Smith",
+          id: 500,
+          timeZone: "America/New_York",
+        },
+      },
+      retryCount: 0,
+    };
   };
+
+  const reminderTestData = createReminderData();
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("should successfully schedule SMS reminders", async () => {
-    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue([mockWorkflowReminder]);
+    const twilioResponseId = "mock-twilio-sid";
+    const reminderList = [reminderTestData];
 
-    vi.mocked(twilio.scheduleSMS).mockResolvedValue({
-      sid: "mock-twilio-sid",
-    });
+    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue(reminderList);
+    vi.mocked(twilio.scheduleSMS).mockImplementationOnce(async () => ({
+      sid: twilioResponseId,
+    }));
 
-    const updateSpy = vi.spyOn(prisma.workflowReminder, "update");
+    const dbUpdateTracker = vi.spyOn(prisma.workflowReminder, "update");
 
-    const unscheduledReminders = await prisma.workflowReminder.findMany({
+    const pendingReminders = await prisma.workflowReminder.findMany({
       where: {
         method: WorkflowMethods.SMS,
         scheduled: false,
@@ -88,56 +98,62 @@ describe("SMS Workflow Reminders", () => {
       },
     });
 
-    expect(unscheduledReminders).toHaveLength(1);
+    expect(pendingReminders.length).toEqual(1);
 
-    for (const reminder of unscheduledReminders) {
-      const scheduledSMS = await twilio.scheduleSMS(
-        (reminder as any).booking.smsReminderNumber,
-        (reminder as any).workflowStep.reminderBody,
-        reminder.scheduledDate,
-        (reminder as any).workflowStep.sender,
-        (reminder as any).workflowStep.workflow.userId,
-        (reminder as any).workflowStep.workflow.teamId
+    const processReminder = async (reminderItem: any) => {
+      const smsResult = await twilio.scheduleSMS(
+        reminderItem.booking.smsReminderNumber,
+        reminderItem.workflowStep.reminderBody,
+        reminderItem.scheduledDate,
+        reminderItem.workflowStep.sender,
+        reminderItem.workflowStep.workflow.userId,
+        reminderItem.workflowStep.workflow.teamId
       );
 
-      expect(scheduledSMS).toBeTruthy();
-      expect((scheduledSMS as any).sid).toBe("mock-twilio-sid");
+      expect(smsResult).toBeDefined();
+      expect((smsResult as any).sid).toEqual(twilioResponseId);
 
-      await prisma.workflowReminder.update({
-        where: { id: reminder.id },
+      const updatePayload = {
+        where: { id: reminderItem.id },
         data: {
           scheduled: true,
-          referenceId: (scheduledSMS as any).sid,
+          referenceId: (smsResult as any).sid,
         },
-      });
-    }
+      };
+
+      await prisma.workflowReminder.update(updatePayload);
+    };
+
+    await Promise.all(pendingReminders.map(processReminder));
 
     expect(twilio.scheduleSMS).toHaveBeenCalledWith(
       "+1234567890",
       "Test reminder for your upcoming event",
-      mockWorkflowReminder.scheduledDate,
+      reminderTestData.scheduledDate,
       "test_sender",
       100,
       200
     );
 
-    expect(updateSpy).toHaveBeenCalledWith({
-      where: { id: mockWorkflowReminder.id },
+    expect(dbUpdateTracker).toHaveBeenCalledWith({
+      where: { id: reminderTestData.id },
       data: {
         scheduled: true,
-        referenceId: "mock-twilio-sid",
+        referenceId: twilioResponseId,
       },
     });
   });
 
   it("should handle scheduling failures", async () => {
-    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue([mockWorkflowReminder]);
+    const emptyResponse = { sid: "" };
+    const reminderArray = [reminderTestData];
 
-    vi.mocked(twilio.scheduleSMS).mockResolvedValue({ sid: "" });
+    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue(reminderArray);
+    vi.mocked(twilio.scheduleSMS).mockImplementationOnce(async () => emptyResponse);
 
-    const updateSpy = vi.spyOn(prisma.workflowReminder, "update");
+    const dbUpdateTracker = vi.spyOn(prisma.workflowReminder, "update");
 
-    const unscheduledReminders = await prisma.workflowReminder.findMany({
+    const pendingReminders = await prisma.workflowReminder.findMany({
       where: {
         method: WorkflowMethods.SMS,
         scheduled: false,
@@ -148,40 +164,49 @@ describe("SMS Workflow Reminders", () => {
       },
     });
 
-    for (const reminder of unscheduledReminders) {
-      const scheduledSMS = await twilio.scheduleSMS(
-        (reminder as any).booking.smsReminderNumber,
-        (reminder as any).workflowStep.reminderBody,
-        reminder.scheduledDate,
-        (reminder as any).workflowStep.sender,
-        (reminder as any).workflowStep.workflow.userId,
-        (reminder as any).workflowStep.workflow.teamId
+    let currentIndex = 0;
+    const totalReminders = pendingReminders.length;
+
+    do {
+      const activeReminder = pendingReminders[currentIndex];
+
+      const smsResponse = await twilio.scheduleSMS(
+        (activeReminder as any).booking.smsReminderNumber,
+        (activeReminder as any).workflowStep.reminderBody,
+        activeReminder.scheduledDate,
+        (activeReminder as any).workflowStep.sender,
+        (activeReminder as any).workflowStep.workflow.userId,
+        (activeReminder as any).workflowStep.workflow.teamId
       );
 
-      // Verify scheduling failed
-      expect(scheduledSMS).toBeTruthy();
+      expect(smsResponse).toBeDefined();
 
-      // Update with retry count
+      const newRetryCount = activeReminder.retryCount + 1;
+
       await prisma.workflowReminder.update({
-        where: { id: reminder.id },
+        where: { id: activeReminder.id },
         data: {
-          retryCount: reminder.retryCount + 1,
+          retryCount: newRetryCount,
         },
       });
-    }
 
-    expect(updateSpy).toHaveBeenCalledWith({
-      where: { id: mockWorkflowReminder.id },
+      currentIndex++;
+    } while (currentIndex < totalReminders);
+
+    expect(dbUpdateTracker).toHaveBeenCalledWith({
+      where: { id: reminderTestData.id },
       data: {
-        retryCount: mockWorkflowReminder.retryCount + 1,
+        retryCount: reminderTestData.retryCount + 1,
       },
     });
   });
 
   it("should handle edge cases with no reminders", async () => {
-    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue([]);
+    const noReminders: (typeof reminderTestData)[] = [];
 
-    const unscheduledReminders = await prisma.workflowReminder.findMany({
+    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue(noReminders);
+
+    const pendingReminders = await prisma.workflowReminder.findMany({
       where: {
         method: WorkflowMethods.SMS,
         scheduled: false,
@@ -192,7 +217,8 @@ describe("SMS Workflow Reminders", () => {
       },
     });
 
-    expect(unscheduledReminders).toHaveLength(0);
+    const reminderCount = pendingReminders.length;
+    expect(reminderCount).toStrictEqual(0);
 
     expect(twilio.scheduleSMS).not.toHaveBeenCalled();
   });

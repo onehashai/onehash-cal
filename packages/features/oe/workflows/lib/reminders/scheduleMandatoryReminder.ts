@@ -7,59 +7,64 @@ import { WorkflowTriggerEvents, TimeUnit, WorkflowActions, WorkflowTemplates } f
 
 import type { ExtendedCalendarEvent } from "./reminderScheduler";
 
-const log = logger.getSubLogger({ prefix: ["[scheduleMandatoryReminder]"] });
+const logInstance = logger.getSubLogger({ prefix: ["[scheduleMandatoryReminder]"] });
 
 export type NewBookingEventType = Awaited<ReturnType<typeof getDefaultEvent>> | getEventTypeResponse;
 
 export async function scheduleMandatoryReminder(
-  evt: ExtendedCalendarEvent,
-  workflows: Workflow[],
-  requiresConfirmation: boolean,
-  hideBranding: boolean,
-  seatReferenceUid: string | undefined,
-  isPlatformNoEmail = false
+  calendarEvent: ExtendedCalendarEvent,
+  workflowList: Workflow[],
+  needsConfirmation: boolean,
+  brandingHidden: boolean,
+  seatReference: string | undefined,
+  platformEmailDisabled = false
 ) {
-  if (isPlatformNoEmail) return;
-  try {
-    const hasExistingWorkflow = workflows.some((workflow) => {
-      return (
-        workflow.trigger === WorkflowTriggerEvents.BEFORE_EVENT &&
-        ((workflow.time !== null && workflow.time <= 12 && workflow.timeUnit === TimeUnit.HOUR) ||
-          (workflow.time !== null && workflow.time <= 720 && workflow.timeUnit === TimeUnit.MINUTE)) &&
-        workflow.steps.some((step) => step?.action === WorkflowActions.EMAIL_ATTENDEE)
+  if (platformEmailDisabled) return;
+
+  const executeReminderScheduling = async () => {
+    const existingWorkflowFound = workflowList.find((workflowItem) => {
+      const isBeforeEventTrigger = workflowItem.trigger === WorkflowTriggerEvents.BEFORE_EVENT;
+      const hasValidTimeConstraints =
+        (workflowItem.time !== null && workflowItem.time <= 12 && workflowItem.timeUnit === TimeUnit.HOUR) ||
+        (workflowItem.time !== null && workflowItem.time <= 720 && workflowItem.timeUnit === TimeUnit.MINUTE);
+      const containsEmailAction = workflowItem.steps.find(
+        (stepItem) => stepItem?.action === WorkflowActions.EMAIL_ATTENDEE
       );
+
+      return isBeforeEventTrigger && hasValidTimeConstraints && !!containsEmailAction;
     });
-    //Allowing scheduled emails for all email providers
 
-    if (
-      !hasExistingWorkflow &&
-      // evt.attendees.some((attendee) => attendee.email.includes("@gmail.com")) &&
-      !requiresConfirmation
-    ) {
-      try {
-        const filteredAttendees = evt.attendees;
-        // ?.filter((attendee) => attendee.email.includes("@gmail.com")) || [];
+    const shouldCreateReminder = !existingWorkflowFound && !needsConfirmation;
 
-        await scheduleEmailReminder({
-          evt,
-          triggerEvent: WorkflowTriggerEvents.BEFORE_EVENT,
-          action: WorkflowActions.EMAIL_ATTENDEE,
-          timeSpan: {
-            time: 1,
-            timeUnit: TimeUnit.HOUR,
-          },
-          sendTo: filteredAttendees,
-          template: WorkflowTemplates.REMINDER,
-          hideBranding,
-          seatReferenceUid,
-          includeCalendarEvent: false,
-          isMandatoryReminder: true,
-        });
-      } catch (error) {
-        log.error("Error while scheduling mandatory reminders", JSON.stringify({ error }));
-      }
+    if (shouldCreateReminder) {
+      const attendeeList = calendarEvent.attendees;
+
+      const reminderConfiguration = {
+        evt: calendarEvent,
+        triggerEvent: WorkflowTriggerEvents.BEFORE_EVENT,
+        action: WorkflowActions.EMAIL_ATTENDEE,
+        timeSpan: {
+          time: 1,
+          timeUnit: TimeUnit.HOUR,
+        },
+        sendTo: attendeeList,
+        template: WorkflowTemplates.REMINDER,
+        hideBranding: brandingHidden,
+        seatReferenceUid: seatReference,
+        includeCalendarEvent: false,
+        isMandatoryReminder: true,
+      };
+
+      await scheduleEmailReminder(reminderConfiguration);
     }
-  } catch (error) {
-    log.error("Error while scheduling mandatory reminders", JSON.stringify({ error }));
+  };
+
+  try {
+    await executeReminderScheduling();
+  } catch (schedulingError) {
+    logInstance.error(
+      "Error while scheduling mandatory reminders",
+      JSON.stringify({ error: schedulingError })
+    );
   }
 }

@@ -40,11 +40,11 @@ describe("deleteScheduledSMSReminder", () => {
   });
 
   it("should log an error if prisma update fails", async () => {
-    vi.mocked(prisma.workflowReminder.update).mockRejectedValue(new Error("Mocked DB error"));
+    vi.mocked(prisma.workflowReminder.update).mockRejectedValue(new Error("Error cancelling reminder"));
 
     await deleteScheduledSMSReminder(1, "mock-reference-id");
 
-    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("Error canceling reminder"));
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("Error cancelling reminder"));
   });
 
   it("should handle a null referenceId without errors", async () => {

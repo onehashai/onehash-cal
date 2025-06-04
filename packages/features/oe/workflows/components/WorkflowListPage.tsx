@@ -58,274 +58,321 @@ export type WorkflowType = Workflow & {
 interface Props {
   workflows: WorkflowType[] | undefined;
 }
-export default function WorkflowListPage({ workflows }: Props) {
-  const { t } = useLocale();
-  const utils = trpc.useUtils();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workflowToDeleteId, setwWorkflowToDeleteId] = useState(0);
-  const [parent] = useAutoAnimate<HTMLUListElement>();
-  const router = useRouter();
 
-  const mutation = trpc.viewer.workflowOrder.useMutation({
-    onError: async (err) => {
-      console.error(err.message);
-      await utils.viewer.workflows.filteredList.cancel();
-      await utils.viewer.workflows.filteredList.invalidate();
+export default function WorkflowListPage({ workflows }: Props) {
+  const localeData = useLocale();
+  const getTranslation = localeData.t;
+  const trpcUtils = trpc.useUtils();
+  const deleteModalState = useState(false);
+  const targetWorkflowState = useState(0);
+  const animationRef = useAutoAnimate<HTMLUListElement>();
+  const navigationRouter = useRouter();
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = deleteModalState;
+  const [targetWorkflowId, setTargetWorkflowId] = targetWorkflowState;
+  const [animatedListRef] = animationRef;
+
+  const orderMutation = trpc.viewer.workflowOrder.useMutation({
+    onError: async (error) => {
+      console.error(error.message);
+      await trpcUtils.viewer.workflows.filteredList.cancel();
+      await trpcUtils.viewer.workflows.filteredList.invalidate();
     },
     onSettled: () => {
-      utils.viewer.workflows.filteredList.invalidate();
+      trpcUtils.viewer.workflows.filteredList.invalidate();
     },
   });
 
-  async function moveWorkflow(index: number, increment: 1 | -1) {
-    const types = workflows!;
+  async function reorderWorkflow(currentIndex: number, direction: 1 | -1) {
+    if (!workflows) return;
 
-    const newList = [...types];
+    const workflowList = [...workflows];
+    const targetIndex = currentIndex + direction;
+    const currentWorkflow = workflowList[currentIndex];
+    const targetWorkflow = workflowList[targetIndex];
 
-    const type = types[index];
-    const tmp = types[index + increment];
-    if (tmp) {
-      newList[index] = tmp;
-      newList[index + increment] = type;
+    if (targetWorkflow) {
+      workflowList[currentIndex] = targetWorkflow;
+      workflowList[targetIndex] = currentWorkflow;
     }
 
-    await utils.viewer.appRoutingForms.forms.cancel();
+    await trpcUtils.viewer.appRoutingForms.forms.cancel();
 
-    mutation.mutate({
-      ids: newList?.map((type) => type.id),
-    });
+    const workflowIds = workflowList.map((workflow) => workflow.id);
+    orderMutation.mutate({ ids: workflowIds });
   }
+
+  const EmptyState = () => <></>;
+
+  if (!workflows || workflows.length === 0) {
+    return <EmptyState />;
+  }
+
+  const WorkflowListItem = ({ workflow, index }: { workflow: WorkflowType; index: number }) => {
+    const isFirstWorkflow = index === 0;
+    const isLastWorkflow = index === workflows.length - 1;
+    const itemTestId = `workflow-${workflow.name.toLowerCase().replaceAll(" ", "-")}`;
+
+    const navigateToWorkflow = async () => {
+      await navigationRouter.replace(`/workflows/${workflow.id}`);
+    };
+
+    const handleDelete = () => {
+      setIsDeleteModalOpen(true);
+      setTargetWorkflowId(workflow.id);
+    };
+
+    const WorkflowTitle = () => {
+      const generateTitle = () => {
+        if (workflow.name) return workflow.name;
+
+        const firstStep = workflow.steps[0];
+        if (!firstStep) return "Untitled";
+
+        const actionName = getTranslation(`${firstStep.action.toLowerCase()}_action`);
+        const capitalizedAction = actionName.charAt(0).toUpperCase() + actionName.slice(1);
+        return `Untitled (${capitalizedAction})`;
+      };
+
+      const titleClasses = classNames(
+        "text-emphasis max-w-56 truncate text-sm font-medium leading-6 md:max-w-max",
+        workflow.name ? "text-emphasis" : "text-subtle"
+      );
+
+      return (
+        <div className="flex">
+          <div className={titleClasses}>{generateTitle()}</div>
+          <div>
+            {workflow.readOnly && (
+              <Badge variant="gray" className="ml-2 ">
+                {getTranslation("readonly")}
+              </Badge>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    const TriggerBadge = () => (
+      <Badge variant="gray">
+        <div>
+          {getActionIcon(workflow.steps)}
+          <span className="mr-1">{getTranslation("triggers")}</span>
+          {workflow.timeUnit && workflow.time && (
+            <span className="mr-1">
+              {getTranslation(`${workflow.timeUnit.toLowerCase()}`, { count: workflow.time })}
+            </span>
+          )}
+          <span>{getTranslation(`${workflow.trigger.toLowerCase()}_trigger`)}</span>
+        </div>
+      </Badge>
+    );
+
+    const ActiveOnBadge = () => {
+      const generateBadgeContent = () => {
+        if (workflow.isActiveOnAll) {
+          return (
+            <div>
+              <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
+              {workflow.isOrg
+                ? getTranslation("active_on_all_teams")
+                : getTranslation("active_on_all_event_types")}
+            </div>
+          );
+        }
+
+        if (workflow.activeOn && workflow.activeOn.length > 0) {
+          const filteredEvents = workflow.activeOn.filter((wf) =>
+            workflow.teamId ? wf.eventType.parentId === null : true
+          );
+
+          return (
+            <Tooltip
+              content={filteredEvents.map((activeOn, key) => (
+                <p key={key}>
+                  {activeOn.eventType.title}
+                  {activeOn.eventType._count.children > 0 ? ` (+${activeOn.eventType._count.children})` : ""}
+                </p>
+              ))}>
+              <div>
+                <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
+                {getTranslation("active_on_event_types", { count: filteredEvents.length })}
+              </div>
+            </Tooltip>
+          );
+        }
+
+        if (workflow.activeOnTeams && workflow.activeOnTeams.length > 0) {
+          return (
+            <Tooltip
+              content={workflow.activeOnTeams.map((activeOn, key) => (
+                <p key={key}>{activeOn.team.name}</p>
+              ))}>
+              <div>
+                <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
+                {getTranslation("active_on_teams", { count: workflow.activeOnTeams.length })}
+              </div>
+            </Tooltip>
+          );
+        }
+
+        return (
+          <div>
+            <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
+            {workflow.isOrg ? getTranslation("no_active_teams") : getTranslation("no_active_event_types")}
+          </div>
+        );
+      };
+
+      return <Badge variant="gray">{generateBadgeContent()}</Badge>;
+    };
+
+    const TeamBadge = () => {
+      if (!workflow.team?.name) return null;
+
+      const avatarUrl = getPlaceholderAvatar(workflow.team.logo, workflow.team.name);
+      const teamProfileUrl = workflow.team.id
+        ? `/settings/teams/${workflow.team.id}/profile`
+        : "/settings/my-account/profile";
+
+      return (
+        <Badge className="mr-4 mt-1 p-[1px] px-2" variant="gray">
+          <Avatar
+            alt={workflow.team.name}
+            href={teamProfileUrl}
+            imageSrc={avatarUrl}
+            size="xxs"
+            className="mt-[3px] inline-flex justify-center"
+          />
+          <div>{workflow.team.name}</div>
+        </Badge>
+      );
+    };
+
+    const ActionButtons = () => {
+      const DesktopButtons = () => (
+        <div className="hidden sm:block">
+          <ButtonGroup combined>
+            <Tooltip content={getTranslation("edit") as string}>
+              <Button
+                type="button"
+                color="secondary"
+                variant="icon"
+                StartIcon="pencil"
+                disabled={workflow.readOnly}
+                onClick={navigateToWorkflow}
+                data-testid="edit-button"
+              />
+            </Tooltip>
+            <Tooltip content={getTranslation("delete") as string}>
+              <Button
+                onClick={handleDelete}
+                color="secondary"
+                variant="icon"
+                disabled={workflow.readOnly}
+                StartIcon="trash-2"
+                data-testid="delete-button"
+              />
+            </Tooltip>
+          </ButtonGroup>
+        </div>
+      );
+
+      const MobileDropdown = () => {
+        if (workflow.readOnly) return null;
+
+        return (
+          <div className="block sm:hidden">
+            <Dropdown>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" color="minimal" variant="icon" StartIcon="ellipsis" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem>
+                  <DropdownItem type="button" StartIcon="pencil" onClick={navigateToWorkflow}>
+                    {getTranslation("edit")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <DropdownItem type="button" color="destructive" StartIcon="trash-2" onClick={handleDelete}>
+                    {getTranslation("delete")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </Dropdown>
+          </div>
+        );
+      };
+
+      return (
+        <div className="flex flex-shrink-0">
+          <DesktopButtons />
+          <MobileDropdown />
+        </div>
+      );
+    };
+
+    return (
+      <li
+        key={workflow.id}
+        data-testid={itemTestId}
+        className="group flex w-full max-w-full items-center justify-between overflow-hidden">
+        {!isFirstWorkflow && <ArrowButton onClick={() => reorderWorkflow(index, -1)} arrowDirection="up" />}
+        {!isLastWorkflow && <ArrowButton onClick={() => reorderWorkflow(index, 1)} arrowDirection="down" />}
+        <div className="first-line:group hover:bg-muted flex w-full items-center justify-between p-4 transition sm:px-6">
+          <Link href={`/workflows/${workflow.id}`} className="flex-grow cursor-pointer">
+            <div className="rtl:space-x-reverse">
+              <WorkflowTitle />
+              <ul className="mt-1 flex flex-wrap space-x-2 sm:flex-nowrap ">
+                <li>
+                  <TriggerBadge />
+                </li>
+                <li>
+                  <ActiveOnBadge />
+                </li>
+                <div className="block md:hidden">
+                  {workflow.team?.name && (
+                    <li>
+                      <Badge variant="gray">
+                        <>{workflow.team.name}</>
+                      </Badge>
+                    </li>
+                  )}
+                </div>
+              </ul>
+            </div>
+          </Link>
+          <div>
+            <div className="hidden md:block">
+              <TeamBadge />
+            </div>
+          </div>
+          <ActionButtons />
+        </div>
+      </li>
+    );
+  };
+
+  const containerClasses = "bg-default border-subtle overflow-hidden rounded-md border sm:mx-0";
+  const listClasses = "divide-subtle !static w-full divide-y";
 
   return (
     <>
-      {workflows && workflows.length > 0 ? (
-        <div className="bg-default border-subtle overflow-hidden rounded-md border sm:mx-0">
-          <ul className="divide-subtle !static w-full divide-y" data-testid="workflow-list" ref={parent}>
-            {workflows.map((workflow, index) => {
-              const firstItem = workflows[0];
-              const lastItem = workflows[workflows.length - 1];
-              const dataTestId = `workflow-${workflow.name.toLowerCase().replaceAll(" ", "-")}`;
-              return (
-                <li
-                  key={workflow.id}
-                  data-testid={dataTestId}
-                  className="group flex w-full max-w-full items-center justify-between overflow-hidden">
-                  {!(firstItem && firstItem.id === workflow.id) && (
-                    <ArrowButton onClick={() => moveWorkflow(index, -1)} arrowDirection="up" />
-                  )}
-                  {!(lastItem && lastItem.id === workflow.id) && (
-                    <ArrowButton onClick={() => moveWorkflow(index, 1)} arrowDirection="down" />
-                  )}
-                  <div className="first-line:group hover:bg-muted flex w-full items-center justify-between p-4 transition sm:px-6">
-                    <Link href={`/workflows/${workflow.id}`} className="flex-grow cursor-pointer">
-                      <div className="rtl:space-x-reverse">
-                        <div className="flex">
-                          <div
-                            className={classNames(
-                              "text-emphasis max-w-56 truncate text-sm font-medium leading-6 md:max-w-max",
-                              workflow.name ? "text-emphasis" : "text-subtle"
-                            )}>
-                            {workflow.name
-                              ? workflow.name
-                              : workflow.steps[0]
-                              ? `Untitled (${`${t(`${workflow.steps[0].action.toLowerCase()}_action`)}`
-                                  .charAt(0)
-                                  .toUpperCase()}${`${t(
-                                  `${workflow.steps[0].action.toLowerCase()}_action`
-                                )}`.slice(1)})`
-                              : "Untitled"}
-                          </div>
-                          <div>
-                            {workflow.readOnly && (
-                              <Badge variant="gray" className="ml-2 ">
-                                {t("readonly")}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        <ul className="mt-1 flex flex-wrap space-x-2 sm:flex-nowrap ">
-                          <li>
-                            <Badge variant="gray">
-                              <div>
-                                {getActionIcon(workflow.steps)}
-
-                                <span className="mr-1">{t("triggers")}</span>
-                                {workflow.timeUnit && workflow.time && (
-                                  <span className="mr-1">
-                                    {t(`${workflow.timeUnit.toLowerCase()}`, { count: workflow.time })}
-                                  </span>
-                                )}
-                                <span>{t(`${workflow.trigger.toLowerCase()}_trigger`)}</span>
-                              </div>
-                            </Badge>
-                          </li>
-                          <li>
-                            <Badge variant="gray">
-                              {/*active on all badge */}
-                              {workflow.isActiveOnAll ? (
-                                <div>
-                                  <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
-                                  {workflow.isOrg ? t("active_on_all_teams") : t("active_on_all_event_types")}
-                                </div>
-                              ) : workflow.activeOn && workflow.activeOn.length > 0 ? (
-                                //active on event types badge
-                                <Tooltip
-                                  content={workflow.activeOn
-                                    .filter((wf) => (workflow.teamId ? wf.eventType.parentId === null : true))
-                                    .map((activeOn, key) => (
-                                      <p key={key}>
-                                        {activeOn.eventType.title}
-                                        {activeOn.eventType._count.children > 0
-                                          ? ` (+${activeOn.eventType._count.children})`
-                                          : ""}
-                                      </p>
-                                    ))}>
-                                  <div>
-                                    <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
-                                    {t("active_on_event_types", {
-                                      count: workflow.activeOn.filter((wf) =>
-                                        workflow.teamId ? wf.eventType.parentId === null : true
-                                      ).length,
-                                    })}
-                                  </div>
-                                </Tooltip>
-                              ) : workflow.activeOnTeams && workflow.activeOnTeams.length > 0 ? (
-                                //active on teams badge
-                                <Tooltip
-                                  content={workflow.activeOnTeams.map((activeOn, key) => (
-                                    <p key={key}>{activeOn.team.name}</p>
-                                  ))}>
-                                  <div>
-                                    <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
-                                    {t("active_on_teams", {
-                                      count: workflow.activeOnTeams?.length,
-                                    })}
-                                  </div>
-                                </Tooltip>
-                              ) : (
-                                // active on no teams or event types
-                                <div>
-                                  <Icon name="link" className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
-                                  {workflow.isOrg ? t("no_active_teams") : t("no_active_event_types")}
-                                </div>
-                              )}
-                            </Badge>
-                          </li>
-                          <div className="block md:hidden">
-                            {workflow.team?.name && (
-                              <li>
-                                <Badge variant="gray">
-                                  <>{workflow.team.name}</>
-                                </Badge>
-                              </li>
-                            )}
-                          </div>
-                        </ul>
-                      </div>
-                    </Link>
-                    <div>
-                      <div className="hidden md:block">
-                        {workflow.team?.name && (
-                          <Badge className="mr-4 mt-1 p-[1px] px-2" variant="gray">
-                            <Avatar
-                              alt={workflow.team?.name || ""}
-                              href={
-                                workflow.team?.id
-                                  ? `/settings/teams/${workflow.team?.id}/profile`
-                                  : "/settings/my-account/profile"
-                              }
-                              imageSrc={getPlaceholderAvatar(
-                                workflow?.team.logo,
-                                workflow.team?.name as string
-                              )}
-                              size="xxs"
-                              className="mt-[3px] inline-flex justify-center"
-                            />
-                            <div>{workflow.team.name}</div>
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-shrink-0">
-                      <div className="hidden sm:block">
-                        <ButtonGroup combined>
-                          <Tooltip content={t("edit") as string}>
-                            <Button
-                              type="button"
-                              color="secondary"
-                              variant="icon"
-                              StartIcon="pencil"
-                              disabled={workflow.readOnly}
-                              onClick={async () => await router.replace(`/workflows/${workflow.id}`)}
-                              data-testid="edit-button"
-                            />
-                          </Tooltip>
-                          <Tooltip content={t("delete") as string}>
-                            <Button
-                              onClick={() => {
-                                setDeleteDialogOpen(true);
-                                setwWorkflowToDeleteId(workflow.id);
-                              }}
-                              color="secondary"
-                              variant="icon"
-                              disabled={workflow.readOnly}
-                              StartIcon="trash-2"
-                              data-testid="delete-button"
-                            />
-                          </Tooltip>
-                        </ButtonGroup>
-                      </div>
-                      {!workflow.readOnly && (
-                        <div className="block sm:hidden">
-                          <Dropdown>
-                            <DropdownMenuTrigger asChild>
-                              <Button type="button" color="minimal" variant="icon" StartIcon="ellipsis" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem>
-                                <DropdownItem
-                                  type="button"
-                                  StartIcon="pencil"
-                                  onClick={async () => await router.replace(`/workflows/${workflow.id}`)}>
-                                  {t("edit")}
-                                </DropdownItem>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <DropdownItem
-                                  type="button"
-                                  color="destructive"
-                                  StartIcon="trash-2"
-                                  onClick={() => {
-                                    setDeleteDialogOpen(true);
-                                    setwWorkflowToDeleteId(workflow.id);
-                                  }}>
-                                  {t("delete")}
-                                </DropdownItem>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </Dropdown>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <DeleteDialog
-            isOpenDialog={deleteDialogOpen}
-            setIsOpenDialog={setDeleteDialogOpen}
-            workflowId={workflowToDeleteId}
-            additionalFunction={async () => {
-              await utils.viewer.workflows.filteredList.invalidate();
-            }}
-          />
-        </div>
-      ) : (
-        <></>
-      )}
+      <div className={containerClasses}>
+        <ul className={listClasses} data-testid="workflow-list" ref={animatedListRef}>
+          {workflows.map((workflow, idx) => (
+            <WorkflowListItem key={workflow.id} workflow={workflow} index={idx} />
+          ))}
+        </ul>
+        <DeleteDialog
+          isOpenDialog={isDeleteModalOpen}
+          setIsOpenDialog={setIsDeleteModalOpen}
+          workflowId={targetWorkflowId}
+          additionalFunction={async () => {
+            await trpcUtils.viewer.workflows.filteredList.invalidate();
+          }}
+        />
+      </div>
     </>
   );
 }

@@ -127,6 +127,7 @@ type InputUser = Omit<typeof TestData.users.example, "defaultScheduleId"> & {
       slug: string;
       parentId?: number;
       isPrivate?: boolean;
+      smsLockState?: SMSLockState;
     };
   }[];
   schedules: {
