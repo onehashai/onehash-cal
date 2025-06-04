@@ -1,3 +1,4 @@
+import type { WorkflowStep } from "@prisma/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 import { useState, useEffect } from "react";
@@ -34,312 +35,284 @@ interface Props {
 
 export default function WorkflowDetailsPage(props: Props) {
   const formInstance = props.form;
-  const workflowIdentifier = props.workflowId;
-  const currentSelectedOptions = props.selectedOptions;
-  const updateSelectedOptions = props.setSelectedOptions;
-  const teamIdentifier = props.teamId;
-  const organizationMode = props.isOrg;
-  const availableOptions = props.allOptions;
-  const userInfo = props.user;
-  const viewOnlyMode = props.readOnly;
+  const flowIdentifier = props.workflowId;
+  const chosenItems = props.selectedOptions;
+  const updateChosenItems = props.setSelectedOptions;
+  const groupIdentifier = props.teamId;
+  const isOrganization = props.isOrg;
+  const availableChoices = props.allOptions;
 
-  const localeHook = useLocale();
-  const translate = localeHook.t;
+  const localization = useLocale();
   const navigationRouter = useRouter();
 
-  const actionDialogState = useState(false);
-  const reloadState = useState(false);
-  const deleteDialogState = useState(false);
+  const [actionDialogVisible, changeActionDialogVisibility] = useState<boolean>(false);
+  const [refreshRequired, updateRefreshState] = useState<boolean>(false);
+  const [removalDialogVisible, setRemovalDialogVisible] = useState<boolean>(false);
 
-  const [actionDialogVisible, setActionDialogVisible] = actionDialogState;
-  const [shouldReload, setShouldReload] = reloadState;
-  const [deleteDialogVisible, setDeleteDialogVisible] = deleteDialogState;
+  const queryParameters = useSearchParams();
+  const eventTypeIdentifier = queryParameters?.get("eventTypeId");
 
-  const queryParams = useSearchParams();
-  const targetEventTypeId = queryParams?.get("eventTypeId");
+  useEffect(
+    function synchronizeEventTypeSelection() {
+      const correspondingChoice = availableChoices.find(function (choice) {
+        return choice.value === eventTypeIdentifier;
+      });
 
-  useEffect(() => {
-    const findMatchingOption = () => {
-      return availableOptions.find((opt) => opt.value === targetEventTypeId);
-    };
+      const alreadySelected = chosenItems.find(function (item) {
+        return item.value === eventTypeIdentifier;
+      });
 
-    const isOptionAlreadySelected = () => {
-      return currentSelectedOptions.find((opt) => opt.value === targetEventTypeId);
-    };
+      if (correspondingChoice && !alreadySelected) {
+        const updatedChoices = [...chosenItems, correspondingChoice];
+        updateChosenItems(updatedChoices);
+        formInstance.setValue("activeOn", updatedChoices);
+      }
+    },
+    [eventTypeIdentifier]
+  );
 
-    const matchedOption = findMatchingOption();
-
-    if (matchedOption && !isOptionAlreadySelected()) {
-      const updatedOptions = [...currentSelectedOptions, matchedOption];
-      updateSelectedOptions(updatedOptions);
-      formInstance.setValue("activeOn", updatedOptions);
-    }
-  }, [targetEventTypeId]);
-
-  const handleActionAddition = (
-    action: WorkflowActions,
-    sendTo?: string,
-    numberRequired?: boolean,
-    sender?: string,
-    senderName?: string
-  ) => {
+  const insertNewAction = function (
+    actionType: WorkflowActions,
+    recipient?: string,
+    phoneRequired?: boolean,
+    senderIdentity?: string,
+    displayName?: string
+  ): void {
     const existingSteps = formInstance.getValues("steps");
 
-    const calculateNewId = () => {
+    const calculateIdentifier = function (): number {
       if (!existingSteps || existingSteps.length === 0) return 0;
 
-      const sortedById = [...existingSteps].sort((stepA, stepB) => stepA.id - stepB.id);
-      const lowestId = sortedById[0].id;
-      return lowestId > 0 ? 0 : lowestId - 1;
+      const sortedById = [...existingSteps].sort(function (first, second) {
+        return first.id - second.id;
+      });
+
+      const minimumId = sortedById[0].id - 1;
+      return minimumId > 0 ? 0 : minimumId;
     };
 
-    const calculateStepNumber = () => {
+    const determineStepPosition = function (): number {
       if (!existingSteps || existingSteps.length === 0) return 1;
 
-      const sortedByStepNumber = [...existingSteps].sort(
-        (stepA, stepB) => stepA.stepNumber - stepB.stepNumber
-      );
-      const highestStepNumber = sortedByStepNumber[sortedByStepNumber.length - 1].stepNumber;
-      return highestStepNumber + 1;
+      const sortedByPosition = [...existingSteps].sort(function (first, second) {
+        return first.stepNumber - second.stepNumber;
+      });
+
+      return sortedByPosition[sortedByPosition.length - 1].stepNumber + 1;
     };
 
-    const determineSender = () => {
-      if (isSMSAction(action)) {
-        return sender || SENDER_ID;
-      }
-      return SENDER_ID;
-    };
-
-    const determineSenderName = () => {
-      if (!isSMSAction(action)) {
-        return senderName || SENDER_NAME;
-      }
-      return SENDER_NAME;
-    };
-
-    const determineTemplate = () => {
-      return isWhatsappAction(action) ? WorkflowTemplates.REMINDER : WorkflowTemplates.CUSTOM;
-    };
-
-    const newStep = {
-      id: calculateNewId(),
-      action,
-      stepNumber: calculateStepNumber(),
-      sendTo: sendTo || null,
-      workflowId: workflowIdentifier,
+    const constructedStep = {
+      id: calculateIdentifier(),
+      action: actionType,
+      stepNumber: determineStepPosition(),
+      sendTo: recipient ?? null,
+      workflowId: flowIdentifier,
       reminderBody: null,
       emailSubject: null,
-      template: determineTemplate(),
-      numberRequired: numberRequired || false,
-      sender: determineSender(),
-      senderName: determineSenderName(),
+      template: isWhatsappAction(actionType) ? WorkflowTemplates.REMINDER : WorkflowTemplates.CUSTOM,
+      numberRequired: phoneRequired ?? false,
+      sender: isSMSAction(actionType) ? senderIdentity ?? SENDER_ID : SENDER_ID,
+      senderName: !isSMSAction(actionType) ? displayName ?? SENDER_NAME : SENDER_NAME,
       numberVerificationPending: false,
       includeCalendarEvent: false,
       disableOnMarkNoShow: false,
     };
 
-    const updatedSteps = [...(existingSteps || []), newStep];
-    formInstance.setValue("steps", updatedSteps);
+    const modifiedSteps = existingSteps ? [...existingSteps, constructedStep] : [constructedStep];
+    formInstance.setValue("steps", modifiedSteps);
   };
 
-  const navigateToWorkflows = async () => {
-    await navigationRouter.push("/workflows");
+  const generateMainContent = function () {
+    return (
+      <div className="z-1 my-8 sm:my-0 md:flex">
+        {renderSidePanel()}
+        {renderWorkflowContent()}
+      </div>
+    );
   };
 
-  const SidebarSection = () => {
-    const sidebarClasses = "pl-2 pr-3 md:sticky md:top-6 md:h-0 md:pl-0";
-    const nameFieldClasses = "mb-5";
-    const dividerClasses = "md:border-subtle my-7 border-transparent md:border-t";
-    const bottomDividerClasses = "border-subtle my-7 border-t md:border-none";
-
-    const TeamOrgLabel = () => {
-      if (organizationMode) {
-        return (
-          <div className="flex">
-            <Label>{translate("which_team_apply")}</Label>
-            <div className="-mt-0.5">
-              <InfoBadge content={translate("team_select_info")} />
-            </div>
-          </div>
-        );
-      }
-      return <Label>{translate("which_event_type_apply")}</Label>;
-    };
-
-    const DeleteWorkflowButton = () => {
-      if (viewOnlyMode) return null;
-
-      return (
-        <Button
-          type="button"
-          StartIcon="trash-2"
-          color="destructive"
-          className="border"
-          onClick={() => setDeleteDialogVisible(true)}>
-          {translate("delete_workflow")}
-        </Button>
-      );
-    };
+  const renderSidePanel = function () {
+    const isSelectAllActive = formInstance.getValues("selectAll");
 
     return (
-      <div className={sidebarClasses}>
-        <div className={nameFieldClasses}>
+      <div className="pl-2 pr-3 md:sticky md:top-6 md:h-0 md:pl-0">
+        <div className="mb-5">
           <TextField
             data-testid="workflow-name"
-            disabled={viewOnlyMode}
-            label={`${translate("workflow_name")}:`}
+            disabled={props.readOnly}
+            label={`${localization.t("workflow_name")}:`}
             type="text"
             {...formInstance.register("name")}
           />
         </div>
-        <TeamOrgLabel />
+
+        {renderSelectionLabel()}
+
         <Controller
           name="activeOn"
           control={formInstance.control}
-          render={() => {
-            const selectAllEnabled = formInstance.getValues("selectAll");
-            const selectedValues = selectAllEnabled ? availableOptions : currentSelectedOptions;
-
+          render={function () {
             return (
               <MultiSelectCheckboxes
-                options={availableOptions}
-                isDisabled={viewOnlyMode || selectAllEnabled}
+                options={availableChoices}
+                isDisabled={props.readOnly || isSelectAllActive}
                 className="w-full md:w-64"
-                setSelected={updateSelectedOptions}
-                selected={selectedValues}
-                setValue={(selections: Option[]) => {
+                setSelected={updateChosenItems}
+                selected={isSelectAllActive ? availableChoices : chosenItems}
+                setValue={function (selections: Option[]) {
                   formInstance.setValue("activeOn", selections);
                 }}
-                countText={organizationMode ? "count_team" : "nr_event_type"}
+                countText={isOrganization ? "count_team" : "nr_event_type"}
               />
             );
           }}
         />
+
         <div className="mt-3">
           <Controller
             name="selectAll"
-            render={({ field: { value, onChange } }) => {
-              const handleSelectAllChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-                onChange(event);
-                if (event.target.value) {
-                  updateSelectedOptions(availableOptions);
-                  formInstance.setValue("activeOn", availableOptions);
-                }
-              };
-
+            render={function ({ field: { value: isChecked, onChange: handleChange } }) {
               return (
                 <CheckboxField
                   description={
-                    organizationMode ? translate("apply_to_all_teams") : translate("apply_to_all_event_types")
+                    isOrganization
+                      ? localization.t("apply_to_all_teams")
+                      : localization.t("apply_to_all_event_types")
                   }
-                  disabled={viewOnlyMode}
-                  onChange={handleSelectAllChange}
-                  checked={value}
+                  disabled={props.readOnly}
+                  onChange={function (event) {
+                    handleChange(event);
+                    if (event.target.value) {
+                      updateChosenItems(availableChoices);
+                      formInstance.setValue("activeOn", availableChoices);
+                    }
+                  }}
+                  checked={isChecked}
                 />
               );
             }}
           />
         </div>
-        <div className={dividerClasses} />
-        <DeleteWorkflowButton />
-        <div className={bottomDividerClasses} />
+
+        <div className="md:border-subtle my-7 border-transparent md:border-t" />
+
+        {!props.readOnly && (
+          <Button
+            type="button"
+            StartIcon="trash-2"
+            color="destructive"
+            className="border"
+            onClick={function () {
+              setRemovalDialogVisible(true);
+            }}>
+            {localization.t("delete_workflow")}
+          </Button>
+        )}
+
+        <div className="border-subtle my-7 border-t md:border-none" />
       </div>
     );
   };
 
-  const WorkflowContentSection = () => {
-    const contentClasses = "bg-muted border-subtle w-full rounded-md border p-3 py-5 md:ml-3 md:p-8";
-    const arrowContainerClasses = "my-3 flex justify-center";
-    const arrowClasses = "text-subtle stroke-[1.5px] text-3xl";
-    const buttonContainerClasses = "flex justify-center";
-    const addButtonClasses = "bg-default";
-
-    const TriggerStep = () => {
-      const triggerData = formInstance.getValues("trigger");
-      if (!triggerData) return null;
-
+  const renderSelectionLabel = function () {
+    if (isOrganization) {
       return (
-        <div>
-          <WorkflowStepContainer
-            form={formInstance}
-            user={userInfo}
-            teamId={teamIdentifier}
-            readOnly={viewOnlyMode}
-          />
+        <div className="flex">
+          <Label>{localization.t("which_team_apply")}</Label>
+          <div className="-mt-0.5">
+            <InfoBadge content={localization.t("team_select_info")} />
+          </div>
         </div>
       );
-    };
+    }
 
-    const WorkflowSteps = () => {
-      const stepsData = formInstance.getValues("steps");
-      if (!stepsData) return null;
+    return <Label>{localization.t("which_event_type_apply")}</Label>;
+  };
 
-      return (
-        <>
-          {stepsData.map((stepData) => (
-            <WorkflowStepContainer
-              key={stepData.id}
-              form={formInstance}
-              user={userInfo}
-              step={stepData}
-              reload={shouldReload}
-              setReload={setShouldReload}
-              teamId={teamIdentifier}
-              readOnly={viewOnlyMode}
-            />
-          ))}
-        </>
-      );
-    };
-
-    const AddActionSection = () => {
-      if (viewOnlyMode) return null;
-
-      return (
-        <>
-          <div className={arrowContainerClasses}>
-            <Icon name="arrow-down" className={arrowClasses} />
-          </div>
-          <div className={buttonContainerClasses}>
-            <Button
-              type="button"
-              onClick={() => setActionDialogVisible(true)}
-              color="secondary"
-              className={addButtonClasses}>
-              {translate("add_action")}
-            </Button>
-          </div>
-        </>
-      );
-    };
+  const renderWorkflowContent = function () {
+    const triggerData = formInstance.getValues("trigger");
+    const stepData = formInstance.getValues("steps");
 
     return (
-      <div className={contentClasses}>
-        <TriggerStep />
-        <WorkflowSteps />
-        <AddActionSection />
+      <div className="bg-muted border-subtle w-full rounded-md border p-3 py-5 md:ml-3 md:p-8">
+        {triggerData && (
+          <div>
+            <WorkflowStepContainer
+              form={formInstance}
+              user={props.user}
+              teamId={groupIdentifier}
+              readOnly={props.readOnly}
+            />
+          </div>
+        )}
+
+        {stepData && renderStepList(stepData)}
+
+        {!props.readOnly && renderActionControls()}
       </div>
     );
   };
+  type StepDataType = FormValues["steps"];
 
-  const mainContainerClasses = "z-1 my-8 sm:my-0 md:flex";
+  const renderStepList = function (stepCollection: StepDataType) {
+    return (
+      <>
+        {stepCollection?.map(function (individualStep: WorkflowStep) {
+          return (
+            <WorkflowStepContainer
+              key={individualStep.id}
+              form={formInstance}
+              user={props.user}
+              step={individualStep}
+              reload={refreshRequired}
+              setReload={updateRefreshState}
+              teamId={groupIdentifier}
+              readOnly={props.readOnly}
+            />
+          );
+        })}
+      </>
+    );
+  };
+
+  const renderActionControls = function () {
+    return (
+      <>
+        <div className="my-3 flex justify-center">
+          <Icon name="arrow-down" className="text-subtle stroke-[1.5px] text-3xl" />
+        </div>
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            onClick={function () {
+              changeActionDialogVisibility(true);
+            }}
+            color="secondary"
+            className="bg-default">
+            {localization.t("add_action")}
+          </Button>
+        </div>
+      </>
+    );
+  };
 
   return (
     <>
-      <div className={mainContainerClasses}>
-        <SidebarSection />
-        <WorkflowContentSection />
-      </div>
+      {generateMainContent()}
+
       <AddActionDialog
         isOpenDialog={actionDialogVisible}
-        setIsOpenDialog={setActionDialogVisible}
-        addAction={handleActionAddition}
+        setIsOpenDialog={changeActionDialogVisibility}
+        addAction={insertNewAction}
       />
+
       <DeleteDialog
-        isOpenDialog={deleteDialogVisible}
-        setIsOpenDialog={setDeleteDialogVisible}
-        workflowId={workflowIdentifier}
-        additionalFunction={navigateToWorkflows}
+        isOpenDialog={removalDialogVisible}
+        setIsOpenDialog={setRemovalDialogVisible}
+        workflowId={flowIdentifier}
+        additionalFunction={async function () {
+          await navigationRouter.push("/workflows");
+        }}
       />
     </>
   );
