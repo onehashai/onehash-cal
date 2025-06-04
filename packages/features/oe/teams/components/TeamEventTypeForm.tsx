@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { ReactNode } from "react";
 import type { UseFormReturn } from "react-hook-form";
 
@@ -21,138 +22,164 @@ type props = {
   isManagedEventType: boolean;
   SubmitButton: (isPending: boolean) => ReactNode;
 };
-export const TeamEventTypeForm = ({
-  isTeamAdminOrOwner,
-  teamSlug,
-  teamId,
-  form,
-  urlPrefix,
-  isPending,
-  handleSubmit,
-  isManagedEventType,
-  SubmitButton,
-}: props) => {
-  const isPlatform = useIsPlatform();
 
-  const { t } = useLocale();
+export const TeamEventTypeForm = function (properties: props) {
+  const platformCheck = useIsPlatform();
 
-  const { register, setValue, formState } = form;
+  const localizationTools = useLocale();
 
-  return (
-    <Form form={form} handleSubmit={handleSubmit}>
+  const formMethods = properties.form;
+  const registrationHandler = formMethods.register;
+  const valueUpdater = formMethods.setValue;
+  const currentFormState = formMethods.formState;
+
+  const buildTooltipContent = function (isManaged: boolean, slug?: string | null) {
+    if (isManaged) {
+      return localizationTools.t("username_placeholder");
+    }
+    return `team/${slug}`;
+  };
+
+  const generateUrlDisplay = function (prefix?: string, isManaged?: boolean, slug?: string | null) {
+    const baseContent = isManaged ? localizationTools.t("username_placeholder") : `team/${slug}`;
+    if (!prefix) return `/${baseContent}/`;
+    return `${prefix}/${baseContent}/`;
+  };
+
+  const handleTitleChange = function (event: React.ChangeEvent<HTMLInputElement>) {
+    const newTitle = event.target.value;
+    formMethods.setValue("title", newTitle);
+
+    const hasSlugBeenTouched = currentFormState.touchedFields["slug"] !== undefined;
+    if (!hasSlugBeenTouched) {
+      formMethods.setValue("slug", slugify(newTitle));
+    }
+  };
+
+  const handleSlugChange = function (event: React.ChangeEvent<HTMLInputElement>) {
+    const slugValue = event.target.value;
+    formMethods.setValue("slug", slugify(slugValue), { shouldTouch: true });
+  };
+
+  const handleSchedulingTypeChange = function (selectedValue: SchedulingType) {
+    valueUpdater("schedulingType", selectedValue);
+  };
+
+  const renderUrlField = function () {
+    const hasLongPrefix = properties.urlPrefix && properties.urlPrefix.length >= 21;
+    const labelText = platformCheck
+      ? "Slug"
+      : hasLongPrefix
+      ? `${localizationTools.t("url")}: ${properties.urlPrefix}`
+      : localizationTools.t("url");
+
+    const tooltipContent = hasLongPrefix
+      ? buildTooltipContent(properties.isManagedEventType, properties.teamSlug)
+      : generateUrlDisplay(properties.urlPrefix, properties.isManagedEventType, properties.teamSlug);
+
+    const leadingAddon = platformCheck ? undefined : (
+      <Tooltip content={tooltipContent}>
+        <span className="max-w-24 md:max-w-56">
+          {hasLongPrefix
+            ? `/${buildTooltipContent(properties.isManagedEventType, properties.teamSlug)}/`
+            : generateUrlDisplay(properties.urlPrefix, properties.isManagedEventType, properties.teamSlug)}
+        </span>
+      </Tooltip>
+    );
+
+    return (
+      <div>
+        <TextField
+          label={labelText}
+          required
+          addOnLeading={leadingAddon}
+          {...registrationHandler("slug")}
+          onChange={handleSlugChange}
+        />
+        {properties.isManagedEventType && !platformCheck && (
+          <p className="mt-2 text-sm text-gray-600">
+            {localizationTools.t("managed_event_url_clarification")}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  const renderSchedulingOption = function (
+    optionType: SchedulingType,
+    titleKey: string,
+    descriptionKey: string,
+    testId?: string
+  ) {
+    const containerClasses = properties.isTeamAdminOrOwner ? "w-full" : "";
+    const itemClasses =
+      optionType === SchedulingType.COLLECTIVE && !properties.isTeamAdminOrOwner
+        ? "w-full text-sm w-1/2"
+        : "text-sm w-1/2";
+
+    return (
+      <RadioArea.Item
+        {...registrationHandler("schedulingType")}
+        value={optionType}
+        className={classNames(itemClasses, properties.isTeamAdminOrOwner && "text-sm")}
+        classNames={{ container: classNames(containerClasses) }}
+        data-testid={testId}>
+        <strong className="mb-1 block">{localizationTools.t(titleKey)}</strong>
+        <p>{localizationTools.t(descriptionKey)}</p>
+      </RadioArea.Item>
+    );
+  };
+
+  const formContent = (
+    <Fragment>
       <div className="mt-3 space-y-6 pb-11">
         <TextField
           type="hidden"
           labelProps={{ style: { display: "none" } }}
-          {...register("teamId", { valueAsNumber: true })}
-          value={teamId}
+          {...registrationHandler("teamId", { valueAsNumber: true })}
+          value={properties.teamId}
         />
         <TextField
-          label={t("title")}
-          placeholder={t("quick_chat")}
+          label={localizationTools.t("title")}
+          placeholder={localizationTools.t("quick_chat")}
           data-testid="event-type-quick-chat"
-          {...register("title")}
-          onChange={(e) => {
-            form.setValue("title", e?.target.value);
-            if (formState.touchedFields["slug"] === undefined) {
-              form.setValue("slug", slugify(e?.target.value));
-            }
-          }}
+          {...registrationHandler("title")}
+          onChange={handleTitleChange}
         />
-        {urlPrefix && urlPrefix.length >= 21 ? (
-          <div>
-            <TextField
-              label={isPlatform ? "Slug" : `${t("url")}: ${urlPrefix}`}
-              required
-              addOnLeading={
-                !isPlatform ? (
-                  <Tooltip content={!isManagedEventType ? `team/${teamSlug}` : t("username_placeholder")}>
-                    <span className="max-w-24 md:max-w-56">
-                      /{!isManagedEventType ? `team/${teamSlug}` : t("username_placeholder")}/
-                    </span>
-                  </Tooltip>
-                ) : undefined
-              }
-              {...register("slug")}
-              onChange={(e) => {
-                form.setValue("slug", slugify(e?.target.value), { shouldTouch: true });
-              }}
-            />
-
-            {isManagedEventType && !isPlatform && (
-              <p className="mt-2 text-sm text-gray-600">{t("managed_event_url_clarification")}</p>
-            )}
-          </div>
-        ) : (
-          <div>
-            <TextField
-              label={isPlatform ? "Slug" : t("url")}
-              required
-              addOnLeading={
-                !isPlatform ? (
-                  <Tooltip
-                    content={`${urlPrefix}/${
-                      !isManagedEventType ? `team/${teamSlug}` : t("username_placeholder")
-                    }/`}>
-                    <span className="max-w-24 md:max-w-56">
-                      {urlPrefix}/{!isManagedEventType ? `team/${teamSlug}` : t("username_placeholder")}/
-                    </span>
-                  </Tooltip>
-                ) : undefined
-              }
-              {...register("slug")}
-              onChange={(e) => {
-                form.setValue("slug", slugify(e?.target.value), { shouldTouch: true });
-              }}
-            />
-            {isManagedEventType && !isPlatform && (
-              <p className="mt-2 text-sm text-gray-600">{t("managed_event_url_clarification")}</p>
-            )}
-          </div>
-        )}
+        {renderUrlField()}
         <div className="mb-4">
           <label htmlFor="schedulingType" className="text-default block text-sm font-bold">
-            {t("assignment")}
+            {localizationTools.t("assignment")}
           </label>
-          {formState.errors.schedulingType && (
-            <Alert className="mt-1" severity="error" message={formState.errors.schedulingType.message} />
+          {currentFormState.errors.schedulingType && (
+            <Alert
+              className="mt-1"
+              severity="error"
+              message={currentFormState.errors.schedulingType.message}
+            />
           )}
           <RadioArea.Group
-            onValueChange={(val: SchedulingType) => {
-              setValue("schedulingType", val);
-            }}
-            className={classNames("mt-1 flex gap-4", isTeamAdminOrOwner && "flex-col")}>
-            <RadioArea.Item
-              {...register("schedulingType")}
-              value={SchedulingType.COLLECTIVE}
-              className={classNames("w-full text-sm", !isTeamAdminOrOwner && "w-1/2")}
-              classNames={{ container: classNames(isTeamAdminOrOwner && "w-full") }}>
-              <strong className="mb-1 block">{t("collective")}</strong>
-              <p>{t("collective_description")}</p>
-            </RadioArea.Item>
-            <RadioArea.Item
-              {...register("schedulingType")}
-              value={SchedulingType.ROUND_ROBIN}
-              className={classNames("text-sm", !isTeamAdminOrOwner && "w-1/2")}
-              classNames={{ container: classNames(isTeamAdminOrOwner && "w-full") }}>
-              <strong className="mb-1 block">{t("round_robin")}</strong>
-              <p>{t("round_robin_description")}</p>
-            </RadioArea.Item>
-            {isTeamAdminOrOwner && (
-              <RadioArea.Item
-                {...register("schedulingType")}
-                value={SchedulingType.MANAGED}
-                className={classNames("text-sm", !isTeamAdminOrOwner && "w-1/2")}
-                classNames={{ container: classNames(isTeamAdminOrOwner && "w-full") }}
-                data-testid="managed-event-type">
-                <strong className="mb-1 block">{t("managed_event")}</strong>
-                <p>{t("managed_event_description")}</p>
-              </RadioArea.Item>
-            )}
+            onValueChange={handleSchedulingTypeChange}
+            className={classNames("mt-1 flex gap-4", properties.isTeamAdminOrOwner && "flex-col")}>
+            {renderSchedulingOption(SchedulingType.COLLECTIVE, "collective", "collective_description")}
+            {renderSchedulingOption(SchedulingType.ROUND_ROBIN, "round_robin", "round_robin_description")}
+            {properties.isTeamAdminOrOwner &&
+              renderSchedulingOption(
+                SchedulingType.MANAGED,
+                "managed_event",
+                "managed_event_description",
+                "managed-event-type"
+              )}
           </RadioArea.Group>
         </div>
       </div>
-      {SubmitButton(isPending)}
+      {properties.SubmitButton(properties.isPending)}
+    </Fragment>
+  );
+
+  return (
+    <Form form={properties.form} handleSubmit={properties.handleSubmit}>
+      {formContent}
     </Form>
   );
 };

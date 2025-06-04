@@ -1,95 +1,145 @@
 // eslint-disable-next-line no-restricted-imports
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 
 import { useTeamInvites } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button, showToast, TopBanner, Icon } from "@calcom/ui";
 
-// export type TeamInviteBannerProps = { data: boolean };
+const TeamInviteBanner = function () {
+  const localizationMethods = useLocale();
 
-function TeamInviteBanner() {
-  const { t } = useLocale();
+  const [displayBadgeStatus, updateDisplayBadgeStatus] = useState(false);
+  const [activeTeamIdentifiers, updateActiveTeamIdentifiers] = useState<number[]>([]);
+  const [dismissedInvitations, updateDismissedInvitations] = useState<number[]>([]);
 
-  const [showInviteeBadge, setShowInviteeBadge] = useState(false);
-  const [pendingTeamIds, setPendingTeamIds] = useState<number[]>([]);
-  const [hiddenInvites, setHiddenInvites] = useState<number[]>([]);
+  const teamInviteData = useTeamInvites();
+  const apiHelpers = trpc.useUtils();
 
-  const { isPending, listInvites } = useTeamInvites();
-  const utils = trpc.useUtils();
-
-  const acceptOrLeaveMutation = trpc.viewer.teams.acceptOrLeave.useMutation({
-    onSuccess: () => {
-      showToast(t("success"), "success");
-      utils.viewer.teams.get.invalidate();
-      utils.viewer.teams.list.invalidate();
-      utils.viewer.teams.hasTeamPlan.invalidate();
-      utils.viewer.teams.listInvites.invalidate();
+  const teamResponseMutation = trpc.viewer.teams.acceptOrLeave.useMutation({
+    onSuccess: function () {
+      showToast(localizationMethods.t("success"), "success");
+      apiHelpers.viewer.teams.get.invalidate();
+      apiHelpers.viewer.teams.list.invalidate();
+      apiHelpers.viewer.teams.hasTeamPlan.invalidate();
+      apiHelpers.viewer.teams.listInvites.invalidate();
     },
   });
 
-  useEffect(() => {
-    if (isPending || !listInvites?.length) return;
+  useEffect(
+    function () {
+      const isLoading = teamInviteData.isPending;
+      const inviteList = teamInviteData.listInvites;
 
-    const disabledBadges = localStorage.getItem("disabledTeamNotifications");
-    const parsedDisabledBadges = disabledBadges ? JSON.parse(disabledBadges) : [];
+      if (isLoading || !inviteList || inviteList.length === 0) {
+        return;
+      }
 
-    const pendingIds = listInvites
-      .map((invite) => invite.teamId)
-      .filter((id) => !parsedDisabledBadges.includes(id));
+      const storedDisabledNotifications = localStorage.getItem("disabledTeamNotifications");
+      let previouslyDismissed: number[] = [];
 
-    setHiddenInvites(parsedDisabledBadges);
-    setPendingTeamIds(pendingIds);
-    setShowInviteeBadge(pendingIds.length > 0);
-  }, [listInvites, isPending]);
+      if (storedDisabledNotifications) {
+        previouslyDismissed = JSON.parse(storedDisabledNotifications);
+      }
 
-  const handleAcceptOrLeave = (accept: boolean, teamId: number) => {
-    acceptOrLeaveMutation.mutate({ teamId, accept });
-  };
+      const visibleTeamIds: number[] = [];
 
-  const handleHideInvite = (teamId: number) => {
-    const updatedHiddenInvites = [...hiddenInvites, teamId];
-    setHiddenInvites(updatedHiddenInvites);
-    setPendingTeamIds(listInvites?.map((invite) => invite.teamId).filter((id) => id !== teamId) ?? []);
-    localStorage.setItem("disabledTeamNotifications", JSON.stringify(updatedHiddenInvites));
-  };
+      for (let i = 0; i < inviteList.length; i++) {
+        const currentTeamId = inviteList[i].teamId;
+        const isNotDismissed = previouslyDismissed.indexOf(currentTeamId) === -1;
 
-  if (!showInviteeBadge) return null;
+        if (isNotDismissed) {
+          visibleTeamIds.push(currentTeamId);
+        }
+      }
 
-  return (
-    <>
-      {listInvites?.map((invite) => {
-        if (!pendingTeamIds.includes(invite.teamId)) return null;
-
-        return (
-          <TopBanner
-            key={invite.teamId}
-            text={t("pending_invites_team", { teamName: invite.team.name })}
-            variant="warning"
-            actions={
-              <div className="flex gap-2">
-                <Button
-                  color="minimal"
-                  className="border"
-                  onClick={() => handleAcceptOrLeave(true, invite.teamId)}>
-                  Accept
-                </Button>
-                <Button
-                  color="minimal"
-                  className="border"
-                  onClick={() => handleAcceptOrLeave(false, invite.teamId)}>
-                  Decline
-                </Button>
-                <Button color="minimal" onClick={() => handleHideInvite(invite.teamId)}>
-                  <Icon name="x" />
-                </Button>
-              </div>
-            }
-          />
-        );
-      })}
-    </>
+      updateDismissedInvitations(previouslyDismissed);
+      updateActiveTeamIdentifiers(visibleTeamIds);
+      updateDisplayBadgeStatus(visibleTeamIds.length > 0);
+    },
+    [teamInviteData.listInvites, teamInviteData.isPending]
   );
-}
+
+  const processTeamResponse = function (shouldAccept: boolean, targetTeamId: number) {
+    teamResponseMutation.mutate({
+      teamId: targetTeamId,
+      accept: shouldAccept,
+    });
+  };
+
+  const dismissInvitation = function (targetTeamId: number) {
+    const newDismissedList = dismissedInvitations.concat(targetTeamId);
+    updateDismissedInvitations(newDismissedList);
+
+    const remainingInvites =
+      teamInviteData.listInvites
+        ?.map(function (invitation) {
+          return invitation.teamId;
+        })
+        .filter(function (id) {
+          return id !== targetTeamId;
+        }) ?? [];
+
+    updateActiveTeamIdentifiers(remainingInvites);
+    localStorage.setItem("disabledTeamNotifications", JSON.stringify(newDismissedList));
+  };
+
+  if (displayBadgeStatus === false) {
+    return null;
+  }
+
+  const renderInvitationBanner = function (
+    invitation: NonNullable<typeof teamInviteData.listInvites>[number]
+  ) {
+    const shouldShowBanner = activeTeamIdentifiers.indexOf(invitation.teamId) !== -1;
+
+    if (!shouldShowBanner) {
+      return null;
+    }
+
+    const actionButtons = (
+      <div className="flex gap-2">
+        <Button
+          color="minimal"
+          className="border"
+          onClick={function () {
+            processTeamResponse(true, invitation.teamId);
+          }}>
+          Accept
+        </Button>
+        <Button
+          color="minimal"
+          className="border"
+          onClick={function () {
+            processTeamResponse(false, invitation.teamId);
+          }}>
+          Decline
+        </Button>
+        <Button
+          color="minimal"
+          onClick={function () {
+            dismissInvitation(invitation.teamId);
+          }}>
+          <Icon name="x" />
+        </Button>
+      </div>
+    );
+
+    return (
+      <TopBanner
+        key={invitation.teamId}
+        text={localizationMethods.t("pending_invites_team", { teamName: invitation.team.name })}
+        variant="warning"
+        actions={actionButtons}
+      />
+    );
+  };
+
+  const bannerElements = teamInviteData.listInvites?.map(function (invite) {
+    return renderInvitationBanner(invite);
+  });
+
+  return <Fragment>{bannerElements}</Fragment>;
+};
 
 export default TeamInviteBanner;

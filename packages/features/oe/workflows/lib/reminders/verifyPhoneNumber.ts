@@ -2,29 +2,35 @@ import prisma from "@calcom/prisma";
 
 import * as twilio from "./providers/twilioProvider";
 
-export const sendVerificationCode = async (phoneNumber: string) => {
-  return twilio.sendVerificationCode(phoneNumber);
+const initiatePhoneValidation = async (contactNumber: string): Promise<any> => {
+  return twilio.sendVerificationCode(contactNumber);
 };
 
-export const verifyPhoneNumber = async (
-  phoneNumber: string,
-  code: string,
-  userId?: number,
-  teamId?: number
-) => {
-  if (!userId && !teamId) return true;
+const confirmNumberOwnership = async (
+  contactNumber: string,
+  validationToken: string,
+  userIdentifier?: number,
+  organizationId?: number
+): Promise<boolean> => {
+  const hasRequiredIdentifier = userIdentifier || organizationId;
+  if (!hasRequiredIdentifier) return true;
 
-  const verificationStatus = await twilio.verifyNumber(phoneNumber, code);
+  const authenticationResult = await twilio.verifyNumber(contactNumber, validationToken);
+  const isValidationSuccessful = authenticationResult === "approved";
 
-  if (verificationStatus === "approved") {
+  if (isValidationSuccessful) {
     await prisma.verifiedNumber.create({
       data: {
-        userId,
-        teamId,
-        phoneNumber,
+        userId: userIdentifier,
+        teamId: organizationId,
+        phoneNumber: contactNumber,
       },
     });
     return true;
   }
+
   return false;
 };
+
+export const sendVerificationCode = initiatePhoneValidation;
+export const verifyPhoneNumber = confirmNumberOwnership;

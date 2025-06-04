@@ -26,62 +26,69 @@ vi.mock("../lib/reminders/providers/sendgridProvider", () => ({
 }));
 
 describe("Email Workflow Reminders", () => {
-  const mockWorkflowReminder = {
-    id: 1,
-    method: WorkflowMethods.EMAIL,
-    scheduled: false,
-    scheduledDate: dayjs().add(3, "day").toISOString(),
-    workflowStep: {
-      workflow: {
-        userId: 100,
-        teamId: 200,
-      },
-      action: WorkflowActions.EMAIL_ATTENDEE,
-      reminderBody: "Test reminder for your upcoming event",
-      sender: "test_sender",
-      template: null,
-      emailSubject: "Event Reminder",
-    },
-    booking: {
-      uid: "booking-123",
-      startTime: new Date(),
-      eventType: {
-        title: "Team Meeting",
-        id: 300,
-      },
-      attendees: [
-        {
-          name: "John Doe",
-          email: "john@example.com",
-          timeZone: "UTC",
+  const reminderFixture = (() => {
+    const baseDate = dayjs().add(3, "day").toISOString();
+    const bookingUid = "booking-123";
+
+    return {
+      id: 1,
+      method: WorkflowMethods.EMAIL,
+      scheduled: false,
+      scheduledDate: baseDate,
+      workflowStep: {
+        workflow: {
+          userId: 100,
+          teamId: 200,
         },
-      ],
-      user: {
-        name: "Jane Smith",
-        email: "jane@example.com",
-        id: 500,
-        timeZone: "America/New_York",
+        action: WorkflowActions.EMAIL_ATTENDEE,
+        reminderBody: "Test reminder for your upcoming event",
+        sender: "test_sender",
+        template: null,
+        emailSubject: "Event Reminder",
       },
-      metadata: {},
-    },
-    retryCount: 0,
-  };
+      booking: {
+        uid: bookingUid,
+        startTime: new Date(),
+        eventType: {
+          title: "Team Meeting",
+          id: 300,
+        },
+        attendees: [
+          {
+            name: "John Doe",
+            email: "john@example.com",
+            timeZone: "UTC",
+          },
+        ],
+        user: {
+          name: "Jane Smith",
+          email: "jane@example.com",
+          id: 500,
+          timeZone: "America/New_York",
+        },
+        metadata: {},
+      },
+      retryCount: 0,
+    };
+  })();
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("should successfully schedule email reminders", async () => {
-    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue([mockWorkflowReminder]);
+    const expectedBatchIdentifier = "mock-batch-id";
+    const expectedMessageIdentifier = "mock-message-id";
 
-    vi.mocked(sendgrid.getBatchId).mockResolvedValue("mock-batch-id");
-    vi.mocked(sendgrid.sendSendgridMail).mockResolvedValue({
-      messageId: "mock-message-id",
+    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValueOnce([reminderFixture]);
+    vi.mocked(sendgrid.getBatchId).mockResolvedValueOnce(expectedBatchIdentifier);
+    vi.mocked(sendgrid.sendSendgridMail).mockResolvedValueOnce({
+      messageId: expectedMessageIdentifier,
     });
 
-    const updateSpy = vi.spyOn(prisma.workflowReminder, "update");
+    const databaseUpdateSpy = vi.spyOn(prisma.workflowReminder, "update");
 
-    const unscheduledReminders = await prisma.workflowReminder.findMany({
+    const queryResults = await prisma.workflowReminder.findMany({
       where: {
         method: WorkflowMethods.EMAIL,
         scheduled: false,
@@ -92,37 +99,46 @@ describe("Email Workflow Reminders", () => {
       },
     });
 
-    expect(unscheduledReminders).toHaveLength(1);
+    expect(queryResults.length).toEqual(1);
 
-    for (const reminder of unscheduledReminders) {
-      const batchId = await sendgrid.getBatchId();
+    let reminderIndex = 0;
+    while (reminderIndex < queryResults.length) {
+      const currentReminder = queryResults[reminderIndex];
+      const retrievedBatchId = await sendgrid.getBatchId();
 
-      const scheduledEmail = await sendgrid.sendSendgridMail(
-        {
-          to: (reminder as any).booking.attendees[0].email,
-          subject: (reminder as any).workflowStep.emailSubject,
-          html: (reminder as any).workflowStep.reminderBody,
-          batchId: batchId,
-          sendAt: dayjs(reminder.scheduledDate).unix(),
-        },
-        { sender: (reminder as any).workflowStep.sender },
-        {
-          ...((reminder as any).booking.eventType?.id && {
-            eventTypeId: (reminder as any).booking.eventType.id,
-          }),
-        }
-      );
+      const emailPayload = {
+        to: (currentReminder as any).booking.attendees[0].email,
+        subject: (currentReminder as any).workflowStep.emailSubject,
+        html: (currentReminder as any).workflowStep.reminderBody,
+        batchId: retrievedBatchId,
+        sendAt: dayjs(currentReminder.scheduledDate).unix(),
+      };
 
-      expect(scheduledEmail).toBeTruthy();
-      expect((scheduledEmail as any).messageId).toBe("mock-message-id");
+      const senderConfig = {
+        sender: (currentReminder as any).workflowStep.sender,
+      };
+
+      const metadataConfig = {};
+      if ((currentReminder as any).booking.eventType?.id) {
+        Object.assign(metadataConfig, {
+          eventTypeId: (currentReminder as any).booking.eventType.id,
+        });
+      }
+
+      const emailResponse = await sendgrid.sendSendgridMail(emailPayload, senderConfig, metadataConfig);
+
+      expect(emailResponse).toBeDefined();
+      expect((emailResponse as any).messageId).toEqual(expectedMessageIdentifier);
 
       await prisma.workflowReminder.update({
-        where: { id: reminder.id },
+        where: { id: currentReminder.id },
         data: {
           scheduled: true,
-          referenceId: batchId,
+          referenceId: retrievedBatchId,
         },
       });
+
+      reminderIndex++;
     }
 
     expect(sendgrid.sendSendgridMail).toHaveBeenCalledWith(
@@ -130,31 +146,33 @@ describe("Email Workflow Reminders", () => {
         to: "john@example.com",
         subject: "Event Reminder",
         html: "Test reminder for your upcoming event",
-        batchId: "mock-batch-id",
+        batchId: expectedBatchIdentifier,
         sendAt: expect.any(Number),
       },
       { sender: "test_sender" },
       { eventTypeId: 300 }
     );
 
-    expect(updateSpy).toHaveBeenCalledWith({
-      where: { id: mockWorkflowReminder.id },
+    expect(databaseUpdateSpy).toHaveBeenCalledWith({
+      where: { id: reminderFixture.id },
       data: {
         scheduled: true,
-        referenceId: "mock-batch-id",
+        referenceId: expectedBatchIdentifier,
       },
     });
   });
 
   it("should handle scheduling failures", async () => {
-    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue([mockWorkflowReminder]);
+    const failureMessage = "Sending failed";
+    const batchIdentifier = "mock-batch-id";
 
-    vi.mocked(sendgrid.getBatchId).mockResolvedValue("mock-batch-id");
-    vi.mocked(sendgrid.sendSendgridMail).mockRejectedValue(new Error("Sending failed"));
+    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValueOnce([reminderFixture]);
+    vi.mocked(sendgrid.getBatchId).mockResolvedValueOnce(batchIdentifier);
+    vi.mocked(sendgrid.sendSendgridMail).mockRejectedValueOnce(new Error(failureMessage));
 
-    const updateSpy = vi.spyOn(prisma.workflowReminder, "update");
+    const databaseUpdateSpy = vi.spyOn(prisma.workflowReminder, "update");
 
-    const unscheduledReminders = await prisma.workflowReminder.findMany({
+    const queryResults = await prisma.workflowReminder.findMany({
       where: {
         method: WorkflowMethods.EMAIL,
         scheduled: false,
@@ -165,46 +183,59 @@ describe("Email Workflow Reminders", () => {
       },
     });
 
-    for (const reminder of unscheduledReminders) {
+    const reminderIterator = queryResults[Symbol.iterator]();
+    let currentIteration = reminderIterator.next();
+
+    while (!currentIteration.done) {
+      const currentReminder = currentIteration.value;
+      const batchIdForSending = await sendgrid.getBatchId();
+
+      const sendingParameters = {
+        to: (currentReminder as any).booking.attendees[0].email,
+        subject: (currentReminder as any).workflowStep.emailSubject,
+        html: (currentReminder as any).workflowStep.reminderBody,
+        batchId: batchIdForSending,
+        sendAt: dayjs(currentReminder.scheduledDate).unix(),
+      };
+
+      const senderInfo = {
+        sender: (currentReminder as any).workflowStep.sender,
+      };
+
+      const eventMetadata = (currentReminder as any).booking.eventType?.id
+        ? { eventTypeId: (currentReminder as any).booking.eventType.id }
+        : {};
+
       try {
-        await sendgrid.sendSendgridMail(
-          {
-            to: (reminder as any).booking.attendees[0].email,
-            subject: (reminder as any).workflowStep.emailSubject,
-            html: (reminder as any).workflowStep.reminderBody,
-            batchId: await sendgrid.getBatchId(),
-            sendAt: dayjs(reminder.scheduledDate).unix(),
-          },
-          { sender: (reminder as any).workflowStep.sender },
-          {
-            ...((reminder as any).booking.eventType?.id && {
-              eventTypeId: (reminder as any).booking.eventType.id,
-            }),
-          }
-        );
-      } catch (error) {
-        // Update with retry count
+        await sendgrid.sendSendgridMail(sendingParameters, senderInfo, eventMetadata);
+      } catch (errorInstance) {
+        const updatedRetryCount = currentReminder.retryCount + 1;
+
         await prisma.workflowReminder.update({
-          where: { id: reminder.id },
+          where: { id: currentReminder.id },
           data: {
-            retryCount: reminder.retryCount + 1,
+            retryCount: updatedRetryCount,
           },
         });
       }
+
+      currentIteration = reminderIterator.next();
     }
 
-    expect(updateSpy).toHaveBeenCalledWith({
-      where: { id: mockWorkflowReminder.id },
+    expect(databaseUpdateSpy).toHaveBeenCalledWith({
+      where: { id: reminderFixture.id },
       data: {
-        retryCount: mockWorkflowReminder.retryCount + 1,
+        retryCount: reminderFixture.retryCount + 1,
       },
     });
   });
 
   it("should handle edge cases with no reminders", async () => {
-    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValue([]);
+    const emptyResultSet: any[] = [];
 
-    const unscheduledReminders = await prisma.workflowReminder.findMany({
+    vi.mocked(prisma.workflowReminder.findMany).mockResolvedValueOnce(emptyResultSet);
+
+    const queryResults = await prisma.workflowReminder.findMany({
       where: {
         method: WorkflowMethods.EMAIL,
         scheduled: false,
@@ -215,7 +246,8 @@ describe("Email Workflow Reminders", () => {
       },
     });
 
-    expect(unscheduledReminders).toHaveLength(0);
+    const resultCount = queryResults.length;
+    expect(resultCount).toBe(0);
 
     expect(sendgrid.sendSendgridMail).not.toHaveBeenCalled();
   });

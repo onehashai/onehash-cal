@@ -10,80 +10,89 @@ import {
   whatsappReminderTemplate,
 } from "./reminders/templates/whatsapp";
 
-export function shouldScheduleEmailReminder(action: WorkflowActions) {
-  return action === WorkflowActions.EMAIL_ATTENDEE || action === WorkflowActions.EMAIL_HOST;
-}
+export const shouldScheduleEmailReminder = (actionType: WorkflowActions): boolean => {
+  const emailActions: WorkflowActions[] = [WorkflowActions.EMAIL_ATTENDEE, WorkflowActions.EMAIL_HOST];
+  return emailActions.includes(actionType);
+};
 
-export function shouldScheduleSMSReminder(action: WorkflowActions) {
-  return action === WorkflowActions.SMS_ATTENDEE || action === WorkflowActions.SMS_NUMBER;
-}
+export const shouldScheduleSMSReminder = (actionType: WorkflowActions): boolean => {
+  const smsActions = [WorkflowActions.SMS_ATTENDEE, WorkflowActions.SMS_NUMBER];
+  return smsActions.some((smsAction) => smsAction === actionType);
+};
 
-export function isSMSAction(action: WorkflowActions) {
-  return action === WorkflowActions.SMS_ATTENDEE || action === WorkflowActions.SMS_NUMBER;
-}
+export const isSMSAction = (actionType: WorkflowActions): boolean => {
+  const textMessageActions: WorkflowActions[] = [WorkflowActions.SMS_ATTENDEE, WorkflowActions.SMS_NUMBER];
+  return textMessageActions.indexOf(actionType) !== -1;
+};
 
-export function isWhatsappAction(action: WorkflowActions) {
-  return action === WorkflowActions.WHATSAPP_NUMBER || action === WorkflowActions.WHATSAPP_ATTENDEE;
-}
+export const isWhatsappAction = (actionType: WorkflowActions): boolean => {
+  const whatsappActionTypes = [WorkflowActions.WHATSAPP_NUMBER, WorkflowActions.WHATSAPP_ATTENDEE];
+  return whatsappActionTypes.find((action) => action === actionType) !== undefined;
+};
 
-export function isSMSOrWhatsappAction(action: WorkflowActions) {
-  return isSMSAction(action) || isWhatsappAction(action);
-}
+export const isSMSOrWhatsappAction = (actionType: WorkflowActions): boolean => {
+  return isSMSAction(actionType) || isWhatsappAction(actionType);
+};
 
-export function isAttendeeAction(action: WorkflowActions) {
-  return (
-    action === WorkflowActions.SMS_ATTENDEE ||
-    action === WorkflowActions.EMAIL_ATTENDEE ||
-    action === WorkflowActions.WHATSAPP_ATTENDEE
-  );
-}
+export const isAttendeeAction = (actionType: WorkflowActions): boolean => {
+  const attendeeTargetedActions: WorkflowActions[] = [
+    WorkflowActions.SMS_ATTENDEE,
+    WorkflowActions.EMAIL_ATTENDEE,
+    WorkflowActions.WHATSAPP_ATTENDEE,
+  ];
+  return attendeeTargetedActions.includes(actionType);
+};
 
-export function isEmailToAttendeeAction(action: WorkflowActions) {
-  return action === WorkflowActions.EMAIL_ATTENDEE;
-}
+export const isEmailToAttendeeAction = (actionType: WorkflowActions): boolean => {
+  return actionType === WorkflowActions.EMAIL_ATTENDEE;
+};
 
-export function isTextMessageToSpecificNumber(action?: WorkflowActions) {
-  return action === WorkflowActions.SMS_NUMBER || action === WorkflowActions.WHATSAPP_NUMBER;
-}
+export const isTextMessageToSpecificNumber = (actionType?: WorkflowActions): boolean => {
+  if (!actionType) return false;
+  const numberTargetedActions = [WorkflowActions.SMS_NUMBER, WorkflowActions.WHATSAPP_NUMBER];
+  return numberTargetedActions.some((action) => action === actionType);
+};
 
-export function getWhatsappTemplateForTrigger(trigger: WorkflowTriggerEvents): WorkflowTemplates {
-  switch (trigger) {
-    case "NEW_EVENT":
-    case "BEFORE_EVENT":
-      return WorkflowTemplates.REMINDER;
-    case "AFTER_EVENT":
-      return WorkflowTemplates.COMPLETED;
-    case "EVENT_CANCELLED":
-      return WorkflowTemplates.CANCELLED;
-    case "RESCHEDULE_EVENT":
-      return WorkflowTemplates.RESCHEDULED;
-    default:
-      return WorkflowTemplates.REMINDER;
-  }
-}
+export const getWhatsappTemplateForTrigger = (
+  triggerEvent: Exclude<
+    WorkflowTriggerEvents,
+    "AFTER_HOSTS_CAL_VIDEO_NO_SHOW" | "AFTER_GUESTS_CAL_VIDEO_NO_SHOW"
+  >
+): WorkflowTemplates => {
+  const triggerTemplateMap: Record<
+    Exclude<WorkflowTriggerEvents, "AFTER_HOSTS_CAL_VIDEO_NO_SHOW" | "AFTER_GUESTS_CAL_VIDEO_NO_SHOW">,
+    WorkflowTemplates
+  > = {
+    NEW_EVENT: WorkflowTemplates.REMINDER,
+    BEFORE_EVENT: WorkflowTemplates.REMINDER,
+    AFTER_EVENT: WorkflowTemplates.COMPLETED,
+    EVENT_CANCELLED: WorkflowTemplates.CANCELLED,
+    RESCHEDULE_EVENT: WorkflowTemplates.RESCHEDULED,
+  };
 
-export function getWhatsappTemplateFunction(template?: WorkflowTemplates): typeof whatsappReminderTemplate {
-  switch (template) {
-    case "CANCELLED":
-      return whatsappEventCancelledTemplate;
-    case "COMPLETED":
-      return whatsappEventCompletedTemplate;
-    case "RESCHEDULED":
-      return whatsappEventRescheduledTemplate;
-    case "CUSTOM":
-    case "REMINDER":
-      return whatsappReminderTemplate;
-    default:
-      return whatsappReminderTemplate;
-  }
-}
+  return triggerTemplateMap[triggerEvent] || WorkflowTemplates.REMINDER;
+};
 
-export function getWhatsappTemplateForAction(
-  action: WorkflowActions,
-  locale: string,
-  template: WorkflowTemplates,
-  timeFormat: TimeFormat
-): string | null {
-  const templateFunction = getWhatsappTemplateFunction(template);
-  return templateFunction(true, locale, action, timeFormat);
-}
+export const getWhatsappTemplateFunction = (
+  templateType?: WorkflowTemplates
+): typeof whatsappReminderTemplate => {
+  const templateFunctionMap = {
+    CANCELLED: whatsappEventCancelledTemplate,
+    COMPLETED: whatsappEventCompletedTemplate,
+    RESCHEDULED: whatsappEventRescheduledTemplate,
+    CUSTOM: whatsappReminderTemplate,
+    REMINDER: whatsappReminderTemplate,
+  };
+
+  return templateFunctionMap[templateType as keyof typeof templateFunctionMap] || whatsappReminderTemplate;
+};
+
+export const getWhatsappTemplateForAction = (
+  actionType: WorkflowActions,
+  localeString: string,
+  templateType: WorkflowTemplates,
+  timeFormatSetting: TimeFormat
+): string | null => {
+  const templateRenderer = getWhatsappTemplateFunction(templateType);
+  return templateRenderer(true, localeString, actionType, timeFormatSetting);
+};

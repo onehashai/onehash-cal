@@ -19,56 +19,97 @@ interface Props {
   className?: string;
 }
 
-export default function TeamAvailabilityTimes(props: Props) {
-  const { t } = useLocale();
+const TeamAvailabilityTimes = function (properties: Props) {
+  const localeHelpers = useLocale();
 
-  const { data, isPending } = trpc.viewer.teams.getMemberAvailability.useQuery(
+  const queryResult = trpc.viewer.teams.getMemberAvailability.useQuery(
     {
-      teamId: props.teamId,
-      memberId: props.memberId,
-      dateFrom: props.selectedDate.toString(),
-      dateTo: props.selectedDate.add(1, "day").toString(),
-      timezone: `${props.selectedTimeZone.toString()}`,
+      teamId: properties.teamId,
+      memberId: properties.memberId,
+      dateFrom: properties.selectedDate.toString(),
+      dateTo: properties.selectedDate.add(1, "day").toString(),
+      timezone: String(properties.selectedTimeZone),
     },
     {
       refetchOnWindowFocus: false,
     }
   );
 
-  const slots = !isPending
-    ? getSlots({
-        frequency: props.frequency,
-        inviteeDate: props.selectedDate,
-        workingHours: data?.workingHours || [],
-        minimumBookingNotice: 0,
-        offsetStart: 0,
-        eventLength: props.frequency,
-        organizerTimeZone: `${data?.timeZone}`,
-      })
-    : [];
+  const isDataLoading = queryResult.isPending;
+  const memberData = queryResult.data;
+
+  const calculateTimeSlots = function () {
+    if (isDataLoading) return [];
+
+    const slotParams = {
+      frequency: properties.frequency,
+      inviteeDate: properties.selectedDate,
+      workingHours: memberData?.workingHours ?? [],
+      minimumBookingNotice: 0,
+      offsetStart: 0,
+      eventLength: properties.frequency,
+      organizerTimeZone: String(memberData?.timeZone ?? ""),
+    };
+
+    return getSlots(slotParams);
+  };
+
+  const availableSlots = calculateTimeSlots();
+
+  const hasNoSlots = availableSlots.length === 0;
+  const showSkeleton = isDataLoading && hasNoSlots;
+  const showEmptyState = !isDataLoading && hasNoSlots;
+  const showAvailableMessage = !isDataLoading && !hasNoSlots;
+
+  const renderEmptyState = function () {
+    return (
+      <div className="flex flex-col items-center justify-center pt-4">
+        <span className="text-subtle text-sm">{localeHelpers.t("no_available_slots")}</span>
+      </div>
+    );
+  };
+
+  const renderAvailableHeader = function () {
+    if (!showAvailableMessage) return null;
+
+    return <p className="text-default mb-3 text-sm">{localeHelpers.t("time_available")}</p>;
+  };
+
+  const renderTimeSlot = function (slot: ReturnType<typeof getSlots>[0]) {
+    const formattedTime = slot.time.tz(properties.selectedTimeZone.toString()).format("HH:mm");
+
+    return (
+      <div key={slot.time.format()} className="flex flex-row items-center ">
+        <a
+          className="border-brand-default text-bookingdarker bg-default  min-w-48 mb-2 mr-3 block flex-grow rounded-md border py-2 text-center font-medium dark:border-transparent dark:bg-gray-600 "
+          data-testid="time">
+          {formattedTime}
+        </a>
+      </div>
+    );
+  };
+
+  const renderSlotsList = function () {
+    return (
+      <div className="max-h-[390px] overflow-scroll">
+        {availableSlots.map(function (timeSlot) {
+          return renderTimeSlot(timeSlot);
+        })}
+      </div>
+    );
+  };
+
+  const containerClasses = classNames("min-w-60 flex-grow pl-0", properties.className);
 
   return (
-    <div className={classNames("min-w-60 flex-grow pl-0", props.className)}>
-      {props.HeaderComponent}
-      {isPending && slots.length === 0 && <SkeletonLoader />}
-      {!isPending && slots.length === 0 ? (
-        <div className="flex flex-col items-center justify-center pt-4">
-          <span className="text-subtle text-sm">{t("no_available_slots")}</span>
-        </div>
-      ) : (
-        <>{!isPending && <p className="text-default mb-3 text-sm">{t("time_available")}</p>}</>
-      )}
-      <div className="max-h-[390px] overflow-scroll">
-        {slots.map((slot) => (
-          <div key={slot.time.format()} className="flex flex-row items-center ">
-            <a
-              className="border-brand-default text-bookingdarker bg-default  min-w-48 mb-2 mr-3 block flex-grow rounded-md border py-2 text-center font-medium dark:border-transparent dark:bg-gray-600 "
-              data-testid="time">
-              {slot.time.tz(props.selectedTimeZone.toString()).format("HH:mm")}
-            </a>
-          </div>
-        ))}
-      </div>
+    <div className={containerClasses}>
+      {properties.HeaderComponent}
+      {showSkeleton && <SkeletonLoader />}
+      {showEmptyState && renderEmptyState()}
+      {showAvailableMessage && <React.Fragment>{renderAvailableHeader()}</React.Fragment>}
+      {!hasNoSlots && renderSlotsList()}
     </div>
   );
-}
+};
+
+export default TeamAvailabilityTimes;

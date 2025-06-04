@@ -4,86 +4,101 @@ import { z } from "zod";
 
 import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-billing";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import stripe from "@calcom/features/ee/payments/server/stripe";
+import stripe from "@calcom/features/oe/payments/server/stripe";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { HttpError } from "@calcom/lib/http-error";
 import { defaultHandler, defaultResponder } from "@calcom/lib/server";
 import prisma from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
-const querySchema = z.object({
-  team: z.string().transform((val) => parseInt(val)),
+const requestSchema = z.object({
+  team: z.string().transform((value) => parseInt(value)),
   session_id: z.string().min(1),
 });
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { team: id, session_id } = querySchema.parse(req.query);
+const processUpgradeRequest = async (request: NextApiRequest, response: NextApiResponse) => {
+  const { team: teamIdentifier, session_id: sessionIdentifier } = requestSchema.parse(request.query);
 
-  const checkoutSession = await stripe.checkout.sessions.retrieve(session_id, {
+  const retrievedSession = await stripe.checkout.sessions.retrieve(sessionIdentifier, {
     expand: ["subscription"],
   });
-  if (!checkoutSession) throw new HttpError({ statusCode: 404, message: "Checkout session not found" });
 
-  const subscription = checkoutSession.subscription as Stripe.Subscription;
-  if (checkoutSession.payment_status !== "paid")
+  if (!retrievedSession) {
+    throw new HttpError({ statusCode: 404, message: "Checkout session not found" });
+  }
+
+  const stripeSubscription = retrievedSession.subscription as Stripe.Subscription;
+
+  if (retrievedSession.payment_status !== "paid") {
     throw new HttpError({ statusCode: 402, message: "Payment required" });
+  }
 
-  /* Check if a team was already upgraded with this payment intent */
-  let team = await prisma.team.findFirst({
-    where: { metadata: { path: ["paymentId"], equals: checkoutSession.id } },
+  let existingTeam = await prisma.team.findFirst({
+    where: { metadata: { path: ["paymentId"], equals: retrievedSession.id } },
   });
 
-  let metadata;
+  let parsedMetadata;
 
-  if (!team) {
-    const prevTeam = await prisma.team.findFirstOrThrow({ where: { id } });
+  if (!existingTeam) {
+    const originalTeam = await prisma.team.findFirstOrThrow({ where: { id: teamIdentifier } });
 
-    metadata = teamMetadataSchema.safeParse(prevTeam.metadata);
-    if (!metadata.success) throw new HttpError({ statusCode: 400, message: "Invalid team metadata" });
+    parsedMetadata = teamMetadataSchema.safeParse(originalTeam.metadata);
 
-    const { requestedSlug, ...newMetadata } = metadata.data || {};
-    /** We save the metadata first to prevent duplicate payments */
-    team = await prisma.team.update({
-      where: { id },
+    if (!parsedMetadata.success) {
+      throw new HttpError({ statusCode: 400, message: "Invalid team metadata" });
+    }
+
+    const { requestedSlug, ...remainingMetadata } = parsedMetadata.data || {};
+
+    existingTeam = await prisma.team.update({
+      where: { id: teamIdentifier },
       data: {
         metadata: {
-          ...newMetadata,
-          paymentId: checkoutSession.id,
-          subscriptionId: subscription.id || null,
-          subscriptionItemId: subscription.items.data[0].id || null,
+          ...remainingMetadata,
+          paymentId: retrievedSession.id,
+          subscriptionId: stripeSubscription.id || null,
+          subscriptionItemId: stripeSubscription.items.data[0].id || null,
         },
       },
     });
-    /** Legacy teams already have a slug, this will allow them to upgrade as well */
-    const slug = prevTeam.slug || requestedSlug;
-    if (slug) {
+
+    const teamSlug = originalTeam.slug || requestedSlug;
+    if (teamSlug) {
       try {
-        /** Then we try to upgrade the slug, which may fail if a conflict came up since team creation */
-        team = await prisma.team.update({ where: { id }, data: { slug } });
-      } catch (error) {
-        const { message, statusCode } = getRequestedSlugError(error, slug);
-        return res.status(statusCode).json({ message });
+        existingTeam = await prisma.team.update({
+          where: { id: teamIdentifier },
+          data: { slug: teamSlug },
+        });
+      } catch (upgradeError) {
+        const { message: errorMessage, statusCode: errorStatus } = getRequestedSlugError(
+          upgradeError,
+          teamSlug
+        );
+        return response.status(errorStatus).json({ message: errorMessage });
       }
     }
   }
 
-  if (!metadata) {
-    metadata = teamMetadataSchema.safeParse(team.metadata);
-    if (!metadata.success) throw new HttpError({ statusCode: 400, message: "Invalid team metadata" });
+  if (!parsedMetadata) {
+    parsedMetadata = teamMetadataSchema.safeParse(existingTeam.metadata);
+    if (!parsedMetadata.success) {
+      throw new HttpError({ statusCode: 400, message: "Invalid team metadata" });
+    }
   }
 
-  const session = await getServerSession({ req, res });
+  const userSession = await getServerSession({ req: request, res: response });
 
-  if (!session) return { message: "Team upgraded successfully" };
+  if (!userSession) {
+    return { message: "Team upgraded successfully" };
+  }
 
-  const redirectUrl = team?.isOrganization
+  const destinationUrl = existingTeam?.isOrganization
     ? `${WEBAPP_URL}/settings/organizations/profile?upgraded=true`
-    : `${WEBAPP_URL}/settings/teams/${team.id}/profile?upgraded=true`;
+    : `${WEBAPP_URL}/settings/teams/${existingTeam.id}/profile?upgraded=true`;
 
-  // redirect to team screen
-  res.redirect(302, redirectUrl);
-}
+  response.redirect(302, destinationUrl);
+};
 
 export default defaultHandler({
-  GET: Promise.resolve({ default: defaultResponder(handler) }),
+  GET: Promise.resolve({ default: defaultResponder(processUpgradeRequest) }),
 });

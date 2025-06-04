@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import AddNewTeamMembers from "@calcom/features/oe/teams/components/AddNewTeamMembers";
+import TeamMemberAddition from "@calcom/features/oe/teams/components/TeamMemberAddition";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { WizardLayout } from "@calcom/ui";
 
@@ -24,5 +24,5 @@ export const LayoutWrapper = (page: React.ReactElement) => {
   );
 };
 
-const OrgAddNewTeamMembers = () => <AddNewTeamMembers isOrg={true} />;
-export default OrgAddNewTeamMembers;
+const OrgTeamMemberAddition = () => <TeamMemberAddition isOrg={true} />;
+export default OrgTeamMemberAddition;

@@ -26,7 +26,7 @@ import { test } from "@calcom/web/test/fixtures/fixtures";
 
 import { deleteWorkfowRemindersOfRemovedMember } from "../../../teams/lib/deleteWorkflowRemindersOfRemovedMember";
 
-const workflowSelect = {
+const queryFieldsForWorkflow = {
   id: true,
   userId: true,
   isActiveOnAll: true,
@@ -53,7 +53,7 @@ beforeAll(() => {
   vi.setSystemTime(new Date("2024-05-20T11:59:59Z"));
 });
 
-const mockEventTypes = [
+const eventTypesMockData = [
   {
     id: 1,
     slotInterval: 30,
@@ -80,7 +80,7 @@ const mockEventTypes = [
   },
 ];
 
-const mockBookings = [
+const reservationsMockData = [
   {
     uid: "jK7Rf8iYsOpmQUw9hB1vZxP",
     eventTypeId: 1,
@@ -119,10 +119,10 @@ const mockBookings = [
   },
 ];
 
-async function createWorkflowRemindersForWorkflow(workflowName: string) {
-  const workflow = await prismock.workflow.findFirst({
+async function generateWorkflowNotifications(automationName: string) {
+  const automationInstance = await prismock.workflow.findFirst({
     where: {
-      name: workflowName,
+      name: automationName,
     },
     select: {
       steps: {
@@ -144,7 +144,7 @@ async function createWorkflowRemindersForWorkflow(workflowName: string) {
     },
   });
 
-  const workflowRemindersData = [
+  const notificationRecordsData = [
     {
       booking: {
         connect: {
@@ -152,7 +152,7 @@ async function createWorkflowRemindersForWorkflow(workflowName: string) {
         },
       },
       bookingUid: "jK7Rf8iYsOpmQUw9hB1vZxP",
-      workflowStepId: workflow?.steps[0]?.id,
+      workflowStepId: automationInstance?.steps[0]?.id,
       method: WorkflowMethods.EMAIL,
       scheduledDate: `2024-05-22T06:00:00.000Z`,
       scheduled: false,
@@ -165,7 +165,7 @@ async function createWorkflowRemindersForWorkflow(workflowName: string) {
         },
       },
       bookingUid: "mL4Dx9jTkQbnWEu3pR7yNcF",
-      workflowStepId: workflow?.steps[0]?.id,
+      workflowStepId: automationInstance?.steps[0]?.id,
       method: WorkflowMethods.EMAIL,
       scheduledDate: `2024-05-22T06:30:00.000Z`,
       scheduled: false,
@@ -178,7 +178,7 @@ async function createWorkflowRemindersForWorkflow(workflowName: string) {
         },
       },
       bookingUid: "Fd9Rf8iYsOpmQUw9hB1vKd8",
-      workflowStepId: workflow?.steps[0]?.id,
+      workflowStepId: automationInstance?.steps[0]?.id,
       method: WorkflowMethods.EMAIL,
       scheduledDate: `2024-05-22T06:30:00.000Z`,
       scheduled: false,
@@ -191,7 +191,7 @@ async function createWorkflowRemindersForWorkflow(workflowName: string) {
         },
       },
       bookingUid: "Kd8Dx9jTkQbnWEu3pR7yKdl",
-      workflowStepId: workflow?.steps[0]?.id,
+      workflowStepId: automationInstance?.steps[0]?.id,
       method: WorkflowMethods.EMAIL,
       scheduledDate: `2024-05-22T06:30:00.000Z`,
       scheduled: false,
@@ -199,18 +199,18 @@ async function createWorkflowRemindersForWorkflow(workflowName: string) {
     },
   ];
 
-  for (const data of workflowRemindersData) {
+  for (const recordData of notificationRecordsData) {
     await prismock.workflowReminder.create({
-      data,
+      data: recordData,
     });
   }
 
-  return workflow;
+  return automationInstance;
 }
 
 describe("deleteRemindersOfActiveOnIds", () => {
   test("should delete all reminders from removed event types", async ({}) => {
-    const organizer = getOrganizer({
+    const eventHost = getOrganizer({
       name: "Organizer",
       email: "organizer@example.com",
       id: 101,
@@ -222,7 +222,7 @@ describe("deleteRemindersOfActiveOnIds", () => {
         workflows: [
           {
             name: "User Workflow",
-            userId: organizer.id,
+            userId: eventHost.id,
             trigger: "BEFORE_EVENT",
             time: 1,
             timeUnit: TimeUnit.HOUR,
@@ -231,25 +231,25 @@ describe("deleteRemindersOfActiveOnIds", () => {
             activeOn: [1],
           },
         ],
-        eventTypes: mockEventTypes,
-        bookings: mockBookings,
-        organizer,
+        eventTypes: eventTypesMockData,
+        bookings: reservationsMockData,
+        organizer: eventHost,
       })
     );
 
-    const workflow = await createWorkflowRemindersForWorkflow("User Workflow");
+    const automationFlow = await generateWorkflowNotifications("User Workflow");
 
-    const removedActiveOnIds = [1];
-    const activeOnIds = [2];
+    const eliminatedActiveIds = [1];
+    const currentActiveIds = [2];
 
     await deleteRemindersOfActiveOnIds({
-      removedActiveOnIds,
-      workflowSteps: workflow?.steps || [],
+      removedActiveOnIds: eliminatedActiveIds,
+      workflowSteps: automationFlow?.steps || [],
       isOrg: false,
-      activeOnIds,
+      activeOnIds: currentActiveIds,
     });
 
-    const workflowReminders = await prismock.workflowReminder.findMany({
+    const existingNotifications = await prismock.workflowReminder.findMany({
       select: {
         booking: {
           select: {
@@ -258,26 +258,31 @@ describe("deleteRemindersOfActiveOnIds", () => {
         },
       },
     });
-    const remainingReminders = workflowReminders.filter((reminder) => reminder.booking?.userId === 101);
+    const persistingNotifications = existingNotifications.filter(
+      (notification) => notification.booking?.userId === 101
+    );
 
-    expect(remainingReminders.filter((reminder) => reminder.booking?.eventTypeId === 1).length).toBe(0);
-    expect(workflowReminders.filter((reminder) => reminder.booking?.eventTypeId === 2).length).toBe(2);
+    expect(
+      persistingNotifications.filter((notification) => notification.booking?.eventTypeId === 1).length
+    ).toBe(0);
+    expect(
+      existingNotifications.filter((notification) => notification.booking?.eventTypeId === 2).length
+    ).toBe(2);
   });
 
   test("should delete all reminders from removed event types (org workflow)", async ({}) => {
-    const org = await createOrganization({
+    const organizationEntity = await createOrganization({
       name: "Test Org",
       slug: "testorg",
       withTeam: true,
     });
 
-    // organizer is part of org and two teams
-    const organizer = getOrganizer({
+    const eventHost = getOrganizer({
       name: "Organizer",
       email: "organizer@example.com",
       id: 101,
       defaultScheduleId: null,
-      organizationId: org.id,
+      organizationId: organizationEntity.id,
       teams: [
         {
           membership: {
@@ -287,7 +292,7 @@ describe("deleteRemindersOfActiveOnIds", () => {
             id: 3,
             name: "Team 1",
             slug: "team-1",
-            parentId: org.id,
+            parentId: organizationEntity.id,
           },
         },
         {
@@ -298,7 +303,7 @@ describe("deleteRemindersOfActiveOnIds", () => {
             id: 4,
             name: "Team 2",
             slug: "team-2",
-            parentId: org.id,
+            parentId: organizationEntity.id,
           },
         },
       ],
@@ -317,56 +322,53 @@ describe("deleteRemindersOfActiveOnIds", () => {
             activeOnTeams: [2, 3, 4],
           },
         ],
-        eventTypes: mockEventTypes,
-        bookings: mockBookings,
-        organizer,
+        eventTypes: eventTypesMockData,
+        bookings: reservationsMockData,
+        organizer: eventHost,
       })
     );
 
-    const workflow = await createWorkflowRemindersForWorkflow("Org Workflow");
+    const automationFlow = await generateWorkflowNotifications("Org Workflow");
 
-    let removedActiveOnIds = [1];
-    const activeOnIds = [2];
+    let eliminatedActiveIds = [1];
+    const currentActiveIds = [2];
 
-    //workflow removed from team 2, but still acitve on team 3 --> so reminder should not be removed
     await deleteRemindersOfActiveOnIds({
-      removedActiveOnIds,
-      workflowSteps: workflow?.steps || [],
+      removedActiveOnIds: eliminatedActiveIds,
+      workflowSteps: automationFlow?.steps || [],
       isOrg: true,
-      activeOnIds,
+      activeOnIds: currentActiveIds,
     });
 
-    // get all reminders from organizer's bookings
-    const workflowRemindersWithOneTeamActive = await prismock.workflowReminder.findMany({
+    const notificationsWithSingleTeam = await prismock.workflowReminder.findMany({
       where: {
         booking: {
-          userId: organizer.id,
+          userId: eventHost.id,
         },
       },
     });
 
-    removedActiveOnIds = [3];
+    eliminatedActiveIds = [3];
 
-    // should still be active on all 4 bookings
-    expect(workflowRemindersWithOneTeamActive.length).toBe(4);
+    expect(notificationsWithSingleTeam.length).toBe(4);
     await deleteRemindersOfActiveOnIds({
-      removedActiveOnIds,
-      workflowSteps: workflow?.steps || [],
+      removedActiveOnIds: eliminatedActiveIds,
+      workflowSteps: automationFlow?.steps || [],
       isOrg: true,
-      activeOnIds,
+      activeOnIds: currentActiveIds,
     });
 
-    const workflowRemindersWithNoTeamActive = await prismock.workflowReminder.findMany({
+    const notificationsWithoutTeam = await prismock.workflowReminder.findMany({
       where: {
         booking: {
-          userId: organizer.id,
+          userId: eventHost.id,
         },
       },
     });
-    const remainingReminders = workflowRemindersWithNoTeamActive.filter(
-      (reminder) => reminder.booking?.userId === 101
+    const persistingNotifications = notificationsWithoutTeam.filter(
+      (notification) => notification.booking?.userId === 101
     );
-    expect(remainingReminders.length).toBe(0);
+    expect(persistingNotifications.length).toBe(0);
   });
 });
 
@@ -374,8 +376,7 @@ describe("scheduleBookingReminders", () => {
   setupAndTeardown();
 
   test("schedules workflow notifications with before event trigger and email to host action", async ({}) => {
-    // organizer is part of org and two teams
-    const organizer = getOrganizer({
+    const eventHost = getOrganizer({
       name: "Organizer",
       email: "organizer@example.com",
       id: 101,
@@ -397,68 +398,67 @@ describe("scheduleBookingReminders", () => {
             timeUnit: TimeUnit.HOUR,
           },
         ],
-        eventTypes: mockEventTypes,
-        bookings: mockBookings,
-        organizer,
+        eventTypes: eventTypesMockData,
+        bookings: reservationsMockData,
+        organizer: eventHost,
       })
     );
 
-    const workflow = await prismock.workflow.findFirst({
-      select: workflowSelect,
+    const automationFlow = await prismock.workflow.findFirst({
+      select: queryFieldsForWorkflow,
     });
 
-    const bookings = await prismock.booking.findMany({
+    const reservationRecords = await prismock.booking.findMany({
       where: {
-        userId: organizer.id,
+        userId: eventHost.id,
       },
       select: bookingSelect,
     });
 
-    expect(workflow).not.toBeNull();
+    expect(automationFlow).not.toBeNull();
 
-    if (!workflow) return;
+    if (!automationFlow) return;
 
     await scheduleBookingReminders(
-      bookings,
-      workflow.steps,
-      workflow.time,
-      workflow.timeUnit,
-      workflow.trigger,
-      organizer.id,
-      null //teamId
+      reservationRecords,
+      automationFlow.steps,
+      automationFlow.time,
+      automationFlow.timeUnit,
+      automationFlow.trigger,
+      eventHost.id,
+      null
     );
 
-    const scheduledWorkflowReminders = await prismock.workflowReminder.findMany({
+    const plannedNotifications = await prismock.workflowReminder.findMany({
       where: {
         workflowStep: {
-          workflowId: workflow.id,
+          workflowId: automationFlow.id,
         },
       },
     });
-    scheduledWorkflowReminders.sort((a, b) =>
-      dayjs(a.scheduledDate).isBefore(dayjs(b.scheduledDate)) ? -1 : 1
+    plannedNotifications.sort((firstItem, secondItem) =>
+      dayjs(firstItem.scheduledDate).isBefore(dayjs(secondItem.scheduledDate)) ? -1 : 1
     );
 
-    const expectedScheduledDates = [
+    const anticipatedScheduleDates = [
       new Date("2024-05-20T13:00:00.000"),
       new Date("2024-05-20T13:30:00.000Z"),
       new Date("2024-06-01T03:30:00.000Z"),
       new Date("2024-06-02T03:30:00.000Z"),
     ];
 
-    scheduledWorkflowReminders.forEach((reminder, index) => {
-      expect(reminder.method).toBe(WorkflowMethods.EMAIL);
-      if (index < 2) {
-        expect(reminder.scheduled).toBe(true);
+    plannedNotifications.forEach((notification, position) => {
+      expect(notification.method).toBe(WorkflowMethods.EMAIL);
+      if (position < 2) {
+        expect(notification.scheduled).toBe(true);
       } else {
-        expect(reminder.scheduled).toBe(false);
+        expect(notification.scheduled).toBe(false);
       }
     });
   });
 
   test("schedules workflow notifications with after event trigger and email to host action", async ({}) => {
-    // organizer is part of org and two teams
-    const organizer = getOrganizer({
+    const eventHost = getOrganizer({
       name: "Organizer",
       email: "organizer@example.com",
       id: 101,
@@ -480,64 +480,63 @@ describe("scheduleBookingReminders", () => {
             timeUnit: TimeUnit.HOUR,
           },
         ],
-        eventTypes: mockEventTypes,
-        bookings: mockBookings,
-        organizer,
+        eventTypes: eventTypesMockData,
+        bookings: reservationsMockData,
+        organizer: eventHost,
       })
     );
 
-    const workflow = await prismock.workflow.findFirst({
-      select: workflowSelect,
+    const automationFlow = await prismock.workflow.findFirst({
+      select: queryFieldsForWorkflow,
     });
 
-    const bookings = await prismock.booking.findMany({
+    const reservationRecords = await prismock.booking.findMany({
       where: {
-        userId: organizer.id,
+        userId: eventHost.id,
       },
       select: bookingSelect,
     });
 
-    expect(workflow).not.toBeNull();
+    expect(automationFlow).not.toBeNull();
 
-    if (!workflow) return;
+    if (!automationFlow) return;
 
     await scheduleBookingReminders(
-      bookings,
-      workflow.steps,
-      workflow.time,
-      workflow.timeUnit,
-      workflow.trigger,
-      organizer.id,
-      null //teamId
+      reservationRecords,
+      automationFlow.steps,
+      automationFlow.time,
+      automationFlow.timeUnit,
+      automationFlow.trigger,
+      eventHost.id,
+      null
     );
 
-    const scheduledWorkflowReminders = await prismock.workflowReminder.findMany({
+    const plannedNotifications = await prismock.workflowReminder.findMany({
       where: {
         workflowStep: {
-          workflowId: workflow.id,
+          workflowId: automationFlow.id,
         },
       },
     });
-    scheduledWorkflowReminders.sort((a, b) =>
-      dayjs(a.scheduledDate).isBefore(dayjs(b.scheduledDate)) ? -1 : 1
+    plannedNotifications.sort((firstItem, secondItem) =>
+      dayjs(firstItem.scheduledDate).isBefore(dayjs(secondItem.scheduledDate)) ? -1 : 1
     );
 
-    const expectedScheduledDates = [
+    const anticipatedScheduleDates = [
       new Date("2024-05-20T15:30:00.000"),
       new Date("2024-05-20T16:00:00.000Z"),
       new Date("2024-06-01T06:00:00.000Z"),
       new Date("2024-06-02T06:00:00.000Z"),
     ];
 
-    scheduledWorkflowReminders.forEach((reminder, index) => {
-      expect(reminder.method).toBe(WorkflowMethods.EMAIL);
-      expect(reminder.scheduled).toBe(false); // all are more than 2 hours in advance
+    plannedNotifications.forEach((notification, position) => {
+      expect(notification.method).toBe(WorkflowMethods.EMAIL);
+      expect(notification.scheduled).toBe(false);
     });
   });
 
   test("send sms to specific number for bookings", async ({ sms }) => {
-    // organizer is part of org and two teams
-    const organizer = getOrganizer({
+    const eventHost = getOrganizer({
       name: "Organizer",
       email: "organizer@example.com",
       id: 101,
@@ -560,38 +559,37 @@ describe("scheduleBookingReminders", () => {
             sendTo: "000",
           },
         ],
-        eventTypes: mockEventTypes,
-        bookings: mockBookings,
-        organizer,
+        eventTypes: eventTypesMockData,
+        bookings: reservationsMockData,
+        organizer: eventHost,
       })
     );
 
-    const workflow = await prismock.workflow.findFirst({
-      select: workflowSelect,
+    const automationFlow = await prismock.workflow.findFirst({
+      select: queryFieldsForWorkflow,
     });
 
-    const bookings = await prismock.booking.findMany({
+    const reservationRecords = await prismock.booking.findMany({
       where: {
-        userId: organizer.id,
+        userId: eventHost.id,
       },
       select: bookingSelect,
     });
 
-    expect(workflow).not.toBeNull();
+    expect(automationFlow).not.toBeNull();
 
-    if (!workflow) return;
+    if (!automationFlow) return;
 
     await scheduleBookingReminders(
-      bookings,
-      workflow.steps,
-      workflow.time,
-      workflow.timeUnit,
-      workflow.trigger,
-      organizer.id,
-      null //teamId
+      reservationRecords,
+      automationFlow.steps,
+      automationFlow.time,
+      automationFlow.timeUnit,
+      automationFlow.trigger,
+      eventHost.id,
+      null
     );
 
-    // number is not verified, so sms should not send
     expectSMSWorkflowToBeNotTriggered({
       sms,
       toNumber: "000",
@@ -599,23 +597,22 @@ describe("scheduleBookingReminders", () => {
 
     await prismock.verifiedNumber.create({
       data: {
-        userId: organizer.id,
+        userId: eventHost.id,
         phoneNumber: "000",
       },
     });
 
-    const allVerified = await prismock.verifiedNumber.findMany();
+    const verifiedPhoneNumbers = await prismock.verifiedNumber.findMany();
     await scheduleBookingReminders(
-      bookings,
-      workflow.steps,
-      workflow.time,
-      workflow.timeUnit,
-      workflow.trigger,
-      organizer.id,
-      null //teamId
+      reservationRecords,
+      automationFlow.steps,
+      automationFlow.time,
+      automationFlow.timeUnit,
+      automationFlow.trigger,
+      eventHost.id,
+      null
     );
 
-    // two sms schould be scheduled
     expectSMSWorkflowToBeTriggered({
       sms,
       toNumber: "000",
@@ -628,7 +625,6 @@ describe("scheduleBookingReminders", () => {
       includedString: "2024 May 20 at 8:00pm Asia/Kolkata",
     });
 
-    // sms are too far in future
     expectSMSWorkflowToBeNotTriggered({
       sms,
       toNumber: "000",
@@ -641,30 +637,30 @@ describe("scheduleBookingReminders", () => {
       includedString: "2024 June 2 at 10:00am Asia/Kolkata",
     });
 
-    const scheduledWorkflowReminders = await prismock.workflowReminder.findMany({
+    const plannedNotifications = await prismock.workflowReminder.findMany({
       where: {
         workflowStep: {
-          workflowId: workflow.id,
+          workflowId: automationFlow.id,
         },
       },
     });
-    scheduledWorkflowReminders.sort((a, b) =>
-      dayjs(a.scheduledDate).isBefore(dayjs(b.scheduledDate)) ? -1 : 1
+    plannedNotifications.sort((firstItem, secondItem) =>
+      dayjs(firstItem.scheduledDate).isBefore(dayjs(secondItem.scheduledDate)) ? -1 : 1
     );
 
-    const expectedScheduledDates = [
+    const anticipatedScheduleDates = [
       new Date("2024-05-20T17:30:00.000"),
       new Date("2024-05-20T18:00:00.000Z"),
       new Date("2024-06-01T08:00:00.000Z"),
       new Date("2024-06-02T08:00:00.000Z"),
     ];
 
-    scheduledWorkflowReminders.forEach((reminder, index) => {
-      expect(reminder.method).toBe(WorkflowMethods.SMS);
-      if (index < 2) {
-        expect(reminder.scheduled).toBe(true);
+    plannedNotifications.forEach((notification, position) => {
+      expect(notification.method).toBe(WorkflowMethods.SMS);
+      if (position < 2) {
+        expect(notification.scheduled).toBe(true);
       } else {
-        expect(reminder.scheduled).toBe(false);
+        expect(notification.scheduled).toBe(false);
       }
     });
   });
@@ -672,19 +668,18 @@ describe("scheduleBookingReminders", () => {
 
 describe("deleteWorkfowRemindersOfRemovedMember", () => {
   test("deletes all workflow reminders when member is removed from org", async ({}) => {
-    const org = await createOrganization({
+    const organizationEntity = await createOrganization({
       name: "Test Org",
       slug: "testorg",
       withTeam: true,
     });
 
-    // organizer is part of org and two teams
-    const organizer = getOrganizer({
+    const eventHost = getOrganizer({
       name: "Organizer",
       email: "organizer@example.com",
       id: 101,
       defaultScheduleId: null,
-      organizationId: org.id,
+      organizationId: organizationEntity.id,
       teams: [
         {
           membership: {
@@ -694,7 +689,7 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
             id: 3,
             name: "Team 1",
             slug: "team-1",
-            parentId: org.id,
+            parentId: organizationEntity.id,
           },
         },
         {
@@ -705,7 +700,7 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
             id: 4,
             name: "Team 2",
             slug: "team-2",
-            parentId: org.id,
+            parentId: organizationEntity.id,
           },
         },
       ],
@@ -724,35 +719,36 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
             activeOnTeams: [2, 3, 4],
           },
         ],
-        eventTypes: mockEventTypes,
-        bookings: mockBookings,
-        organizer,
+        eventTypes: eventTypesMockData,
+        bookings: reservationsMockData,
+        organizer: eventHost,
       })
     );
 
-    await createWorkflowRemindersForWorkflow("Org Workflow");
+    await generateWorkflowNotifications("Org Workflow");
 
-    await deleteWorkfowRemindersOfRemovedMember(org, 101, true);
+    await deleteWorkfowRemindersOfRemovedMember(organizationEntity, 101, true);
 
-    const workflowReminders = await prismock.workflowReminder.findMany();
-    const remainingReminders = workflowReminders.filter((reminder) => reminder.booking?.userId === 101);
-    expect(remainingReminders.length).toBe(0);
+    const existingNotifications = await prismock.workflowReminder.findMany();
+    const persistingNotifications = existingNotifications.filter(
+      (notification) => notification.booking?.userId === 101
+    );
+    expect(persistingNotifications.length).toBe(0);
   });
 
   test("deletes reminders if member is removed from an org team ", async ({}) => {
-    const org = await createOrganization({
+    const organizationEntity = await createOrganization({
       name: "Test Org",
       slug: "testorg",
       withTeam: true,
     });
 
-    // organizer is part of org and two teams
-    const organizer = getOrganizer({
+    const eventHost = getOrganizer({
       name: "Organizer",
       email: "organizer@example.com",
       id: 101,
       defaultScheduleId: null,
-      organizationId: org.id,
+      organizationId: organizationEntity.id,
       teams: [
         {
           membership: {
@@ -762,7 +758,7 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
             id: 2,
             name: "Team 1",
             slug: "team-1",
-            parentId: org.id,
+            parentId: organizationEntity.id,
           },
         },
         {
@@ -773,7 +769,7 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
             id: 3,
             name: "Team 2",
             slug: "team-2",
-            parentId: org.id,
+            parentId: organizationEntity.id,
           },
         },
         {
@@ -784,7 +780,7 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
             id: 4,
             name: "Team 3",
             slug: "team-3",
-            parentId: org.id,
+            parentId: organizationEntity.id,
           },
         },
       ],
@@ -811,16 +807,16 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
             activeOnTeams: [2],
           },
         ],
-        eventTypes: mockEventTypes,
-        bookings: mockBookings,
-        organizer,
+        eventTypes: eventTypesMockData,
+        bookings: reservationsMockData,
+        organizer: eventHost,
       })
     );
 
-    await createWorkflowRemindersForWorkflow("Org Workflow 1");
-    await createWorkflowRemindersForWorkflow("Org Workflow 2");
+    await generateWorkflowNotifications("Org Workflow 1");
+    await generateWorkflowNotifications("Org Workflow 2");
 
-    const tes = await prismock.membership.findMany();
+    const membershipRecords = await prismock.membership.findMany();
 
     await prismock.membership.delete({
       where: {
@@ -829,9 +825,9 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
       },
     });
 
-    await deleteWorkfowRemindersOfRemovedMember({ id: 2, parentId: org.id }, 101, false);
+    await deleteWorkfowRemindersOfRemovedMember({ id: 2, parentId: organizationEntity.id }, 101, false);
 
-    const workflowReminders = await prismock.workflowReminder.findMany({
+    const existingNotifications = await prismock.workflowReminder.findMany({
       select: {
         workflowStep: {
           select: {
@@ -845,15 +841,17 @@ describe("deleteWorkfowRemindersOfRemovedMember", () => {
       },
     });
 
-    const workflow1Reminders = workflowReminders.filter(
-      (reminder) => reminder.workflowStep?.workflow.name === "Org Workflow 1"
+    const firstAutomationNotifications = existingNotifications.filter(
+      (notification) => notification.workflowStep?.workflow.name === "Org Workflow 1"
     );
-    const workflow2Reminders = workflowReminders.filter(
-      (reminder) => reminder.workflowStep?.workflow.name === "Org Workflow 2"
+    const secondAutomationNotifications = existingNotifications.filter(
+      (notification) => notification.workflowStep?.workflow.name === "Org Workflow 2"
     );
 
-    expect(workflow1Reminders.length).toBe(4);
-    const remainingReminders = workflow2Reminders.filter((reminder) => reminder.booking?.userId === 101);
-    expect(remainingReminders.length).toBe(0);
+    expect(firstAutomationNotifications.length).toBe(4);
+    const persistingNotifications = secondAutomationNotifications.filter(
+      (notification) => notification.booking?.userId === 101
+    );
+    expect(persistingNotifications.length).toBe(0);
   });
 });

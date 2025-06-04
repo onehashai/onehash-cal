@@ -43,13 +43,13 @@ import {
   TextField,
 } from "@calcom/ui";
 
-const regex = new RegExp("^[a-zA-Z0-9-]*$");
+const urlPattern = new RegExp("^[a-zA-Z0-9-]*$");
 
-const teamProfileFormSchema = z.object({
+const teamConfigValidationSchema = z.object({
   name: z.string(),
   slug: z
     .string()
-    .regex(regex, {
+    .regex(urlPattern, {
       message: "Url can only have alphanumeric characters(a-z, 0-9) and hyphen(-) symbol.",
     })
     .min(1, { message: "Url cannot be left empty" }),
@@ -57,9 +57,9 @@ const teamProfileFormSchema = z.object({
   bio: z.string(),
 });
 
-type FormValues = z.infer<typeof teamProfileFormSchema>;
+type TeamFormData = z.infer<typeof teamConfigValidationSchema>;
 
-const SkeletonLoader = () => {
+const LoadingSkeletonComponent = () => {
   return (
     <SkeletonContainer>
       <div className="border-subtle space-y-6 rounded-b-xl border border-t-0 px-4 py-8">
@@ -78,116 +78,117 @@ const SkeletonLoader = () => {
 };
 
 const ProfileView = () => {
-  const params = useParamsWithFallback();
-  const teamId = Number(params.id);
+  const routeParameters = useParamsWithFallback();
+  const teamIdentifier = Number(routeParameters.id);
   const { t } = useLocale();
-  const router = useRouter();
-  const utils = trpc.useUtils();
-  const session = useSession();
+  const navigationRouter = useRouter();
+  const trpcUtilities = trpc.useUtils();
+  const userSession = useSession();
 
   useLayoutEffect(() => {
     document.body.focus();
   }, []);
 
   const {
-    data: team,
-    isPending,
-    error,
+    data: teamData,
+    isPending: isLoadingTeam,
+    error: teamQueryError,
   } = trpc.viewer.teams.get.useQuery(
-    { teamId },
+    { teamId: teamIdentifier },
     {
-      enabled: !!teamId,
+      enabled: !!teamIdentifier,
     }
   );
 
   useEffect(
-    function refactorMeWithoutEffect() {
-      if (error) {
-        router.replace("/teams");
+    function redirectOnErrorCondition() {
+      if (teamQueryError) {
+        navigationRouter.replace("/teams");
       }
     },
-    [error]
+    [teamQueryError]
   );
-  const isAdmin =
-    team && (team.membership.role === MembershipRole.OWNER || team.membership.role === MembershipRole.ADMIN);
+  const hasAdminAccess =
+    teamData &&
+    (teamData.membership.role === MembershipRole.OWNER || teamData.membership.role === MembershipRole.ADMIN);
 
-  const permalink = team
+  const teamUrlPath = teamData
     ? `${getTeamUrlSync({
-        orgSlug: team.parent ? team.parent.slug : null,
-        teamSlug: team.slug,
+        orgSlug: teamData.parent ? teamData.parent.slug : null,
+        teamSlug: teamData.slug,
       })}`
     : "";
 
-  const isBioEmpty = !team || !team.bio || !team.bio.replace("<p><br></p>", "").length;
+  const bioContentEmpty = !teamData || !teamData.bio || !teamData.bio.replace("<p><br></p>", "").length;
 
-  const deleteTeamMutation = trpc.viewer.teams.delete.useMutation({
+  const teamDeletionMutation = trpc.viewer.teams.delete.useMutation({
     async onSuccess() {
-      await utils.viewer.teams.list.invalidate();
-      await utils.viewer.eventTypes.getByViewer.invalidate();
+      await trpcUtilities.viewer.teams.list.invalidate();
+      await trpcUtilities.viewer.eventTypes.getByViewer.invalidate();
       showToast(t("your_team_disbanded_successfully"), "success");
-      router.push(`${WEBAPP_URL}/teams`);
+      navigationRouter.push(`${WEBAPP_URL}/teams`);
       trackFormbricksAction("team_disbanded");
     },
   });
 
-  const removeMemberMutation = trpc.viewer.teams.removeMember.useMutation({
+  const memberRemovalMutation = trpc.viewer.teams.removeMember.useMutation({
     async onSuccess() {
-      await utils.viewer.teams.get.invalidate();
-      await utils.viewer.teams.list.invalidate();
-      await utils.viewer.eventTypes.invalidate();
+      await trpcUtilities.viewer.teams.get.invalidate();
+      await trpcUtilities.viewer.teams.list.invalidate();
+      await trpcUtilities.viewer.eventTypes.invalidate();
       showToast(t("success"), "success");
     },
-    async onError(err) {
-      showToast(err.message, "error");
+    async onError(errorResponse) {
+      showToast(errorResponse.message, "error");
     },
   });
 
-  function deleteTeam() {
-    if (team?.id) deleteTeamMutation.mutate({ teamId: team.id });
+  function executeTeamDeletion() {
+    if (teamData?.id) teamDeletionMutation.mutate({ teamId: teamData.id });
   }
 
-  function leaveTeam() {
-    if (team?.id && session.data)
-      removeMemberMutation.mutate({
-        teamIds: [team.id],
-        memberIds: [session.data.user.id],
+  function performTeamExit() {
+    if (teamData?.id && userSession.data)
+      memberRemovalMutation.mutate({
+        teamIds: [teamData.id],
+        memberIds: [userSession.data.user.id],
       });
   }
 
-  if (isPending) {
-    return <SkeletonLoader />;
+  if (isLoadingTeam) {
+    return <LoadingSkeletonComponent />;
   }
 
   return (
     <>
-      {isAdmin ? (
-        <TeamProfileForm team={team} />
+      {hasAdminAccess ? (
+        <TeamConfigurationForm team={teamData} />
       ) : (
         <div className="border-subtle flex rounded-b-xl border border-t-0 px-4 py-8 sm:px-6">
           <div className="flex-grow">
             <div>
               <Label className="text-emphasis">{t("team_name")}</Label>
-              <p className="text-default text-sm">{team?.name}</p>
+              <p className="text-default text-sm">{teamData?.name}</p>
             </div>
-            {team && !isBioEmpty && (
+            {teamData && !bioContentEmpty && (
               <>
                 <Label className="text-emphasis mt-5">{t("about")}</Label>
                 <div
                   className="  text-subtle break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
                   // eslint-disable-next-line react/no-danger
-                  dangerouslySetInnerHTML={{ __html: markdownToSafeHTML(team.bio ?? null) }}
+                  dangerouslySetInnerHTML={{ __html: markdownToSafeHTML(teamData.bio ?? null) }}
                 />
               </>
             )}
           </div>
           <div>
-            <Link href={permalink} passHref={true} target="_blank">
+            <Link href={teamUrlPath} passHref={true} target="_blank">
               <LinkIconButton Icon="external-link">{t("preview")}</LinkIconButton>
             </Link>
             <LinkIconButton
               Icon="link"
               onClick={() => {
-                navigator.clipboard.writeText(permalink);
+                navigator.clipboard.writeText(teamUrlPath);
                 showToast("Copied to clipboard", "success");
               }}>
               {t("copy_link_team")}
@@ -198,11 +199,11 @@ const ProfileView = () => {
 
       <div className="border-subtle mt-6 rounded-lg rounded-b-none border border-b-0 p-6">
         <Label className="mb-0 text-base font-semibold text-red-700">{t("danger_zone")}</Label>
-        {team?.membership.role === "OWNER" && (
+        {teamData?.membership.role === "OWNER" && (
           <p className="text-subtle text-sm">{t("team_deletion_cannot_be_undone")}</p>
         )}
       </div>
-      {team?.membership.role === "OWNER" ? (
+      {teamData?.membership.role === "OWNER" ? (
         <Dialog>
           <SectionBottomActions align="end">
             <DialogTrigger asChild>
@@ -220,7 +221,7 @@ const ProfileView = () => {
             title={t("disband_team")}
             confirmBtnText={t("confirm_disband_team")}
             onConfirm={() => {
-              deleteTeam();
+              executeTeamDeletion();
             }}>
             {t("disband_team_confirmation_message")}
           </ConfirmationDialogContent>
@@ -238,7 +239,7 @@ const ProfileView = () => {
             variety="danger"
             title={t("leave_team")}
             confirmBtnText={t("confirm_leave_team")}
-            onConfirm={leaveTeam}>
+            onConfirm={performTeamExit}>
             {t("leave_team_confirmation_message")}
           </ConfirmationDialogContent>
         </Dialog>
@@ -249,93 +250,93 @@ const ProfileView = () => {
 
 export type TeamProfileFormProps = { team: RouterOutputs["viewer"]["teams"]["get"] };
 
-const TeamProfileForm = ({ team }: TeamProfileFormProps) => {
-  const utils = trpc.useUtils();
+const TeamConfigurationForm = ({ team }: TeamProfileFormProps) => {
+  const trpcUtilities = trpc.useUtils();
   const { t } = useLocale();
-  const router = useRouter();
+  const navigationRouter = useRouter();
 
-  const mutation = trpc.viewer.teams.update.useMutation({
-    onError: (err) => {
-      showToast(err.message, "error");
+  const updateTeamMutation = trpc.viewer.teams.update.useMutation({
+    onError: (errorResponse) => {
+      showToast(errorResponse.message, "error");
     },
-    async onSuccess(res) {
-      reset({
-        logo: res?.logoUrl,
-        name: (res?.name || "") as string,
-        bio: (res?.bio || "") as string,
-        slug: res?.slug as string,
+    async onSuccess(responseData) {
+      resetFormValues({
+        logo: responseData?.logoUrl,
+        name: (responseData?.name || "") as string,
+        bio: (responseData?.bio || "") as string,
+        slug: responseData?.slug as string,
       });
-      await utils.viewer.teams.get.invalidate();
-      // TODO: Not all changes require list invalidation
-      await utils.viewer.teams.list.invalidate();
+      await trpcUtilities.viewer.teams.get.invalidate();
+      await trpcUtilities.viewer.teams.list.invalidate();
       showToast(t("your_team_updated_successfully"), "success");
     },
   });
 
-  const defaultValues: FormValues = {
+  const initialFormValues: TeamFormData = {
     name: team?.name || "",
     logo: team?.logo || "",
     bio: team?.bio || "",
     slug: team?.slug || ((team?.metadata as Prisma.JsonObject)?.requestedSlug as string) || "",
   };
 
-  const form = useForm({
-    defaultValues,
-    resolver: zodResolver(teamProfileFormSchema),
+  const formController = useForm({
+    defaultValues: initialFormValues,
+    resolver: zodResolver(teamConfigValidationSchema),
   });
 
-  const [firstRender, setFirstRender] = useState(true);
+  const [initialRenderState, setInitialRenderState] = useState(true);
 
   const {
     formState: { isSubmitting, isDirty },
-    reset,
-  } = form;
+    reset: resetFormValues,
+  } = formController;
 
-  const isDisabled = isSubmitting || !isDirty;
+  const isFormDisabled = isSubmitting || !isDirty;
 
-  const publishMutation = trpc.viewer.teams.publish.useMutation({
-    async onSuccess(data: { url?: string }) {
-      if (data.url) {
-        router.push(data.url);
+  const teamPublishMutation = trpc.viewer.teams.publish.useMutation({
+    async onSuccess(responseData: { url?: string }) {
+      if (responseData.url) {
+        navigationRouter.push(responseData.url);
       }
     },
-    async onError(err) {
-      showToast(err.message, "error");
+    async onError(errorResponse) {
+      showToast(errorResponse.message, "error");
     },
   });
 
   return (
     <Form
-      form={form}
-      handleSubmit={(values) => {
+      form={formController}
+      handleSubmit={(formValues) => {
         if (team) {
-          const variables = {
-            name: values.name,
-            slug: values.slug,
-            bio: values.bio,
-            logo: values.logo,
+          const updatePayload = {
+            name: formValues.name,
+            slug: formValues.slug,
+            bio: formValues.bio,
+            logo: formValues.logo,
           };
-          objectKeys(variables).forEach((key) => {
-            if (variables[key as keyof typeof variables] === team?.[key]) delete variables[key];
+          objectKeys(updatePayload).forEach((propertyKey) => {
+            if (updatePayload[propertyKey as keyof typeof updatePayload] === team?.[propertyKey])
+              delete updatePayload[propertyKey];
           });
-          mutation.mutate({ id: team.id, ...variables });
+          updateTeamMutation.mutate({ id: team.id, ...updatePayload });
         }
       }}>
       <div className="border-subtle border-x px-4 py-8 sm:px-6">
         {!team.parent && (
           <div className="flex items-center pb-8">
             <Controller
-              control={form.control}
+              control={formController.control}
               name="logo"
-              render={({ field: { value, onChange } }) => {
-                const showRemoveLogoButton = !!value;
+              render={({ field: { value: logoValue, onChange: handleLogoChange } }) => {
+                const shouldShowRemoveButton = !!logoValue;
 
                 return (
                   <>
                     <Avatar
-                      alt={form.getValues("name")}
+                      alt={formController.getValues("name")}
                       data-testid="profile-upload-logo"
-                      imageSrc={getPlaceholderAvatar(value, form.getValues("name"))}
+                      imageSrc={getPlaceholderAvatar(logoValue, formController.getValues("name"))}
                       size="lg"
                     />
                     <div className="ms-4 flex gap-2">
@@ -343,12 +344,12 @@ const TeamProfileForm = ({ team }: TeamProfileFormProps) => {
                         target="logo"
                         id="avatar-upload"
                         buttonMsg={t("upload_logo")}
-                        handleAvatarChange={onChange}
-                        triggerButtonColor={showRemoveLogoButton ? "secondary" : "primary"}
-                        imageSrc={getPlaceholderAvatar(value, form.getValues("name"))}
+                        handleAvatarChange={handleLogoChange}
+                        triggerButtonColor={shouldShowRemoveButton ? "secondary" : "primary"}
+                        imageSrc={getPlaceholderAvatar(logoValue, formController.getValues("name"))}
                       />
-                      {showRemoveLogoButton && (
-                        <Button color="secondary" onClick={() => onChange(null)}>
+                      {shouldShowRemoveButton && (
+                        <Button color="secondary" onClick={() => handleLogoChange(null)}>
                           {t("remove")}
                         </Button>
                       )}
@@ -361,26 +362,26 @@ const TeamProfileForm = ({ team }: TeamProfileFormProps) => {
         )}
 
         <Controller
-          control={form.control}
+          control={formController.control}
           name="name"
-          render={({ field: { name, value, onChange } }) => (
+          render={({ field: { name: fieldName, value: fieldValue, onChange: handleFieldChange } }) => (
             <TextField
-              name={name}
+              name={fieldName}
               label={t("team_name")}
-              value={value}
-              onChange={(e) => onChange(e?.target.value)}
+              value={fieldValue}
+              onChange={(eventTarget) => handleFieldChange(eventTarget?.target.value)}
             />
           )}
         />
         <Controller
-          control={form.control}
+          control={formController.control}
           name="slug"
-          render={({ field: { value } }) => (
+          render={({ field: { value: slugValue } }) => (
             <div className="mt-8">
               <TextField
                 name="slug"
                 label={t("team_url")}
-                value={value}
+                value={slugValue}
                 data-testid="team-url"
                 addOnClassname="testid-leading-text-team-url"
                 addOnLeading={`${getTeamUrlSync(
@@ -389,9 +390,11 @@ const TeamProfileForm = ({ team }: TeamProfileFormProps) => {
                     protocol: false,
                   }
                 )}`}
-                onChange={(e) => {
-                  form.clearErrors("slug");
-                  form.setValue("slug", slugify(e?.target.value, true), { shouldDirty: true });
+                onChange={(eventTarget) => {
+                  formController.clearErrors("slug");
+                  formController.setValue("slug", slugify(eventTarget?.target.value, true), {
+                    shouldDirty: true,
+                  });
                 }}
               />
             </div>
@@ -400,19 +403,25 @@ const TeamProfileForm = ({ team }: TeamProfileFormProps) => {
         <div className="mt-8">
           <Label>{t("about")}</Label>
           <Editor
-            getText={() => md.render(form.getValues("bio") || "")}
-            setText={(value: string) => form.setValue("bio", turndown(value), { shouldDirty: true })}
+            getText={() => md.render(formController.getValues("bio") || "")}
+            setText={(editorValue: string) =>
+              formController.setValue("bio", turndown(editorValue), { shouldDirty: true })
+            }
             excludedToolbarItems={["blockType"]}
             disableLists
-            firstRender={firstRender}
-            setFirstRender={setFirstRender}
+            firstRender={initialRenderState}
+            setFirstRender={setInitialRenderState}
             height="80px"
           />
         </div>
         <p className="text-default mt-2 text-sm">{t("team_description")}</p>
       </div>
       <SectionBottomActions align="end">
-        <Button color="primary" type="submit" loading={mutation.isPending} disabled={isDisabled}>
+        <Button
+          color="primary"
+          type="submit"
+          loading={updateTeamMutation.isPending}
+          disabled={isFormDisabled}>
           {t("update")}
         </Button>
         {IS_TEAM_BILLING_ENABLED &&
@@ -423,7 +432,7 @@ const TeamProfileForm = ({ team }: TeamProfileFormProps) => {
               className="ml-2"
               type="button"
               onClick={() => {
-                publishMutation.mutate({ teamId: team.id });
+                teamPublishMutation.mutate({ teamId: team.id });
               }}>
               {t("team_publish")}
             </Button>

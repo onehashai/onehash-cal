@@ -33,201 +33,313 @@ interface Props {
 }
 
 export default function WorkflowDetailsPage(props: Props) {
-  const { form, workflowId, selectedOptions, setSelectedOptions, teamId, isOrg, allOptions } = props;
-  const { t } = useLocale();
-  const router = useRouter();
+  const formInstance = props.form;
+  const workflowIdentifier = props.workflowId;
+  const currentSelectedOptions = props.selectedOptions;
+  const updateSelectedOptions = props.setSelectedOptions;
+  const teamIdentifier = props.teamId;
+  const organizationMode = props.isOrg;
+  const availableOptions = props.allOptions;
+  const userInfo = props.user;
+  const viewOnlyMode = props.readOnly;
 
-  const [isAddActionDialogOpen, setIsAddActionDialogOpen] = useState(false);
+  const localeHook = useLocale();
+  const translate = localeHook.t;
+  const navigationRouter = useRouter();
 
-  const [reload, setReload] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const actionDialogState = useState(false);
+  const reloadState = useState(false);
+  const deleteDialogState = useState(false);
 
-  const searchParams = useSearchParams();
-  const eventTypeId = searchParams?.get("eventTypeId");
+  const [actionDialogVisible, setActionDialogVisible] = actionDialogState;
+  const [shouldReload, setShouldReload] = reloadState;
+  const [deleteDialogVisible, setDeleteDialogVisible] = deleteDialogState;
+
+  const queryParams = useSearchParams();
+  const targetEventTypeId = queryParams?.get("eventTypeId");
 
   useEffect(() => {
-    const matchingOption = allOptions.find((option) => option.value === eventTypeId);
-    if (matchingOption && !selectedOptions.find((option) => option.value === eventTypeId)) {
-      const newOptions = [...selectedOptions, matchingOption];
-      setSelectedOptions(newOptions);
-      form.setValue("activeOn", newOptions);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventTypeId]);
+    const findMatchingOption = () => {
+      return availableOptions.find((opt) => opt.value === targetEventTypeId);
+    };
 
-  const addAction = (
+    const isOptionAlreadySelected = () => {
+      return currentSelectedOptions.find((opt) => opt.value === targetEventTypeId);
+    };
+
+    const matchedOption = findMatchingOption();
+
+    if (matchedOption && !isOptionAlreadySelected()) {
+      const updatedOptions = [...currentSelectedOptions, matchedOption];
+      updateSelectedOptions(updatedOptions);
+      formInstance.setValue("activeOn", updatedOptions);
+    }
+  }, [targetEventTypeId]);
+
+  const handleActionAddition = (
     action: WorkflowActions,
     sendTo?: string,
     numberRequired?: boolean,
     sender?: string,
     senderName?: string
   ) => {
-    const steps = form.getValues("steps");
-    const id =
-      steps?.length > 0
-        ? steps.sort((a, b) => {
-            return a.id - b.id;
-          })[0].id - 1
-        : 0;
+    const existingSteps = formInstance.getValues("steps");
 
-    const step = {
-      id: id > 0 ? 0 : id, //id of new steps always <= 0
+    const calculateNewId = () => {
+      if (!existingSteps || existingSteps.length === 0) return 0;
+
+      const sortedById = [...existingSteps].sort((stepA, stepB) => stepA.id - stepB.id);
+      const lowestId = sortedById[0].id;
+      return lowestId > 0 ? 0 : lowestId - 1;
+    };
+
+    const calculateStepNumber = () => {
+      if (!existingSteps || existingSteps.length === 0) return 1;
+
+      const sortedByStepNumber = [...existingSteps].sort(
+        (stepA, stepB) => stepA.stepNumber - stepB.stepNumber
+      );
+      const highestStepNumber = sortedByStepNumber[sortedByStepNumber.length - 1].stepNumber;
+      return highestStepNumber + 1;
+    };
+
+    const determineSender = () => {
+      if (isSMSAction(action)) {
+        return sender || SENDER_ID;
+      }
+      return SENDER_ID;
+    };
+
+    const determineSenderName = () => {
+      if (!isSMSAction(action)) {
+        return senderName || SENDER_NAME;
+      }
+      return SENDER_NAME;
+    };
+
+    const determineTemplate = () => {
+      return isWhatsappAction(action) ? WorkflowTemplates.REMINDER : WorkflowTemplates.CUSTOM;
+    };
+
+    const newStep = {
+      id: calculateNewId(),
       action,
-      stepNumber:
-        steps && steps.length > 0
-          ? steps.sort((a, b) => {
-              return a.stepNumber - b.stepNumber;
-            })[steps.length - 1].stepNumber + 1
-          : 1,
+      stepNumber: calculateStepNumber(),
       sendTo: sendTo || null,
-      workflowId: workflowId,
+      workflowId: workflowIdentifier,
       reminderBody: null,
       emailSubject: null,
-      template: isWhatsappAction(action) ? WorkflowTemplates.REMINDER : WorkflowTemplates.CUSTOM,
+      template: determineTemplate(),
       numberRequired: numberRequired || false,
-      sender: isSMSAction(action) ? sender || SENDER_ID : SENDER_ID,
-      senderName: !isSMSAction(action) ? senderName || SENDER_NAME : SENDER_NAME,
+      sender: determineSender(),
+      senderName: determineSenderName(),
       numberVerificationPending: false,
       includeCalendarEvent: false,
       disableOnMarkNoShow: false,
     };
-    steps?.push(step);
-    form.setValue("steps", steps);
+
+    const updatedSteps = [...(existingSteps || []), newStep];
+    formInstance.setValue("steps", updatedSteps);
   };
 
-  return (
-    <>
-      <div className="z-1 my-8 sm:my-0 md:flex">
-        <div className="pl-2 pr-3 md:sticky md:top-6 md:h-0 md:pl-0">
-          <div className="mb-5">
-            <TextField
-              data-testid="workflow-name"
-              disabled={props.readOnly}
-              label={`${t("workflow_name")}:`}
-              type="text"
-              {...form.register("name")}
-            />
-          </div>
-          {isOrg ? (
-            <div className="flex">
-              <Label>{t("which_team_apply")}</Label>
-              <div className="-mt-0.5">
-                <InfoBadge content={t("team_select_info")} />
-              </div>
+  const navigateToWorkflows = async () => {
+    await navigationRouter.push("/workflows");
+  };
+
+  const SidebarSection = () => {
+    const sidebarClasses = "pl-2 pr-3 md:sticky md:top-6 md:h-0 md:pl-0";
+    const nameFieldClasses = "mb-5";
+    const dividerClasses = "md:border-subtle my-7 border-transparent md:border-t";
+    const bottomDividerClasses = "border-subtle my-7 border-t md:border-none";
+
+    const TeamOrgLabel = () => {
+      if (organizationMode) {
+        return (
+          <div className="flex">
+            <Label>{translate("which_team_apply")}</Label>
+            <div className="-mt-0.5">
+              <InfoBadge content={translate("team_select_info")} />
             </div>
-          ) : (
-            <Label>{t("which_event_type_apply")}</Label>
-          )}
+          </div>
+        );
+      }
+      return <Label>{translate("which_event_type_apply")}</Label>;
+    };
+
+    const DeleteWorkflowButton = () => {
+      if (viewOnlyMode) return null;
+
+      return (
+        <Button
+          type="button"
+          StartIcon="trash-2"
+          color="destructive"
+          className="border"
+          onClick={() => setDeleteDialogVisible(true)}>
+          {translate("delete_workflow")}
+        </Button>
+      );
+    };
+
+    return (
+      <div className={sidebarClasses}>
+        <div className={nameFieldClasses}>
+          <TextField
+            data-testid="workflow-name"
+            disabled={viewOnlyMode}
+            label={`${translate("workflow_name")}:`}
+            type="text"
+            {...formInstance.register("name")}
+          />
+        </div>
+        <TeamOrgLabel />
+        <Controller
+          name="activeOn"
+          control={formInstance.control}
+          render={() => {
+            const selectAllEnabled = formInstance.getValues("selectAll");
+            const selectedValues = selectAllEnabled ? availableOptions : currentSelectedOptions;
+
+            return (
+              <MultiSelectCheckboxes
+                options={availableOptions}
+                isDisabled={viewOnlyMode || selectAllEnabled}
+                className="w-full md:w-64"
+                setSelected={updateSelectedOptions}
+                selected={selectedValues}
+                setValue={(selections: Option[]) => {
+                  formInstance.setValue("activeOn", selections);
+                }}
+                countText={organizationMode ? "count_team" : "nr_event_type"}
+              />
+            );
+          }}
+        />
+        <div className="mt-3">
           <Controller
-            name="activeOn"
-            control={form.control}
-            render={() => {
+            name="selectAll"
+            render={({ field: { value, onChange } }) => {
+              const handleSelectAllChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+                onChange(event);
+                if (event.target.value) {
+                  updateSelectedOptions(availableOptions);
+                  formInstance.setValue("activeOn", availableOptions);
+                }
+              };
+
               return (
-                <MultiSelectCheckboxes
-                  options={allOptions}
-                  isDisabled={props.readOnly || form.getValues("selectAll")}
-                  className="w-full md:w-64"
-                  setSelected={setSelectedOptions}
-                  selected={form.getValues("selectAll") ? allOptions : selectedOptions}
-                  setValue={(s: Option[]) => {
-                    form.setValue("activeOn", s);
-                  }}
-                  countText={isOrg ? "count_team" : "nr_event_type"}
+                <CheckboxField
+                  description={
+                    organizationMode ? translate("apply_to_all_teams") : translate("apply_to_all_event_types")
+                  }
+                  disabled={viewOnlyMode}
+                  onChange={handleSelectAllChange}
+                  checked={value}
                 />
               );
             }}
           />
-          <div className="mt-3">
-            <Controller
-              name="selectAll"
-              render={({ field: { value, onChange } }) => (
-                <CheckboxField
-                  description={isOrg ? t("apply_to_all_teams") : t("apply_to_all_event_types")}
-                  disabled={props.readOnly}
-                  onChange={(e) => {
-                    onChange(e);
-                    if (e.target.value) {
-                      setSelectedOptions(allOptions);
-                      form.setValue("activeOn", allOptions);
-                    }
-                  }}
-                  checked={value}
-                />
-              )}
+        </div>
+        <div className={dividerClasses} />
+        <DeleteWorkflowButton />
+        <div className={bottomDividerClasses} />
+      </div>
+    );
+  };
+
+  const WorkflowContentSection = () => {
+    const contentClasses = "bg-muted border-subtle w-full rounded-md border p-3 py-5 md:ml-3 md:p-8";
+    const arrowContainerClasses = "my-3 flex justify-center";
+    const arrowClasses = "text-subtle stroke-[1.5px] text-3xl";
+    const buttonContainerClasses = "flex justify-center";
+    const addButtonClasses = "bg-default";
+
+    const TriggerStep = () => {
+      const triggerData = formInstance.getValues("trigger");
+      if (!triggerData) return null;
+
+      return (
+        <div>
+          <WorkflowStepContainer
+            form={formInstance}
+            user={userInfo}
+            teamId={teamIdentifier}
+            readOnly={viewOnlyMode}
+          />
+        </div>
+      );
+    };
+
+    const WorkflowSteps = () => {
+      const stepsData = formInstance.getValues("steps");
+      if (!stepsData) return null;
+
+      return (
+        <>
+          {stepsData.map((stepData) => (
+            <WorkflowStepContainer
+              key={stepData.id}
+              form={formInstance}
+              user={userInfo}
+              step={stepData}
+              reload={shouldReload}
+              setReload={setShouldReload}
+              teamId={teamIdentifier}
+              readOnly={viewOnlyMode}
             />
+          ))}
+        </>
+      );
+    };
+
+    const AddActionSection = () => {
+      if (viewOnlyMode) return null;
+
+      return (
+        <>
+          <div className={arrowContainerClasses}>
+            <Icon name="arrow-down" className={arrowClasses} />
           </div>
-          <div className="md:border-subtle my-7 border-transparent md:border-t" />
-          {!props.readOnly && (
+          <div className={buttonContainerClasses}>
             <Button
               type="button"
-              StartIcon="trash-2"
-              color="destructive"
-              className="border"
-              onClick={() => setDeleteDialogOpen(true)}>
-              {t("delete_workflow")}
+              onClick={() => setActionDialogVisible(true)}
+              color="secondary"
+              className={addButtonClasses}>
+              {translate("add_action")}
             </Button>
-          )}
-          <div className="border-subtle my-7 border-t md:border-none" />
-        </div>
+          </div>
+        </>
+      );
+    };
 
-        {/* Workflow Trigger Event & Steps */}
-        <div className="bg-muted border-subtle w-full rounded-md border p-3 py-5 md:ml-3 md:p-8">
-          {form.getValues("trigger") && (
-            <div>
-              <WorkflowStepContainer
-                form={form}
-                user={props.user}
-                teamId={teamId}
-                readOnly={props.readOnly}
-              />
-            </div>
-          )}
-          {form.getValues("steps") && (
-            <>
-              {form.getValues("steps")?.map((step) => {
-                return (
-                  <WorkflowStepContainer
-                    key={step.id}
-                    form={form}
-                    user={props.user}
-                    step={step}
-                    reload={reload}
-                    setReload={setReload}
-                    teamId={teamId}
-                    readOnly={props.readOnly}
-                  />
-                );
-              })}
-            </>
-          )}
-          {!props.readOnly && (
-            <>
-              <div className="my-3 flex justify-center">
-                <Icon name="arrow-down" className="text-subtle stroke-[1.5px] text-3xl" />
-              </div>
-              <div className="flex justify-center">
-                <Button
-                  type="button"
-                  onClick={() => setIsAddActionDialogOpen(true)}
-                  color="secondary"
-                  className="bg-default">
-                  {t("add_action")}
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
+    return (
+      <div className={contentClasses}>
+        <TriggerStep />
+        <WorkflowSteps />
+        <AddActionSection />
+      </div>
+    );
+  };
+
+  const mainContainerClasses = "z-1 my-8 sm:my-0 md:flex";
+
+  return (
+    <>
+      <div className={mainContainerClasses}>
+        <SidebarSection />
+        <WorkflowContentSection />
       </div>
       <AddActionDialog
-        isOpenDialog={isAddActionDialogOpen}
-        setIsOpenDialog={setIsAddActionDialogOpen}
-        addAction={addAction}
+        isOpenDialog={actionDialogVisible}
+        setIsOpenDialog={setActionDialogVisible}
+        addAction={handleActionAddition}
       />
       <DeleteDialog
-        isOpenDialog={deleteDialogOpen}
-        setIsOpenDialog={setDeleteDialogOpen}
-        workflowId={workflowId}
-        additionalFunction={async () => router.push("/workflows")}
+        isOpenDialog={deleteDialogVisible}
+        setIsOpenDialog={setDeleteDialogVisible}
+        workflowId={workflowIdentifier}
+        additionalFunction={navigateToWorkflows}
       />
     </>
   );

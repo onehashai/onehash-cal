@@ -1,7 +1,7 @@
 import { SkeletonContainer, SkeletonText } from "@calcom/ui";
 
-function SkeletonLoader() {
-  return (
+const SkeletonLoader = function () {
+  const containerElement = (
     <SkeletonContainer>
       <div className="mr-3">
         <SkeletonText className="h-4 w-28" />
@@ -10,6 +10,8 @@ function SkeletonLoader() {
       </div>
     </SkeletonContainer>
   );
-}
+
+  return containerElement;
+};
 
 export default SkeletonLoader;
