@@ -2,81 +2,128 @@ import type { TFunction } from "next-i18next";
 
 import { DYNAMIC_TEXT_VARIABLES, FORMATTED_DYNAMIC_TEXT_VARIABLES } from "./constants";
 
-// variables are saved in the db always in english, so here we translate them to the user's language
-export function getTranslatedText(text: string, language: { locale: string; t: TFunction }) {
-  let translatedText = text;
+export function getTranslatedText(
+  inputText: string,
+  languageConfig: { locale: string; t: TFunction }
+): string {
+  const { locale, t } = languageConfig;
 
-  if (language.locale !== "en") {
-    const variables = text.match(/\{(.+?)}/g)?.map((variable) => {
-      return variable.replace("{", "").replace("}", "");
-    });
-
-    variables?.forEach((variable) => {
-      const regex = new RegExp(`{${variable}}`, "g"); // .replaceAll is not available here for some reason
-      let translatedVariable = DYNAMIC_TEXT_VARIABLES.includes(variable.toLowerCase())
-        ? language.t(variable.toLowerCase().concat("_variable")).replace(/ /g, "_").toLocaleUpperCase()
-        : DYNAMIC_TEXT_VARIABLES.includes(variable.toLowerCase().concat("_name")) //for the old variables names (ORGANIZER_NAME, ATTENDEE_NAME)
-        ? language.t(variable.toLowerCase().concat("_name_variable")).replace(/ /g, "_").toLocaleUpperCase()
-        : variable;
-
-      // this takes care of translating formatted variables (e.g. {EVENT_DATE_DD MM YYYY})
-      const formattedVarToTranslate = FORMATTED_DYNAMIC_TEXT_VARIABLES.map((formattedVar) => {
-        if (variable.toLowerCase().startsWith(formattedVar)) return variable;
-      })[0];
-
-      if (formattedVarToTranslate) {
-        // only translate the variable part not the formatting
-        const variableName = formattedVarToTranslate
-          .substring(0, formattedVarToTranslate?.lastIndexOf("_"))
-          .toLowerCase()
-          .concat("_variable");
-
-        translatedVariable = language
-          .t(variableName)
-          .replace(/ /g, "_")
-          .toLocaleUpperCase()
-          .concat(formattedVarToTranslate?.substring(formattedVarToTranslate?.lastIndexOf("_")));
-      }
-
-      translatedText = translatedText.replace(regex, `{${translatedVariable}}`);
-    });
+  if (locale === "en") {
+    return inputText;
   }
 
-  return translatedText;
+  const extractedVariables = extractVariableTokens(inputText);
+
+  return extractedVariables.reduce((processedText, currentVariable) => {
+    const variablePattern = createVariableRegex(currentVariable);
+    const transformedVariable = processVariableTranslation(currentVariable, t);
+    return processedText.replace(variablePattern, `{${transformedVariable}}`);
+  }, inputText);
 }
 
-export function translateVariablesToEnglish(text: string, language: { locale: string; t: TFunction }) {
-  let newText = text;
+export function translateVariablesToEnglish(
+  inputText: string,
+  languageConfig: { locale: string; t: TFunction }
+): string {
+  const { locale, t } = languageConfig;
 
-  if (language.locale !== "en") {
-    const variables = text.match(/\{(.+?)}/g)?.map((variable) => {
-      return variable.replace("{", "").replace("}", "");
-    });
-
-    variables?.forEach((variable) => {
-      DYNAMIC_TEXT_VARIABLES.forEach((originalVar) => {
-        const newVariableName = variable.replace("_NAME", "");
-        const originalVariable = `${originalVar}_variable`;
-        if (
-          language.t(originalVariable).replace(/ /g, "_").toUpperCase() === variable ||
-          language.t(originalVariable).replace(/ /g, "_").toUpperCase() === newVariableName
-        ) {
-          newText = newText.replace(
-            variable,
-            language.t(originalVariable, { lng: "en" }).replace(/ /g, "_").toUpperCase()
-          );
-          return;
-        }
-      });
-
-      FORMATTED_DYNAMIC_TEXT_VARIABLES.forEach((formattedVar) => {
-        const translatedVariable = language.t(`${formattedVar}variable`).replace(/ /g, "_").toUpperCase();
-        if (variable.startsWith(translatedVariable)) {
-          newText = newText.replace(translatedVariable, formattedVar.slice(0, -1).toUpperCase());
-        }
-      });
-    });
+  if (locale === "en") {
+    return inputText;
   }
 
-  return newText;
+  const extractedVariables = extractVariableTokens(inputText);
+
+  return extractedVariables.reduce((processedText, currentVariable) => {
+    const englishEquivalent = findEnglishVariableEquivalent(currentVariable, t);
+    return englishEquivalent ? processedText.replace(currentVariable, englishEquivalent) : processedText;
+  }, inputText);
+}
+
+function extractVariableTokens(textContent: string): string[] {
+  const variableMatches = textContent.match(/\{(.+?)}/g);
+  return variableMatches?.map((match) => match.slice(1, -1)) ?? [];
+}
+
+function createVariableRegex(variableName: string): RegExp {
+  return new RegExp(`{${variableName}}`, "g");
+}
+
+function processVariableTranslation(originalVariable: string, translationFunction: TFunction): string {
+  const lowerCaseVariable = originalVariable.toLowerCase();
+
+  if (DYNAMIC_TEXT_VARIABLES.includes(lowerCaseVariable)) {
+    return generateTranslatedVariableName(lowerCaseVariable, translationFunction);
+  }
+
+  const legacyVariableName = `${lowerCaseVariable}_name`;
+  if (DYNAMIC_TEXT_VARIABLES.includes(legacyVariableName)) {
+    return generateLegacyTranslatedVariableName(lowerCaseVariable, translationFunction);
+  }
+
+  const formattedVariableResult = processFormattedVariable(originalVariable, translationFunction);
+  return formattedVariableResult || originalVariable;
+}
+
+function generateTranslatedVariableName(baseVariable: string, translationFunction: TFunction): string {
+  const translationKey = `${baseVariable}_variable`;
+  return normalizeTranslatedText(translationFunction(translationKey));
+}
+
+function generateLegacyTranslatedVariableName(baseVariable: string, translationFunction: TFunction): string {
+  const legacyTranslationKey = `${baseVariable}_name_variable`;
+  return normalizeTranslatedText(translationFunction(legacyTranslationKey));
+}
+
+function processFormattedVariable(variableToken: string, translationFunction: TFunction): string | null {
+  const matchingFormattedVariable = FORMATTED_DYNAMIC_TEXT_VARIABLES.find((formattedVar) =>
+    variableToken.toLowerCase().startsWith(formattedVar)
+  );
+
+  if (!matchingFormattedVariable) {
+    return null;
+  }
+
+  const separatorIndex = matchingFormattedVariable.lastIndexOf("_");
+  const baseVariableName = `${matchingFormattedVariable.substring(0, separatorIndex).toLowerCase()}_variable`;
+  const formatSuffix = matchingFormattedVariable.substring(separatorIndex);
+
+  const translatedBaseName = normalizeTranslatedText(translationFunction(baseVariableName));
+  return `${translatedBaseName}${formatSuffix}`;
+}
+
+function normalizeTranslatedText(translatedContent: string): string {
+  return translatedContent.replace(/ /g, "_").toLocaleUpperCase();
+}
+
+function findEnglishVariableEquivalent(
+  translatedVariable: string,
+  translationFunction: TFunction
+): string | null {
+  const normalizedVariable = translatedVariable.replace("_NAME", "");
+
+  for (const baseVariable of DYNAMIC_TEXT_VARIABLES) {
+    const variableTranslationKey = `${baseVariable}_variable`;
+    const normalizedTranslation = normalizeTranslatedText(translationFunction(variableTranslationKey));
+
+    const isDirectMatch = normalizedTranslation === translatedVariable;
+    const isNameVariantMatch = normalizedTranslation === normalizedVariable;
+
+    if (isDirectMatch || isNameVariantMatch) {
+      return normalizeTranslatedText(translationFunction(variableTranslationKey, { lng: "en" }));
+    }
+  }
+
+  for (const formattedVariable of FORMATTED_DYNAMIC_TEXT_VARIABLES) {
+    const formattedTranslationKey = `${formattedVariable}variable`;
+    const normalizedFormattedTranslation = normalizeTranslatedText(
+      translationFunction(formattedTranslationKey)
+    );
+
+    if (translatedVariable.startsWith(normalizedFormattedTranslation)) {
+      const englishPrefix = formattedVariable.slice(0, -1).toUpperCase();
+      return translatedVariable.replace(normalizedFormattedTranslation, englishPrefix);
+    }
+  }
+
+  return null;
 }

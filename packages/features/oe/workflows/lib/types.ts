@@ -29,3 +29,8 @@ export type WorkflowStep = {
   numberRequired: boolean | null;
   disableOnMarkNoShow: boolean | null;
 };
+
+export type ScheduleEmailReminderAction = Extract<
+  WorkflowActions,
+  "EMAIL_HOST" | "EMAIL_ATTENDEE" | "EMAIL_ADDRESS"
+>;

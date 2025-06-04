@@ -67,9 +67,9 @@ interface Props {
 
 export type User = RouterOutputs["viewer"]["teams"]["listMembers"]["members"][number];
 
-const checkIsOrg = (team: Props["team"]) => {
-  return team.isOrganization;
-};
+function verifyIsOrganization(teamData: Props["team"]) {
+  return Boolean(teamData.isOrganization);
+}
 
 type Payload = {
   showModal: boolean;
@@ -97,7 +97,7 @@ export type Action =
       type: "CLOSE_MODAL";
     };
 
-const initialState: State = {
+const defaultStateValues: State = {
   deleteMember: {
     showModal: false,
   },
@@ -112,7 +112,7 @@ const initialState: State = {
   },
 };
 
-const initalColumnVisibility = {
+const defaultColumnStates = {
   select: true,
   member: true,
   role: true,
@@ -120,57 +120,51 @@ const initalColumnVisibility = {
   actions: true,
 };
 
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case "SET_DELETE_ID":
-      return { ...state, deleteMember: action.payload };
-    case "SET_IMPERSONATE_ID":
-      return { ...state, impersonateMember: action.payload };
-    case "EDIT_USER_SHEET":
-      return { ...state, editSheet: action.payload };
-    case "TEAM_AVAILABILITY":
-      return { ...state, teamAvailability: action.payload };
-    case "CLOSE_MODAL":
-      return {
-        ...state,
-        deleteMember: { showModal: false },
-        impersonateMember: { showModal: false },
-        editSheet: { showModal: false },
-        teamAvailability: { showModal: false },
-      };
-    default:
-      return state;
+function stateReducer(currentState: State, actionData: Action): State {
+  if (actionData.type === "SET_DELETE_ID") {
+    return Object.assign({}, currentState, { deleteMember: actionData.payload });
+  } else if (actionData.type === "SET_IMPERSONATE_ID") {
+    return Object.assign({}, currentState, { impersonateMember: actionData.payload });
+  } else if (actionData.type === "EDIT_USER_SHEET") {
+    return Object.assign({}, currentState, { editSheet: actionData.payload });
+  } else if (actionData.type === "TEAM_AVAILABILITY") {
+    return Object.assign({}, currentState, { teamAvailability: actionData.payload });
+  } else if (actionData.type === "CLOSE_MODAL") {
+    const resetState = {
+      deleteMember: { showModal: false },
+      impersonateMember: { showModal: false },
+      editSheet: { showModal: false },
+      teamAvailability: { showModal: false },
+    };
+    return Object.assign({}, currentState, resetState);
   }
+  return currentState;
 }
 
-interface Props {
-  team: NonNullable<RouterOutputs["viewer"]["teams"]["get"]>;
-  isOrgAdminOrOwner: boolean | undefined;
-  setShowMemberInvitationModal: Dispatch<SetStateAction<boolean>>;
-}
+export default function MemberList(properties: Props) {
+  const [isDynamicLinkActive, updateDynamicLinkState] = useQueryState("dynamicLink", parseAsBoolean);
+  const localizationHooks = useLocale();
+  const sessionInfo = useSession();
 
-export default function MemberList(props: Props) {
-  const [dynamicLinkVisible, setDynamicLinkVisible] = useQueryState("dynamicLink", parseAsBoolean);
-  const { t, i18n } = useLocale();
-  const { data: session } = useSession();
+  const trpcHelpers = trpc.useUtils();
+  const organizationBrand = useOrgBranding();
+  const baseUrl = organizationBrand?.fullDomain || WEBAPP_URL;
 
-  const utils = trpc.useUtils();
-  const orgBranding = useOrgBranding();
-  const domain = orgBranding?.fullDomain ?? WEBAPP_URL;
+  const scrollContainerElement = useRef<HTMLDivElement>(null);
+  const [modalState, updateModalState] = useReducer(stateReducer, defaultStateValues);
+  const [searchQuery, updateSearchQuery] = useState("");
 
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-
-  const { data, isPending, fetchNextPage, isFetching } = trpc.viewer.teams.listMembers.useInfiniteQuery(
+  const membersQuery = trpc.viewer.teams.listMembers.useInfiniteQuery(
     {
       limit: 10,
-      searchTerm: debouncedSearchTerm,
-      teamId: props.team.id,
+      searchTerm: searchQuery,
+      teamId: properties.team.id,
     },
     {
-      enabled: !!props.team.id,
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      enabled: Boolean(properties.team.id),
+      getNextPageParam: function (lastPageData) {
+        return lastPageData.nextCursor;
+      },
       placeholderData: keepPreviousData,
       refetchOnWindowFocus: true,
       refetchOnMount: true,
@@ -178,596 +172,632 @@ export default function MemberList(props: Props) {
     }
   );
 
-  // TODO (SEAN): Make Column filters a trpc query param so we can fetch serverside even if the data is not loaded
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState({});
+  const [activeFilters, modifyActiveFilters] = useState<ColumnFiltersState>([]);
+  const [selectedRows, modifySelectedRows] = useState({});
 
-  const removeMemberFromCache = ({
-    utils,
-    memberId,
-    teamId,
-    searchTerm,
-  }: {
+  function updateMemberCache(params: {
     utils: ReturnType<typeof trpc.useUtils>;
     memberId: number;
     teamId: number;
     searchTerm: string;
-  }) => {
-    utils.viewer.teams.listMembers.setInfiniteData(
+  }) {
+    params.utils.viewer.teams.listMembers.setInfiniteData(
       {
         limit: 10,
-        teamId,
-        searchTerm,
+        teamId: params.teamId,
+        searchTerm: params.searchTerm,
       },
-      (data) => {
-        if (!data) {
+      function (existingData) {
+        if (!existingData) {
           return {
             pages: [],
             pageParams: [],
           };
         }
 
-        return {
-          ...data,
-          pages: data.pages.map((page) => ({
-            ...page,
-            members: page.members.filter((member) => member.id !== memberId),
-          })),
-        };
+        const updatedPages = existingData.pages.map(function (singlePage) {
+          const filteredMembers = singlePage.members.filter(function (member) {
+            return member.id !== params.memberId;
+          });
+
+          return Object.assign({}, singlePage, { members: filteredMembers });
+        });
+
+        return Object.assign({}, existingData, { pages: updatedPages });
       }
     );
-  };
+  }
 
-  const removeMemberMutation = trpc.viewer.teams.removeMember.useMutation({
-    onMutate: async ({ teamIds }) => {
-      await utils.viewer.teams.listMembers.cancel();
-      const previousValue = utils.viewer.teams.listMembers.getInfiniteData({
+  const deleteMemberAction = trpc.viewer.teams.removeMember.useMutation({
+    onMutate: async function (mutationParams) {
+      await trpcHelpers.viewer.teams.listMembers.cancel();
+
+      const cachedData = trpcHelpers.viewer.teams.listMembers.getInfiniteData({
         limit: 10,
-        teamId: teamIds[0],
-        searchTerm: debouncedSearchTerm,
+        teamId: mutationParams.teamIds[0],
+        searchTerm: searchQuery,
       });
 
-      if (previousValue) {
-        removeMemberFromCache({
-          utils,
-          memberId: state.deleteMember.user?.id as number,
-          teamId: teamIds[0],
-          searchTerm: debouncedSearchTerm,
+      if (cachedData && modalState.deleteMember.user?.id) {
+        updateMemberCache({
+          utils: trpcHelpers,
+          memberId: modalState.deleteMember.user.id,
+          teamId: mutationParams.teamIds[0],
+          searchTerm: searchQuery,
         });
       }
-      return { previousValue };
+
+      return { previousValue: cachedData };
     },
-    async onSuccess() {
-      await utils.viewer.teams.get.invalidate();
-      await utils.viewer.eventTypes.invalidate();
-      await utils.viewer.organizations.listMembers.invalidate();
-      await utils.viewer.organizations.getMembers.invalidate();
-      showToast(t("success"), "success");
+    onSuccess: async function () {
+      await Promise.all([
+        trpcHelpers.viewer.teams.get.invalidate(),
+        trpcHelpers.viewer.eventTypes.invalidate(),
+        trpcHelpers.viewer.organizations.listMembers.invalidate(),
+        trpcHelpers.viewer.organizations.getMembers.invalidate(),
+      ]);
+      showToast(localizationHooks.t("success"), "success");
     },
-    async onError(err) {
-      showToast(err.message, "error");
+    onError: function (errorInfo) {
+      showToast(errorInfo.message, "error");
     },
   });
 
-  const resendInvitationMutation = trpc.viewer.teams.resendInvitation.useMutation({
-    onSuccess: () => {
-      showToast(t("invitation_resent"), "success");
+  const resendInviteAction = trpc.viewer.teams.resendInvitation.useMutation({
+    onSuccess: function () {
+      showToast(localizationHooks.t("invitation_resent"), "success");
     },
-    onError: (error) => {
-      showToast(error.message, "error");
+    onError: function (errorData) {
+      showToast(errorData.message, "error");
     },
   });
 
-  // const ownersInTeam = () => {
-  //   const { members } = props.team;
-  //   const owners = members.filter((member) => member["role"] === MembershipRole.OWNER && member["accepted"]);
-  //   return owners.length;
-  // };
+  const userIsAdminOrOwner =
+    properties.team.membership.role === MembershipRole.OWNER ||
+    properties.team.membership.role === MembershipRole.ADMIN;
 
-  const isAdminOrOwner =
-    props.team.membership.role === MembershipRole.OWNER ||
-    props.team.membership.role === MembershipRole.ADMIN;
+  function executeRemoveMember() {
+    if (!modalState.deleteMember.user?.id) return;
 
-  const removeMember = () =>
-    removeMemberMutation.mutate({
-      teamIds: [props.team?.id],
-      memberIds: [state.deleteMember.user?.id as number],
-      isOrg: checkIsOrg(props.team),
+    deleteMemberAction.mutate({
+      teamIds: [properties.team.id],
+      memberIds: [modalState.deleteMember.user.id],
+      isOrg: verifyIsOrganization(properties.team),
     });
+  }
 
-  const totalDBRowCount = data?.pages?.[0]?.meta?.totalRowCount ?? 0;
+  const totalMembersCount = membersQuery.data?.pages?.[0]?.meta?.totalRowCount || 0;
 
-  const memorisedColumns = useMemo(() => {
-    const cols: ColumnDef<User>[] = [
-      // Disabling select for this PR: Will work on actions etc in a follow up
-      {
-        id: "select",
-        enableHiding: false,
-        enableSorting: false,
-        size: 30,
-        header: ({ table }) => (
-          <Checkbox
-            checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-            className="translate-y-[2px]"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-            className="translate-y-[2px]"
-          />
-        ),
-      },
-      {
-        id: "member",
-        accessorFn: (data) => data.email,
-        enableHiding: false,
-        header: `Member (${totalDBRowCount})`,
-        size: 250,
-        cell: ({ row }) => {
-          const { username, email, avatarUrl, accepted, name } = row.original;
-          const memberName =
-            name ||
-            (() => {
-              const emailName = email.split("@")[0];
-              return emailName.charAt(0).toUpperCase() + emailName.slice(1);
-            })();
-          return (
-            <div className="flex items-center gap-2">
-              <Avatar
-                size="sm"
-                alt={username || email}
-                imageSrc={getUserAvatarUrl({
-                  avatarUrl,
-                })}
+  const tableColumnDefinitions = useMemo(
+    function () {
+      const columnDefs: ColumnDef<User>[] = [
+        {
+          id: "select",
+          enableHiding: false,
+          enableSorting: false,
+          size: 30,
+          header: function (headerProps) {
+            return (
+              <Checkbox
+                checked={headerProps.table.getIsAllPageRowsSelected()}
+                onCheckedChange={function (checkValue) {
+                  headerProps.table.toggleAllPageRowsSelected(Boolean(checkValue));
+                }}
+                aria-label="Select all"
+                className="translate-y-[2px]"
               />
-              <div data-testid={`member-${username}`}>
-                <div data-testid="member-name" className="text-emphasis text-sm font-medium leading-none">
-                  {memberName}
-                </div>
-                <div
-                  data-testid={accepted ? "member-email" : `email-${email.replace("@", "")}-pending`}
-                  className="text-subtle mt-1 text-sm leading-none">
-                  {email}
+            );
+          },
+          cell: function (cellProps) {
+            return (
+              <Checkbox
+                checked={cellProps.row.getIsSelected()}
+                onCheckedChange={function (checkValue) {
+                  cellProps.row.toggleSelected(Boolean(checkValue));
+                }}
+                aria-label="Select row"
+                className="translate-y-[2px]"
+              />
+            );
+          },
+        },
+        {
+          id: "member",
+          accessorFn: function (rowData) {
+            return rowData.email;
+          },
+          enableHiding: false,
+          header: `Member (${totalMembersCount})`,
+          size: 250,
+          cell: function (cellData) {
+            const memberInfo = cellData.row.original;
+            const displayName =
+              memberInfo.name ||
+              (function () {
+                const emailPrefix = memberInfo.email.split("@")[0];
+                return emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+              })();
+
+            return (
+              <div className="flex items-center gap-2">
+                <Avatar
+                  size="sm"
+                  alt={memberInfo.username || memberInfo.email}
+                  imageSrc={getUserAvatarUrl({
+                    avatarUrl: memberInfo.avatarUrl,
+                  })}
+                />
+                <div data-testid={`member-${memberInfo.username}`}>
+                  <div data-testid="member-name" className="text-emphasis text-sm font-medium leading-none">
+                    {displayName}
+                  </div>
+                  <div
+                    data-testid={
+                      memberInfo.accepted
+                        ? "member-email"
+                        : `email-${memberInfo.email.replace("@", "")}-pending`
+                    }
+                    className="text-subtle mt-1 text-sm leading-none">
+                    {memberInfo.email}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
+            );
+          },
+          filterFn: function (rowData, columnId, filterData) {
+            const emailAddress = rowData.original.email;
+            return filterData.indexOf(emailAddress) !== -1;
+          },
         },
-        filterFn: (rows, id, filterValue) => {
-          const userEmail = rows.original.email;
-          return filterValue.includes(userEmail);
-        },
-      },
-      {
-        id: "role",
-        accessorFn: (data) => data.role,
-        header: "Role",
-        size: 100,
-        cell: ({ row, table }) => {
-          const { role, accepted } = row.original;
-          return (
-            <div className="flex h-full flex-wrap items-center gap-2">
-              {!accepted && (
+        {
+          id: "role",
+          accessorFn: function (rowData) {
+            return rowData.role;
+          },
+          header: "Role",
+          size: 100,
+          cell: function (cellData) {
+            const memberData = cellData.row.original;
+            return (
+              <div className="flex h-full flex-wrap items-center gap-2">
+                {!memberData.accepted && (
+                  <Badge
+                    data-testid="member-pending"
+                    variant="orange"
+                    className="text-xs"
+                    onClick={function () {
+                      cellData.table.getColumn("role")?.setFilterValue(["PENDING"]);
+                    }}>
+                    Pending
+                  </Badge>
+                )}
                 <Badge
-                  data-testid="member-pending"
-                  variant="orange"
-                  className="text-xs"
-                  onClick={() => {
-                    table.getColumn("role")?.setFilterValue(["PENDING"]);
+                  data-testid="member-role"
+                  variant={memberData.role === "MEMBER" ? "gray" : "blue"}
+                  onClick={function () {
+                    cellData.table.getColumn("role")?.setFilterValue([memberData.role]);
                   }}>
-                  Pending
+                  {memberData.role}
                 </Badge>
-              )}
-              <Badge
-                data-testid="member-role"
-                variant={role === "MEMBER" ? "gray" : "blue"}
-                onClick={() => {
-                  table.getColumn("role")?.setFilterValue([role]);
-                }}>
-                {role}
-              </Badge>
-            </div>
-          );
-        },
-        filterFn: (rows, id, filterValue) => {
-          if (filterValue.includes("PENDING")) {
-            if (filterValue.length === 1) return !rows.original.accepted;
-            else return !rows.original.accepted || filterValue.includes(rows.getValue(id));
-          }
+              </div>
+            );
+          },
+          filterFn: function (rowData, columnId, filterData) {
+            const isPendingIncluded = filterData.indexOf("PENDING") !== -1;
 
-          // Show only the selected roles
-          return filterValue.includes(rows.getValue(id));
+            if (isPendingIncluded) {
+              if (filterData.length === 1) {
+                return !rowData.original.accepted;
+              } else {
+                return !rowData.original.accepted || filterData.indexOf(rowData.getValue(columnId)) !== -1;
+              }
+            }
+
+            return filterData.indexOf(rowData.getValue(columnId)) !== -1;
+          },
         },
-      },
-      {
-        id: "lastActiveAt",
-        header: "Last Active",
-        cell: ({ row }) => <div>{row.original.lastActiveAt}</div>,
-      },
-      {
-        id: "actions",
-        size: 80,
-        meta: {
-          sticky: { position: "right" },
+        {
+          id: "lastActiveAt",
+          header: "Last Active",
+          cell: function (cellData) {
+            return <div>{cellData.row.original.lastActiveAt}</div>;
+          },
         },
-        cell: ({ row }) => {
-          const user = row.original;
-          const isSelf = user.id === session?.user.id;
-          const editMode =
-            (props.team.membership?.role === MembershipRole.OWNER &&
-              (user.role !== MembershipRole.OWNER || !isSelf)) ||
-            (props.team.membership?.role === MembershipRole.ADMIN && user.role !== MembershipRole.OWNER) ||
-            props.isOrgAdminOrOwner;
-          const impersonationMode =
-            editMode &&
-            !user.disableImpersonation &&
-            user.accepted &&
-            process.env.NEXT_PUBLIC_TEAM_IMPERSONATION === "true";
-          const resendInvitation = editMode && !user.accepted;
-          return (
-            <>
-              {props.team.membership?.accepted && (
-                <div className="flex items-center justify-end">
-                  <ButtonGroup combined containerProps={{ className: "border-default hidden md:flex" }}>
-                    {/* TODO: bring availability back. right now its ugly and broken
-                    <Tooltip
-                      content={
-                        user.accepted
-                          ? t("team_view_user_availability")
-                          : t("team_view_user_availability_disabled")
-                      }>
-                      <Button
-                        disabled={!user.accepted}
-                        onClick={() =>
-                          user.accepted
-                            ? dispatch({
-                                type: "TEAM_AVAILABILITY",
-                                payload: {
-                                  user,
-                                  showModal: true,
-                                },
-                              })
-                            : null
-                        }
-                        color="secondary"
-                        variant="icon"
-                        StartIcon="clock"
-                      />
-                    </Tooltip> */}
-                    {!!user.accepted && (
-                      <Tooltip content={t("view_public_page")}>
-                        <Button
-                          target="_blank"
-                          href={`${user.bookerUrl}/${user.username}`}
-                          color="secondary"
-                          className={classNames(!editMode ? "rounded-r-md" : "")}
-                          variant="icon"
-                          StartIcon="external-link"
-                          disabled={!user.accepted}
-                        />
-                      </Tooltip>
-                    )}
-                    {editMode && (
+        {
+          id: "actions",
+          size: 80,
+          meta: {
+            sticky: { position: "right" },
+          },
+          cell: function (cellData) {
+            const memberRecord = cellData.row.original;
+            const isCurrentUser = memberRecord.id === sessionInfo?.data?.user.id;
+
+            const canEditMember =
+              (properties.team.membership?.role === MembershipRole.OWNER &&
+                (memberRecord.role !== MembershipRole.OWNER || !isCurrentUser)) ||
+              (properties.team.membership?.role === MembershipRole.ADMIN &&
+                memberRecord.role !== MembershipRole.OWNER) ||
+              properties.isOrgAdminOrOwner;
+
+            const canImpersonate =
+              canEditMember &&
+              !memberRecord.disableImpersonation &&
+              memberRecord.accepted &&
+              process.env.NEXT_PUBLIC_TEAM_IMPERSONATION === "true";
+
+            const canResendInvite = canEditMember && !memberRecord.accepted;
+
+            return (
+              <>
+                {properties.team.membership?.accepted && (
+                  <div className="flex items-center justify-end">
+                    <ButtonGroup combined containerProps={{ className: "border-default hidden md:flex" }}>
+                      {Boolean(memberRecord.accepted) && (
+                        <Tooltip content={localizationHooks.t("view_public_page")}>
+                          <Button
+                            target="_blank"
+                            href={`${memberRecord.bookerUrl}/${memberRecord.username}`}
+                            color="secondary"
+                            className={classNames(!canEditMember ? "rounded-r-md" : "")}
+                            variant="icon"
+                            StartIcon="external-link"
+                            disabled={!memberRecord.accepted}
+                          />
+                        </Tooltip>
+                      )}
+                      {canEditMember && (
+                        <Dropdown>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              className="radix-state-open:rounded-r-md"
+                              color="secondary"
+                              variant="icon"
+                              StartIcon="ellipsis"
+                            />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem>
+                                <DropdownItem
+                                  type="button"
+                                  onClick={function () {
+                                    updateModalState({
+                                      type: "EDIT_USER_SHEET",
+                                      payload: {
+                                        user: memberRecord,
+                                        showModal: true,
+                                      },
+                                    });
+                                  }}
+                                  StartIcon="pencil">
+                                  {localizationHooks.t("edit")}
+                                </DropdownItem>
+                              </DropdownMenuItem>
+                              {canImpersonate && (
+                                <>
+                                  <DropdownMenuItem>
+                                    <DropdownItem
+                                      type="button"
+                                      onClick={function () {
+                                        updateModalState({
+                                          type: "SET_IMPERSONATE_ID",
+                                          payload: {
+                                            user: memberRecord,
+                                            showModal: true,
+                                          },
+                                        });
+                                      }}
+                                      StartIcon="lock">
+                                      {localizationHooks.t("impersonate")}
+                                    </DropdownItem>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                </>
+                              )}
+                              {canResendInvite && (
+                                <DropdownMenuItem>
+                                  <DropdownItem
+                                    type="button"
+                                    onClick={function () {
+                                      resendInviteAction.mutate({
+                                        teamId: properties.team.id,
+                                        email: memberRecord.email,
+                                        language: localizationHooks.i18n.language,
+                                      });
+                                    }}
+                                    StartIcon="send">
+                                    {localizationHooks.t("resend_invitation")}
+                                  </DropdownItem>
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem>
+                                <DropdownItem
+                                  type="button"
+                                  onClick={function () {
+                                    updateModalState({
+                                      type: "SET_DELETE_ID",
+                                      payload: {
+                                        user: memberRecord,
+                                        showModal: true,
+                                      },
+                                    });
+                                  }}
+                                  color="destructive"
+                                  StartIcon="user-x">
+                                  {localizationHooks.t("remove")}
+                                </DropdownItem>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenuPortal>
+                        </Dropdown>
+                      )}
+                    </ButtonGroup>
+                    <div className="flex md:hidden">
                       <Dropdown>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            className="radix-state-open:rounded-r-md"
-                            color="secondary"
-                            variant="icon"
-                            StartIcon="ellipsis"
-                          />
+                          <Button type="button" variant="icon" color="minimal" StartIcon="ellipsis" />
                         </DropdownMenuTrigger>
                         <DropdownMenuPortal>
                           <DropdownMenuContent>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem className="outline-none">
                               <DropdownItem
+                                disabled={!memberRecord.accepted}
+                                href={!memberRecord.accepted ? undefined : `/${memberRecord.username}`}
+                                target="_blank"
                                 type="button"
-                                onClick={() =>
-                                  dispatch({
-                                    type: "EDIT_USER_SHEET",
-                                    payload: {
-                                      user,
-                                      showModal: true,
-                                    },
-                                  })
-                                }
-                                StartIcon="pencil">
-                                {t("edit")}
+                                StartIcon="external-link">
+                                {localizationHooks.t("view_public_page")}
                               </DropdownItem>
                             </DropdownMenuItem>
-                            {impersonationMode && (
+                            {canEditMember && (
                               <>
                                 <DropdownMenuItem>
                                   <DropdownItem
                                     type="button"
-                                    onClick={() =>
-                                      dispatch({
-                                        type: "SET_IMPERSONATE_ID",
+                                    onClick={function () {
+                                      updateModalState({
+                                        type: "EDIT_USER_SHEET",
                                         payload: {
-                                          user,
+                                          user: memberRecord,
                                           showModal: true,
                                         },
-                                      })
-                                    }
-                                    StartIcon="lock">
-                                    {t("impersonate")}
+                                      });
+                                    }}
+                                    StartIcon="pencil">
+                                    {localizationHooks.t("edit")}
                                   </DropdownItem>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>
+                                  <DropdownItem
+                                    type="button"
+                                    color="destructive"
+                                    onClick={function () {
+                                      updateModalState({
+                                        type: "SET_DELETE_ID",
+                                        payload: {
+                                          user: memberRecord,
+                                          showModal: true,
+                                        },
+                                      });
+                                    }}
+                                    StartIcon="user-x">
+                                    {localizationHooks.t("remove")}
+                                  </DropdownItem>
+                                </DropdownMenuItem>
                               </>
                             )}
-                            {resendInvitation && (
-                              <DropdownMenuItem>
-                                <DropdownItem
-                                  type="button"
-                                  onClick={() => {
-                                    resendInvitationMutation.mutate({
-                                      teamId: props.team?.id,
-                                      email: user.email,
-                                      language: i18n.language,
-                                    });
-                                  }}
-                                  StartIcon="send">
-                                  {t("resend_invitation")}
-                                </DropdownItem>
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem>
-                              <DropdownItem
-                                type="button"
-                                onClick={() =>
-                                  dispatch({
-                                    type: "SET_DELETE_ID",
-                                    payload: {
-                                      user,
-                                      showModal: true,
-                                    },
-                                  })
-                                }
-                                color="destructive"
-                                StartIcon="user-x">
-                                {t("remove")}
-                              </DropdownItem>
-                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenuPortal>
                       </Dropdown>
-                    )}
-                  </ButtonGroup>
-                  <div className="flex md:hidden">
-                    <Dropdown>
-                      <DropdownMenuTrigger asChild>
-                        <Button type="button" variant="icon" color="minimal" StartIcon="ellipsis" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem className="outline-none">
-                            <DropdownItem
-                              disabled={!user.accepted}
-                              href={!user.accepted ? undefined : `/${user.username}`}
-                              target="_blank"
-                              type="button"
-                              StartIcon="external-link">
-                              {t("view_public_page")}
-                            </DropdownItem>
-                          </DropdownMenuItem>
-                          {editMode && (
-                            <>
-                              <DropdownMenuItem>
-                                <DropdownItem
-                                  type="button"
-                                  onClick={() =>
-                                    dispatch({
-                                      type: "EDIT_USER_SHEET",
-                                      payload: {
-                                        user,
-                                        showModal: true,
-                                      },
-                                    })
-                                  }
-                                  StartIcon="pencil">
-                                  {t("edit")}
-                                </DropdownItem>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <DropdownItem
-                                  type="button"
-                                  color="destructive"
-                                  onClick={() =>
-                                    dispatch({
-                                      type: "SET_DELETE_ID",
-                                      payload: {
-                                        user,
-                                        showModal: true,
-                                      },
-                                    })
-                                  }
-                                  StartIcon="user-x">
-                                  {t("remove")}
-                                </DropdownItem>
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenuPortal>
-                    </Dropdown>
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          );
+                )}
+              </>
+            );
+          },
         },
-      },
-    ];
+      ];
 
-    return cols;
-  }, [props.isOrgAdminOrOwner, dispatch, totalDBRowCount, session?.user.id]);
-  //we must flatten the array of arrays from the useInfiniteQuery hook
-  const flatData = useMemo(() => data?.pages?.flatMap((page) => page.members) ?? [], [data]) as User[];
-  const totalFetched = flatData.length;
+      return columnDefs;
+    },
+    [properties.isOrgAdminOrOwner, updateModalState, totalMembersCount, sessionInfo?.data?.user.id]
+  );
 
-  const table = useReactTable({
-    data: flatData,
-    columns: memorisedColumns,
+  const processedMemberData = useMemo(
+    function () {
+      if (!membersQuery.data?.pages) return [];
+
+      const allMembers: User[] = [];
+      membersQuery.data.pages.forEach(function (page) {
+        allMembers.push(...page.members);
+      });
+
+      return allMembers;
+    },
+    [membersQuery.data]
+  ) as User[];
+
+  const currentFetchedCount = processedMemberData.length;
+
+  const dataTable = useReactTable({
+    data: processedMemberData,
+    columns: tableColumnDefinitions,
     enableRowSelection: true,
     debugTable: true,
     manualPagination: true,
     initialState: {
-      columnVisibility: initalColumnVisibility,
+      columnVisibility: defaultColumnStates,
     },
     state: {
-      columnFilters,
-      rowSelection,
+      columnFilters: activeFilters,
+      rowSelection: selectedRows,
     },
-    onColumnFiltersChange: setColumnFilters,
-    onRowSelectionChange: setRowSelection,
+    onColumnFiltersChange: modifyActiveFilters,
+    onRowSelectionChange: modifySelectedRows,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    getRowId: (row) => `${row.id}`,
+    getRowId: function (memberRow) {
+      return String(memberRow.id);
+    },
   });
 
-  const fetchMoreOnBottomReached = useFetchMoreOnBottomReached(
-    tableContainerRef,
-    fetchNextPage,
-    isFetching,
-    totalFetched,
-    totalDBRowCount
+  const infiniteScrollHandler = useFetchMoreOnBottomReached(
+    scrollContainerElement,
+    membersQuery.fetchNextPage,
+    membersQuery.isFetching,
+    currentFetchedCount,
+    totalMembersCount
   );
 
-  const numberOfSelectedRows = table.getSelectedRowModel().rows.length;
+  const selectionCount = dataTable.getSelectedRowModel().rows.length;
 
   return (
     <>
       <DataTable
         data-testid="team-member-list-container"
-        table={table}
-        tableContainerRef={tableContainerRef}
-        isPending={isPending}
-        onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}>
+        table={dataTable}
+        tableContainerRef={scrollContainerElement}
+        isPending={membersQuery.isPending}
+        onScroll={function (scrollEvent) {
+          infiniteScrollHandler(scrollEvent.target as HTMLDivElement);
+        }}>
         <DataTableToolbar.Root>
           <div className="flex w-full gap-2">
-            <DataTableToolbar.SearchBar table={table} onSearch={(value) => setDebouncedSearchTerm(value)} />
-            <DataTableFilters.FilterButton table={table} />
-            <DataTableFilters.ColumnVisibilityButton table={table} />
-            {isAdminOrOwner && (
+            <DataTableToolbar.SearchBar
+              table={dataTable}
+              onSearch={function (searchValue) {
+                updateSearchQuery(searchValue);
+              }}
+            />
+            <DataTableFilters.FilterButton table={dataTable} />
+            <DataTableFilters.ColumnVisibilityButton table={dataTable} />
+            {userIsAdminOrOwner && (
               <DataTableToolbar.CTA
                 type="button"
                 color="primary"
                 StartIcon="plus"
                 className="rounded-md"
-                onClick={() => props.setShowMemberInvitationModal(true)}
+                onClick={function () {
+                  properties.setShowMemberInvitationModal(true);
+                }}
                 data-testid="new-member-button">
-                {t("add")}
+                {localizationHooks.t("add")}
               </DataTableToolbar.CTA>
             )}
           </div>
           <div className="flex gap-2 justify-self-start">
-            <DataTableFilters.ActiveFilters table={table} />
+            <DataTableFilters.ActiveFilters table={dataTable} />
           </div>
         </DataTableToolbar.Root>
 
-        {numberOfSelectedRows >= 2 && dynamicLinkVisible && (
+        {selectionCount >= 2 && isDynamicLinkActive && (
           <DataTableSelectionBar.Root className="!bottom-16 md:!bottom-20">
-            <DynamicLink table={table} domain={domain} />
+            <DynamicLink table={dataTable} domain={baseUrl} />
           </DataTableSelectionBar.Root>
         )}
-        {numberOfSelectedRows > 0 && (
+        {selectionCount > 0 && (
           <DataTableSelectionBar.Root className="justify-center">
             <p className="text-brand-subtle px-2 text-center text-xs leading-none sm:text-sm sm:font-medium">
-              {t("number_selected", { count: numberOfSelectedRows })}
+              {localizationHooks.t("number_selected", { count: selectionCount })}
             </p>
-            {numberOfSelectedRows >= 2 && (
+            {selectionCount >= 2 && (
               <DataTableSelectionBar.Button
-                onClick={() => setDynamicLinkVisible(!dynamicLinkVisible)}
+                onClick={function () {
+                  updateDynamicLinkState(!isDynamicLinkActive);
+                }}
                 icon="handshake">
-                {t("group_meeting")}
+                {localizationHooks.t("group_meeting")}
               </DataTableSelectionBar.Button>
             )}
-            <EventTypesList table={table} teamId={props.team.id} />
+            <EventTypesList table={dataTable} teamId={properties.team.id} />
             <DeleteBulkTeamMembers
-              users={table.getSelectedRowModel().flatRows.map((row) => row.original)}
-              onRemove={() => table.toggleAllPageRowsSelected(false)}
-              isOrg={checkIsOrg(props.team)}
-              teamId={props.team.id}
+              users={dataTable.getSelectedRowModel().flatRows.map(function (rowItem) {
+                return rowItem.original;
+              })}
+              onRemove={function () {
+                dataTable.toggleAllPageRowsSelected(false);
+              }}
+              isOrg={verifyIsOrganization(properties.team)}
+              teamId={properties.team.id}
             />
           </DataTableSelectionBar.Root>
         )}
       </DataTable>
-      {state.deleteMember.showModal && (
+      {modalState.deleteMember.showModal && (
         <Dialog
           open={true}
-          onOpenChange={(open) =>
-            !open &&
-            dispatch({
-              type: "CLOSE_MODAL",
-            })
-          }>
+          onOpenChange={function (openState) {
+            if (!openState) {
+              updateModalState({
+                type: "CLOSE_MODAL",
+              });
+            }
+          }}>
           <ConfirmationDialogContent
             variety="danger"
-            title={t("remove_member")}
-            confirmBtnText={t("confirm_remove_member")}
-            onConfirm={removeMember}>
-            {t("remove_member_confirmation_message")}
+            title={localizationHooks.t("remove_member")}
+            confirmBtnText={localizationHooks.t("confirm_remove_member")}
+            onConfirm={executeRemoveMember}>
+            {localizationHooks.t("remove_member_confirmation_message")}
           </ConfirmationDialogContent>
         </Dialog>
       )}
 
-      {state.impersonateMember.showModal && state.impersonateMember.user?.username && (
+      {modalState.impersonateMember.showModal && modalState.impersonateMember.user?.username && (
         <Dialog
           open={true}
-          onOpenChange={() =>
-            dispatch({
+          onOpenChange={function () {
+            updateModalState({
               type: "CLOSE_MODAL",
-            })
-          }>
-          <DialogContent type="creation" title={t("impersonate")} description={t("impersonation_user_tip")}>
+            });
+          }}>
+          <DialogContent
+            type="creation"
+            title={localizationHooks.t("impersonate")}
+            description={localizationHooks.t("impersonation_user_tip")}>
             <form
-              onSubmit={async (e) => {
-                e.preventDefault();
+              onSubmit={async function (submitEvent) {
+                submitEvent.preventDefault();
                 await signIn("impersonation-auth", {
-                  username: state.impersonateMember.user?.email,
-                  teamId: props.team.id,
+                  username: modalState.impersonateMember.user?.email,
+                  teamId: properties.team.id,
                 });
-                dispatch({
+                updateModalState({
                   type: "CLOSE_MODAL",
                 });
               }}>
               <DialogFooter showDivider className="mt-8">
-                <DialogClose color="secondary">{t("cancel")}</DialogClose>
+                <DialogClose color="secondary">{localizationHooks.t("cancel")}</DialogClose>
                 <Button color="primary" type="submit">
-                  {t("impersonate")}
+                  {localizationHooks.t("impersonate")}
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       )}
-      {state.teamAvailability.showModal && (
+      {modalState.teamAvailability.showModal && (
         <Dialog
           open={true}
-          onOpenChange={() => {
-            dispatch({
+          onOpenChange={function () {
+            updateModalState({
               type: "CLOSE_MODAL",
             });
           }}>
           <DialogContent type="creation" size="md">
-            <TeamAvailabilityModal team={props.team} member={state.teamAvailability.user} />
+            <TeamAvailabilityModal team={properties.team} member={modalState.teamAvailability.user} />
           </DialogContent>
         </Dialog>
       )}
-      {state.editSheet.showModal && (
+      {modalState.editSheet.showModal && (
         <EditMemberSheet
-          dispatch={dispatch}
-          state={state}
-          currentMember={props.team.membership.role}
-          teamId={props.team.id}
+          dispatch={updateModalState}
+          state={modalState}
+          currentMember={properties.team.membership.role}
+          teamId={properties.team.id}
         />
       )}
     </>

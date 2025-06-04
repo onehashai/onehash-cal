@@ -4,9 +4,9 @@ import { vi, describe, it, expect, beforeEach } from "vitest";
 import logger from "@calcom/lib/logger";
 import { WorkflowTemplates, WorkflowActions, TimeUnit, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 
+import type { ScheduleEmailReminderAction } from "../types";
 import { scheduleEmailReminder } from "./emailReminderManager";
 import type { ScheduleReminderArgs } from "./emailReminderManager";
-import type { ScheduleEmailReminderAction } from "./emailReminderManager";
 import { sendSendgridMail } from "./providers/sendgridProvider";
 import { getBatchId } from "./providers/sendgridProvider";
 import type { BookingInfo } from "./smsReminderManager";

@@ -12,41 +12,80 @@ import {
   ATTENDEE_WORKFLOW_TEMPLATES,
 } from "./constants";
 
+const EXCLUDED_TRIGGER_EVENTS = [
+  WorkflowTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW,
+  WorkflowTriggerEvents.AFTER_GUESTS_CAL_VIDEO_NO_SHOW,
+];
+
+function capitalizeFirstLetter(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function createTranslatedOption(translator: TFunction, key: string, value: any) {
+  const translatedText = translator(`${key.toLowerCase()}_action`);
+  return {
+    label: capitalizeFirstLetter(translatedText),
+    value: value,
+  };
+}
+
+function determineTemplateCollection(actionType?: WorkflowActions) {
+  if (!actionType) return BASIC_WORKFLOW_TEMPLATES;
+
+  if (isWhatsappAction(actionType)) {
+    return WHATSAPP_WORKFLOW_TEMPLATES;
+  }
+
+  if (isEmailToAttendeeAction(actionType)) {
+    return ATTENDEE_WORKFLOW_TEMPLATES;
+  }
+
+  return BASIC_WORKFLOW_TEMPLATES;
+}
+
+function shouldRequireTeamUpgrade(actionType: WorkflowActions, hasTeamsPlan?: boolean): boolean {
+  return isSMSOrWhatsappAction(actionType) && !hasTeamsPlan;
+}
+
 export function getWorkflowActionOptions(t: TFunction, isTeamsPlan?: boolean, isOrgsPlan?: boolean) {
-  return WORKFLOW_ACTIONS.map((action) => {
-    const actionString = t(`${action.toLowerCase()}_action`);
+  return WORKFLOW_ACTIONS.map((actionType) => {
+    const translatedActionName = t(`${actionType.toLowerCase()}_action`);
+    const formattedLabel = capitalizeFirstLetter(translatedActionName);
+    const requiresUpgrade = shouldRequireTeamUpgrade(actionType, isTeamsPlan);
 
     return {
-      label: actionString.charAt(0).toUpperCase() + actionString.slice(1),
-      value: action,
-      needsTeamsUpgrade: isSMSOrWhatsappAction(action) && !isTeamsPlan,
+      label: formattedLabel,
+      value: actionType,
+      needsTeamsUpgrade: requiresUpgrade,
     };
   });
 }
 
 export function getWorkflowTriggerOptions(t: TFunction) {
-  // TODO: remove this after workflows are supported
-  const filterdWorkflowTriggerEvents = WORKFLOW_TRIGGER_EVENTS.filter(
-    (event) =>
-      event !== WorkflowTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW &&
-      event !== WorkflowTriggerEvents.AFTER_GUESTS_CAL_VIDEO_NO_SHOW
+  const allowedTriggerEvents = WORKFLOW_TRIGGER_EVENTS.filter(
+    (triggerEvent) =>
+      !EXCLUDED_TRIGGER_EVENTS.includes(triggerEvent as (typeof EXCLUDED_TRIGGER_EVENTS)[number])
   );
 
-  return filterdWorkflowTriggerEvents.map((triggerEvent) => {
-    const triggerString = t(`${triggerEvent.toLowerCase()}_trigger`);
+  return allowedTriggerEvents.map((triggerEvent) => {
+    const translatedTriggerName = t(`${triggerEvent.toLowerCase()}_trigger`);
+    const capitalizedLabel = capitalizeFirstLetter(translatedTriggerName);
 
-    return { label: triggerString.charAt(0).toUpperCase() + triggerString.slice(1), value: triggerEvent };
+    return {
+      label: capitalizedLabel,
+      value: triggerEvent,
+    };
   });
 }
 
 export function getWorkflowTemplateOptions(t: TFunction, action: WorkflowActions | undefined) {
-  const TEMPLATES =
-    action && isWhatsappAction(action)
-      ? WHATSAPP_WORKFLOW_TEMPLATES
-      : action && isEmailToAttendeeAction(action)
-      ? ATTENDEE_WORKFLOW_TEMPLATES
-      : BASIC_WORKFLOW_TEMPLATES;
-  return TEMPLATES.map((template) => {
-    return { label: t(`${template.toLowerCase()}`), value: template };
+  const selectedTemplateCollection = determineTemplateCollection(action);
+
+  return selectedTemplateCollection.map((templateType) => {
+    const translatedTemplate = t(`${templateType.toLowerCase()}`);
+    return {
+      label: translatedTemplate,
+      value: templateType,
+    };
   }) as { label: string; value: any }[];
 }

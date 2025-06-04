@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 
-import BrandColorsForm from "@calcom/features/ee/components/BrandColorsForm";
-import { AppearanceSkeletonLoader } from "@calcom/features/ee/components/CommonSkeletonLoaders";
+import { AppearanceSkeletonLoader } from "@calcom/features/oe/components/AppearanceSkeletonLoader";
+import BrandThemeEditor from "@calcom/features/oe/components/BrandThemeEditor";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import { classNames } from "@calcom/lib";
 import { APP_NAME } from "@calcom/lib/constants";
-import { DEFAULT_LIGHT_BRAND_COLOR, DEFAULT_DARK_BRAND_COLOR } from "@calcom/lib/constants";
+import { DEFAULT_LIGHT_BRAND_COLOR, DEFAULT_DARK_BRAND_COLOR, COMPANY_NAME } from "@calcom/lib/constants";
 import { getBrandLogoUrl } from "@calcom/lib/getAvatarUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
@@ -29,92 +29,95 @@ import {
 
 import ThemeLabel from "../../../settings/ThemeLabel";
 
-type BrandColorsFormValues = {
+interface ColorSchemeFormData {
   brandColor: string;
   darkBrandColor: string;
-};
+}
 
-type BannerFormValues = {
+interface HeaderImageFormData {
   bannerUrl: string | null;
-};
+}
 
-type FaviconFormValues = {
+interface IconFormData {
   faviconUrl: string | null;
-};
-type ProfileViewProps = { team: RouterOutputs["viewer"]["teams"]["get"] };
+}
 
-const ProfileView = ({ team }: ProfileViewProps) => {
+interface TeamDisplayProps {
+  team: RouterOutputs["viewer"]["teams"]["get"];
+}
+
+const TeamDisplayComponent = ({ team }: TeamDisplayProps) => {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utilities = trpc.useUtils();
 
-  const [hideBrandingValue, setHideBrandingValue] = useState(team?.hideBranding ?? false);
-  const [hideBookATeamMember, setHideBookATeamMember] = useState(team?.hideBookATeamMember ?? false);
+  const [brandingVisibility, setBrandingVisibility] = useState(team?.hideBranding ?? false);
+  const [memberBookingVisibility, setMemberBookingVisibility] = useState(team?.hideBookATeamMember ?? false);
 
-  const themeForm = useForm<{ theme: string | null | undefined }>({
+  const themeFormController = useForm<{ theme: string | null | undefined }>({
     defaultValues: {
       theme: team?.theme,
     },
   });
 
   const {
-    formState: { isSubmitting: isThemeSubmitting, isDirty: isThemeDirty },
-    reset: resetTheme,
-  } = themeForm;
+    formState: { isSubmitting: themeSubmissionState, isDirty: themeModificationState },
+    reset: resetThemeData,
+  } = themeFormController;
 
-  const brandColorsFormMethods = useForm<BrandColorsFormValues>({
+  const colorSchemeFormController = useForm<ColorSchemeFormData>({
     defaultValues: {
       brandColor: team?.brandColor || DEFAULT_LIGHT_BRAND_COLOR,
       darkBrandColor: team?.darkBrandColor || DEFAULT_DARK_BRAND_COLOR,
     },
   });
 
-  const { reset: resetBrandColors } = brandColorsFormMethods;
+  const { reset: resetColorSchemeData } = colorSchemeFormController;
 
-  const bannerFormMethods = useForm({
+  const headerImageFormController = useForm({
     defaultValues: {
       bannerUrl: team.bannerUrl,
     },
   });
 
   const {
-    formState: { isSubmitting: isBannerFormSubmitting, isDirty: isBannerFormDirty },
-  } = bannerFormMethods;
+    formState: { isSubmitting: headerImageSubmissionState, isDirty: headerImageModificationState },
+  } = headerImageFormController;
 
-  const onBannerFormSubmit = (values: BannerFormValues) => {
-    if (values.bannerUrl === null) {
-      values.bannerUrl = "delete";
+  const processHeaderImageSubmission = (formData: HeaderImageFormData) => {
+    if (formData.bannerUrl === null) {
+      formData.bannerUrl = "delete";
     }
-    mutation.mutate({ ...values, id: team.id });
+    updateMutation.mutate({ ...formData, id: team.id });
   };
 
-  const faviconFormMethods = useForm({
+  const iconFormController = useForm({
     defaultValues: {
       faviconUrl: team.faviconUrl,
     },
   });
 
   const {
-    formState: { isSubmitting: isFaviconFormSubmitting, isDirty: isFaviconFormDirty },
-  } = faviconFormMethods;
+    formState: { isSubmitting: iconSubmissionState, isDirty: iconModificationState },
+  } = iconFormController;
 
-  const onFaviconFormSubmit = (values: FaviconFormValues) => {
-    if (values.faviconUrl === null) {
-      values.faviconUrl = "delete";
+  const processIconSubmission = (formData: IconFormData) => {
+    if (formData.faviconUrl === null) {
+      formData.faviconUrl = "delete";
     }
-    mutation.mutate({ ...values, id: team.id });
+    updateMutation.mutate({ ...formData, id: team.id });
   };
 
-  const mutation = trpc.viewer.teams.update.useMutation({
-    onError: (err) => {
-      showToast(err.message, "error");
+  const updateMutation = trpc.viewer.teams.update.useMutation({
+    onError: (error) => {
+      showToast(error.message, "error");
     },
-    async onSuccess(res) {
-      await utils.viewer.teams.get.invalidate();
-      if (res) {
-        resetTheme({ theme: res.theme });
-        resetBrandColors({
-          brandColor: res.brandColor ?? DEFAULT_LIGHT_BRAND_COLOR,
-          darkBrandColor: res.darkBrandColor ?? DEFAULT_DARK_BRAND_COLOR,
+    async onSuccess(response) {
+      await utilities.viewer.teams.get.invalidate();
+      if (response) {
+        resetThemeData({ theme: response.theme });
+        resetColorSchemeData({
+          brandColor: response.brandColor ?? DEFAULT_LIGHT_BRAND_COLOR,
+          darkBrandColor: response.darkBrandColor ?? DEFAULT_DARK_BRAND_COLOR,
         });
       }
 
@@ -122,21 +125,21 @@ const ProfileView = ({ team }: ProfileViewProps) => {
     },
   });
 
-  const onBrandColorsFormSubmit = (values: BrandColorsFormValues) => {
-    mutation.mutate({ ...values, id: team.id });
+  const processColorSchemeSubmission = (formData: ColorSchemeFormData) => {
+    updateMutation.mutate({ ...formData, id: team.id });
   };
 
-  const isAdmin =
+  const hasAdministrativeAccess =
     team && (team.membership.role === MembershipRole.OWNER || team.membership.role === MembershipRole.ADMIN);
 
   return (
     <>
-      {isAdmin ? (
+      {hasAdministrativeAccess ? (
         <>
           <Form
-            form={themeForm}
+            form={themeFormController}
             handleSubmit={({ theme }) => {
-              mutation.mutate({
+              updateMutation.mutate({
                 id: team.id,
                 theme: theme === "light" || theme === "dark" ? theme : null,
               });
@@ -153,26 +156,26 @@ const ProfileView = ({ team }: ProfileViewProps) => {
                 value="system"
                 label={t("theme_system")}
                 defaultChecked={team.theme === null}
-                register={themeForm.register}
+                register={themeFormController.register}
               />
               <ThemeLabel
                 variant="light"
                 value="light"
                 label={t("light")}
                 defaultChecked={team.theme === "light"}
-                register={themeForm.register}
+                register={themeFormController.register}
               />
               <ThemeLabel
                 variant="dark"
                 value="dark"
                 label={t("dark")}
                 defaultChecked={team.theme === "dark"}
-                register={themeForm.register}
+                register={themeFormController.register}
               />
             </div>
             <SectionBottomActions className="mb-6" align="end">
               <Button
-                disabled={isThemeSubmitting || !isThemeDirty}
+                disabled={themeSubmissionState || !themeModificationState}
                 type="submit"
                 data-testid="update-org-theme-btn"
                 color="primary">
@@ -182,12 +185,12 @@ const ProfileView = ({ team }: ProfileViewProps) => {
           </Form>
 
           <Form
-            form={brandColorsFormMethods}
-            handleSubmit={(values) => {
-              onBrandColorsFormSubmit(values);
+            form={colorSchemeFormController}
+            handleSubmit={(formData) => {
+              processColorSchemeSubmission(formData);
             }}>
-            <BrandColorsForm
-              onSubmit={onBrandColorsFormSubmit}
+            <BrandThemeEditor
+              onSubmit={processColorSchemeSubmission}
               brandColor={team?.brandColor ?? DEFAULT_LIGHT_BRAND_COLOR}
               darkBrandColor={team?.darkBrandColor ?? DEFAULT_DARK_BRAND_COLOR}
             />
@@ -196,26 +199,26 @@ const ProfileView = ({ team }: ProfileViewProps) => {
           <div className="mt-6 flex flex-col gap-6">
             <SettingsToggle
               toggleSwitchAtTheEnd={true}
-              title={t("disable_cal_branding", { appName: APP_NAME })}
-              disabled={mutation?.isPending}
-              description={t("removes_cal_branding", { appName: APP_NAME })}
-              checked={hideBrandingValue}
-              onCheckedChange={(checked) => {
-                setHideBrandingValue(checked);
-                mutation.mutate({ id: team.id, hideBranding: checked });
+              title={t("disable_cal_branding", { appName: COMPANY_NAME })}
+              disabled={updateMutation?.isPending}
+              description={t("removes_cal_branding", { appName: COMPANY_NAME })}
+              checked={brandingVisibility}
+              onCheckedChange={(isChecked) => {
+                setBrandingVisibility(isChecked);
+                updateMutation.mutate({ id: team.id, hideBranding: isChecked });
               }}
             />
 
             <Form
-              form={bannerFormMethods}
-              handleSubmit={(values) => {
-                onBannerFormSubmit(values);
+              form={headerImageFormController}
+              handleSubmit={(formData) => {
+                processHeaderImageSubmission(formData);
               }}>
               <Controller
-                control={bannerFormMethods.control}
+                control={headerImageFormController.control}
                 name="bannerUrl"
                 render={({ field: { value, onChange } }) => {
-                  const showRemoveAvatarButton = !!value;
+                  const displayRemoveImageButton = !!value;
 
                   return (
                     <div className="mt-3">
@@ -261,7 +264,7 @@ const ProfileView = ({ team }: ProfileViewProps) => {
                                   handleAvatarChange={onChange}
                                   imageSrc={getBrandLogoUrl({ bannerUrl: value })}
                                 />
-                                {showRemoveAvatarButton && (
+                                {displayRemoveImageButton && (
                                   <Button
                                     color="secondary"
                                     onClick={() => {
@@ -275,8 +278,8 @@ const ProfileView = ({ team }: ProfileViewProps) => {
                           </div>
                           <Button
                             className="my-auto"
-                            loading={mutation.isPending}
-                            disabled={isBannerFormSubmitting || !isBannerFormDirty}
+                            loading={updateMutation.isPending}
+                            disabled={headerImageSubmissionState || !headerImageModificationState}
                             color="primary"
                             type="submit">
                             {t("update")}
@@ -289,15 +292,15 @@ const ProfileView = ({ team }: ProfileViewProps) => {
               />
             </Form>
             <Form
-              form={faviconFormMethods}
-              handleSubmit={(values) => {
-                onFaviconFormSubmit(values);
+              form={iconFormController}
+              handleSubmit={(formData) => {
+                processIconSubmission(formData);
               }}>
               <Controller
-                control={faviconFormMethods.control}
+                control={iconFormController.control}
                 name="faviconUrl"
                 render={({ field: { value, onChange } }) => {
-                  const showRemoveFaviconButton = !!value;
+                  const displayRemoveIconButton = !!value;
 
                   return (
                     <div className="mt-3">
@@ -333,13 +336,13 @@ const ProfileView = ({ team }: ProfileViewProps) => {
                                   target="avatar"
                                   id="avatar-upload"
                                   buttonMsg={t("upload_favicon")}
-                                  handleAvatarChange={(newAvatar) => {
-                                    onChange(newAvatar);
+                                  handleAvatarChange={(newImage) => {
+                                    onChange(newImage);
                                   }}
                                   imageSrc={getBrandLogoUrl({ bannerUrl: value }, true)}
                                 />
 
-                                {showRemoveFaviconButton && (
+                                {displayRemoveIconButton && (
                                   <Button
                                     color="secondary"
                                     onClick={() => {
@@ -353,8 +356,8 @@ const ProfileView = ({ team }: ProfileViewProps) => {
                           </div>
                           <Button
                             className="my-auto"
-                            loading={mutation.isPending}
-                            disabled={isFaviconFormSubmitting || !isFaviconFormDirty}
+                            loading={updateMutation.isPending}
+                            disabled={iconSubmissionState || !iconModificationState}
                             color="primary"
                             type="submit">
                             {t("update")}
@@ -369,12 +372,12 @@ const ProfileView = ({ team }: ProfileViewProps) => {
             <SettingsToggle
               toggleSwitchAtTheEnd={true}
               title={t("hide_book_a_team_member")}
-              disabled={mutation?.isPending}
+              disabled={updateMutation?.isPending}
               description={t("hide_book_a_team_member_description", { appName: APP_NAME })}
-              checked={hideBookATeamMember ?? false}
-              onCheckedChange={(checked) => {
-                setHideBookATeamMember(checked);
-                mutation.mutate({ id: team.id, hideBookATeamMember: checked });
+              checked={memberBookingVisibility ?? false}
+              onCheckedChange={(isChecked) => {
+                setMemberBookingVisibility(isChecked);
+                updateMutation.mutate({ id: team.id, hideBookATeamMember: isChecked });
               }}
             />
           </div>
@@ -389,36 +392,36 @@ const ProfileView = ({ team }: ProfileViewProps) => {
 };
 
 const ProfileViewWrapper = () => {
-  const router = useRouter();
-  const params = useParamsWithFallback();
+  const navigationRouter = useRouter();
+  const routeParameters = useParamsWithFallback();
 
   const { t } = useLocale();
 
   const {
-    data: team,
-    isPending,
-    error,
+    data: teamData,
+    isPending: loadingState,
+    error: queryError,
   } = trpc.viewer.teams.get.useQuery(
-    { teamId: Number(params.id) },
+    { teamId: Number(routeParameters.id) },
     {
-      enabled: !!Number(params.id),
+      enabled: !!Number(routeParameters.id),
     }
   );
 
   useEffect(
-    function refactorMeWithoutEffect() {
-      if (error) {
-        router.replace("/teams");
+    function handleErrorRedirection() {
+      if (queryError) {
+        navigationRouter.replace("/teams");
       }
     },
-    [error]
+    [queryError]
   );
 
-  if (isPending) return <AppearanceSkeletonLoader />;
+  if (loadingState) return <AppearanceSkeletonLoader />;
 
-  if (!team) return null;
+  if (!teamData) return null;
 
-  return <ProfileView team={team} />;
+  return <TeamDisplayComponent team={teamData} />;
 };
 
 export default ProfileViewWrapper;

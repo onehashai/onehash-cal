@@ -22,7 +22,8 @@ export enum timeUnitLowerCase {
   MINUTE = "minute",
   YEAR = "year",
 }
-const log = logger.getSubLogger({ prefix: ["[smsReminderManager]"] });
+
+const moduleLogger = logger.getSubLogger({ prefix: ["[smsReminderManager]"] });
 
 export type AttendeeInBookingInfo = {
   id?: number;
@@ -67,6 +68,7 @@ export type ScheduleTextReminderAction = Extract<
   WorkflowActions,
   "SMS_ATTENDEE" | "SMS_NUMBER" | "WHATSAPP_ATTENDEE" | "WHATSAPP_NUMBER"
 >;
+
 export interface ScheduleTextReminderArgs extends ScheduleReminderArgs {
   reminderPhone: string | null;
   message: string;
@@ -77,218 +79,368 @@ export interface ScheduleTextReminderArgs extends ScheduleReminderArgs {
   prisma?: PrismaClient;
 }
 
-export const scheduleSMSReminder = async (args: ScheduleTextReminderArgs) => {
-  const {
-    evt,
-    reminderPhone,
-    triggerEvent,
-    action,
-    timeSpan,
-    message = "",
-    workflowStepId,
-    template,
-    sender,
-    userId,
-    teamId,
-    isVerificationPending = false,
-    seatReferenceUid,
-  } = args;
+const validateNumberVerification = async (
+  actionType: ScheduleTextReminderAction,
+  phoneNumber: string | null,
+  userIdentifier?: number | null,
+  teamIdentifier?: number | null,
+  pendingVerification = false
+): Promise<boolean> => {
+  if (actionType === WorkflowActions.SMS_ATTENDEE) return true;
 
-  const { startTime, endTime } = evt;
-  const uid = evt.uid as string;
-  const currentDate = dayjs();
-  const timeUnit: timeUnitLowerCase | undefined = timeSpan.timeUnit?.toLocaleLowerCase() as timeUnitLowerCase;
-  let scheduledDate = null;
+  const verificationRecord = await prisma.verifiedNumber.findFirst({
+    where: {
+      OR: [{ userId: userIdentifier }, { teamId: teamIdentifier }],
+      phoneNumber: phoneNumber || "",
+    },
+  });
 
-  const senderID = getSenderId(reminderPhone, sender || SENDER_ID);
+  return verificationRecord ? true : pendingVerification;
+};
 
-  //SMS_ATTENDEE action does not need to be verified
-  //isVerificationPending is from all already existing workflows (once they edit their workflow, they will also have to verify the number)
-  async function getIsNumberVerified() {
-    if (action === WorkflowActions.SMS_ATTENDEE) return true;
-    const verifiedNumber = await prisma.verifiedNumber.findFirst({
-      where: {
-        OR: [{ userId }, { teamId }],
-        phoneNumber: reminderPhone || "",
-      },
-    });
-    if (!!verifiedNumber) return true;
-    return isVerificationPending;
-  }
-  const isNumberVerified = await getIsNumberVerified();
-
-  let attendeeToBeUsedInSMS: AttendeeInBookingInfo | null = null;
-  if (action === WorkflowActions.SMS_ATTENDEE) {
-    const attendeeWithReminderPhoneAsSMSReminderNumber =
-      reminderPhone && evt.attendees.find((attendee) => attendee.email === evt.responses?.email?.value);
-    attendeeToBeUsedInSMS = attendeeWithReminderPhoneAsSMSReminderNumber
-      ? attendeeWithReminderPhoneAsSMSReminderNumber
-      : evt.attendees[0];
-  } else {
-    attendeeToBeUsedInSMS = evt.attendees[0];
+const determineTargetAttendee = (
+  actionType: ScheduleTextReminderAction,
+  eventData: any,
+  phoneContact: string | null
+): AttendeeInBookingInfo => {
+  if (actionType !== WorkflowActions.SMS_ATTENDEE) {
+    return eventData.attendees[0];
   }
 
-  if (triggerEvent === WorkflowTriggerEvents.BEFORE_EVENT) {
-    scheduledDate = timeSpan.time && timeUnit ? dayjs(startTime).subtract(timeSpan.time, timeUnit) : null;
-  } else if (triggerEvent === WorkflowTriggerEvents.AFTER_EVENT) {
-    scheduledDate = timeSpan.time && timeUnit ? dayjs(endTime).add(timeSpan.time, timeUnit) : null;
+  const matchingAttendee =
+    phoneContact &&
+    eventData.attendees.find(
+      (participant: AttendeeInBookingInfo) => participant.email === eventData.responses?.email?.value
+    );
+
+  return matchingAttendee || eventData.attendees[0];
+};
+
+const calculateScheduledDateTime = (
+  triggerType: WorkflowTriggerEvents,
+  eventStartTime: string,
+  eventEndTime: string,
+  timeConfiguration: { time?: number; timeUnit?: string }
+): dayjs.Dayjs | null => {
+  const { time, timeUnit } = timeConfiguration;
+  const normalizedUnit = timeUnit?.toLocaleLowerCase() as timeUnitLowerCase;
+
+  if (!time || !normalizedUnit) return null;
+
+  switch (triggerType) {
+    case WorkflowTriggerEvents.BEFORE_EVENT:
+      return dayjs(eventStartTime).subtract(time, normalizedUnit);
+    case WorkflowTriggerEvents.AFTER_EVENT:
+      return dayjs(eventEndTime).add(time, normalizedUnit);
+    default:
+      return null;
+  }
+};
+
+const buildMessageVariables = (eventInfo: any, targetAttendee: AttendeeInBookingInfo): VariablesType => ({
+  eventName: eventInfo.title,
+  organizerName: eventInfo.organizer.name,
+  attendeeName: targetAttendee.name,
+  attendeeFirstName: targetAttendee.firstName,
+  attendeeLastName: targetAttendee.lastName,
+  attendeeEmail: targetAttendee.email,
+  eventDate: dayjs(eventInfo.startTime).tz(targetAttendee.timeZone),
+  eventEndTime: dayjs(eventInfo.endTime).tz(targetAttendee.timeZone),
+  timeZone: targetAttendee.timeZone,
+  location: eventInfo.location,
+  additionalNotes: eventInfo.additionalNotes,
+  responses: eventInfo.responses,
+  meetingUrl: bookingMetadataSchema.parse(eventInfo.metadata || {})?.videoCallUrl,
+  cancelLink: `${eventInfo.bookerUrl ?? WEBSITE_URL}/booking/${eventInfo.uid}?cancel=true`,
+  rescheduleLink: `${eventInfo.bookerUrl ?? WEBSITE_URL}/reschedule/${eventInfo.uid}`,
+  attendeeTimezone: eventInfo.attendees[0].timeZone,
+  eventTimeInAttendeeTimezone: dayjs(eventInfo.startTime).tz(eventInfo.attendees[0].timeZone),
+  eventEndTimeInAttendeeTimezone: dayjs(eventInfo.endTime).tz(eventInfo.attendees[0].timeZone),
+});
+
+const generateMessageContent = (
+  messageTemplate: string,
+  workflowTemplate: WorkflowTemplates | undefined,
+  eventDetails: any,
+  actionType: ScheduleTextReminderAction,
+  targetParticipant: AttendeeInBookingInfo,
+  recipientLocale: string,
+  recipientTimezone: string
+): string => {
+  if (messageTemplate) {
+    const templateVariables = buildMessageVariables(eventDetails, targetParticipant);
+    const processedMessage = customTemplate(
+      messageTemplate,
+      templateVariables,
+      recipientLocale,
+      eventDetails.organizer.timeFormat
+    );
+    return processedMessage.text;
   }
 
-  const name = action === WorkflowActions.SMS_ATTENDEE ? attendeeToBeUsedInSMS.name : "";
-  const attendeeName =
-    action === WorkflowActions.SMS_ATTENDEE ? evt.organizer.name : attendeeToBeUsedInSMS.name;
-  const timeZone =
-    action === WorkflowActions.SMS_ATTENDEE ? attendeeToBeUsedInSMS.timeZone : evt.organizer.timeZone;
+  if (workflowTemplate === WorkflowTemplates.REMINDER) {
+    const recipientName = actionType === WorkflowActions.SMS_ATTENDEE ? targetParticipant.name : "";
+    const organizerName =
+      actionType === WorkflowActions.SMS_ATTENDEE ? eventDetails.organizer.name : targetParticipant.name;
 
-  const locale =
-    action === WorkflowActions.SMS_ATTENDEE
-      ? attendeeToBeUsedInSMS.language?.locale
-      : evt.organizer.language.locale;
-
-  let smsMessage = message;
-
-  if (smsMessage) {
-    const variables: VariablesType = {
-      eventName: evt.title,
-      organizerName: evt.organizer.name,
-      attendeeName: attendeeToBeUsedInSMS.name,
-      attendeeFirstName: attendeeToBeUsedInSMS.firstName,
-      attendeeLastName: attendeeToBeUsedInSMS.lastName,
-      attendeeEmail: attendeeToBeUsedInSMS.email,
-      eventDate: dayjs(evt.startTime).tz(timeZone),
-      eventEndTime: dayjs(evt.endTime).tz(timeZone),
-      timeZone: timeZone,
-      location: evt.location,
-      additionalNotes: evt.additionalNotes,
-      responses: evt.responses,
-      meetingUrl: bookingMetadataSchema.parse(evt.metadata || {})?.videoCallUrl,
-      cancelLink: `${evt.bookerUrl ?? WEBSITE_URL}/booking/${evt.uid}?cancel=true`,
-      rescheduleLink: `${evt.bookerUrl ?? WEBSITE_URL}/reschedule/${evt.uid}`,
-      attendeeTimezone: evt.attendees[0].timeZone,
-      eventTimeInAttendeeTimezone: dayjs(evt.startTime).tz(evt.attendees[0].timeZone),
-      eventEndTimeInAttendeeTimezone: dayjs(evt.endTime).tz(evt.attendees[0].timeZone),
-    };
-    const customMessage = customTemplate(smsMessage, variables, locale, evt.organizer.timeFormat);
-    smsMessage = customMessage.text;
-  } else if (template === WorkflowTemplates.REMINDER) {
-    smsMessage =
+    return (
       smsReminderTemplate(
         false,
-        evt.organizer.language.locale,
-        action,
-        evt.organizer.timeFormat,
-        evt.startTime,
-        evt.title,
-        timeZone,
-        attendeeName,
-        name
-      ) || message;
+        eventDetails.organizer.language.locale,
+        actionType,
+        eventDetails.organizer.timeFormat,
+        eventDetails.startTime,
+        eventDetails.title,
+        recipientTimezone,
+        organizerName,
+        recipientName
+      ) || messageTemplate
+    );
   }
 
-  // Allows debugging generated email content without waiting for sendgrid to send emails
-  log.debug(`Sending sms for trigger ${triggerEvent}`, smsMessage);
+  return messageTemplate;
+};
 
-  if (smsMessage.length > 0 && reminderPhone && isNumberVerified) {
-    //send SMS when event is booked/cancelled/rescheduled
-    if (
-      triggerEvent === WorkflowTriggerEvents.NEW_EVENT ||
-      triggerEvent === WorkflowTriggerEvents.EVENT_CANCELLED ||
-      triggerEvent === WorkflowTriggerEvents.RESCHEDULE_EVENT
-    ) {
-      try {
-        await twilio.sendSMS(
-          reminderPhone,
-          smsMessage,
-          senderID,
-          userId,
-          teamId,
-          false,
-          undefined,
-          undefined,
-          {
-            eventTypeId: evt.eventType.id,
-          }
-        );
-      } catch (error) {
-        log.error(`Error sending SMS with error ${error}`);
-      }
-    } else if (
-      (triggerEvent === WorkflowTriggerEvents.BEFORE_EVENT ||
-        triggerEvent === WorkflowTriggerEvents.AFTER_EVENT) &&
-      scheduledDate
-    ) {
-      // Can only schedule at least 60 minutes in advance and at most 7 days in advance
-      if (
-        currentDate.isBefore(scheduledDate.subtract(1, "hour")) &&
-        !scheduledDate.isAfter(currentDate.add(7, "day"))
-      ) {
-        try {
-          const scheduledSMS = await twilio.scheduleSMS(
-            reminderPhone,
-            smsMessage,
-            scheduledDate.toDate(),
-            senderID,
-            userId,
-            teamId,
-            false,
-            undefined,
-            undefined,
-            {
-              eventTypeId: evt.eventTypeId,
-            }
-          );
+const executeImmediateNotification = async (
+  phoneDestination: string,
+  textContent: string,
+  senderIdentifier: string,
+  userRef?: number | null,
+  teamRef?: number | null,
+  eventTypeRef?: number
+): Promise<void> => {
+  try {
+    await twilio.sendSMS(
+      phoneDestination,
+      textContent,
+      senderIdentifier,
+      userRef,
+      teamRef,
+      false,
+      undefined,
+      undefined,
+      { eventTypeId: eventTypeRef }
+    );
+  } catch (exception) {
+    moduleLogger.error(`Immediate SMS delivery failed: ${exception}`);
+  }
+};
 
-          if (scheduledSMS) {
-            await prisma.workflowReminder.create({
-              data: {
-                bookingUid: uid,
-                workflowStepId: workflowStepId,
-                method: WorkflowMethods.SMS,
-                scheduledDate: scheduledDate.toDate(),
-                scheduled: true,
-                referenceId: scheduledSMS.sid,
-                seatReferenceId: seatReferenceUid,
-                ...(evt.attendees[0].id && { attendeeId: evt.attendees[0].id }),
-              },
-            });
-          }
-        } catch (error) {
-          log.error(`Error scheduling SMS with error ${error}`);
-        }
-      } else if (scheduledDate.isAfter(currentDate.add(7, "day"))) {
-        // Write to DB and send to CRON if scheduled reminder date is past 7 days
-        await prisma.workflowReminder.create({
-          data: {
-            bookingUid: uid,
-            workflowStepId: workflowStepId,
-            method: WorkflowMethods.SMS,
-            scheduledDate: scheduledDate.toDate(),
-            scheduled: false,
-            seatReferenceId: seatReferenceUid,
-          },
-        });
-      }
+const scheduleDelayedNotification = async (
+  phoneDestination: string,
+  textContent: string,
+  dispatchTime: dayjs.Dayjs,
+  senderIdentifier: string,
+  bookingReference: string,
+  stepReference: number,
+  seatReference?: string | null,
+  userRef?: number | null,
+  teamRef?: number | null,
+  eventTypeRef?: number | null
+): Promise<void> => {
+  try {
+    const scheduledMessage = await twilio.scheduleSMS(
+      phoneDestination,
+      textContent,
+      dispatchTime.toDate(),
+      senderIdentifier,
+      userRef,
+      teamRef,
+      false,
+      undefined,
+      undefined,
+      { eventTypeId: eventTypeRef }
+    );
+
+    if (scheduledMessage) {
+      await prisma.workflowReminder.create({
+        data: {
+          bookingUid: bookingReference,
+          workflowStepId: stepReference,
+          method: WorkflowMethods.SMS,
+          scheduledDate: dispatchTime.toDate(),
+          scheduled: true,
+          referenceId: scheduledMessage.sid,
+          seatReferenceId: seatReference,
+        },
+      });
+    }
+  } catch (exception) {
+    moduleLogger.error(`Scheduled SMS creation failed: ${exception}`);
+  }
+};
+
+const storeFutureReminder = async (
+  bookingReference: string,
+  stepReference: number,
+  dispatchTime: dayjs.Dayjs,
+  seatReference?: string | null
+): Promise<void> => {
+  await prisma.workflowReminder.create({
+    data: {
+      bookingUid: bookingReference,
+      workflowStepId: stepReference,
+      method: WorkflowMethods.SMS,
+      scheduledDate: dispatchTime.toDate(),
+      scheduled: false,
+      seatReferenceId: seatReference,
+    },
+  });
+};
+
+const processScheduledReminder = async (
+  phoneDestination: string,
+  textContent: string,
+  dispatchTime: dayjs.Dayjs,
+  senderIdentifier: string,
+  bookingReference: string,
+  stepReference: number,
+  seatReference?: string | null,
+  userRef?: number | null,
+  teamRef?: number | null,
+  eventTypeRef?: number | null
+): Promise<void> => {
+  const currentMoment = dayjs();
+  const minimumAdvanceTime = currentMoment.add(1, "hour");
+  const maximumAdvanceTime = currentMoment.add(7, "day");
+
+  if (currentMoment.isBefore(dispatchTime.subtract(1, "hour")) && !dispatchTime.isAfter(maximumAdvanceTime)) {
+    await scheduleDelayedNotification(
+      phoneDestination,
+      textContent,
+      dispatchTime,
+      senderIdentifier,
+      bookingReference,
+      stepReference,
+      seatReference,
+      userRef,
+      teamRef,
+      eventTypeRef
+    );
+  } else if (dispatchTime.isAfter(maximumAdvanceTime)) {
+    await storeFutureReminder(bookingReference, stepReference, dispatchTime, seatReference);
+  }
+};
+
+const determineRecipientDetails = (
+  actionType: ScheduleTextReminderAction,
+  targetAttendee: AttendeeInBookingInfo,
+  organizerInfo: any
+) => {
+  const isAttendeeAction = actionType === WorkflowActions.SMS_ATTENDEE;
+
+  return {
+    recipientName: isAttendeeAction ? targetAttendee.name : "",
+    organizerName: isAttendeeAction ? organizerInfo.name : targetAttendee.name,
+    recipientTimezone: isAttendeeAction ? targetAttendee.timeZone : organizerInfo.timeZone,
+    recipientLocale: isAttendeeAction ? targetAttendee.language?.locale : organizerInfo.language.locale,
+  };
+};
+
+export const scheduleSMSReminder = async (parameters: ScheduleTextReminderArgs): Promise<void> => {
+  const {
+    evt: eventData,
+    reminderPhone: phoneDestination,
+    triggerEvent: triggerType,
+    action: actionType,
+    timeSpan: timeConfiguration,
+    message: messageTemplate = "",
+    workflowStepId: stepReference,
+    template: workflowTemplate,
+    sender: senderOverride,
+    userId: userReference,
+    teamId: teamReference,
+    isVerificationPending: pendingVerification = false,
+    seatReferenceUid: seatReference,
+  } = parameters;
+
+  const { startTime: eventStart, endTime: eventEnd, uid: bookingId } = eventData;
+  const senderIdentifier = getSenderId(phoneDestination, senderOverride || SENDER_ID);
+
+  const numberVerified = await validateNumberVerification(
+    actionType,
+    phoneDestination,
+    userReference,
+    teamReference,
+    pendingVerification
+  );
+
+  const targetAttendee = determineTargetAttendee(actionType, eventData, phoneDestination);
+  const scheduledDispatch = calculateScheduledDateTime(triggerType, eventStart, eventEnd, {
+    time: timeConfiguration.time ?? undefined,
+    timeUnit: timeConfiguration.timeUnit ?? undefined,
+  });
+
+  const { recipientName, organizerName, recipientTimezone, recipientLocale } = determineRecipientDetails(
+    actionType,
+    targetAttendee,
+    eventData.organizer
+  );
+
+  const messageContent = generateMessageContent(
+    messageTemplate,
+    workflowTemplate,
+    eventData,
+    actionType,
+    targetAttendee,
+    recipientLocale,
+    recipientTimezone
+  );
+
+  moduleLogger.debug(`Preparing SMS notification for trigger ${triggerType}`, messageContent);
+
+  if (messageContent.length === 0 || !phoneDestination || !numberVerified) return;
+
+  const immediateEvents: WorkflowTriggerEvents[] = [
+    WorkflowTriggerEvents.NEW_EVENT,
+    WorkflowTriggerEvents.EVENT_CANCELLED,
+    WorkflowTriggerEvents.RESCHEDULE_EVENT,
+  ];
+
+  const scheduledEvents: WorkflowTriggerEvents[] = [
+    WorkflowTriggerEvents.BEFORE_EVENT,
+    WorkflowTriggerEvents.AFTER_EVENT,
+  ];
+
+  if (immediateEvents.includes(triggerType)) {
+    await executeImmediateNotification(
+      phoneDestination,
+      messageContent,
+      senderIdentifier,
+      userReference,
+      teamReference,
+      eventData.eventType.id
+    );
+  } else if (scheduledEvents.includes(triggerType) && scheduledDispatch) {
+    if (typeof stepReference === "number") {
+      await processScheduledReminder(
+        phoneDestination,
+        messageContent,
+        scheduledDispatch,
+        senderIdentifier,
+        bookingId as string,
+        stepReference,
+        seatReference,
+        userReference,
+        teamReference,
+        eventData.eventTypeId
+      );
+    } else {
+      moduleLogger.error("stepReference is undefined when scheduling SMS reminder.");
     }
   }
 };
 
-export const deleteScheduledSMSReminder = async (reminderId: number, referenceId: string | null) => {
+export const deleteScheduledSMSReminder = async (
+  reminderIdentifier: number,
+  externalReference: string | null
+): Promise<void> => {
   try {
-    //TODO:NOSHOW , We will just mark the reminder as cancelled ,and cron job will handle the cancellation
-    // as now we can also reschedule the cancelled sms/whatsapp
-    // if (referenceId) {
-    // await twilio.cancelSMS(referenceId);
-    // }
-
     await prisma.workflowReminder.update({
-      where: {
-        id: reminderId,
-      },
-      data: {
-        cancelled: true,
-      },
+      where: { id: reminderIdentifier },
+      data: { cancelled: true },
     });
-  } catch (error) {
-    log.error(`Error canceling reminder with error ${error}`);
+  } catch (exception) {
+    moduleLogger.error(`Reminder cancellation failed: ${exception}`);
   }
 };

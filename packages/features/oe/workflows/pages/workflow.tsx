@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
+import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
 import Shell, { ShellMain } from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
 import { SENDER_ID } from "@calcom/lib/constants";
@@ -44,333 +44,343 @@ type PageProps = {
   verifiedEmails?: Awaited<ReturnType<typeof WorkflowRepository.getVerifiedEmails>>;
 };
 
-function WorkflowPage({
-  workflowData: workflowDataProp,
-  verifiedNumbers: verifiedNumbersProp,
-  verifiedEmails: verifiedEmailsProp,
-}: PageProps) {
+const WorkflowPage = ({
+  workflowData: initialWorkflowData,
+  verifiedNumbers: initialVerifiedNumbers,
+  verifiedEmails: initialVerifiedEmails,
+}: PageProps) => {
   const { t, i18n } = useLocale();
-  const session = useSession();
-  const params = useParamsWithFallback();
+  const sessionData = useSession();
+  const urlParams = useParamsWithFallback();
 
-  const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
-  const [isAllDataLoaded, setIsAllDataLoaded] = useState(false);
-  const [isMixedEventType, setIsMixedEventType] = useState(false); //for old event types before team workflows existed
+  const [currentOptions, setCurrentOptions] = useState<Option[]>([]);
+  const [hasLoadedAllData, setHasLoadedAllData] = useState(false);
+  const [containsMixedTypes, setContainsMixedTypes] = useState(false);
 
-  const form = useForm<FormValues>({
+  const formController = useForm<FormValues>({
     mode: "onBlur",
     resolver: zodResolver(formSchema),
   });
 
-  const { workflow: workflowId } = params ? querySchema.parse(params) : { workflow: -1 };
-  const utils = trpc.useUtils();
+  const { workflow: currentWorkflowId } = urlParams ? querySchema.parse(urlParams) : { workflow: -1 };
+  const trpcUtils = trpc.useUtils();
 
-  const userQuery = useMeQuery();
-  const user = userQuery.data;
+  const currentUserQuery = useMeQuery();
+  const currentUser = currentUserQuery.data;
 
   const {
-    data: workflowData,
-    isError: _isError,
-    error,
-    isPending: _isPendingWorkflow,
+    data: fetchedWorkflow,
+    isError: hasFetchError,
+    error: fetchError,
+    isPending: isWorkflowLoading,
   } = trpc.viewer.workflows.get.useQuery(
-    { id: +workflowId },
+    { id: +currentWorkflowId },
     {
-      enabled: workflowDataProp ? false : !!workflowId,
+      enabled: initialWorkflowData ? false : !!currentWorkflowId,
     }
   );
 
-  const workflow = workflowDataProp || workflowData;
-  const isPendingWorkflow = workflowDataProp ? false : _isPendingWorkflow;
-  const isError = workflowDataProp ? false : _isError;
+  const workflowEntity = initialWorkflowData || fetchedWorkflow;
+  const isLoadingWorkflow = initialWorkflowData ? false : isWorkflowLoading;
+  const hasError = initialWorkflowData ? false : hasFetchError;
 
-  const { data: verifiedNumbersData } = trpc.viewer.workflows.getVerifiedNumbers.useQuery(
-    { teamId: workflow?.team?.id },
+  const { data: fetchedPhoneNumbers } = trpc.viewer.workflows.getVerifiedNumbers.useQuery(
+    { teamId: workflowEntity?.team?.id },
     {
-      enabled: verifiedNumbersProp ? false : !!workflow?.id,
+      enabled: initialVerifiedNumbers ? false : !!workflowEntity?.id,
     }
   );
-  const verifiedNumbers = verifiedNumbersProp || verifiedNumbersData;
+  const phoneNumbers = initialVerifiedNumbers || fetchedPhoneNumbers;
 
-  const { data: verifiedEmailsData } = trpc.viewer.workflows.getVerifiedEmails.useQuery(
+  const { data: fetchedEmailAddresses } = trpc.viewer.workflows.getVerifiedEmails.useQuery(
     {
-      teamId: workflow?.team?.id,
+      teamId: workflowEntity?.team?.id,
     },
-    { enabled: !verifiedEmailsProp }
+    { enabled: !initialVerifiedEmails }
   );
-  const verifiedEmails = verifiedEmailsProp || verifiedEmailsData;
+  const emailAddresses = initialVerifiedEmails || fetchedEmailAddresses;
 
-  const isOrg = workflow?.team?.isOrganization ?? false;
+  const isOrganization = workflowEntity?.team?.isOrganization ?? false;
 
-  const teamId = workflow?.teamId ?? undefined;
+  const associatedTeamId = workflowEntity?.teamId ?? undefined;
 
-  const { data, isPending: isPendingEventTypes } = trpc.viewer.eventTypes.getTeamAndEventTypeOptions.useQuery(
-    { teamId, isOrg },
-    { enabled: !isPendingWorkflow }
-  );
+  const { data: typeOptions, isPending: isLoadingEventTypes } =
+    trpc.viewer.eventTypes.getTeamAndEventTypeOptions.useQuery(
+      { teamId: associatedTeamId, isOrg: isOrganization },
+      { enabled: !isLoadingWorkflow }
+    );
 
-  const teamOptions = data?.teamOptions ?? [];
+  const availableTeams = typeOptions?.teamOptions ?? [];
 
-  let allEventTypeOptions = data?.eventTypeOptions ?? [];
-  const distinctEventTypes = new Set();
+  let availableEventTypes = typeOptions?.eventTypeOptions ?? [];
+  const uniqueEventTypes = new Set();
 
-  if (!teamId && isMixedEventType) {
-    allEventTypeOptions = [...allEventTypeOptions, ...selectedOptions];
-    allEventTypeOptions = allEventTypeOptions.filter((option) => {
-      const duplicate = distinctEventTypes.has(option.value);
-      distinctEventTypes.add(option.value);
-      return !duplicate;
+  if (!associatedTeamId && containsMixedTypes) {
+    availableEventTypes = [...availableEventTypes, ...currentOptions];
+    availableEventTypes = availableEventTypes.filter((eventType) => {
+      const isDuplicate = uniqueEventTypes.has(eventType.value);
+      uniqueEventTypes.add(eventType.value);
+      return !isDuplicate;
     });
   }
 
-  const readOnly =
-    workflow?.team?.members?.find((member) => member.userId === session.data?.user.id)?.role ===
+  const isReadOnlyMode =
+    workflowEntity?.team?.members?.find((member) => member.userId === sessionData.data?.user.id)?.role ===
     MembershipRole.MEMBER;
 
-  const isPending = isPendingWorkflow || isPendingEventTypes;
+  const isDataLoading = isLoadingWorkflow || isLoadingEventTypes;
 
   useEffect(() => {
-    if (!isPending) {
-      setFormData(workflow);
+    if (!isDataLoading) {
+      populateFormData(workflowEntity);
     }
-  }, [isPending]);
+  }, [isDataLoading]);
 
-  function setFormData(workflowData: RouterOutputs["viewer"]["workflows"]["get"] | undefined) {
-    if (workflowData) {
-      if (workflowData.userId && workflowData.activeOn.find((active) => !!active.eventType.teamId)) {
-        setIsMixedEventType(true);
-      }
-      let activeOn;
+  const populateFormData = (workflow: RouterOutputs["viewer"]["workflows"]["get"] | undefined) => {
+    if (!workflow) return;
 
-      if (workflowData.isActiveOnAll) {
-        activeOn = isOrg ? teamOptions : allEventTypeOptions;
+    if (workflow.userId && workflow.activeOn.find((activeItem) => !!activeItem.eventType.teamId)) {
+      setContainsMixedTypes(true);
+    }
+
+    let selectedEventTypes;
+
+    if (workflow.isActiveOnAll) {
+      selectedEventTypes = isOrganization ? availableTeams : availableEventTypes;
+    } else {
+      if (isOrganization) {
+        selectedEventTypes = workflow.activeOnTeams.flatMap((activeTeam) => ({
+          value: String(activeTeam.team.id) || "",
+          label: activeTeam.team.slug || "",
+        }));
+        setCurrentOptions(selectedEventTypes || []);
       } else {
-        if (isOrg) {
-          activeOn = workflowData.activeOnTeams.flatMap((active) => {
+        setCurrentOptions(
+          workflow.activeOn?.flatMap((activeItem) => {
+            if (workflow.teamId && activeItem.eventType.parentId) return [];
             return {
-              value: String(active.team.id) || "",
-              label: active.team.slug || "",
+              value: String(activeItem.eventType.id),
+              label: activeItem.eventType.title,
             };
-          });
-          setSelectedOptions(activeOn || []);
-        } else {
-          setSelectedOptions(
-            workflowData.activeOn?.flatMap((active) => {
-              if (workflowData.teamId && active.eventType.parentId) return [];
-              return {
-                value: String(active.eventType.id),
-                label: active.eventType.title,
-              };
-            }) || []
-          );
-          activeOn = workflowData.activeOn
-            ? workflowData.activeOn.map((active) => ({
-                value: active.eventType.id.toString(),
-                label: active.eventType.slug,
-              }))
-            : undefined;
-        }
+          }) || []
+        );
+        selectedEventTypes = workflow.activeOn
+          ? workflow.activeOn.map((activeItem) => ({
+              value: activeItem.eventType.id.toString(),
+              label: activeItem.eventType.slug,
+            }))
+          : undefined;
       }
-      //translate dynamic variables into local language
-      const steps = workflowData.steps?.map((step) => {
-        const updatedStep = {
-          ...step,
-          senderName: step.sender,
-          sender: isSMSAction(step.action) ? step.sender : SENDER_ID,
-        };
-        if (step.reminderBody) {
-          updatedStep.reminderBody = getTranslatedText(step.reminderBody || "", {
-            locale: i18n.language,
-            t,
-          });
-        }
-        if (step.emailSubject) {
-          updatedStep.emailSubject = getTranslatedText(step.emailSubject || "", {
-            locale: i18n.language,
-            t,
-          });
-        }
-        return updatedStep;
-      });
-
-      form.setValue("name", workflowData.name);
-      form.setValue("steps", steps);
-      form.setValue("trigger", workflowData.trigger);
-      form.setValue("time", workflowData.time || undefined);
-      form.setValue("timeUnit", workflowData.timeUnit || undefined);
-      form.setValue("activeOn", activeOn || []);
-      form.setValue("selectAll", workflowData.isActiveOnAll ?? false);
-      setIsAllDataLoaded(true);
     }
-  }
 
-  const updateMutation = trpc.viewer.workflows.update.useMutation({
-    onSuccess: async ({ workflow }) => {
-      if (workflow) {
-        utils.viewer.workflows.get.setData({ id: +workflow.id }, workflow);
-        setFormData(workflow);
+    const processedSteps = workflow.steps?.map((stepItem) => {
+      const modifiedStep = {
+        ...stepItem,
+        senderName: stepItem.sender,
+        sender: isSMSAction(stepItem.action) ? stepItem.sender : SENDER_ID,
+      };
+      if (stepItem.reminderBody) {
+        modifiedStep.reminderBody = getTranslatedText(stepItem.reminderBody || "", {
+          locale: i18n.language,
+          t,
+        });
+      }
+      if (stepItem.emailSubject) {
+        modifiedStep.emailSubject = getTranslatedText(stepItem.emailSubject || "", {
+          locale: i18n.language,
+          t,
+        });
+      }
+      return modifiedStep;
+    });
+
+    formController.setValue("name", workflow.name);
+    formController.setValue("steps", processedSteps);
+    formController.setValue("trigger", workflow.trigger);
+    formController.setValue("time", workflow.time || undefined);
+    formController.setValue("timeUnit", workflow.timeUnit || undefined);
+    formController.setValue("activeOn", selectedEventTypes || []);
+    formController.setValue("selectAll", workflow.isActiveOnAll ?? false);
+    setHasLoadedAllData(true);
+  };
+
+  const modifyWorkflowMutation = trpc.viewer.workflows.update.useMutation({
+    onSuccess: async ({ workflow: updatedWorkflow }) => {
+      if (updatedWorkflow) {
+        trpcUtils.viewer.workflows.get.setData({ id: +updatedWorkflow.id }, updatedWorkflow);
+        populateFormData(updatedWorkflow);
         showToast(
           t("workflow_updated_successfully", {
-            workflowName: workflow.name,
+            workflowName: updatedWorkflow.name,
           }),
           "success"
         );
       }
     },
-    onError: (err) => {
-      if (err instanceof HttpError) {
-        const message = `${err.statusCode}: ${err.message}`;
-        showToast(message, "error");
+    onError: (error) => {
+      if (error instanceof HttpError) {
+        const errorMessage = `${error.statusCode}: ${error.message}`;
+        showToast(errorMessage, "error");
       }
     },
   });
 
-  return session.data ? (
+  const processFormSubmission = async (formData: FormValues) => {
+    let selectedIds: number[] = [];
+    let hasEmptyContent = false;
+    let hasVerifiedContacts = true;
+
+    formData.steps.forEach((stepData) => {
+      const cleanedContent = stepData.reminderBody?.replace(/<[^>]+>/g, "") || "";
+      const isContentEmpty = !isSMSOrWhatsappAction(stepData.action) && cleanedContent.length <= 1;
+
+      if (isContentEmpty) {
+        formController.setError(`steps.${stepData.stepNumber - 1}.reminderBody`, {
+          type: "custom",
+          message: t("fill_this_field"),
+        });
+      }
+
+      if (stepData.reminderBody) {
+        stepData.reminderBody = translateVariablesToEnglish(stepData.reminderBody, {
+          locale: i18n.language,
+          t,
+        });
+      }
+      if (stepData.emailSubject) {
+        stepData.emailSubject = translateVariablesToEnglish(stepData.emailSubject, {
+          locale: i18n.language,
+          t,
+        });
+      }
+      hasEmptyContent = !hasEmptyContent ? isContentEmpty : hasEmptyContent;
+
+      if (
+        (stepData.action === WorkflowActions.SMS_NUMBER ||
+          stepData.action === WorkflowActions.WHATSAPP_NUMBER) &&
+        !phoneNumbers?.find((verifiedPhone) => verifiedPhone.phoneNumber === stepData.sendTo)
+      ) {
+        hasVerifiedContacts = false;
+        formController.setError(`steps.${stepData.stepNumber - 1}.sendTo`, {
+          type: "custom",
+          message: t("not_verified"),
+        });
+      }
+
+      if (
+        stepData.action === WorkflowActions.EMAIL_ADDRESS &&
+        !emailAddresses?.find((verifiedEmail) => verifiedEmail === stepData.sendTo)
+      ) {
+        hasVerifiedContacts = false;
+        formController.setError(`steps.${stepData.stepNumber - 1}.sendTo`, {
+          type: "custom",
+          message: t("not_verified"),
+        });
+      }
+    });
+
+    if (!hasEmptyContent && hasVerifiedContacts) {
+      if (formData.activeOn) {
+        selectedIds = formData.activeOn
+          .filter((optionItem) => optionItem.value !== "all")
+          .map((optionItem) => parseInt(optionItem.value, 10));
+      }
+      modifyWorkflowMutation.mutate({
+        id: currentWorkflowId,
+        name: formData.name,
+        activeOn: selectedIds,
+        steps: formData.steps,
+        trigger: formData.trigger,
+        time: formData.time || null,
+        timeUnit: formData.timeUnit || null,
+        isActiveOnAll: formData.selectAll || false,
+      });
+      trpcUtils.viewer.workflows.getVerifiedNumbers.invalidate();
+    }
+  };
+
+  const renderWorkflowContent = () => {
+    if (hasError) {
+      return <Alert severity="error" title="Something went wrong" message={fetchError?.message ?? ""} />;
+    }
+
+    if (hasLoadedAllData && currentUser) {
+      return (
+        <WorkflowDetailsPage
+          form={formController}
+          workflowId={+currentWorkflowId}
+          user={currentUser}
+          selectedOptions={currentOptions}
+          setSelectedOptions={setCurrentOptions}
+          teamId={workflowEntity ? workflowEntity.teamId || undefined : undefined}
+          readOnly={isReadOnlyMode}
+          isOrg={isOrganization}
+          allOptions={isOrganization ? availableTeams : availableEventTypes}
+        />
+      );
+    }
+
+    return <SkeletonLoader />;
+  };
+
+  const generateWorkflowTitle = () => {
+    return workflowEntity && workflowEntity.name ? workflowEntity.name : "Untitled";
+  };
+
+  const generateWorkflowHeading = () => {
+    if (!hasLoadedAllData) return null;
+
+    return (
+      <div className="flex">
+        <div className={classNames(workflowEntity && !workflowEntity.name ? "text-muted" : "")}>
+          {workflowEntity && workflowEntity.name ? workflowEntity.name : "untitled"}
+        </div>
+        {workflowEntity && workflowEntity.team && (
+          <Badge className="ml-4 mt-1" variant="gray">
+            {workflowEntity.team.name}
+          </Badge>
+        )}
+        {isReadOnlyMode && (
+          <Badge className="ml-4 mt-1" variant="gray">
+            {t("readonly")}
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
+  const generateActionButton = () => {
+    if (isReadOnlyMode) return null;
+
+    return (
+      <div>
+        <Button data-testid="save-workflow" type="submit" loading={modifyWorkflowMutation.isPending}>
+          {t("save")}
+        </Button>
+      </div>
+    );
+  };
+
+  if (!sessionData.data) {
+    return <></>;
+  }
+
+  return (
     <Shell withoutMain backPath="/workflows">
       <LicenseRequired>
-        <Form
-          form={form}
-          handleSubmit={async (values) => {
-            let activeOnIds: number[] = [];
-            let isEmpty = false;
-            let isVerified = true;
-
-            values.steps.forEach((step) => {
-              const strippedHtml = step.reminderBody?.replace(/<[^>]+>/g, "") || "";
-
-              const isBodyEmpty = !isSMSOrWhatsappAction(step.action) && strippedHtml.length <= 1;
-
-              if (isBodyEmpty) {
-                form.setError(`steps.${step.stepNumber - 1}.reminderBody`, {
-                  type: "custom",
-                  message: t("fill_this_field"),
-                });
-              }
-
-              if (step.reminderBody) {
-                step.reminderBody = translateVariablesToEnglish(step.reminderBody, {
-                  locale: i18n.language,
-                  t,
-                });
-              }
-              if (step.emailSubject) {
-                step.emailSubject = translateVariablesToEnglish(step.emailSubject, {
-                  locale: i18n.language,
-                  t,
-                });
-              }
-              isEmpty = !isEmpty ? isBodyEmpty : isEmpty;
-
-              //check if phone number is verified
-              if (
-                (step.action === WorkflowActions.SMS_NUMBER ||
-                  step.action === WorkflowActions.WHATSAPP_NUMBER) &&
-                !verifiedNumbers?.find((verifiedNumber) => verifiedNumber.phoneNumber === step.sendTo)
-              ) {
-                isVerified = false;
-
-                form.setError(`steps.${step.stepNumber - 1}.sendTo`, {
-                  type: "custom",
-                  message: t("not_verified"),
-                });
-              }
-
-              if (
-                step.action === WorkflowActions.EMAIL_ADDRESS &&
-                !verifiedEmails?.find((verifiedEmail) => verifiedEmail === step.sendTo)
-              ) {
-                isVerified = false;
-
-                form.setError(`steps.${step.stepNumber - 1}.sendTo`, {
-                  type: "custom",
-                  message: t("not_verified"),
-                });
-              }
-            });
-
-            if (!isEmpty && isVerified) {
-              if (values.activeOn) {
-                activeOnIds = values.activeOn
-                  .filter((option) => option.value !== "all")
-                  .map((option) => {
-                    return parseInt(option.value, 10);
-                  });
-              }
-              updateMutation.mutate({
-                id: workflowId,
-                name: values.name,
-                activeOn: activeOnIds,
-                steps: values.steps,
-                trigger: values.trigger,
-                time: values.time || null,
-                timeUnit: values.timeUnit || null,
-                isActiveOnAll: values.selectAll || false,
-              });
-              utils.viewer.workflows.getVerifiedNumbers.invalidate();
-            }
-          }}>
+        <Form form={formController} handleSubmit={processFormSubmission}>
           <ShellMain
             backPath="/workflows"
-            title={workflow && workflow.name ? workflow.name : "Untitled"}
-            CTA={
-              !readOnly && (
-                <div>
-                  <Button data-testid="save-workflow" type="submit" loading={updateMutation.isPending}>
-                    {t("save")}
-                  </Button>
-                </div>
-              )
-            }
+            title={generateWorkflowTitle()}
+            CTA={generateActionButton()}
             hideHeadingOnMobile
-            heading={
-              isAllDataLoaded && (
-                <div className="flex">
-                  <div className={classNames(workflow && !workflow.name ? "text-muted" : "")}>
-                    {workflow && workflow.name ? workflow.name : "untitled"}
-                  </div>
-                  {workflow && workflow.team && (
-                    <Badge className="ml-4 mt-1" variant="gray">
-                      {workflow.team.name}
-                    </Badge>
-                  )}
-                  {readOnly && (
-                    <Badge className="ml-4 mt-1" variant="gray">
-                      {t("readonly")}
-                    </Badge>
-                  )}
-                </div>
-              )
-            }>
-            {!isError ? (
-              <>
-                {isAllDataLoaded && user ? (
-                  <>
-                    <WorkflowDetailsPage
-                      form={form}
-                      workflowId={+workflowId}
-                      user={user}
-                      selectedOptions={selectedOptions}
-                      setSelectedOptions={setSelectedOptions}
-                      teamId={workflow ? workflow.teamId || undefined : undefined}
-                      readOnly={readOnly}
-                      isOrg={isOrg}
-                      allOptions={isOrg ? teamOptions : allEventTypeOptions}
-                    />
-                  </>
-                ) : (
-                  <SkeletonLoader />
-                )}
-              </>
-            ) : (
-              <Alert severity="error" title="Something went wrong" message={error?.message ?? ""} />
-            )}
+            heading={generateWorkflowHeading()}>
+            {renderWorkflowContent()}
           </ShellMain>
         </Form>
       </LicenseRequired>
     </Shell>
-  ) : (
-    <></>
   );
-}
+};
 
 export default WorkflowPage;
