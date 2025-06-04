@@ -1,5 +1,5 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Build, Push Docker Image, Deploy to EC2
-
 on:
   #trigger on push on "deploy" branch
   push:
@@ -32,15 +32,27 @@ jobs:
     runs-on: ubuntu-latest      
 
     steps:
+
+      - name: Extract Git commit hash
+        id: hash
+        run: |
+          if [ -n "${{ github.event.inputs.git_hash }}" ]; then
+            hash="${{ github.event.inputs.git_hash }}"
+            echo "[INFO]: ↩️ Old Deployment Action" >> "$LOG_FILE"
+          else
+            hash="$(git rev-parse HEAD)"
+            echo "[INFO]: 🆕 New Deployment Action" >> "$LOG_FILE"
+          fi
+          echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
+  
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetching full history so we can checkout any commit
 
       - name: Checkout specific commit if git_hash is provided
-        if: ${{ github.event.inputs.git_hash != '' }}
         run: |
-          git checkout ${{ github.event.inputs.git_hash }}
+          git checkout ${{ steps.hash.outputs.git_hash }}
         
       - name: Initialize Global Log File
         run: |
@@ -81,19 +93,7 @@ jobs:
           check "${{ secrets.EMAIL_TO }}" "EMAIL_TO"
           check "${{ secrets.EMAIL_FROM }}" "EMAIL_FROM"
           
-      # SETTING NECESSARY ENV VARIABLES
-      - name: Extract Git commit hash
-        if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
-        id: hash
-        run: |
-          if [ -n "${{ github.event.inputs.git_hash }}" ]; then
-            hash="${{ github.event.inputs.git_hash }}"
-            echo "[INFO]: ↩️ Rollback Step" >> "$LOG_FILE"
-          else
-            hash="$(git rev-parse HEAD)"
-            echo "[INFO]: 🆕 New Deployment Step" >> "$LOG_FILE"
-          fi
-          echo "GIT_HASH=$hash" >> $GITHUB_OUTPUT
+      
         
       # BUILDING AND PUSHING DOCKER IMAGE
       - name: Set up Docker Buildx
