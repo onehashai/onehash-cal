@@ -479,7 +479,7 @@ jobs:
 
             #If available space is less than 10GB, lets try to prune unused Docker images and containers
             if [ "$AVAILABLE_SPACE" -lt 10 ]; then 
-              log_message "WARN" "⚠️ Available disk space is low: ${AVAILABLE_SPACE}GB. Pruning unused Docker images and containers older than 72 hours."
+              log_message "WARN" "⚠️ Available disk space is low: ${AVAILABLE_SPACE}GB. Pruning unused Docker images and containers"
               if ! exec_command "Docker system prune" "docker system prune -af --volumes && docker volume prune -af"; then
                 log_message "ERROR" "❌ Failed to prune unused Docker images and containers"
                 exit 1
@@ -493,6 +493,15 @@ jobs:
               fi
             else
               log_message "INFO" "✅ Sufficient disk space available: ${AVAILABLE_SPACE}GB"
+            fi
+
+            # Check and remove existing container if it exists
+            log_message "INFO" "Checking for existing Docker container '$CONTAINER_NAME'"
+            if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}\$"; then
+              if ! exec_command "Remove existing container" "docker rm -f \"$CONTAINER_NAME\""; then
+                log_message "ERROR" "❌ Failed to remove existing container '$CONTAINER_NAME' - aborting deployment"
+                exit 1
+              fi
             fi
 
             #Running container
