@@ -178,8 +178,8 @@ export { getTranslation };
 
 export { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
 
-export { roundRobinReassignment } from "@calcom/features/ee/round-robin/roundRobinReassignment";
-export { roundRobinManualReassignment } from "@calcom/features/ee/round-robin/roundRobinManualReassignment";
+export { roundRobinReassignment } from "@calcom/features/oe/round-robin/roundRobinReassignment";
+export { roundRobinManualReassignment } from "@calcom/features/oe/round-robin/roundRobinManualReassignment";
 
 export { ErrorCode } from "@calcom/lib/errorCodes";
 

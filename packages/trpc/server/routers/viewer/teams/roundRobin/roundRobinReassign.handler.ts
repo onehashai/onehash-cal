@@ -1,4 +1,5 @@
-import { roundRobinReassignment } from "@calcom/features/ee/round-robin/roundRobinReassignment";
+import type { ReassignmentResult } from "@calcom/features/oe/round-robin/roundRobinReassignment";
+import { roundRobinReassignment } from "@calcom/features/oe/round-robin/roundRobinReassignment";
 import { BookingRepository } from "@calcom/lib/server/repository/booking";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
@@ -13,7 +14,10 @@ type RoundRobinReassignOptions = {
   input: TRoundRobinReassignInputSchema;
 };
 
-export const roundRobinReassignHandler = async ({ ctx, input }: RoundRobinReassignOptions) => {
+export const roundRobinReassignHandler = async ({
+  ctx,
+  input,
+}: RoundRobinReassignOptions): Promise<ReassignmentResult> => {
   const { bookingId } = input;
 
   // Check if user has access to change booking
