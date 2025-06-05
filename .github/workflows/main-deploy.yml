@@ -39,9 +39,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetching full history so we can checkout any commit
+            fetch-depth: 0  # Fetching full history so we can checkout any commit
 
-      
       - name: Checkout specific commit if git_hash is provided
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
         run: |
