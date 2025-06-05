@@ -21,11 +21,11 @@ import getBookingInfo from "@calcom/features/bookings/lib/getBookingInfo";
 import handleCancelBooking from "@calcom/features/bookings/lib/handleCancelBooking";
 import * as newBookingMethods from "@calcom/features/bookings/lib/handleNewBooking";
 import handleDeleteCredential from "@calcom/features/credentials/handleDeleteCredential";
-import { getClientSecretFromPayment } from "@calcom/features/ee/payments/pages/getClientSecretFromPayment";
 import { getPublicEvent } from "@calcom/features/eventtypes/lib/getPublicEvent";
 import { handleCreatePhoneCall } from "@calcom/features/handleCreatePhoneCall";
 import handleMarkNoShow from "@calcom/features/handleMarkNoShow";
 import * as instantMeetingMethods from "@calcom/features/instant-meeting/handleInstantMeeting";
+import { getClientSecretFromPayment } from "@calcom/features/oe/payments/pages/getClientSecretFromPayment";
 import getEnabledAppsFromCredentials from "@calcom/lib/apps/getEnabledAppsFromCredentials";
 import getAllUserBookings from "@calcom/lib/bookings/getAllUserBookings";
 import { symmetricEncrypt, symmetricDecrypt } from "@calcom/lib/crypto";
@@ -178,8 +178,8 @@ export { getTranslation };
 
 export { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
 
-export { roundRobinReassignment } from "@calcom/features/ee/round-robin/roundRobinReassignment";
-export { roundRobinManualReassignment } from "@calcom/features/ee/round-robin/roundRobinManualReassignment";
+export { roundRobinReassignment } from "@calcom/features/oe/round-robin/roundRobinReassignment";
+export { roundRobinManualReassignment } from "@calcom/features/oe/round-robin/roundRobinManualReassignment";
 
 export { ErrorCode } from "@calcom/lib/errorCodes";
 

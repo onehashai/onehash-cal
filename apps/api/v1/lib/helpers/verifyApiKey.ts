@@ -1,7 +1,7 @@
 import type { NextMiddleware } from "next-api-middleware";
 
 import { LicenseKeySingleton } from "@calcom/ee/common/server/LicenseKeyService";
-import { hashAPIKey } from "@calcom/features/ee/api-keys/lib/apiKeys";
+import { hashAPIKey } from "@calcom/features/oe/api-keys/lib/apiKeys";
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 

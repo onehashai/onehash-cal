@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Trans } from "react-i18next";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
-import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import type { FormValues } from "@calcom/features/eventtypes/lib/types";
+import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
+import useLockedFieldsManager from "@calcom/features/oe/managed-event-types/hooks/useLockedFieldsManager";
 import SkeletonLoader from "@calcom/features/oe/workflows/components/SkeletonLoaderEventWorkflowsTab";
 import type { WorkflowType } from "@calcom/features/oe/workflows/components/WorkflowListPage";
 import { getActionIcon } from "@calcom/features/oe/workflows/lib/getActionIcon";
