@@ -2,8 +2,8 @@ import { withAppDirSsr } from "app/WithAppDirSsr";
 import { _generateMetadata } from "app/_utils";
 import { WithLayout } from "app/layoutHOC";
 
-import PaymentPage from "@calcom/features/ee/payments/components/PaymentPage";
-import { getServerSideProps, type PaymentPageProps } from "@calcom/features/ee/payments/pages/payment";
+import PaymentPage from "@calcom/features/oe/payments/components/PaymentPage";
+import { getServerSideProps, type PaymentPageProps } from "@calcom/features/oe/payments/pages/payment";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

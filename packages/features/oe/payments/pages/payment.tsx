@@ -1,7 +1,7 @@
 import type { GetServerSidePropsContext } from "next";
 import { z } from "zod";
 
-import { getClientSecretFromPayment } from "@calcom/features/ee/payments/pages/getClientSecretFromPayment";
+import { getClientSecretFromPayment } from "@calcom/features/oe/payments/pages/getClientSecretFromPayment";
 import prisma from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { paymentDataSelect } from "@calcom/prisma/selects/payment";
