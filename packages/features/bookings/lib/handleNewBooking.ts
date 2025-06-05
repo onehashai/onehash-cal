@@ -31,10 +31,10 @@ import getICalUID from "@calcom/emails/lib/getICalUID";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
 import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhookTrigger";
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
-import AssignmentReasonRecorder from "@calcom/features/ee/round-robin/assignmentReason/AssignmentReasonRecorder";
 import { getFullName } from "@calcom/features/form-builder/utils";
 import { subscriptionSchema } from "@calcom/features/instant-meeting/schema";
 import { sendNotification } from "@calcom/features/notifications/sendNotification";
+import AssignmentReasonRecorder from "@calcom/features/oe/round-robin/assignmentReason/AssignmentReasonRecorder";
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
