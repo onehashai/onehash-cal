@@ -479,7 +479,7 @@ jobs:
 
             #If available space is less than 10GB, lets try to prune unused Docker images and containers
             if [ "$AVAILABLE_SPACE" -lt 10 ]; then 
-              log_message "WARN" "⚠️ Available disk space is low: ${AVAILABLE_SPACE}GB. Pruning unused Docker images and containers older than 72 hours."
+              log_message "WARN" "⚠️ Available disk space is low: ${AVAILABLE_SPACE}GB. Pruning unused Docker images and containers"
               if ! exec_command "Docker system prune" "docker system prune -af --volumes && docker volume prune -af"; then
                 log_message "ERROR" "❌ Failed to prune unused Docker images and containers"
                 exit 1
