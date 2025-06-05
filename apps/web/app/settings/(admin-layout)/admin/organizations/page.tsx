@@ -1,7 +1,7 @@
 import { _generateMetadata } from "app/_utils";
 import { getTranslate } from "app/_utils";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
+import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
 import AdminOrgTable from "@calcom/features/oe/organizations/pages/settings/admin/AdminOrgPage";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 

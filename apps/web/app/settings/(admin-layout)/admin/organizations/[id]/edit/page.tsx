@@ -3,7 +3,7 @@ import { _generateMetadata, getTranslate } from "app/_utils";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
+import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
 import { OrgForm } from "@calcom/features/oe/organizations/pages/settings/admin/AdminOrgEditPage";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { OrganizationRepository } from "@calcom/lib/server/repository/organization";

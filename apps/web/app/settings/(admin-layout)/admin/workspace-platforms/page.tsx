@@ -2,7 +2,7 @@ import { _generateMetadata } from "app/_utils";
 import { getFixedT } from "app/_utils";
 
 import { getServerSessionForAppDir } from "@calcom/feature-auth/lib/get-server-session-for-app-dir";
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
+import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
 import WorkspacePlatformsPage from "@calcom/features/oe/organizations/pages/settings/admin/WorkspacePlatformPage";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
