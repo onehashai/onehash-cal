@@ -1,6 +1,6 @@
 "use client";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
+import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
 import MakeTeamPrivateSwitch from "@calcom/features/oe/teams/components/MakeTeamPrivateSwitch";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";

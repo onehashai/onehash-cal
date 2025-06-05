@@ -1,6 +1,6 @@
 // "use client";
 
-// import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
+// import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
 // import { UpgradeTip } from "@calcom/features/tips";
 // import { useLocale } from "@calcom/lib/hooks/useLocale";
 // import { Button, Icon, ButtonGroup } from "@calcom/ui";
