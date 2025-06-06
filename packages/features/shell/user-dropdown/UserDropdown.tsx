@@ -22,7 +22,7 @@ import {
 import { useGetUserAttributes } from "@calcom/web/components/settings/platform/hooks/useGetUserAttributes";
 
 import federatedLogout from "../../auth/lib/federatedLogout";
-import usePostHog from "../../ee/event-tracking/lib/posthog/userPostHog";
+// import usePostHog from "../../ee/event-tracking/lib/posthog/userPostHog";
 import FreshChatProvider from "../../ee/support/lib/freshchat/FreshChatProvider";
 
 declare global {
@@ -38,7 +38,7 @@ export function UserDropdown({ small }: UserDropdownProps) {
   const { t } = useLocale();
   const { data: user } = useMeQuery();
   const pathname = usePathname();
-  const posthog = usePostHog();
+  // const posthog = usePostHog();
   const isPlatformPages = pathname?.startsWith("/settings/platform");
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
