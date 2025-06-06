@@ -6,6 +6,7 @@ import { z } from "zod";
 import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { TeamEventTypeForm } from "@calcom/features/oe/teams/components/TeamEventTypeForm";
 import { useCreateEventType } from "@calcom/lib/hooks/useCreateEventType";
+import { useCustomerIO } from "@calcom/lib/hooks/useCustomerIO";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";
 import { MembershipRole, SchedulingType } from "@calcom/prisma/enums";
@@ -76,8 +77,15 @@ export default function CreateEventTypeDialog({
     teamId !== undefined &&
     (teamProfile?.membershipRole === MembershipRole.OWNER ||
       teamProfile?.membershipRole === MembershipRole.ADMIN);
+  const { trackEvent: trackEventCIO } = useCustomerIO();
 
   const onSuccessMutation = (eventType: EventType) => {
+    const trackingPayload = {
+      event_type_id: eventType.id,
+      duration: eventType.length,
+      is_team_event: !!eventType.teamId,
+    };
+    trackEventCIO("Event Type Created", trackingPayload);
     router.replace(`/event-types/${eventType.id}${teamId ? "?tabName=team" : ""}`);
     showToast(
       t("event_type_created_successfully", {
