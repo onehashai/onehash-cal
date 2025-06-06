@@ -42,6 +42,8 @@ declare module "next-auth" {
     profile?: UserProfile;
     completedOnboarding: boolean;
     createdAt: Date;
+    customBrandingEnabled: boolean;
+    timezone: string;
   }
 }
 

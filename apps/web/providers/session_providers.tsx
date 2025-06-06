@@ -2,12 +2,22 @@ import { signOut } from "next-auth/react";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 
-import dayjs from "@calcom/dayjs";
 import { trpc } from "@calcom/trpc";
+
+type UserData = {
+  id: number;
+  email: string;
+  name: string;
+  username: string;
+  createdAt: string;
+  completedOnboarding: boolean;
+  customBrandingEnabled: boolean;
+  timezone: string;
+};
 
 // Higher-level component where session state is managed
 export default function SessionManager({ children }: { children: React.ReactNode }) {
-  const [userData, setUserData] = useState();
+  const [userData, setUserData] = useState<undefined | UserData>(undefined);
   const checkKeyCloakSession = async () => {
     try {
       const response = await fetch("/api/auth/keycloak/userinfo");
@@ -37,28 +47,69 @@ export default function SessionManager({ children }: { children: React.ReactNode
       },
     },
   });
+
   //Checks for session and attaches posthog to current user
   const init = async () => {
     if (!userData) {
-      const userInfo = await checkKeyCloakSession();
+      const userInfo: UserData = await checkKeyCloakSession();
       setUserData(userInfo);
     } else {
       if (statsData) {
-        const { id, email, name, username, createdAt, completedOnboarding } = userData;
-        const createdAtFormatted = String(dayjs(createdAt).format("DD-MM-YYYY, HH:mm"));
-        const posthogPayload = {
+        const { id, email, name, username, createdAt, completedOnboarding, customBrandingEnabled, timezone } =
+          userData;
+        const [first_name, last_name] = name.trim().split(/\s+/);
+        const trackingPayload = {
+          id,
           email,
-          name,
-          userslug: username,
-          createdAt: createdAtFormatted,
-          completedOnboarding,
-          sum_of_bookings: statsData.sumOfBookings,
-          sum_of_calendars: statsData.sumOfCalendars,
-          sum_of_teams: statsData.sumOfTeams,
-          sum_of_event_types: statsData.sumOfEventTypes,
-          sum_of_team_event_types: statsData.sumOfTeamEventTypes,
+          first_name,
+          last_name,
+          created_at: createdAt,
+          slug: username,
+          onboarding_completed: completedOnboarding,
+          custom_branding: customBrandingEnabled,
+          lifetime_meetings: statsData.sumOfBookings,
+          timezone,
+          // profile_completed: completedOnboarding,
+          // availability_configured: statsData.sumOfCalendars > 0, //Whether availability settings are configured
+          // sum_of_calendars: statsData.sumOfCalendars,
+          // sum_of_teams: statsData.sumOfTeams,
+          // sum_of_event_types: statsData.sumOfEventTypes,
+          // sum_of_team_event_types: statsData.sumOfTeamEventTypes,
+
+          // plan_type: "N/A", //trial , paid , cancelled
+          // plan_tier: "N/A", //trial , pro , team , enterprise , cancelled , basic
+          // user_type: "solo", //solo , team , enterprise
+          // subscription_status: "N/A", //active , past_due , expired , cancelled"
+          // mrr: "N/A", //Revenue generated per month from this customer
+          // account_value: "N/A", //Total value of the customer account
+          // lifetime_revenue: "N/A", //All-time revenue from this customer
+          // tenure_months: "N/A",
         };
-        posthog.identify(id, posthogPayload);
+        posthog.identify(String(id), trackingPayload);
+
+        // CIO Analytics identification with retry mechanism for delayed loading
+        const identifyWithCIO = (retryCount = 0, maxRetries = 10) => {
+          if (
+            typeof window !== "undefined" &&
+            window.cioanalytics &&
+            typeof window.cioanalytics.identify === "function"
+          ) {
+            try {
+              window.cioanalytics.identify(id, trackingPayload);
+            } catch (error) {
+              console.error("Error identifying user with CIO Analytics:", error);
+            }
+          } else if (retryCount < maxRetries) {
+            // Retry with exponential backoff: 100ms, 200ms, 400ms, 800ms, etc.
+            setTimeout(() => {
+              identifyWithCIO(retryCount + 1, maxRetries);
+            }, 100 * Math.pow(2, retryCount));
+          } else {
+            console.warn("CIO Analytics not available after maximum retries");
+          }
+        };
+
+        identifyWithCIO();
       }
     }
   };
