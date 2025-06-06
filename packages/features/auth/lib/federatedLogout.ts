@@ -1,4 +1,5 @@
 import { signOut } from "next-auth/react";
+import posthog from "posthog-js";
 
 import { showToast } from "@calcom/ui";
 
@@ -9,6 +10,8 @@ export default async function federatedLogout() {
 
     if (response.ok) {
       await signOut({ callbackUrl: data.data });
+      posthog.reset(true);
+
       return;
     }
   } catch (error) {
@@ -22,6 +25,7 @@ export async function logoutAndDeleteUser(deleteAccount: (url: string) => Promis
     const data = await response.json();
     if (response.ok) {
       await deleteAccount(data.data);
+      posthog.reset(true);
       return;
     }
     console.error("Failed to logout user from Keycloak", status);

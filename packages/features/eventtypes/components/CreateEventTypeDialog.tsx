@@ -12,7 +12,7 @@ import { MembershipRole, SchedulingType } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import { Button, Dialog, DialogClose, DialogContent, DialogFooter, showToast } from "@calcom/ui";
 
-import usePostHog from "../../ee/event-tracking/lib/posthog/userPostHog";
+// import usePostHog from "../../ee/event-tracking/lib/posthog/userPostHog";
 import CreateEventTypeForm from "./CreateEventTypeForm";
 
 // this describes the uniform data needed to create a new event type on Profile or Team
@@ -61,7 +61,7 @@ export default function CreateEventTypeDialog({
     membershipRole: MembershipRole | null | undefined;
   }[];
 }) {
-  const postHog = usePostHog();
+  // const postHog = usePostHog();
   const { t } = useLocale();
   const router = useRouter();
   const orgBranding = useOrgBranding();
@@ -130,7 +130,7 @@ export default function CreateEventTypeDialog({
             form={form}
             isManagedEventType={isManagedEventType}
             handleSubmit={(values) => {
-              postHog.capture("Event Created Frontend");
+              // postHog.capture("Event Created Frontend");
               createMutation.mutate(values);
             }}
             SubmitButton={SubmitButton}

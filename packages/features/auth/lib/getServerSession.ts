@@ -108,6 +108,8 @@ export async function getServerSession(options: {
       org: token.org,
       locale: user.locale ?? undefined,
       profile: user.profile,
+      completedOnboarding: user.completedOnboarding,
+      createdAt: user.createdDate,
     },
     profileId: token.profileId,
     upId,
