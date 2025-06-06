@@ -1,9 +1,13 @@
 import { signOut } from "next-auth/react";
 import posthog from "posthog-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+import dayjs from "@calcom/dayjs";
+import { trpc } from "@calcom/trpc";
 
 // Higher-level component where session state is managed
 export default function SessionManager({ children }: { children: React.ReactNode }) {
+  const [userData, setUserData] = useState();
   const checkKeyCloakSession = async () => {
     try {
       const response = await fetch("/api/auth/keycloak/userinfo");
@@ -26,26 +30,42 @@ export default function SessionManager({ children }: { children: React.ReactNode
       console.error("There was a problem with the fetch operation:", error);
     }
   };
-
+  const { data: statsData } = trpc.viewer.myStats.useQuery(undefined, {
+    trpc: {
+      context: {
+        skipBatch: true,
+      },
+    },
+  });
   //Checks for session and attaches posthog to current user
   const init = async () => {
-    const userInfo = await checkKeyCloakSession();
-    if (userInfo) {
-      const { id, email, name, username, createdAt, completedOnboarding } = userInfo;
-      console.log("in_here_identify", userInfo);
-      posthog.identify(id, {
-        email,
-        name,
-        username,
-        createdAt,
-        completedOnboarding,
-      });
+    if (!userData) {
+      const userInfo = await checkKeyCloakSession();
+      setUserData(userInfo);
+    } else {
+      if (statsData) {
+        const { id, email, name, username, createdAt, completedOnboarding } = userData;
+        const createdAtFormatted = String(dayjs(createdAt).format("DD-MM-YYYY, HH:mm"));
+        const posthogPayload = {
+          email,
+          name,
+          userslug: username,
+          createdAt: createdAtFormatted,
+          completedOnboarding,
+          sum_of_bookings: statsData.sumOfBookings,
+          sum_of_calendars: statsData.sumOfCalendars,
+          sum_of_teams: statsData.sumOfTeams,
+          sum_of_event_types: statsData.sumOfEventTypes,
+          sum_of_team_event_types: statsData.sumOfTeamEventTypes,
+        };
+        posthog.identify(id, posthogPayload);
+      }
     }
   };
 
   useEffect(() => {
     init();
-  }, []);
+  }, [statsData]);
 
   return <>{children}</>;
 }
