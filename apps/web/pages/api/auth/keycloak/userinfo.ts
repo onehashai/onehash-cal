@@ -45,10 +45,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
         browserToken: keycloak_token,
       },
     });
-
     return res.status(200).json({ message: "Session expired. Please log in again." });
   } else {
-    return res.status(200).json({ message: "Session is active" });
+    return res.status(200).json({ message: "Session is active", info: session.user });
   }
 }
 
