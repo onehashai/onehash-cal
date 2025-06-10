@@ -6,6 +6,8 @@ import { bookerLayouts, userMetadata } from "@calcom/prisma/zod-utils";
 export const updateUserMetadataAllowedKeys = z.object({
   sessionTimeout: z.number().optional(), // Minutes
   defaultBookerLayouts: bookerLayouts.optional(),
+  currentOnboardingStep: z.string().optional(),
+  phoneNumber: z.string().optional(),
 });
 
 export const ZUpdateProfileInputSchema = z.object({
@@ -48,6 +50,8 @@ export const ZUpdateProfileInputSchema = z.object({
       })
     )
     .optional(),
+  bannerUrl: z.string().nullable().optional(),
+  faviconUrl: z.string().nullable().optional(),
 });
 
 export type TUpdateProfileInputSchema = z.infer<typeof ZUpdateProfileInputSchema>;

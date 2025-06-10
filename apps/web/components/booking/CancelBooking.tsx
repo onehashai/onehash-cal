@@ -1,17 +1,18 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { sdkActionManager } from "@calcom/embed-core/embed-iframe";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { useRefreshData } from "@calcom/lib/hooks/useRefreshData";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import type { RecurringEvent } from "@calcom/types/Calendar";
-import { Button, Icon, TextArea } from "@calcom/ui";
+import { Button, Icon, Switch, TextArea } from "@calcom/ui";
 
 type Props = {
   booking: {
     title?: string;
     uid?: string;
     id?: number;
+    isPaid: boolean;
   };
   profile: {
     name: string | null;
@@ -23,6 +24,7 @@ type Props = {
   theme: string | null;
   allRemainingBookings: boolean;
   seatReferenceUid?: string;
+  currentUserEmail?: string;
   bookingCancelledEventProps: {
     booking: unknown;
     organizer: {
@@ -32,25 +34,66 @@ type Props = {
     };
     eventType: unknown;
   };
+  isLoggedInUserHost: boolean;
 };
 
 export default function CancelBooking(props: Props) {
   const [cancellationReason, setCancellationReason] = useState<string>("");
   const { t } = useLocale();
-  const router = useRouter();
-  const { booking, allRemainingBookings, seatReferenceUid, bookingCancelledEventProps } = props;
+  const refreshData = useRefreshData();
+  const { booking, allRemainingBookings, seatReferenceUid, bookingCancelledEventProps, currentUserEmail } =
+    props;
   const [loading, setLoading] = useState(false);
   const telemetry = useTelemetry();
   const [error, setError] = useState<string | null>(booking ? null : t("booking_already_cancelled"));
+  const [autoRefund, setAutoRefund] = useState<boolean>(false);
 
   const cancelBookingRef = useCallback((node: HTMLTextAreaElement) => {
     if (node !== null) {
+      // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- CancelBooking is not usually used in embed mode
       node.scrollIntoView({ behavior: "smooth" });
       node.focus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleCancelBooking = async () => {
+    setLoading(true);
+
+    telemetry.event(telemetryEventTypes.bookingCancelled, collectPageParameters());
+
+    const res = await fetch("/api/cancel", {
+      body: JSON.stringify({
+        uid: booking?.uid,
+        cancellationReason: cancellationReason,
+        allRemainingBookings,
+        // @NOTE: very important this shouldn't cancel with number ID use uid instead
+        seatReferenceUid,
+        autoRefund,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+
+    const bookingWithCancellationReason = {
+      ...(bookingCancelledEventProps.booking as object),
+      cancellationReason,
+    } as unknown;
+
+    if (res.status >= 200 && res.status < 300) {
+      // tested by apps/web/playwright/booking-pages.e2e.ts
+      sdkActionManager?.fire("bookingCancelled", {
+        ...bookingCancelledEventProps,
+        booking: bookingWithCancellationReason,
+      });
+      refreshData();
+    } else {
+      setLoading(false);
+      setError(`${t("error_with_status_code_occured", { status: res.status })} ${t("please_try_again")}`);
+    }
+  };
   return (
     <>
       {error && (
@@ -67,16 +110,33 @@ export default function CancelBooking(props: Props) {
       )}
       {!error && (
         <div className="mt-5 sm:mt-6">
-          <label className="text-default font-medium">{t("cancellation_reason")}</label>
-          <TextArea
-            data-testid="cancel_reason"
-            ref={cancelBookingRef}
-            placeholder={t("cancellation_reason_placeholder")}
-            value={cancellationReason}
-            onChange={(e) => setCancellationReason(e.target.value)}
-            className="mb-4 mt-2 w-full "
-            rows={3}
-          />
+          <div className="mb-5 flex flex-col gap-2">
+            <div>
+              <label className="text-default font-medium">{t("cancellation_reason")}</label>
+              <TextArea
+                data-testid="cancel_reason"
+                ref={cancelBookingRef}
+                placeholder={t("cancellation_reason_placeholder")}
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                className=" mt-2 w-full "
+                rows={3}
+              />
+            </div>
+            {props.isLoggedInUserHost && props.booking.isPaid && (
+              <div className="flex w-full justify-between">
+                <label className="text-default font-medium">{t("autorefund")}</label>
+                <Switch
+                  tooltip={t("autorefund_info")}
+                  checked={autoRefund}
+                  onCheckedChange={(val) => {
+                    setAutoRefund(val);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
           <div className="flex flex-col-reverse rtl:space-x-reverse ">
             <div className="ml-auto flex w-full space-x-4 ">
               <Button
@@ -85,49 +145,7 @@ export default function CancelBooking(props: Props) {
                 onClick={() => props.setIsCancellationMode(false)}>
                 {t("nevermind")}
               </Button>
-              <Button
-                data-testid="confirm_cancel"
-                onClick={async () => {
-                  setLoading(true);
-
-                  telemetry.event(telemetryEventTypes.bookingCancelled, collectPageParameters());
-
-                  const res = await fetch("/api/cancel", {
-                    body: JSON.stringify({
-                      uid: booking?.uid,
-                      cancellationReason: cancellationReason,
-                      allRemainingBookings,
-                      // @NOTE: very important this shouldn't cancel with number ID use uid instead
-                      seatReferenceUid,
-                    }),
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    method: "POST",
-                  });
-
-                  const bookingWithCancellationReason = {
-                    ...(bookingCancelledEventProps.booking as object),
-                    cancellationReason,
-                  } as unknown;
-
-                  if (res.status >= 200 && res.status < 300) {
-                    // tested by apps/web/playwright/booking-pages.e2e.ts
-                    sdkActionManager?.fire("bookingCancelled", {
-                      ...bookingCancelledEventProps,
-                      booking: bookingWithCancellationReason,
-                    });
-                    router.refresh();
-                  } else {
-                    setLoading(false);
-                    setError(
-                      `${t("error_with_status_code_occured", { status: res.status })} ${t(
-                        "please_try_again"
-                      )}`
-                    );
-                  }
-                }}
-                loading={loading}>
+              <Button data-testid="confirm_cancel" onClick={handleCancelBooking} loading={loading}>
                 {props.allRemainingBookings ? t("cancel_all_remaining") : t("cancel_event")}
               </Button>
             </div>

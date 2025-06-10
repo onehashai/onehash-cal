@@ -34,10 +34,11 @@ test.describe("User Avatar", async () => {
 
       const response = await prisma.avatar.findUniqueOrThrow({
         where: {
-          teamId_userId_isBanner: {
+          teamId_userId_isBanner_isFavicon: {
             userId: user.id,
             teamId: 0,
             isBanner: false,
+            isFavicon: false,
           },
         },
       });
@@ -64,11 +65,10 @@ test.describe("User Avatar", async () => {
       );
       // verify objectKey is passed to the OG image
       // yes, OG image URI encodes at multiple places.. don't want to mess with that.
+      const searchParam = `meetingImage=${encodeURIComponent(`${CAL_URL}/api/avatar/${objectKey}.png`)}`;
       await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
         "content",
-        new RegExp(
-          encodeURIComponent(`meetingImage=${encodeURIComponent(`${CAL_URL}/api/avatar/${objectKey}.png`)}`)
-        )
+        new RegExp(encodeURIComponent(searchParam))
       );
     });
   });
@@ -103,10 +103,11 @@ test.describe("Team Logo", async () => {
 
       const response = await prisma.avatar.findUniqueOrThrow({
         where: {
-          teamId_userId_isBanner: {
+          teamId_userId_isBanner_isFavicon: {
             userId: 0,
             teamId: team.id,
             isBanner: false,
+            isFavicon: false,
           },
         },
       });
@@ -160,10 +161,11 @@ test.describe("Organization Logo", async () => {
 
       const response = await prisma.avatar.findUniqueOrThrow({
         where: {
-          teamId_userId_isBanner: {
+          teamId_userId_isBanner_isFavicon: {
             userId: 0,
             teamId: org.id,
             isBanner: false,
+            isFavicon: false,
           },
         },
       });
@@ -192,7 +194,7 @@ test.describe("Organization Logo", async () => {
     await test.step("it shows the correct logo on the unpublished public page", async () => {
       await page.goto(`/org/${requestedSlug}`);
 
-      expect(await page.locator('[data-testid="empty-screen"]').count()).toBe(1);
+      await expect(page.locator('[data-testid="empty-screen"]')).toHaveCount(1);
 
       await expect(page.locator(`img`)).toHaveAttribute(
         "src",

@@ -428,6 +428,7 @@ export class EventTypeRepository {
       length: true,
       isInstantEvent: true,
       instantMeetingExpiryTimeOffsetInSeconds: true,
+      instantMeetingParameters: true,
       aiPhoneCallConfig: true,
       offsetStart: true,
       hidden: true,
@@ -443,9 +444,19 @@ export class EventTypeRepository {
       periodCountCalendarDays: true,
       lockTimeZoneToggleOnBookingPage: true,
       requiresConfirmation: true,
+      requiresConfirmationWillBlockSlot: true,
       requiresBookerEmailVerification: true,
+      autoTranslateDescriptionEnabled: true,
+      fieldTranslations: {
+        select: {
+          translatedText: true,
+          targetLocale: true,
+          field: true,
+        },
+      },
       recurringEvent: true,
       hideCalendarNotes: true,
+      hideCalendarEventDetails: true,
       disableGuests: true,
       minimumBookingNotice: true,
       beforeEventBuffer: true,
@@ -457,6 +468,8 @@ export class EventTypeRepository {
       onlyShowFirstAvailableSlot: true,
       durationLimits: true,
       assignAllTeamMembers: true,
+      assignRRMembersUsingSegment: true,
+      rrSegmentQueryValue: true,
       isRRWeightsEnabled: true,
       rescheduleWithSameRoundRobinHost: true,
       successRedirectUrl: true,
@@ -520,13 +533,19 @@ export class EventTypeRepository {
           name: true,
         },
       },
+      instantMeetingSchedule: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       hosts: {
         select: {
           isFixed: true,
           userId: true,
           priority: true,
           weight: true,
-          weightAdjustment: true,
+          scheduleId: true,
         },
       },
       userId: true,
@@ -602,6 +621,8 @@ export class EventTypeRepository {
         },
       },
       secondaryEmailId: true,
+      maxLeadThreshold: true,
+      captchaType: true,
     });
 
     return await prisma.eventType.findFirst({
@@ -636,6 +657,43 @@ export class EventTypeRepository {
         ],
       },
       select: CompleteEventTypeSelect,
+    });
+  }
+
+  static async findByIdMinimal({ id }: { id: number }) {
+    return await prisma.eventType.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  static async findByIdIncludeHostsAndTeam({ id }: { id: number }) {
+    return await prisma.eventType.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        hosts: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            weight: true,
+            priority: true,
+            createdAt: true,
+          },
+        },
+        team: {
+          select: {
+            parentId: true,
+          },
+        },
+      },
     });
   }
 

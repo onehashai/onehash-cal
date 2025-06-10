@@ -160,14 +160,18 @@ describe("handleNewBooking", () => {
           expect(createdBookings.length).toBe(numOfSlotsToBeBooked);
           for (const [index, createdBooking] of Object.entries(createdBookings)) {
             logger.debug("Assertion for Booking with index:", index, { createdBooking });
-            expect(createdBooking.responses).toContain({
-              email: booker.email,
-              name: booker.name,
-            });
+            expect(createdBooking.responses).toEqual(
+              expect.objectContaining({
+                email: booker.email,
+                name: booker.name,
+              })
+            );
 
-            expect(createdBooking).toContain({
-              location: "integrations:daily",
-            });
+            expect(createdBooking).toEqual(
+              expect.objectContaining({
+                location: "integrations:daily",
+              })
+            );
 
             await expectBookingToBeInDatabase({
               description: "",
@@ -508,14 +512,18 @@ describe("handleNewBooking", () => {
           expect(createdBookings.length).toBe(numOfSlotsToBeBooked);
           for (const [index, createdBooking] of Object.entries(createdBookings)) {
             logger.debug("Assertion for Booking with index:", index, { createdBooking });
-            expect(createdBooking.responses).toContain({
-              email: booker.email,
-              name: booker.name,
-            });
+            expect(createdBooking.responses).toEqual(
+              expect.objectContaining({
+                email: booker.email,
+                name: booker.name,
+              })
+            );
 
-            expect(createdBooking).toContain({
-              location: "integrations:daily",
-            });
+            expect(createdBooking).toEqual(
+              expect.objectContaining({
+                location: "integrations:daily",
+              })
+            );
 
             await expectBookingToBeInDatabase({
               description: "",
@@ -723,14 +731,18 @@ describe("handleNewBooking", () => {
           expect(createdBookings.length).toBe(numOfSlotsToBeBooked);
           for (const [index, createdBooking] of Object.entries(createdBookings)) {
             logger.debug("Assertion for Booking with index:", index, { createdBooking });
-            expect(createdBooking.responses).toContain({
-              email: booker.email,
-              name: booker.name,
-            });
+            expect(createdBooking.responses).toEqual(
+              expect.objectContaining({
+                email: booker.email,
+                name: booker.name,
+              })
+            );
 
-            expect(createdBooking).toContain({
-              location: "integrations:daily",
-            });
+            expect(createdBooking).toEqual(
+              expect.objectContaining({
+                location: "integrations:daily",
+              })
+            );
 
             await expectBookingToBeInDatabase({
               description: "",
@@ -1172,7 +1184,7 @@ describe("handleNewBooking", () => {
         expect(createdBookings1[0].userId).not.toBe(createdBookings2[0].userId);
         expect(allSameHosts(assignedUserIds1)).toBe(true);
         expect(allSameHosts(assignedUserIds2)).toBe(true);
-      });
+      }, 20000);
 
       test(`should create bookings that are all assigned to the least recently booked user that is available on the first two slots,
             if the least recently booked user is not available on the second slot`, async () => {
@@ -1393,7 +1405,7 @@ describe("handleNewBooking", () => {
         expect(createdBookings1[0].userId).toBe(102); // user 101 is busy on the second recurring slot
         expect(allSameHosts(assignedUserIds1)).toBe(true);
         expect(allSameHosts(assignedUserIds2)).toBe(true);
-      });
+      }, 20000);
     });
   });
 

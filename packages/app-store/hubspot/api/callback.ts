@@ -52,6 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   await createOAuthAppCredential({ appId: metadata.slug, type: metadata.type }, hubspotToken, req);
 
   res.redirect(
-    getSafeRedirectUrl(state?.returnTo) ?? getInstalledAppPath({ variant: "other", slug: "hubspot" })
+    getSafeRedirectUrl(state?.returnTo) ?? getInstalledAppPath({ variant: "crm", slug: "hubspot" })
   );
 }

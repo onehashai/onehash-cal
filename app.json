@@ -1,5 +1,5 @@
 {
-  "name": "Cal.com",
+  "name": "OneHash",
   "description": "Open Source Scheduling",
   "repository": "https://github.com/calcom/cal.com",
   "logo": "https://cal.com/android-chrome-512x512.png",
@@ -33,7 +33,7 @@
       "generator": "secret",
       "required": "true"
     },
-    "CRON_API_KEY": {
+    "CRON_SECRET": {
       "description": "ApiKey for cronjobs",
       "value": ""
     },

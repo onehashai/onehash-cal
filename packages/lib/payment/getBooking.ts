@@ -1,5 +1,5 @@
-import { workflowSelect } from "@calcom/ee/workflows/lib/getAllWorkflows";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
+import { workflowSelect } from "@calcom/features/oe/workflows/lib/getAllWorkflows";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
 import { HttpError as HttpCode } from "@calcom/lib/http-error";
 import { getTranslation } from "@calcom/lib/server/i18n";
@@ -60,7 +60,17 @@ export async function getBooking(bookingId: number) {
           bookingFields: true,
           team: {
             select: {
+              id: true,
+              name: true,
               parentId: true,
+              hideBranding: true,
+              bannerUrl: true,
+            },
+          },
+          owner: {
+            select: {
+              hideBranding: true,
+              bannerUrl: true,
             },
           },
         },
@@ -152,11 +162,20 @@ export async function getBooking(bookingId: number) {
       language: { translate: t, locale: user.locale ?? "en" },
       id: user.id,
     },
+    team: !!booking.eventType?.team
+      ? {
+          name: booking.eventType.team.name,
+          id: booking.eventType.team.id,
+          members: [],
+        }
+      : undefined,
     attendees: attendeesList,
     location: booking.location,
     uid: booking.uid,
     destinationCalendar: selectedDestinationCalendar ? [selectedDestinationCalendar] : [],
     recurringEvent: parseRecurringEvent(eventType?.recurringEvent),
+    hideBranding: booking.eventType?.owner?.hideBranding ?? booking.eventType?.team?.hideBranding ?? false,
+    bannerUrl: booking.eventType?.owner?.bannerUrl ?? booking.eventType?.team?.bannerUrl ?? null,
   };
 
   return {

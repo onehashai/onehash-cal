@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Head from "next/head";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
@@ -16,12 +17,12 @@ import useTheme from "@calcom/lib/hooks/useTheme";
 import { navigateInTopWindow } from "@calcom/lib/navigateInTopWindow";
 import { trpc } from "@calcom/trpc/react";
 import type { inferSSRProps } from "@calcom/types/inferSSRProps";
-import { Button, showToast, useCalcomTheme } from "@calcom/ui";
+import { Button, showToast, useBrandTheme } from "@calcom/ui";
 
 import FormInputFields from "../../components/FormInputFields";
-import { getAbsoluteEventTypeRedirectUrl } from "../../getEventTypeRedirectUrl";
+import { getAbsoluteEventTypeRedirectUrlWithEmbedSupport } from "../../getEventTypeRedirectUrl";
 import getFieldIdentifier from "../../lib/getFieldIdentifier";
-import { processRoute } from "../../lib/processRoute";
+import { findMatchingRoute } from "../../lib/processRoute";
 import { substituteVariables } from "../../lib/substituteVariables";
 import { getFieldResponseForJsonLogic } from "../../lib/transformResponse";
 import type { NonRouterRoute, FormResponse } from "../../types/types";
@@ -40,7 +41,7 @@ const useBrandColors = ({
     lightVal: brandColor,
     darkVal: darkBrandColor,
   });
-  useCalcomTheme(brandTheme);
+  useBrandTheme(brandTheme);
 };
 
 function RoutingForm({ form, profile, ...restProps }: Props) {
@@ -52,36 +53,48 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
     brandColor: profile.brandColor,
     darkBrandColor: profile.darkBrandColor,
   });
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   const [response, setResponse] = usePrefilledResponse(form);
+  const faviconUrl = form.user?.faviconUrl ?? form.team?.faviconUrl;
+  const bannerUrl = form.user?.bannerUrl ?? form.team?.bannerUrl;
+  const hideBranding = form.user?.hideBranding ?? form.team?.hideBranding;
+
+  useEffect(() => {
+    if (faviconUrl) {
+      const defaultFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+      defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
+    }
+  }, [faviconUrl]);
 
   // TODO: We might want to prevent spam from a single user by having same formFillerId across pageviews
   // But technically, a user can fill form multiple times due to any number of reasons and we currently can't differentiate b/w that.
   // - like a network error
   // - or he abandoned booking flow in between
   const formFillerId = formFillerIdRef.current;
-  const decidedActionWithFormResponseRef = useRef<{
-    action: NonRouterRoute["action"];
+  const chosenRouteWithFormResponseRef = useRef<{
+    route: NonRouterRoute;
     response: FormResponse;
   }>();
   const router = useRouter();
 
   const onSubmit = (response: FormResponse) => {
-    const decidedAction = processRoute({ form, response });
+    const chosenRoute = findMatchingRoute({ form, response });
 
-    if (!decidedAction) {
-      // FIXME: Make sure that when a form is created, there is always a fallback route and then remove this.
-      alert("Define atleast 1 route");
-      return;
+    if (!chosenRoute) {
+      // This error should never happen as we ensure that fallback route is always there that matches always
+      throw new Error("No matching route found");
     }
 
     responseMutation.mutate({
       formId: form.id,
       formFillerId,
       response: response,
+      chosenRouteId: chosenRoute.id,
     });
-    decidedActionWithFormResponseRef.current = {
-      action: decidedAction,
+
+    chosenRouteWithFormResponseRef.current = {
+      route: chosenRoute,
       response,
     };
   };
@@ -92,9 +105,10 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
   }, [customPageMessage]);
 
   const responseMutation = trpc.viewer.appRoutingForms.public.response.useMutation({
-    onSuccess: async () => {
-      const decidedActionWithFormResponse = decidedActionWithFormResponseRef.current;
-      if (!decidedActionWithFormResponse) {
+    onSuccess: async (data) => {
+      const { teamMembersMatchingAttributeLogic, formResponse, attributeRoutingConfig } = data;
+      const chosenRouteWithFormResponse = chosenRouteWithFormResponseRef.current;
+      if (!chosenRouteWithFormResponse) {
         return;
       }
       const fields = form.fields;
@@ -102,11 +116,15 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
         throw new Error("Routing Form fields must exist here");
       }
       const allURLSearchParams = getUrlSearchParamsToForward({
-        formResponse: decidedActionWithFormResponse.response,
+        formResponse: chosenRouteWithFormResponse.response,
+        formResponseId: formResponse.id,
         fields,
         searchParams: new URLSearchParams(window.location.search),
+        teamMembersMatchingAttributeLogic,
+        attributeRoutingConfig: attributeRoutingConfig ?? null,
       });
-      const decidedAction = decidedActionWithFormResponse.action;
+      const chosenRoute = chosenRouteWithFormResponse.route;
+      const decidedAction = chosenRoute.action;
       sdkActionManager?.fire("routed", {
         actionType: decidedAction.type,
         actionValue: decidedAction.value,
@@ -117,10 +135,11 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
       } else if (decidedAction.type === "eventTypeRedirectUrl") {
         const eventTypeUrlWithResolvedVariables = substituteVariables(decidedAction.value, response, fields);
         router.push(
-          getAbsoluteEventTypeRedirectUrl({
+          getAbsoluteEventTypeRedirectUrlWithEmbedSupport({
             form,
             eventTypeRedirectUrl: eventTypeUrlWithResolvedVariables,
             allURLSearchParams,
+            isEmbed: !!isEmbed,
           })
         );
       } else if (decidedAction.type === "externalRedirectUrl") {
@@ -150,11 +169,16 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
 
   return (
     <div>
+      {faviconUrl && (
+        <Head>
+          <link rel="icon" href={faviconUrl} type="image/x-icon" />
+        </Head>
+      )}
       <div>
         {!customPageMessage ? (
           <>
             <Head>
-              <title>{`${form.name} | Cal.com Forms`}</title>
+              <title>{`${form.name} | OneHash Forms`}</title>
             </Head>
             <div className={classNames("mx-auto my-0 max-w-3xl", isEmbed ? "" : "md:my-24")}>
               <div className="w-full max-w-4xl ltr:mr-2 rtl:ml-2">
@@ -167,7 +191,7 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
                         {form.name}
                       </h1>
                       {form.description ? (
-                        <p className="min-h-10 text-subtle text-sm ltr:mr-4 rtl:ml-4">{form.description}</p>
+                        <p className="text-subtle min-h-10 text-sm ltr:mr-4 rtl:ml-4">{form.description}</p>
                       ) : null}
                     </div>
                     <FormInputFields form={form} response={response} setResponse={setResponse} />
@@ -181,6 +205,9 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
                       </Button>
                     </div>
                   </form>
+                </div>
+                <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+                  <PoweredBy logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
                 </div>
               </div>
             </div>

@@ -5,7 +5,7 @@ export default create({
   colorPrimary: "#111827",
   colorSecondary: "#111827",
   appContentBg: "#F9FAFC",
-  brandTitle: "Cal.com UI",
+  brandTitle: "OneHash UI",
   brandUrl: "https://cal.com",
   brandImage: "https://cal.com/logo.svg",
   brandTarget: "_self",

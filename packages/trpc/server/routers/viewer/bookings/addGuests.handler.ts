@@ -29,7 +29,6 @@ export const addGuestsHandler = async ({ ctx, input }: AddGuestsOptions) => {
     },
     include: {
       attendees: true,
-      eventType: true,
       destinationCalendar: true,
       references: true,
       user: {
@@ -38,13 +37,29 @@ export const addGuestsHandler = async ({ ctx, input }: AddGuestsOptions) => {
           credentials: true,
         },
       },
+      eventType: {
+        include: {
+          team: {
+            select: {
+              bannerUrl: true,
+              hideBranding: true,
+            },
+          },
+          owner: {
+            select: {
+              bannerUrl: true,
+              hideBranding: true,
+            },
+          },
+        },
+      },
     },
   });
 
   if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "booking_not_found" });
 
   const isTeamAdminOrOwner =
-    (await isTeamAdmin(user.id, booking.eventType?.teamId ?? 0)) &&
+    (await isTeamAdmin(user.id, booking.eventType?.teamId ?? 0)) ||
     (await isTeamOwner(user.id, booking.eventType?.teamId ?? 0));
 
   const isOrganizer = booking.userId === user.id;
@@ -144,6 +159,8 @@ export const addGuestsHandler = async ({ ctx, input }: AddGuestsOptions) => {
       : [],
     seatsPerTimeSlot: booking.eventType?.seatsPerTimeSlot,
     seatsShowAttendees: booking.eventType?.seatsShowAttendees,
+    hideBranding: booking.eventType?.owner?.hideBranding ?? booking.eventType?.team?.hideBranding ?? false,
+    bannerUrl: booking.eventType?.owner?.bannerUrl ?? booking.eventType?.team?.bannerUrl ?? null,
   };
 
   if (videoCallReference) {

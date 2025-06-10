@@ -1,7 +1,7 @@
 {
   "name": "@calcom/api-proxy",
   "version": "1.0.0",
-  "description": "",
+  "description": "Public API for OneHash Cal",
   "main": "index.js",
   "scripts": {
     "dev": "node ./index.js"

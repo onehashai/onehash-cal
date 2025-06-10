@@ -10,12 +10,12 @@ export const metadata = {
   variant: "conferencing",
   categories: ["conferencing"],
   logo: "icon.svg",
-  publisher: "Cal.com",
+  publisher: "OneHash",
   url: "https://jitsi.org/",
   slug: "jitsi",
   title: "Jitsi Meet",
-  isGlobal: false,
-  email: "help@cal.com",
+  isGlobal: true,
+  email: "support@onehash.ai",
   appData: {
     location: {
       linkType: "dynamic",

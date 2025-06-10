@@ -70,7 +70,7 @@ export const SlugReplacementEmail = (
             <br />
             <br />
             Happy scheduling, <br />
-            The Cal.com team
+            The OneHash team
           </p>
         </Trans>
         {/*<p style={{ fontWeight: 400, lineHeight: "24px" }}>

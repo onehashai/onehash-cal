@@ -4,7 +4,7 @@
   "name": "@calcom/raycast",
   "version": "0.0.0",
   "main": "./index.ts",
-  "description": "Quickly share your Cal.com meeting links with Raycast",
+  "description": "Quickly share your OneHash meeting links with Raycast",
   "dependencies": {
     "@calcom/lib": "*"
   },

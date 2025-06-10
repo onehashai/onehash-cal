@@ -4,11 +4,11 @@
   "slug": "mirotalk",
   "type": "mirotalk_video",
   "logo": "icon.svg",
-  "url": "https://cal.com/",
+  "url": "https://www.onehash.ai",
   "variant": "conferencing",
   "categories": ["conferencing"],
-  "publisher": "Cal.com, Inc.",
-  "email": "support@cal.com",
+  "publisher": "OneHash",
+  "email": "support@onehash.ai",
   "appData": {
     "location": {
       "type": "integrations:{SLUG}_video",

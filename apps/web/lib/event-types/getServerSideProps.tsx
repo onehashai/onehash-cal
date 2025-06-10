@@ -1,26 +1,49 @@
 import type { GetServerSidePropsContext } from "next";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { ENABLE_INFINITE_EVENT_TYPES_FOR_ORG } from "@calcom/lib/constants";
+import prisma from "@calcom/prisma";
 
 import { ssrInit } from "@server/lib/ssr";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
-  const ssr = await ssrInit(context);
-  const session = await getServerSession({ req: context.req, res: context.res });
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
+  const session = await getServerSession({ req: context.req });
 
-  if (!session) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/auth/login",
+  // const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
+  // const useSecureCookies = WEBAPP_URL?.startsWith("https://");
+
+  // if (session?.keycloak_token) {
+  //   console.log("token_from", "event-type", session.keycloak_token);
+
+  //   nookies.set(context, "keycloak_token", session.keycloak_token, {
+  //     domain: keycloak_cookie_domain,
+  //     sameSite: useSecureCookies ? "none" : "lax",
+  //     path: "/",
+  //     secure: useSecureCookies,
+  //     httpOnly: true,
+  //   });
+  // }
+
+  if (session) {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: session.user.id,
       },
-    };
+      select: {
+        completedOnboarding: true,
+      },
+    });
+    if (!user) {
+      throw new Error("User from session not found");
+    }
+
+    if (!user.completedOnboarding) {
+      return { redirect: { permanent: true, destination: "/getting-started" } };
+    }
   }
 
-  const isInfiniteScrollEnabled = session.user?.org?.slug
-    ? ENABLE_INFINITE_EVENT_TYPES_FOR_ORG.includes(session.user.org.slug)
-    : false;
-
-  return { props: { trpcState: ssr.dehydrate(), isInfiniteScrollEnabled } };
+  return { props: { trpcState: ssr.dehydrate() } };
 };

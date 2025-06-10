@@ -46,6 +46,7 @@ const defaultIntegrationAddHandler = async ({
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Check that user is authenticated
   req.session = await getServerSession({ req, res });
+  const returnToCookie = req.cookies.return_to;
 
   const { args, teamId } = req.query;
 

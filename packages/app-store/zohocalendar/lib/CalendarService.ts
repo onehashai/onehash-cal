@@ -2,6 +2,7 @@ import { stringify } from "querystring";
 
 import dayjs from "@calcom/dayjs";
 import { getLocation, getRichDescription } from "@calcom/lib/CalEventParser";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import type {
@@ -37,17 +38,18 @@ export default class ZohoCalendarService implements Calendar {
       try {
         const appKeys = await getAppKeysFromSlug("zohocalendar");
         const { client_id, client_secret } = zohoKeysSchema.parse(appKeys);
-        const server_location = zohoCredentials.server_location;
         const params = {
           client_id,
           grant_type: "refresh_token",
           client_secret,
           refresh_token: zohoCredentials.refresh_token,
+          redirect_uri: `${WEBAPP_URL}/api/integrations/zohocalendar/callback`,
         };
 
         const query = stringify(params);
 
-        const res = await fetch(`https://accounts.zoho.${server_location}/oauth/v2/token?${query}`, {
+        const domain = zohoCredentials.domain ?? "zoho.in";
+        const res = await fetch(`https://accounts.${domain}/oauth/v2/token?${query}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json; charset=utf-8",
@@ -65,7 +67,7 @@ export default class ZohoCalendarService implements Calendar {
           access_token: token.access_token,
           refresh_token: zohoCredentials.refresh_token,
           expires_in: Math.round(+new Date() / 1000 + token.expires_in),
-          server_location,
+          domain: domain,
         };
         await prisma.credential.update({
           where: { id: credential.id },
@@ -88,7 +90,9 @@ export default class ZohoCalendarService implements Calendar {
 
   private fetcher = async (endpoint: string, init?: RequestInit | undefined) => {
     const credentials = await this.auth.getToken();
-    return fetch(`https://calendar.zoho.${credentials.server_location}/api/v1${endpoint}`, {
+    const domain = credentials.domain ?? "zoho.in";
+
+    return fetch(`https://calendar.${domain}/api/v1${endpoint}`, {
       method: "GET",
       ...init,
       headers: {
@@ -101,7 +105,9 @@ export default class ZohoCalendarService implements Calendar {
 
   private getUserInfo = async () => {
     const credentials = await this.auth.getToken();
-    const response = await fetch(`https://accounts.zoho.${credentials.server_location}/oauth/user/info`, {
+    const domain = credentials.domain ?? "zoho.in";
+
+    const response = await fetch(`https://accounts.${domain}/oauth/user/info`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${credentials.access_token}`,

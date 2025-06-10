@@ -34,6 +34,8 @@ export type VideoApiAdapter =
 
       getAllTranscriptsAccessLinkFromRoomName?(roomName: string): Promise<Array<string>>;
 
+      getAllTranscriptsAccessLinkFromMeetingId?(meetingId: string): Promise<Array<string>>;
+
       submitBatchProcessorJob?(body: batchProcessorBody): Promise<TSubmitBatchProcessorJobRes>;
 
       getTranscriptsAccessLinkFromRecordingId?(
@@ -41,6 +43,8 @@ export type VideoApiAdapter =
       ): Promise<TGetTranscriptAccessLink["transcription"] | { message: string }>;
 
       checkIfRoomNameMatchesInRecording?(roomName: string, recordingId: string): Promise<boolean>;
+
+      createInstantJitsiVideoRoom?(title: string): Promise<VideoCallData>;
     }
   | undefined;
 

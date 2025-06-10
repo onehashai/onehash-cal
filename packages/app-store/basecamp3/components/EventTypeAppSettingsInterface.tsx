@@ -52,7 +52,7 @@ const EventTypeAppSettingsInterface: EventTypeAppSettingsComponent = ({}) => {
       </div>
       <div className="mt-2">
         Please note that as of now you can only link <span className="italic">one</span> of your projects to
-        cal.com
+        cal.id
       </div>
     </div>
   );

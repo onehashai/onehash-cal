@@ -2,17 +2,22 @@ import authedProcedure from "../../../procedures/authedProcedure";
 import publicProcedure from "../../../procedures/publicProcedure";
 import { router } from "../../../trpc";
 import { ZAddGuestsInputSchema } from "./addGuests.schema";
+import { ZCancelScheduledWorkflowsInputSchema } from "./cancelWorkflows.schema";
 import { ZConfirmInputSchema } from "./confirm.schema";
 import { ZEditLocationInputSchema } from "./editLocation.schema";
+import { ZExportInputSchema } from "./export.schema";
 import { ZFindInputSchema } from "./find.schema";
 import { ZGetInputSchema } from "./get.schema";
+import { ZGetAllInputSchema } from "./getAll.schema";
 import { ZGetBookingAttendeesInputSchema } from "./getBookingAttendees.schema";
 import { ZInstantBookingInputSchema } from "./getInstantBookingLocation.schema";
 import { ZRequestRescheduleInputSchema } from "./requestReschedule.schema";
+import { ZSaveNoteInputSchema } from "./saveNotes.schema";
 import { bookingsProcedure } from "./util";
 
 type BookingsRouterHandlerCache = {
   get?: typeof import("./get.handler").getHandler;
+  getAll?: typeof import("./getAll.handler").getAllHandler;
   requestReschedule?: typeof import("./requestReschedule.handler").requestRescheduleHandler;
   editLocation?: typeof import("./editLocation.handler").editLocationHandler;
   addGuests?: typeof import("./addGuests.handler").addGuestsHandler;
@@ -20,6 +25,9 @@ type BookingsRouterHandlerCache = {
   getBookingAttendees?: typeof import("./getBookingAttendees.handler").getBookingAttendeesHandler;
   find?: typeof import("./find.handler").getHandler;
   getInstantBookingLocation?: typeof import("./getInstantBookingLocation.handler").getHandler;
+  saveNotes?: typeof import("./saveNotes.handler").saveNoteHandler;
+  cancelWorkflow?: typeof import("./cancelWorkflows.handler").cancelWorkflowHandler;
+  export?: typeof import("./export.handler").exportHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: BookingsRouterHandlerCache = {};
@@ -36,6 +44,22 @@ export const bookingsRouter = router({
     }
 
     return UNSTABLE_HANDLER_CACHE.get({
+      ctx,
+      input,
+    });
+  }),
+
+  getAll: authedProcedure.input(ZGetAllInputSchema).mutation(async ({ input, ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.getAll) {
+      UNSTABLE_HANDLER_CACHE.getAll = await import("./getAll.handler").then((mod) => mod.getAllHandler);
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.getAll) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.getAll({
       ctx,
       input,
     });
@@ -82,14 +106,46 @@ export const bookingsRouter = router({
         (mod) => mod.addGuestsHandler
       );
     }
-
-    // Unreachable code but required for type safety
     if (!UNSTABLE_HANDLER_CACHE.addGuests) {
       throw new Error("Failed to load handler");
     }
 
     return UNSTABLE_HANDLER_CACHE.addGuests({
       ctx,
+      input,
+    });
+  }),
+
+  saveNote: bookingsProcedure.input(ZSaveNoteInputSchema).mutation(async ({ input }) => {
+    if (!UNSTABLE_HANDLER_CACHE.saveNotes) {
+      UNSTABLE_HANDLER_CACHE.saveNotes = await import("./saveNotes.handler").then(
+        (mod) => mod.saveNoteHandler
+      );
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.saveNotes) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.saveNotes({
+      input,
+    });
+  }),
+
+  cancelWorkflow: publicProcedure.input(ZCancelScheduledWorkflowsInputSchema).mutation(async ({ input }) => {
+    if (!UNSTABLE_HANDLER_CACHE.cancelWorkflow) {
+      UNSTABLE_HANDLER_CACHE.cancelWorkflow = await import("./cancelWorkflows.handler").then(
+        (mod) => mod.cancelWorkflowHandler
+      );
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.cancelWorkflow) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.cancelWorkflow({
       input,
     });
   }),
@@ -165,4 +221,20 @@ export const bookingsRouter = router({
         input,
       });
     }),
+
+  export: authedProcedure.input(ZExportInputSchema).mutation(async ({ input, ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.export) {
+      UNSTABLE_HANDLER_CACHE.export = await import("./export.handler").then((mod) => mod.exportHandler);
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.export) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.export({
+      ctx,
+      input,
+    });
+  }),
 });

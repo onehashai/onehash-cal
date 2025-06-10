@@ -14,7 +14,8 @@ const workspaces = packagedEmbedTestsOnly
   ? [
       {
         test: {
-          include: ["packages/embeds/**/*.{test,spec}.{ts,js}"],
+          name: "PackagedEmbedTests",
+          include: ["packages/embeds/**/packaged/**/*.{test,spec}.{ts,js}"],
           environment: "jsdom",
         },
       },
@@ -107,6 +108,7 @@ const workspaces = packagedEmbedTestsOnly
           globals: true,
           name: "@calcom/features",
           include: ["packages/features/**/*.{test,spec}.tsx"],
+          exclude: ["packages/features/form-builder/**/*", "packages/features/bookings/**/*"],
           environment: "jsdom",
           setupFiles: ["setupVitest.ts", "packages/ui/components/test-setup.ts"],
         },
@@ -132,10 +134,8 @@ const workspaces = packagedEmbedTestsOnly
       {
         test: {
           globals: true,
-          name: "@calcom/routing-forms/widgets",
-          include: [
-            "packages/app-store/routing-forms/components/react-awesome-query-builder/widgets.test.tsx",
-          ],
+          name: "@calcom/routing-forms",
+          include: ["packages/app-store/routing-forms/**/*.test.tsx"],
           environment: "jsdom",
           setupFiles: ["packages/ui/components/test-setup.ts"],
         },
@@ -145,6 +145,37 @@ const workspaces = packagedEmbedTestsOnly
           globals: true,
           name: "@calcom/ui",
           include: ["packages/ui/components/**/*.{test,spec}.[jt]s?(x)"],
+          environment: "jsdom",
+          setupFiles: ["packages/ui/components/test-setup.ts"],
+        },
+      },
+      {
+        test: {
+          globals: true,
+          name: "@calcom/features/form-builder",
+          include: ["packages/features/form-builder/**/*.{test,spec}.[jt]sx"],
+          environment: "jsdom",
+          setupFiles: ["packages/ui/components/test-setup.ts"],
+        },
+      },
+      {
+        test: {
+          globals: true,
+          name: "@calcom/features/bookings",
+          include: ["packages/features/bookings/**/*.{test,spec}.[jt]sx"],
+          environment: "jsdom",
+          setupFiles: ["packages/ui/components/test-setup.ts"],
+        },
+      },
+      {
+        test: {
+          globals: true,
+          name: "@calcom/web/components",
+          include: [
+            "apps/web/components/**/*.{test,spec}.[jt]sx",
+            "apps/web/test/lib/**/*.{test,spec}.[jt]sx",
+            "apps/web/test/lib/exportAllBookings/exportAllBookings.test.tsx",
+          ],
           environment: "jsdom",
           setupFiles: ["packages/ui/components/test-setup.ts"],
         },
@@ -173,6 +204,16 @@ const workspaces = packagedEmbedTestsOnly
           name: "@calcom/web/modules/views",
           include: ["apps/web/modules/**/*.{test,spec}.tsx"],
           setupFiles: ["apps/web/modules/test-setup.ts"],
+        },
+      },
+
+      {
+        test: {
+          globals: true,
+          environment: "jsdom",
+          name: "@calcom/embeds",
+          include: ["packages/embeds/**/*.{test,spec}.{ts,js}"],
+          exclude: ["packages/embeds/**/packaged/**/*.{test,spec}.{ts,js}"],
         },
       },
     ];

@@ -1,10 +1,18 @@
 import { API_VERSIONS_VALUES } from "@/lib/api-versions";
 import { SlotsService } from "@/modules/slots/services/slots.service";
 import { Query, Body, Controller, Get, Delete, Post, Req, Res } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiQuery, ApiTags as DocsTags } from "@nestjs/swagger";
+import {
+  ApiBody,
+  ApiQuery,
+  ApiTags as DocsTags,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from "@nestjs/swagger";
 import { Response as ExpressResponse, Request as ExpressRequest } from "express";
 
 import { SUCCESS_STATUS } from "@calcom/platform-constants";
+import { SlotFormat } from "@calcom/platform-enums";
 import { getAvailableSlots } from "@calcom/platform-libraries";
 import type { AvailableSlotsType } from "@calcom/platform-libraries";
 import { RemoveSelectedSlotInput, ReserveSlotInput } from "@calcom/platform-types";
@@ -21,6 +29,21 @@ export class SlotsController {
   @Post("/reserve")
   @ApiBody({ type: ReserveSlotInput })
   @ApiOperation({ summary: "Reserve slots for the given time range" })
+  @ApiCreatedResponse({
+    description: "Successful response returning uid of reserved slot.",
+    schema: {
+      type: "object",
+      properties: {
+        status: { type: "string", example: "success" },
+        data: {
+          type: "object",
+          properties: {
+            uid: { type: "string", example: "e2a7bcf9-cc7b-40a0-80d3-657d391775a6" },
+          },
+        },
+      },
+    },
+  })
   async reserveSlot(
     @Body() body: ReserveSlotInput,
     @Res({ passthrough: true }) res: ExpressResponse,
@@ -43,6 +66,15 @@ export class SlotsController {
     type: String,
   })
   @ApiOperation({ summary: "Unreserve served slots" })
+  @ApiOkResponse({
+    description: "Response deleting reserved slot by uid.",
+    schema: {
+      type: "object",
+      properties: {
+        status: { type: "string", example: "success" },
+      },
+    },
+  })
   async deleteSelectedSlot(
     @Query() params: RemoveSelectedSlotInput,
     @Req() req: ExpressRequest
@@ -58,6 +90,74 @@ export class SlotsController {
 
   @Get("/available")
   @ApiOperation({ summary: "Get available slots for an event-type" })
+  @ApiOkResponse({
+    description: "Available time slots retrieved successfully",
+    schema: {
+      type: "object",
+      properties: {
+        status: { type: "string", example: "success" },
+        data: {
+          type: "object",
+          properties: {
+            slots: {
+              type: "object",
+              additionalProperties: {
+                type: "array",
+                items: {
+                  type: "object",
+                  oneOf: [
+                    {
+                      properties: {
+                        time: {
+                          type: "string",
+                          format: "date-time",
+                          example: "2024-09-25T08:00:00.000Z",
+                        },
+                      },
+                    },
+                    {
+                      properties: {
+                        startTime: {
+                          type: "string",
+                          format: "date-time",
+                          example: "2024-09-25T08:00:00.000Z",
+                        },
+                        endTime: {
+                          type: "string",
+                          format: "date-time",
+                          example: "2024-09-25T08:30:00.000Z",
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      example: {
+        status: "success",
+        data: {
+          slots: {
+            // Default format (when slotFormat is 'time' or not provided)
+            "2024-09-25": [{ time: "2024-09-25T08:00:00.000Z" }, { time: "2024-09-25T08:15:00.000Z" }],
+            // Alternative format (when slotFormat is 'range')
+            "2024-09-26": [
+              {
+                startTime: "2024-09-26T08:00:00.000Z",
+                endTime: "2024-09-26T08:30:00.000Z",
+              },
+              {
+                startTime: "2024-09-26T08:15:00.000Z",
+                endTime: "2024-09-26T08:45:00.000Z",
+              },
+            ],
+          },
+        },
+      },
+    },
+  })
   async getAvailableSlots(
     @Query() query: GetAvailableSlotsInput,
     @Req() req: ExpressRequest
@@ -73,8 +173,20 @@ export class SlotsController {
       },
     });
 
+    const transformedSlots =
+      query.slotFormat === SlotFormat.Range
+        ? await this.slotsService.formatSlots(
+            availableSlots,
+            query.duration,
+            query.eventTypeId,
+            query.slotFormat
+          )
+        : availableSlots.slots;
+
     return {
-      data: availableSlots,
+      data: {
+        slots: transformedSlots,
+      },
       status: SUCCESS_STATUS,
     };
   }

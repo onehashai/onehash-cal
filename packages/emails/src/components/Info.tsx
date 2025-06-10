@@ -9,39 +9,61 @@ export const Info = (props: {
   withSpacer?: boolean;
   lineThrough?: boolean;
   formatted?: boolean;
+  link?: string;
+  isLabelHTML?: boolean;
 }) => {
   if (!props.description || props.description === "") return null;
 
-  const descriptionCSS = "color: '#101010'; font-weight: 400; line-height: 24px; margin: 0;";
-
   const safeDescription = markdownToSafeHTML(props.description.toString()) || "";
+  const safeLabel = markdownToSafeHTML(props.label.toString());
+
+  const StyledHtmlContent = ({ htmlContent }: { htmlContent: string }) => {
+    const css = "color: '#101010'; font-weight: 400; line-height: 24px; margin: 0;";
+    return (
+      <p
+        className="dark:text-darkgray-600 mt-2 text-sm text-gray-500 [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{
+          __html: htmlContent
+            .replaceAll("<p>", `<p style="${css}">`)
+            .replaceAll("<li>", `<li style="${css}">`),
+        }}
+      />
+    );
+  };
 
   return (
     <>
       {props.withSpacer && <Spacer />}
       <div>
-        <p style={{ color: "#101010" }}>{props.label}</p>
-        <p
-          style={{
-            color: "#101010",
-            fontWeight: 400,
-            lineHeight: "24px",
-            whiteSpace: "pre-wrap",
-            textDecoration: props.lineThrough ? "line-through" : undefined,
-          }}>
-          {props.formatted ? (
-            <p
-              className="dark:text-darkgray-600 mt-2 text-sm text-gray-500 [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
-              dangerouslySetInnerHTML={{
-                __html: safeDescription
-                  .replaceAll("<p>", `<p style="${descriptionCSS}">`)
-                  .replaceAll("<li>", `<li style="${descriptionCSS}">`),
-              }}
-            />
-          ) : (
-            props.description
-          )}
+        <p style={{ color: "#101010" }}>
+          {props.isLabelHTML ? <StyledHtmlContent htmlContent={safeLabel} /> : props.label}
         </p>
+        {props.link ? (
+          <a
+            href={props.link as string}
+            target="_blank"
+            style={{
+              color: "#101010",
+              fontWeight: 400,
+              lineHeight: "24px",
+              whiteSpace: "pre-wrap",
+              textDecoration: props.lineThrough ? "line-through" : undefined,
+            }}>
+            {props.formatted ? <StyledHtmlContent htmlContent={safeDescription} /> : props.description}
+          </a>
+        ) : (
+          <p
+            style={{
+              color: "#101010",
+              fontWeight: 400,
+              lineHeight: "24px",
+              whiteSpace: "pre-wrap",
+              textDecoration: props.lineThrough ? "line-through" : undefined,
+            }}>
+            {props.formatted ? <StyledHtmlContent htmlContent={safeDescription} /> : props.description}
+          </p>
+        )}
         {props.extraInfo}
       </div>
     </>

@@ -24,6 +24,7 @@ export const BaseEmailHtml = (props: {
   subtitle?: React.ReactNode | string;
   headerType?: BodyHeadType;
   hideLogo?: boolean;
+  bannerUrl?: string | null;
 }) => {
   return (
     <Html>
@@ -197,7 +198,50 @@ export const BaseEmailHtml = (props: {
               </Row>
             </div>
           </div>
-          {!Boolean(props.hideLogo) && <EmailBodyLogo />}
+          {/* Marketing div */}
+          <div
+            className="mj-column-per-100 mj-outlook-group-fix"
+            style={{
+              fontSize: "0px",
+              textAlign: "left",
+              direction: "ltr",
+              display: "inline-block",
+              verticalAlign: "top",
+              width: "100%",
+            }}>
+            {/* <Row border="0" style={{ verticalAlign: "top" }} width="100%">
+              <td
+                align="center"
+                style={{
+                  fontSize: "0px",
+                  wordBreak: "break-word",
+                }}>
+                <Row border="0" style={{ borderCollapse: "collapse", borderSpacing: "0px" }}>
+                  <td style={{ verticalAlign: "middle" }}>
+                    <a
+                      href="https://www.onehash.ai/cal"
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ textDecoration: "none", color: "#000000" }}>
+                      <div
+                        style={{
+                          marginTop: "36px",
+                          fontFamily: "Roboto, Helvetica, sans-serif",
+                          fontSize: 16,
+                          lineHeight: 1,
+                          textAlign: "left",
+                          color: "#000000",
+                        }}>
+                        Scheduling by OneHash Cal 📆
+                      </div>
+                    </a>
+                  </td>
+                </Row>
+              </td>
+            </Row> */}
+          </div>
+          <EmailBodyLogo disableLogo={props.hideLogo} bannerUrl={props.bannerUrl} />
+
           <RawHtml html="<!--[if mso | IE]></td></tr></table><![endif]-->" />
         </div>
       </body>

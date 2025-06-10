@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
+
+import type { AppListCardProps } from "@calcom/features/apps/components/AppListCard";
 import classNames from "@calcom/lib/classNames";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Avatar, Badge, Icon, ListItemText } from "@calcom/ui";
-
-import type { AppListCardProps } from "../../../../apps/web/components/AppListCard";
 
 export const AppListCard = (props: AppListCardProps & { highlight?: boolean }) => {
   const { t } = useLocale();
@@ -27,10 +28,12 @@ export const AppListCard = (props: AppListCardProps & { highlight?: boolean }) =
     <div className={classNames(highlight && "dark:bg-muted bg-yellow-100", className)}>
       <div className="flex items-center gap-x-3 px-4 py-4 sm:px-6">
         {logo ? (
-          <img
+          <Image
             className={classNames(logo.includes("-dark") && "dark:invert", "h-10 w-10")}
             src={logo}
             alt={`${title} logo`}
+            height={40}
+            width={40}
           />
         ) : null}
         <div className="flex grow flex-col gap-y-1 truncate">
@@ -66,9 +69,10 @@ export const AppListCard = (props: AppListCardProps & { highlight?: boolean }) =
             </Badge>
           </div>
         )}
+
         {actions}
       </div>
-      <div className="w-full">{children}</div>
+      {children && <div className="w-full">{children}</div>}
     </div>
   );
 };

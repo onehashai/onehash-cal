@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
 import AppNotInstalledMessage from "@calcom/app-store/_components/AppNotInstalledMessage";
+import { APP_NAME } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc";
@@ -93,7 +94,7 @@ function AlbySetupPage(props: IAlbySetupProps) {
       client_secret: props.clientSecret,
       callback: `${process.env.NEXT_PUBLIC_WEBAPP_URL}/apps/alby/setup?callback=true`,
       scopes: ["invoices:read", "account:read"],
-      user_agent: "cal.com",
+      user_agent: APP_NAME.replace(" ", "-"),
     });
 
     const weblnOAuthProvider = new webln.OauthWeblnProvider({

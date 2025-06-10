@@ -5,19 +5,22 @@
 * Add css variables here as well for light mode in addition to tailwind.config to avoid FOUC
 */
 :root {
+  /* home page */
+  --primary-color: #007ee5;
+  --hover-primary-color: #3b82f6;
   /* background */
 
-  --cal-bg-emphasis: hsla(220,13%,91%,1);
-  --cal-bg: hsla(0,0%,100%,1);
-  --cal-bg-subtle: hsla(220, 14%, 96%,1);
-  --cal-bg-muted: hsla(210,20%,98%,1);
-  --cal-bg-inverted: hsla(0,0%,6%,1);
+  --cal-bg-emphasis: hsla(220, 13%, 91%, 1);
+  --cal-bg: hsla(0, 0%, 100%, 1);
+  --cal-bg-subtle: hsla(220, 14%, 96%, 1);
+  --cal-bg-muted: hsla(210, 20%, 98%, 1);
+  --cal-bg-inverted: hsla(0, 0%, 6%, 1);
 
   /* background -> components*/
-  --cal-bg-info: hsla(218,83%,98%,1);
-  --cal-bg-success: hsla(134,76%,94%,1);
+  --cal-bg-info: hsla(218, 83%, 98%, 1);
+  --cal-bg-success: hsla(134, 76%, 94%, 1);
   --cal-bg-attention: hsla(37, 86%, 92%, 1);
-  --cal-bg-error: hsla(3,66%,93%,1);
+  --cal-bg-error: hsla(3, 66%, 93%, 1);
   --cal-bg-dark-error: hsla(2, 55%, 30%, 1);
 
   /* Borders */
@@ -92,12 +95,12 @@
     */
   --cal-brand: hsla(0, 0%, 100%, 1);
   --cal-brand-emphasis: hsla(218, 11%, 65%, 1);
-  --cal-brand-text: hsla(0, 0%, 0%,1);
+  --cal-brand-text: hsla(0, 0%, 0%, 1);
 }
 
 @layer base {
   * {
-    @apply border-default
+    @apply border-default;
   }
 }
 
@@ -121,7 +124,7 @@ body  {
     https://docs.todesktop.com/
 */
 
-html.todesktop-platform-win32 .todesktop\:\!bg-transparent{
+html.todesktop-platform-win32 .todesktop\:\!bg-transparent {
   background: inherit !important;
 }
 
@@ -154,7 +157,8 @@ html.todesktop header a {
   -webkit-app-region: no-drag;
 }
 
-html.todesktop-platform-darwin body, html.todesktop-platform-darwin aside {
+html.todesktop-platform-darwin body,
+html.todesktop-platform-darwin aside {
   background: transparent !important;
 }
 
@@ -480,6 +484,8 @@ select:focus {
   @apply !border-r-default left-0.5 !border-y-0 !border-l-0;
 }
 
-.intercom-lightweight-app  {
+.intercom-lightweight-app {
   @apply z-40 !important;
 }
+
+@import "./raqb.css";

@@ -1,5 +1,4 @@
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 import { withErrorFromUnknown } from "@calcom/lib/getClientErrorFromUnknown";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
@@ -29,16 +28,6 @@ export const AvailabilitySettingsWebWrapper = () => {
 
   const { data: travelSchedules, isPending: isPendingTravelSchedules } =
     trpc.viewer.getTravelSchedules.useQuery();
-
-  const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
-  const bulkUpdateDefaultAvailabilityMutation =
-    trpc.viewer.availability.schedule.bulkUpdateToDefaultAvailability.useMutation({
-      onSuccess: () => {
-        utils.viewer.availability.list.invalidate();
-        setIsBulkUpdateModalOpen(false);
-        showToast(t("success"), "success");
-      },
-    });
 
   const isDefaultSchedule = me.data?.defaultScheduleId === scheduleId;
 
@@ -97,7 +86,6 @@ export const AvailabilitySettingsWebWrapper = () => {
       isDeleting={deleteMutation.isPending}
       isLoading={isPending}
       isSaving={updateMutation.isPending}
-      enableOverrides={true}
       timeFormat={timeFormat}
       weekStart={me.data?.weekStart || "Sunday"}
       backPath={fromEventType ? true : "/availability"}
@@ -111,12 +99,6 @@ export const AvailabilitySettingsWebWrapper = () => {
             dateOverrides: dateOverrides.flatMap((override) => override.ranges),
             ...values,
           });
-      }}
-      bulkUpdateModalProps={{
-        isOpen: isBulkUpdateModalOpen,
-        setIsOpen: setIsBulkUpdateModalOpen,
-        save: bulkUpdateDefaultAvailabilityMutation.mutate,
-        isSaving: bulkUpdateDefaultAvailabilityMutation.isPending,
       }}
     />
   );

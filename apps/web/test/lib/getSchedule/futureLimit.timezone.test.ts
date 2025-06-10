@@ -66,6 +66,11 @@ vi.mock("@calcom/lib/constants", () => ({
   WEBAPP_URL: "http://localhost:3000",
   RESERVED_SUBDOMAINS: ["auth", "docs"],
   ROLLING_WINDOW_PERIOD_MAX_DAYS_TO_CHECK: 61,
+  //dummy values, ignore the meaning of it
+  WHATSAPP_REMINDER_SID: "whatsapp:+14155238886",
+  WHATSAPP_CANCELLED_SID: "whatsapp:+14155238886",
+  WHATSAPP_RESCHEDULED_SID: "whatsapp:+14155238886",
+  WHATSAPP_COMPLETED_SID: "whatsapp:+14155238886",
 }));
 
 describe("getSchedule", () => {
@@ -121,6 +126,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -208,6 +214,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -291,6 +298,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -385,6 +393,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -488,6 +497,7 @@ describe("getSchedule", () => {
               endTime: `${plus5DateString}T18:29:59.999Z`,
               timeZone: Timezones["+5:30"],
               isTeamEvent: false,
+              orgSlug: null,
             },
           });
 
@@ -577,6 +587,7 @@ describe("getSchedule", () => {
               endTime: `${plus5DateString}T18:29:59.999Z`,
               timeZone: Timezones["+5:30"],
               isTeamEvent: false,
+              orgSlug: null,
             },
           });
 
@@ -660,6 +671,7 @@ describe("getSchedule", () => {
               endTime: `${plus5DateString}T18:29:59.999Z`,
               timeZone: Timezones["-11:00"],
               isTeamEvent: false,
+              orgSlug: null,
             },
           });
 
@@ -782,6 +794,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -879,6 +892,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -979,6 +993,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -1086,6 +1101,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -1205,6 +1221,7 @@ describe("getSchedule", () => {
               endTime: `${plus5DateString}T18:29:59.999Z`,
               timeZone: Timezones["+5:30"],
               isTeamEvent: false,
+              orgSlug: null,
             },
           });
 
@@ -1301,6 +1318,7 @@ describe("getSchedule", () => {
               endTime: `${plus5DateString}T18:29:59.999Z`,
               timeZone: Timezones["+5:30"],
               isTeamEvent: false,
+              orgSlug: null,
             },
           });
 
@@ -1409,6 +1427,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -1510,6 +1529,7 @@ describe("getSchedule", () => {
             endTime: `${plus5DateString}T18:29:59.999Z`,
             timeZone: Timezones["+5:30"],
             isTeamEvent: false,
+            orgSlug: null,
           },
         });
 
@@ -1594,6 +1614,7 @@ describe("getSchedule", () => {
               endTime: `2024-07-31T18:29:59.999Z`,
               timeZone: Timezones["-11:00"],
               isTeamEvent: false,
+              orgSlug: null,
             },
           });
 

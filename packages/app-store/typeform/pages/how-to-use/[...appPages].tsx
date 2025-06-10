@@ -13,7 +13,7 @@ export default function HowToUse() {
             <img className="w-11" src="/api/app-store/typeform/icon.svg" alt="Zapier Logo" />
           </div>
           <div className="ml-5">
-            <div className="text-md text-default">How to route a Typeform with Cal.com Routing</div>
+            <div className="text-md text-default">How to route a Typeform with OneHash Routing</div>
             <ol className="mb-5 ml-5 mt-5 list-decimal ltr:mr-5 rtl:ml-5">
               <li>
                 Make sure that you have{" "}
@@ -38,7 +38,7 @@ export default function HowToUse() {
                   Click &quot;Copy Typeform Redirect URL&quot;
                 </Link>
               </li>
-              <li>Create a Typeform that you want to route through Cal.com form&apos;s routing</li>
+              <li>Create a Typeform that you want to route through OneHash form&apos;s routing</li>
               <li>
                 Add the copied URL as{" "}
                 <Link
@@ -69,7 +69,7 @@ export default function HowToUse() {
                 to add values to query params.
               </li>
               <li>
-                You&apos;re set! Now, when the Typeform gets responses they would be routed through Cal.com
+                You&apos;re set! Now, when the Typeform gets responses they would be routed through OneHash
                 routing
               </li>
             </ol>

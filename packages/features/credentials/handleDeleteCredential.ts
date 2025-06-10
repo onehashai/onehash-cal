@@ -3,11 +3,12 @@ import z from "zod";
 
 import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
 import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
-import { DailyLocationType } from "@calcom/core/location";
-import { sendCancelledEmails } from "@calcom/emails";
+import { JitsiLocationType } from "@calcom/app-store/locations";
+import { sendCancelledEmailsAndSMS } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { deleteWebhookScheduledTriggers } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import { isPrismaObjOrUndefined, parseRecurringEvent } from "@calcom/lib";
+import { ONEHASH_API_KEY, ONEHASH_CHAT_ORIGIN } from "@calcom/lib/constants";
 import { deletePayment } from "@calcom/lib/payment/deletePayment";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { bookingMinimalSelect, prisma } from "@calcom/prisma";
@@ -29,6 +30,22 @@ const isVideoOrConferencingApp = (app: App) =>
 const getRemovedIntegrationNameFromAppSlug = (slug: string) =>
   slug === "msteams" ? "office365_video" : slug.split("-")[0];
 
+const handleOhChatCredentialDelete = async (credential: { key: Prisma.JsonValue }) => {
+  const account_user_id = isPrismaObjOrUndefined(credential.key)?.account_user_id ?? undefined;
+  if (account_user_id) {
+    const res = await fetch(`${ONEHASH_CHAT_ORIGIN}/onehash/cal/action/${account_user_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ONEHASH_API_KEY}`,
+      },
+    });
+    if (!res.ok) {
+      throw new Error("Couldn't unsync app from OneHash Chat");
+    }
+  }
+};
+
 const locationsSchema = z.array(z.object({ type: z.string() }));
 type TlocationsSchema = z.infer<typeof locationsSchema>;
 
@@ -39,7 +56,7 @@ const handleDeleteCredential = async ({
   teamId,
 }: {
   userId: number;
-  userMetadata: Prisma.JsonValue;
+  userMetadata?: Prisma.JsonValue;
   credentialId: number;
   teamId?: number;
 }) => {
@@ -62,6 +79,10 @@ const handleDeleteCredential = async ({
 
   if (!credential) {
     throw new Error("Credential not found");
+  }
+
+  if (credential.appId === "onehash-chat") {
+    await handleOhChatCredentialDelete(credential);
   }
 
   const eventTypes = await prisma.eventType.findMany({
@@ -94,7 +115,8 @@ const handleDeleteCredential = async ({
 
   // TODO: Improve this uninstallation cleanup per event by keeping a relation of EventType to App which has the data.
   for (const eventType of eventTypes) {
-    // If it's a video, replace the location with Cal video
+    //CHANGE:JITSI
+    // If it's a video, replace the location with Jitsi video
     if (eventType.locations && isVideoOrConferencingApp(credential.app)) {
       // Find the user's event types
 
@@ -105,13 +127,20 @@ const handleDeleteCredential = async ({
       // To avoid type errors, need to stringify and parse JSON to use array methods
       const locations = locationsSchema.parse(eventType.locations);
 
-      const doesDailyVideoAlreadyExists = locations.some((location) =>
-        location.type.includes(DailyLocationType)
+      //CHANGE:JITSI
+      // const doesDailyVideoAlreadyExists = locations.some((location) =>
+      //   location.type.includes(DailyLocationType)
+      // );
+      //CHANGE:JITSI
+      const doesJitsiVideoAlreadyExists = locations.some((location) =>
+        location.type.includes(JitsiLocationType)
       );
 
       const updatedLocations: TlocationsSchema = locations.reduce((acc: TlocationsSchema, location) => {
         if (location.type.includes(integrationQuery)) {
-          if (!doesDailyVideoAlreadyExists) acc.push({ type: DailyLocationType });
+          //CHANGE:JITSI
+          if (!doesJitsiVideoAlreadyExists) acc.push({ type: JitsiLocationType });
+          // if (!doesDailyVideoAlreadyExists) acc.push({ type: DailyLocationType });
         } else {
           acc.push(location);
         }
@@ -244,7 +273,21 @@ const handleDeleteCredential = async ({
                   seatsPerTimeSlot: true,
                   seatsShowAttendees: true,
                   eventName: true,
+                  team: {
+                    select: {
+                      id: true,
+                      name: true,
+                      hideBranding: true,
+                      bannerUrl: true,
+                    },
+                  },
                   metadata: true,
+                  owner: {
+                    select: {
+                      hideBranding: true,
+                      bannerUrl: true,
+                    },
+                  },
                 },
               },
               uid: true,
@@ -303,7 +346,7 @@ const handleDeleteCredential = async ({
 
             const attendeesList = await Promise.all(attendeesListPromises);
             const tOrganizer = await getTranslation(booking?.user?.locale ?? "en", "common");
-            await sendCancelledEmails(
+            await sendCancelledEmailsAndSMS(
               {
                 type: booking?.eventType?.title as string,
                 title: booking.title,
@@ -333,6 +376,17 @@ const handleDeleteCredential = async ({
                 cancellationReason: "Payment method removed by organizer",
                 seatsPerTimeSlot: booking.eventType?.seatsPerTimeSlot,
                 seatsShowAttendees: booking.eventType?.seatsShowAttendees,
+                team: !!booking.eventType?.team
+                  ? {
+                      name: booking.eventType.team.name,
+                      id: booking.eventType.team.id,
+                      members: [],
+                    }
+                  : undefined,
+                hideBranding:
+                  booking?.eventType?.owner?.hideBranding ?? booking?.eventType?.team?.hideBranding ?? false,
+                bannerUrl:
+                  booking?.eventType?.owner?.bannerUrl ?? booking?.eventType?.team?.bannerUrl ?? null,
               },
               {
                 eventName: booking?.eventType?.eventName,

@@ -1,24 +1,23 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/calendar-cache-cleanup",
-      "schedule": "0 5 * * *"
-    },
-    {
-      "path": "/api/tasks/cron",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/tasks/cleanup",
-      "schedule": "0 0 * * *"
-    }
-  ],
+  "crons": [],
+  "regions": ["sfo1"],
+  "buildCommand": "(cd ../.. && yarn run deploy)",
+  "outputDirectory": ".next",
   "functions": {
     "pages/api/trpc/public/[trpc].ts": {
-      "memory": 768
+      "memory": 1769
     },
     "pages/api/trpc/slots/[trpc].ts": {
-      "memory": 768
+      "memory": 1769
+    },
+    "pages/api/inngest.ts": {
+      "maxDuration": 300
+    },
+    "pages/api/trpc/highPerf/[trpc].ts": {
+      "memory": 3008
+    },
+    "pages/api/trpc/appRoutingForms/[trpc].ts": {
+      "memory": 2048
     }
   }
 }

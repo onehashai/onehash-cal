@@ -40,10 +40,14 @@ export const BookingFields = ({
 
         // During reschedule by default all system fields are readOnly. Make them editable on case by case basis.
         // Allowing a system field to be edited might require sending emails to attendees, so we need to be careful
-        let readOnly =
+        const rescheduleReadOnly =
           (field.editable === "system" || field.editable === "system-but-optional") &&
           !!rescheduleUid &&
           bookingData !== null;
+
+        const bookingReadOnly = field.editable === "user-readonly";
+
+        let readOnly = bookingReadOnly || rescheduleReadOnly;
 
         let hidden = !!field.hidden;
         const fieldViews = field.views;
@@ -75,7 +79,8 @@ export const BookingFields = ({
         if (field.name === SystemField.Enum.guests) {
           readOnly = false;
           // No matter what user configured for Guests field, we don't show it for dynamic group booking as that doesn't support guests
-          hidden = isDynamicGroupBooking ? true : !!field.hidden;
+          // hidden = isDynamicGroupBooking ? true : !!field.hidden;
+          hidden = !!field.hidden;
         }
 
         // We don't show `notes` field during reschedule but since it's a query param we better valid if rescheduleUid brought any bookingData
@@ -83,11 +88,8 @@ export const BookingFields = ({
           return null;
         }
 
-        // Attendee location field can be edited during reschedule
         if (field.name === SystemField.Enum.location) {
-          if (locationResponse?.value === "attendeeInPerson" || "phone") {
-            readOnly = false;
-          }
+          readOnly = false;
         }
 
         // Dynamically populate location field options

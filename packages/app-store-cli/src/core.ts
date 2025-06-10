@@ -55,6 +55,8 @@ export const BaseAppFork = {
     template,
     isTemplate,
     oldSlug,
+    termsOfServiceUrl,
+    privacyPolicyUrl,
   }: {
     category: string;
     editMode?: boolean;
@@ -66,6 +68,8 @@ export const BaseAppFork = {
     template: string;
     isTemplate: boolean;
     oldSlug?: string;
+    termsOfServiceUrl?: string;
+    privacyPolicyUrl?: string;
   }) {
     const appDirPath = getAppDirPath(slug, isTemplate);
     if (!editMode) {
@@ -107,6 +111,8 @@ export const BaseAppFork = {
       description: description,
       // TODO: Use this to avoid edit and delete on the apps created outside of cli
       __createdUsingCli: true,
+      ...(privacyPolicyUrl && { privacyUrl: privacyPolicyUrl }),
+      ...(termsOfServiceUrl && { tosUrl: termsOfServiceUrl }),
       isTemplate,
       // Store the template used to create an app
       __template: template,

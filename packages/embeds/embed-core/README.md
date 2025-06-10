@@ -66,7 +66,7 @@ Make `dist/embed.umd.js` servable on URL <http://cal.com/embed.js>
 
 - Branding
 
-  - Powered by Cal.com and 'Try it for free'. Should they be shown only for FREE account.
+  - Powered by OneHash and 'Try it for free'. Should they be shown only for FREE account.
   - Branding at the bottom has been removed for UI improvements, need to see where to add it.
 
 - API

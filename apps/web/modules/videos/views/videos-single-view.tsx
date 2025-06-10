@@ -4,6 +4,7 @@ import type { DailyCall } from "@daily-co/daily-js";
 import DailyIframe from "@daily-co/daily-js";
 import { DailyProvider } from "@daily-co/daily-react";
 import Head from "next/head";
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 
 import dayjs from "@calcom/dayjs";
@@ -13,15 +14,18 @@ import { TRANSCRIPTION_STOPPED_ICON, RECORDING_DEFAULT_ICON } from "@calcom/lib/
 import { formatToLocalizedDate, formatToLocalizedTime } from "@calcom/lib/date-fns";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
+import type { inferSSRProps } from "@calcom/types/inferSSRProps";
 import { Icon } from "@calcom/ui";
+
+import type { getServerSideProps } from "@lib/video/[uid]/getServerSideProps";
 
 import { CalAiTranscribe } from "~/videos/ai/ai-transcribe";
 
-import { type PageProps } from "./videos-single-view.getServerSideProps";
+export type PageProps = inferSSRProps<typeof getServerSideProps>;
 
 export default function JoinCall(props: PageProps) {
   const { t } = useLocale();
-  const { meetingUrl, meetingPassword, booking, hasTeamPlan } = props;
+  const { meetingUrl, meetingPassword, booking, hasTeamPlan, calVideoLogo } = props;
   const [daily, setDaily] = useState<DailyCall | null>(null);
 
   useEffect(() => {
@@ -100,25 +104,31 @@ export default function JoinCall(props: PageProps) {
           <CalAiTranscribe />
         </div>
         <div style={{ zIndex: 2, position: "relative" }}>
-          {booking?.user?.organization?.calVideoLogo ? (
+          {calVideoLogo ? (
             <img
-              className="min-w-16 min-h-16 fixed z-10 hidden aspect-square h-16 w-16 rounded-full sm:inline-block"
-              src={booking.user.organization.calVideoLogo}
+              className="min-h-16 min-w-16 fixed z-10 hidden aspect-square h-16 w-16 rounded-full sm:inline-block"
+              src={calVideoLogo}
               alt="My Org Logo"
               style={{
+                position: "fixed",
                 top: 32,
                 left: 32,
               }}
+              width={64}
+              height={64}
             />
           ) : (
-            <img
+            <Image
               className="fixed z-10 hidden h-5 sm:inline-block"
-              src={`${WEBSITE_URL}/cal-logo-word-dark.svg`}
+              src={`${WEBSITE_URL}/oh-logo-word-dark.svg`}
               alt="Logo"
               style={{
                 top: 47,
                 left: 20,
+                position: "fixed",
               }}
+              width={20}
+              height={20}
             />
           )}
         </div>
@@ -217,7 +227,7 @@ export function VideoMeetingInfo(props: VideoMeetingInfo) {
           "no-scrollbar fixed left-0 top-0 z-30 flex h-full w-64 transform justify-between overflow-x-hidden overflow-y-scroll transition-all duration-300 ease-in-out",
           open ? "translate-x-0" : "-translate-x-[232px]"
         )}>
-        <main className="prose-sm prose max-w-64 prose-a:text-white prose-h3:text-white prose-h3:font-cal scroll-bar scrollbar-track-w-20 w-full overflow-scroll overflow-x-hidden border-r border-gray-300/20 bg-black/80 p-4 text-white shadow-sm backdrop-blur-lg">
+        <main className="prose-sm prose prose-a:text-white prose-h3:text-white prose-h3:font-cal scroll-bar scrollbar-track-w-20 max-w-64 w-full overflow-scroll overflow-x-hidden border-r border-gray-300/20 bg-black/80 p-4 text-white shadow-sm backdrop-blur-lg">
           <h3>{t("what")}:</h3>
           <p>{booking.title}</p>
           <h3>{t("invitee_timezone")}:</h3>
@@ -254,6 +264,7 @@ export function VideoMeetingInfo(props: VideoMeetingInfo) {
 
               <div
                 className="prose-sm prose prose-invert"
+                // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: markdownToSafeHTML(booking.description) }}
               />
             </>

@@ -1,7 +1,9 @@
+"use client";
+
 import { Suspense } from "react";
 
 import NoSSR from "@calcom/core/components/NoSSR";
-import { Meta, SkeletonText, SkeletonContainer } from "@calcom/ui";
+import { SkeletonText, SkeletonContainer, Meta } from "@calcom/ui";
 
 import { FlagAdminList } from "../components/FlagAdminList";
 
@@ -19,7 +21,7 @@ const SkeletonLoader = () => {
 export const FlagListingView = () => {
   return (
     <>
-      <Meta title="Feature Flags" description="Here you can toggle your Cal.com instance features." />
+      <Meta title="Feature Flags" description="Here you can toggle your OneHash instance features." />
       <NoSSR>
         <Suspense fallback={<SkeletonLoader />}>
           <FlagAdminList />

@@ -59,6 +59,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Response>) {
       upId: "",
       hasValidLicense: true,
       expires: "" /* Not used in this context */,
+      keycloak_token: "",
     };
   }
 

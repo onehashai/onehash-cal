@@ -1,11 +1,18 @@
 import type { TFunction } from "next-i18next";
 import { Trans } from "next-i18next";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import type { FieldError } from "react-hook-form";
 
 import type { BookerEvent } from "@calcom/features/bookings/types";
-import { IS_CALCOM, WEBSITE_URL } from "@calcom/lib/constants";
+import {
+  RECAPTCHA_KEY_HIGH,
+  RECAPTCHA_KEY_LOW,
+  RECAPTCHA_KEY_MEDIUM,
+  WEBSITE_PRIVACY_POLICY_URL,
+  WEBSITE_TERMS_URL,
+} from "@calcom/lib/constants";
 import getPaymentAppData from "@calcom/lib/getPaymentAppData";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Alert, Button, EmptyScreen, Form } from "@calcom/ui";
@@ -28,6 +35,7 @@ type BookEventFormProps = {
   extraOptions: Record<string, string | string[]>;
   isPlatform?: boolean;
   isVerificationCodeSending: boolean;
+  billingAddressRequired?: boolean;
 };
 
 export const BookEventForm = ({
@@ -44,11 +52,15 @@ export const BookEventForm = ({
   extraOptions,
   isVerificationCodeSending,
   isPlatform = false,
+  billingAddressRequired = false,
 }: Omit<BookEventFormProps, "event"> & {
   eventQuery: {
     isError: boolean;
     isPending: boolean;
-    data?: Pick<BookerEvent, "price" | "currency" | "metadata" | "bookingFields" | "locations"> | null;
+    data?: Pick<
+      BookerEvent,
+      "price" | "currency" | "metadata" | "bookingFields" | "locations" | "captchaType"
+    > | null;
   };
   rescheduleUid: string | null;
 }) => {
@@ -68,6 +80,46 @@ export const BookEventForm = ({
     return eventType?.price > 0 && !Number.isNaN(paymentAppData.price) && paymentAppData.price > 0;
   }, [eventType]);
 
+  const recaptchaRef = useRef<ReCAPTCHA | null>(null);
+
+  useEffect(() => {
+    if (eventType && billingAddressRequired) {
+      const appended = eventType.bookingFields.some((field) => field.name === "_line1");
+      if (!appended)
+        eventType.bookingFields.push(
+          {
+            name: "_line1",
+            type: "address",
+            defaultLabel: "Address Line 1",
+            required: true,
+          },
+          {
+            name: "city",
+            type: "address",
+            defaultLabel: "City",
+            required: true,
+          },
+          {
+            name: "state",
+            type: "address",
+            defaultLabel: "State",
+            required: true,
+          },
+          {
+            name: "country",
+            type: "address",
+            defaultLabel: "Country",
+            required: true,
+          },
+          {
+            name: "postal_code",
+            type: "address",
+            defaultLabel: "Postal Code",
+            required: true,
+          }
+        );
+    }
+  }, [eventType]);
   if (eventQuery.isError) return <Alert severity="warning" message={t("error_booking_event")} />;
   if (eventQuery.isPending || !eventQuery.data) return <FormSkeleton />;
   if (!timeslot)
@@ -86,6 +138,39 @@ export const BookEventForm = ({
     return <Alert severity="warning" message={t("error_booking_event")} />;
   }
 
+  const reCaptchaMap = {
+    LOW: RECAPTCHA_KEY_LOW,
+    MEDIUM: RECAPTCHA_KEY_MEDIUM,
+    HIGH: RECAPTCHA_KEY_HIGH,
+  };
+  const recaptchaKey = reCaptchaMap[eventType.captchaType as keyof typeof reCaptchaMap];
+  const handleFormSubmit = async () => {
+    if (recaptchaRef.current) {
+      try {
+        const token = await recaptchaRef.current.executeAsync();
+        recaptchaRef.current.reset();
+
+        if (token) {
+          const response = await fetch("/api/verify-recaptcha", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, type: eventType.captchaType as keyof typeof reCaptchaMap }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            onSubmit();
+          } else {
+            console.error("reCAPTCHA failed", data.error);
+          }
+        }
+      } catch (error) {
+        console.error("reCAPTCHA error:", error);
+      }
+    } else {
+      onSubmit();
+    }
+  };
   return (
     <div className="flex h-full flex-col">
       <Form
@@ -98,7 +183,7 @@ export const BookEventForm = ({
           setFormValues(values);
         }}
         form={bookingForm}
-        handleSubmit={onSubmit}
+        handleSubmit={handleFormSubmit}
         noValidate>
         <BookingFields
           isDynamicGroupBooking={!!(username && username.indexOf("+") > -1)}
@@ -118,22 +203,22 @@ export const BookEventForm = ({
             />
           </div>
         )}
-        {!isPlatform && IS_CALCOM && (
-          <div className="text-subtle my-3 w-full text-xs opacity-80">
+        {!isPlatform && (
+          <div className="text-subtle my-3 w-full text-xs">
             <Trans
               i18nKey="signing_up_terms"
               components={[
                 <Link
                   className="text-emphasis hover:underline"
                   key="terms"
-                  href={`${WEBSITE_URL}/terms`}
+                  href={`${WEBSITE_TERMS_URL}`}
                   target="_blank">
                   Terms
                 </Link>,
                 <Link
                   className="text-emphasis hover:underline"
                   key="privacy"
-                  href={`${WEBSITE_URL}/privacy`}
+                  href={`${WEBSITE_PRIVACY_POLICY_URL}`}
                   target="_blank">
                   Privacy Policy.
                 </Link>,
@@ -175,6 +260,7 @@ export const BookEventForm = ({
             </>
           )}
         </div>
+        {recaptchaKey && <ReCAPTCHA ref={recaptchaRef} sitekey={recaptchaKey} size="invisible" />}
       </Form>
       {children}
     </div>

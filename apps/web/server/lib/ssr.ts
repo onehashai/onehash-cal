@@ -54,7 +54,11 @@ const routerSlice = router({
  * Automatically prefetches i18n based on the passed in `context`-object to prevent i18n-flickering.
  * Make sure to `return { props: { trpcState: ssr.dehydrate() } }` at the end.
  */
-export async function ssrInit(context: GetServerSidePropsContext, options?: { noI18nPreload: boolean }) {
+
+export async function ssrInit(
+  context: GetServerSidePropsContext,
+  options?: { noI18nPreload: boolean; noQueryPrefetch: boolean; prefetchUserSchedule?: boolean }
+) {
   const ctx = await createContext(context);
   const locale = await getLocale(context.req);
   const i18n = await serverSideTranslations(locale, ["common", "vital"]);
@@ -75,14 +79,20 @@ export async function ssrInit(context: GetServerSidePropsContext, options?: { no
     ssr.queryClient.setQueryData(queryKey, { i18n });
   }
 
-  await Promise.allSettled([
-    // So feature flags are available on first render
-    ssr.viewer.features.map.prefetch(),
-    // Provides a better UX to the users who have already upgraded.
-    ssr.viewer.teams.hasTeamPlan.prefetch(),
-    ssr.viewer.public.session.prefetch(),
-    ssr.viewer.me.prefetch(),
-  ]);
+  if (!options?.noQueryPrefetch) {
+    await Promise.allSettled([
+      // So feature flags are available on first render
+      ssr.viewer.features.map.prefetch(),
+      // Provides a better UX to the users who have already upgraded.
+      ssr.viewer.teams.hasTeamPlan.prefetch(),
+      ssr.viewer.public.session.prefetch(),
+      ssr.viewer.me.prefetch(),
+    ]);
+  }
+
+  // if (options?.prefetchUserSchedule) {
+  //   await ssr.viewer.public.slots.prefetch();
+  // }
 
   return ssr;
 }

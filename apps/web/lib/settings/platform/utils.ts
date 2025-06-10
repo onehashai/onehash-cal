@@ -21,12 +21,13 @@ type HelpCardInfo = {
 // if pricing or plans change in future modify this
 export const platformPlans: IndividualPlatformPlan[] = [
   {
-    plan: "Starter",
+    plan: "Free",
     description:
-      "Perfect for just getting started with community support and access to hosted platform APIs, Cal.com Atoms (React components) and more.",
-    pricing: 99,
+      "The best plan to dip your toes into scheduling infrastructure. Start immediately with 25 free meetings per month",
+    pricing: 0,
     includes: [
-      "Up to 100 bookings a month",
+      "Up to 25 bookings a month",
+      "$0.99 overage beyond",
       "Community Support",
       "Cal Atoms (React Library)",
       "Platform APIs",
@@ -99,7 +100,7 @@ export const helpCards: HelpCardInfo[] = [
       "Book our engineering team for a 15 minute onboarding call and debug a problem. Please come prepared with questions.",
     variant: "basic",
     actionButton: {
-      href: "https://i.cal.com/platform",
+      href: "https://cal.id/team/onehash-eng",
       child: "Schedule a call",
     },
   },

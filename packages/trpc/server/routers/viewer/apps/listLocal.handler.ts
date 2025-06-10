@@ -2,6 +2,12 @@ import type { Prisma } from "@prisma/client";
 
 import { appKeysSchemas } from "@calcom/app-store/apps.keys-schemas.generated";
 import { getLocalAppMetadata } from "@calcom/app-store/utils";
+import {
+  RAZORPAY_CLIENT_ID,
+  RAZORPAY_CLIENT_SECRET,
+  RAZORPAY_STATE_KEY,
+  RAZORPAY_WEBHOOK_SECRET,
+} from "@calcom/lib/constants";
 import type { PrismaClient } from "@calcom/prisma";
 import { AppCategories } from "@calcom/prisma/enums";
 
@@ -41,11 +47,19 @@ export const listLocalHandler = async ({ ctx, input }: ListLocalOptions) => {
       return [];
     }
 
+    // If the app is razorpay and the required keys are not set then return empty array
+    if (
+      app.slug === "razorpay" &&
+      (!RAZORPAY_CLIENT_ID || !RAZORPAY_CLIENT_SECRET || !RAZORPAY_STATE_KEY || !RAZORPAY_WEBHOOK_SECRET)
+    ) {
+      return [];
+    }
+
     // Find app metadata
     const dbData = dbApps.find((dbApp) => dbApp.slug === app.slug);
 
     // If the app already contains keys then return
-    if (dbData?.keys) {
+    if (dbData?.keys != undefined) {
       return {
         name: app.name,
         slug: app.slug,
@@ -65,14 +79,12 @@ export const listLocalHandler = async ({ ctx, input }: ListLocalOptions) => {
 
     const keys: Record<string, string> = {};
 
-    // `typeof val === 'undefined'` is always slower than !== undefined comparison
-    // it is important to avoid string to string comparisons as much as we can
-    if (keysSchema !== undefined) {
-      // TODO: Why don't we parse with schema here? Not doing it makes default() not work in schema.
-      Object.values(keysSchema.keyof()._def.values).reduce((keysObject, key) => {
-        keys[key as string] = "";
-        return keysObject;
-      }, {} as Record<string, string>);
+    if (keysSchema) {
+      const schemaKeys = keysSchema.shape;
+
+      for (const key of Object.keys(schemaKeys)) {
+        keys[key] = "";
+      }
     }
 
     return {

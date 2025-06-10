@@ -12,6 +12,7 @@ import {
 } from "~/lib/utils/retrieveScopedAccessibleUsers";
 import { schemaBookingGetParams, schemaBookingReadPublic } from "~/lib/validations/booking";
 import { schemaQuerySingleOrMultipleAttendeeEmails } from "~/lib/validations/shared/queryAttendeeEmail";
+import { schemaQuerySingleOrMultipleExpand } from "~/lib/validations/shared/queryExpandRelations";
 import { schemaQuerySingleOrMultipleUserIds } from "~/lib/validations/shared/queryUserId";
 
 /**
@@ -149,7 +150,6 @@ type GetAdminArgsType = {
   requestedUserIds: number[];
   userId: number;
 };
-
 /**
  * Constructs the WHERE clause for Prisma booking findMany operation.
  *
@@ -216,10 +216,18 @@ export async function handler(req: NextApiRequest) {
     args.take = take;
     args.skip = skip;
   }
+  const queryFilterForExpand = schemaQuerySingleOrMultipleExpand.parse(req.query.expand);
+  const expand = Array.isArray(queryFilterForExpand)
+    ? queryFilterForExpand
+    : queryFilterForExpand
+    ? [queryFilterForExpand]
+    : [];
+
   args.include = {
     attendees: true,
     user: true,
     payment: true,
+    eventType: expand.includes("team") ? { include: { team: true } } : false,
   };
 
   const queryFilterForAttendeeEmails = schemaQuerySingleOrMultipleAttendeeEmails.parse(req.query);

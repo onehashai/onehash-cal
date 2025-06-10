@@ -9,7 +9,7 @@
 
 # Enterprise Edition
 
-Welcome to the Enterprise Edition ("/ee") of Cal.com.
+Welcome to the Enterprise Edition ("/ee") of OneHash.
 
 The [/ee](https://github.com/calcom/cal.com/tree/main/apps/web/ee) subfolder is the place for all the **Pro** features from our [hosted](https://cal.com/pricing) plan and [enterprise-grade](https://cal.com/enterprise) features such as SSO, SAML, ADFS, OIDC, SCIM, SIEM, HRIS and much more.
 

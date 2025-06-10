@@ -71,7 +71,7 @@ export const useEmbedTypes = () => {
           <rect x="85" y="161.5" width="6" height="6" rx="1" fill="#C6C6C6" />
           <rect x="97" y="161.5" width="6" height="6" rx="1" fill="#3E3E3E" />
           <rect x="109" y="161.5" width="6" height="6" rx="1" fill="#C6C6C6" />
-          <rect x="24.5" y="51" width="139" height="163" rx="6" stroke="#292929" />
+          <rect x="24.5" y="51" width="139" height="163" rx="6" stroke="#007ee5" />
           <rect x="176" y="50.5" width="108" height="164" rx="6" fill="#F3F4F6" />
           <rect x="24" y="226.5" width="260" height="38.5" rx="6" fill="#F3F4F6" />
         </svg>
@@ -98,7 +98,7 @@ export const useEmbedTypes = () => {
           <rect x="24" y="138.5" width="120" height="76" rx="6" fill="#F3F4F6" />
           <rect x="156" y="50.5" width="128" height="164" rx="6" fill="#F3F4F6" />
           <rect x="24" y="226.5" width="260" height="38.5" rx="6" fill="#F3F4F6" />
-          <rect x="226" y="223.5" width="66" height="26" rx="6" fill="#292929" />
+          <rect x="226" y="223.5" width="66" height="26" rx="6" fill="#007ee5" />
           <rect x="242" y="235.5" width="34" height="2" rx="1" fill="white" />
         </svg>
       ),

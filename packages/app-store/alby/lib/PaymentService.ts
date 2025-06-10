@@ -3,6 +3,7 @@ import type { Booking, Payment, PaymentOption, Prisma } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 import type z from "zod";
 
+import { APP_NAME } from "@calcom/lib/constants";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -26,10 +27,13 @@ export class PaymentService implements IAbstractPaymentService {
     }
   }
 
-  async create(
-    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-    bookingId: Booking["id"]
-  ) {
+  async create({
+    payment,
+    bookingId,
+  }: {
+    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+    bookingId: Booking["id"];
+  }) {
     try {
       const booking = await prisma.booking.findFirst({
         select: {
@@ -51,7 +55,7 @@ export class PaymentService implements IAbstractPaymentService {
       const invoice = await lightningAddress.requestInvoice({
         satoshi: payment.amount,
         payerdata: {
-          appId: "cal.com",
+          appId: APP_NAME.replace(" ", "-"),
           referenceId: uid,
         },
       });
@@ -102,8 +106,8 @@ export class PaymentService implements IAbstractPaymentService {
   async collectCard(
     _payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
     _bookingId: number,
-    _bookerEmail: string,
-    _paymentOption: PaymentOption
+    _paymentOption: PaymentOption,
+    _bookerEmail: string
   ): Promise<Payment> {
     throw new Error("Method not implemented");
   }

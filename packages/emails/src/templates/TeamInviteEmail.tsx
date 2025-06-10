@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-restricted-imports
+import { startCase, lowerCase } from "lodash";
 import type { TFunction } from "next-i18next";
 import { Trans } from "next-i18next";
 
@@ -19,6 +21,8 @@ type TeamInvite = {
   isExistingUserMovedToOrg: boolean;
   prevLink: string | null;
   newLink: string | null;
+  hideBranding?: boolean;
+  bannerUrl?: string;
 };
 
 export const TeamInviteEmail = (
@@ -26,10 +30,13 @@ export const TeamInviteEmail = (
 ) => {
   const typeOfInvite = getTypeOfInvite(props);
 
-  const heading = getHeading();
+  const heading = getHeading(props.teamName);
   const content = getContent();
   return (
-    <V2BaseEmailHtml subject={getSubject(props)}>
+    <V2BaseEmailHtml
+      subject={getSubject(props)}
+      hideBranding={props.hideBranding}
+      bannerUrl={props.bannerUrl}>
       <p style={{ fontSize: "24px", marginBottom: "16px", textAlign: "center" }}>
         <>{heading}</>
       </p>
@@ -98,7 +105,7 @@ export const TeamInviteEmail = (
         <p style={{ fontWeight: 400, margin: 0 }}>
           <>
             {props.language("have_any_questions")}{" "}
-            <a href="mailto:support@cal.com" style={{ color: "#3E3E3E" }} target="_blank" rel="noreferrer">
+            <a href="mailto:support@onehash.ai" style={{ color: "#3E3E3E" }} target="_blank" rel="noreferrer">
               <>{props.language("contact")}</>
             </a>{" "}
             {props.language("our_support_team")}
@@ -108,10 +115,10 @@ export const TeamInviteEmail = (
     </V2BaseEmailHtml>
   );
 
-  function getHeading() {
+  function getHeading(teamName: string) {
     const autoJoinType = props.isAutoJoin ? "added" : "invited";
     const variables = {
-      appName: APP_NAME,
+      appName: startCase(lowerCase(teamName)),
       parentTeamName: props.parentTeamName,
     };
 

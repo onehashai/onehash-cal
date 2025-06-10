@@ -1,6 +1,8 @@
+// eslint-disable-next-line no-restricted-imports
+import { startCase, lowerCase } from "lodash";
 import type { TFunction } from "next-i18next";
 
-import { APP_NAME, EMAIL_FROM_NAME } from "@calcom/lib/constants";
+import { APP_NAME } from "@calcom/lib/constants";
 
 import { renderEmail } from "../";
 import BaseEmail from "./_base-email";
@@ -21,6 +23,8 @@ export type TeamInvite = {
   isExistingUserMovedToOrg: boolean;
   prevLink: string | null;
   newLink: string | null;
+  hideBranding?: boolean;
+  bannerUrl?: string;
 };
 
 export function getTypeOfInvite(teamInviteEvent: TeamInvite) {
@@ -70,9 +74,10 @@ export default class TeamInviteEmail extends BaseEmail {
   }
 
   protected async getNodeMailerPayload(): Promise<Record<string, unknown>> {
+    const teamName = startCase(lowerCase(this.teamInviteEvent.teamName));
     return {
       to: this.teamInviteEvent.to,
-      from: `${EMAIL_FROM_NAME} <${this.getMailerOptions().from}>`,
+      from: `${teamName} <${this.getMailerOptions().from}>`,
       subject: getSubject(this.teamInviteEvent),
       html: await renderEmail("TeamInviteEmail", this.teamInviteEvent),
       text: "",

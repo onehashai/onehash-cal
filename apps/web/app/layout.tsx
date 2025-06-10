@@ -1,5 +1,4 @@
 import { dir } from "i18next";
-import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import { headers, cookies } from "next/headers";
 import React from "react";
@@ -11,7 +10,13 @@ import { prepareRootMetadata } from "@lib/metadata";
 
 import "../styles/globals.css";
 
-const interFont = Inter({ subsets: ["latin"], variable: "--font-inter", preload: true, display: "swap" });
+// const interFont = Inter({ subsets: ["latin"], variable: "--font-inter", preload: true, display: "swap" });
+const interFont = localFont({
+  src: "../fonts/Inter.woff2",
+  variable: "--font-inter",
+  preload: true,
+  display: "swap",
+});
 const calFont = localFont({
   src: "../fonts/CalSans-SemiBold.woff2",
   variable: "--font-cal",
@@ -67,12 +72,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang={locale}
       dir={direction}
       style={embedColorScheme ? { colorScheme: embedColorScheme as string } : undefined}
+      suppressHydrationWarning
       data-nextjs-router="app">
       <head nonce={nonce}>
         {!!process.env.NEXT_PUBLIC_HEAD_SCRIPTS && (
           <script
             nonce={nonce}
             id="injected-head-scripts"
+            // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{
               __html: process.env.NEXT_PUBLIC_HEAD_SCRIPTS,
             }}
@@ -104,6 +111,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <script
             nonce={nonce}
             id="injected-head-scripts"
+            // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{
               __html: process.env.NEXT_PUBLIC_BODY_SCRIPTS,
             }}

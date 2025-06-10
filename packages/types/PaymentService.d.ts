@@ -14,23 +14,39 @@ interface PaymentService {
 
 export interface IAbstractPaymentService {
   /* This method is for creating charges at the time of booking */
-  create(
-    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-    bookingId: Booking["id"],
-    userId: Booking["userId"],
-    username: string | null,
-    bookerName: string | null,
-    bookerEmail: string,
-    paymentOption: PaymentOption,
-    eventTitle?: string,
-    bookingTitle?: string
-  ): Promise<Payment>;
+  create({
+    payment,
+    bookingId,
+    userId,
+    username,
+    bookerName,
+    paymentOption,
+    bookingUid,
+    bookerEmail,
+    bookerPhoneNumber,
+    eventTitle,
+    bookingTitle,
+  }: {
+    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+    bookingId: Booking["id"];
+    userId: Booking["userId"];
+    username: string | null;
+    bookerName: string;
+    paymentOption: PaymentOption;
+    bookingUid: string;
+    bookerEmail: string;
+    bookerPhoneNumber?: string | null;
+    eventTitle?: string;
+    bookingTitle?: string;
+    responses?: Prisma.JsonValue;
+  }): Promise<Payment>;
   /* This method is to collect card details to charge at a later date ex. no-show fees */
   collectCard(
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
     bookingId: Booking["id"],
+    paymentOption: PaymentOption,
     bookerEmail: string,
-    paymentOption: PaymentOption
+    bookerPhoneNumber?: string | null
   ): Promise<Payment>;
   chargeCard(
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,

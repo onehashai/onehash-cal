@@ -18,7 +18,7 @@ import { SUCCESS_STATUS } from "@calcom/platform-constants";
   path: "/v2/destination-calendars",
   version: API_VERSIONS_VALUES,
 })
-@DocsTags("Destination-Calendars")
+@DocsTags("Destination Calendars")
 export class DestinationCalendarsController {
   constructor(private readonly destinationCalendarsService: DestinationCalendarsService) {}
 

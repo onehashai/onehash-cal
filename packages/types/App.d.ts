@@ -167,6 +167,10 @@ export interface App {
   createdAt?: string;
   /** Specifies if the App uses an OAuth flow  */
   isOAuth?: boolean;
+  /** The URL to the app's privacy policy */
+  privacyUrl?: string;
+  /** The URL to the app's terms of service */
+  tosUrl?: string;
 }
 
 export type AppFrontendPayload = Omit<App, "key"> & {

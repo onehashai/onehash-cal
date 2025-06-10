@@ -13,6 +13,7 @@ import type { BookerEvent } from "@calcom/features/bookings/types";
 import { getFullName } from "@calcom/features/form-builder/utils";
 import { useBookingSuccessRedirect } from "@calcom/lib/bookingSuccessRedirect";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { localStorage } from "@calcom/lib/webstorage";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 import { trpc } from "@calcom/trpc";
@@ -47,7 +48,7 @@ export interface IUseBookings {
   hashedLink?: string | null;
   bookingForm: UseBookingFormReturnType["bookingForm"];
   metadata: Record<string, string>;
-  teamMemberEmail?: string;
+  teamMemberEmail?: string | null;
 }
 
 const getBookingSuccessfulEventPayload = (booking: {
@@ -85,22 +86,64 @@ export interface IUseBookingErrors {
 }
 export type UseBookingsReturnType = ReturnType<typeof useBookings>;
 
+const STORAGE_KEY = "instantBookingData";
+
+const storeInLocalStorage = ({
+  eventTypeId,
+  expiryTime,
+  bookingId,
+}: {
+  eventTypeId: number;
+  expiryTime: Date;
+  bookingId: number;
+}) => {
+  const value = JSON.stringify({ eventTypeId, expiryTime, bookingId });
+  localStorage.setItem(STORAGE_KEY, value);
+};
+
 export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemberEmail }: IUseBookings) => {
   const router = useRouter();
   const eventSlug = useBookerStore((state) => state.eventSlug);
+  const eventTypeId = useBookerStore((state) => state.eventId);
+  const isInstantMeeting = useBookerStore((state) => state.isInstantMeeting);
+
   const rescheduleUid = useBookerStore((state) => state.rescheduleUid);
+  const rescheduledBy = useBookerStore((state) => state.rescheduledBy);
   const bookingData = useBookerStore((state) => state.bookingData);
   const timeslot = useBookerStore((state) => state.selectedTimeslot);
   const { t } = useLocale();
   const bookingSuccessRedirect = useBookingSuccessRedirect();
   const bookerFormErrorRef = useRef<HTMLDivElement>(null);
+
   const [instantMeetingTokenExpiryTime, setExpiryTime] = useState<Date | undefined>();
   const [instantVideoMeetingUrl, setInstantVideoMeetingUrl] = useState<string | undefined>();
   const duration = useBookerStore((state) => state.selectedDuration);
 
   const isRescheduling = !!rescheduleUid && !!bookingData;
 
-  const bookingId = parseInt(getQueryParam("bookingId") || "0");
+  const bookingId = parseInt(getQueryParam("bookingId") ?? "0");
+
+  useEffect(() => {
+    if (!isInstantMeeting) return;
+
+    const storedInfo = localStorage.getItem(STORAGE_KEY);
+
+    if (storedInfo) {
+      const parsedInfo = JSON.parse(storedInfo);
+
+      const parsedInstantBookingInfo =
+        parsedInfo.eventTypeId === eventTypeId &&
+        isInstantMeeting &&
+        new Date(parsedInfo.expiryTime) > new Date()
+          ? parsedInfo
+          : null;
+
+      if (parsedInstantBookingInfo) {
+        setExpiryTime(parsedInstantBookingInfo.expiryTime);
+        updateQueryParam("bookingId", parsedInstantBookingInfo.bookingId);
+      }
+    }
+  }, [eventTypeId, isInstantMeeting]);
 
   const _instantBooking = trpc.viewer.bookings.getInstantBookingLocation.useQuery(
     {
@@ -137,7 +180,11 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
   const createBookingMutation = useMutation({
     mutationFn: createBooking,
     onSuccess: (booking) => {
-      const { uid, paymentUid } = booking;
+      if (booking.isDryRun) {
+        showToast(t("booking_dry_run_successful"), "success");
+        return;
+      }
+      const { uid, paymentUid, paymentLink } = booking;
       const fullName = getFullName(bookingForm.getValues("responses.name"));
 
       const users = !!event.data?.hosts?.length
@@ -149,7 +196,15 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
         : duration && event.data?.metadata?.multipleDuration?.includes(duration)
         ? duration
         : event.data?.length;
-
+      const eventPayload = {
+        uid: booking.uid,
+        title: booking.title,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        eventTypeId: booking.eventTypeId,
+        status: booking.status,
+        paymentRequired: booking.paymentRequired,
+      };
       if (isRescheduling) {
         sdkActionManager?.fire("rescheduleBookingSuccessful", {
           booking: booking,
@@ -194,6 +249,11 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
       }
 
       if (paymentUid) {
+        //If the payment provides payment link, redirect to that link directly
+        if (paymentLink) {
+          router.push(paymentLink);
+          return;
+        }
         router.push(
           createPaymentLink({
             paymentUid,
@@ -210,14 +270,14 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
         console.error("No uid returned from createBookingMutation");
         return;
       }
-
       const query = {
         isSuccessBookingPage: true,
         email: bookingForm.getValues("responses.email"),
         eventTypeSlug: eventSlug,
-        seatReferenceUid: "seatReferenceUid" in booking ? booking.seatReferenceUid : null,
+        seatReferenceUid: "seatReferenceUid" in booking ? (booking.seatReferenceUid as string) : null,
         formerTime:
           isRescheduling && bookingData?.startTime ? dayjs(bookingData.startTime).toString() : undefined,
+        rescheduledBy, // ensure further reschedules performed on the success page are recorded correctly
       };
 
       bookingSuccessRedirect({
@@ -231,6 +291,7 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
       });
     },
     onError: (err, _, ctx) => {
+      // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- It is only called when user takes an action in embed
       bookerFormErrorRef && bookerFormErrorRef.current?.scrollIntoView({ behavior: "smooth" });
     },
   });
@@ -238,12 +299,20 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
   const createInstantBookingMutation = useMutation({
     mutationFn: createInstantBooking,
     onSuccess: (responseData) => {
+      if (eventTypeId) {
+        storeInLocalStorage({
+          eventTypeId,
+          expiryTime: responseData.expires,
+          bookingId: responseData.bookingId,
+        });
+      }
+
       updateQueryParam("bookingId", responseData.bookingId);
       setExpiryTime(responseData.expires);
     },
     onError: (err, _, ctx) => {
       console.error("Error creating instant booking", err);
-
+      // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- It is only called when user takes an action in embed
       bookerFormErrorRef && bookerFormErrorRef.current?.scrollIntoView({ behavior: "smooth" });
     },
   });
@@ -252,6 +321,12 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
     mutationFn: createRecurringBooking,
     onSuccess: async (bookings) => {
       const booking = bookings[0] || {};
+
+      if (booking.isDryRun) {
+        showToast(t("booking_dry_run_successful"), "success");
+        return;
+      }
+
       const { uid } = booking;
 
       if (!uid) {
@@ -310,7 +385,6 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
     bookingForm,
     hashedLink,
     metadata,
-    teamMemberEmail,
     handleInstantBooking: createInstantBookingMutation.mutate,
     handleRecBooking: createRecurringBookingMutation.mutate,
     handleBooking: createBookingMutation.mutate,

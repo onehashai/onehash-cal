@@ -12,7 +12,7 @@ import type { CalendarEvent } from "@calcom/types/Calendar";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const apiKey = req.headers.authorization || req.query.apiKey;
-  if (process.env.CRON_API_KEY !== apiKey) {
+  if (process.env.CRON_SECRET !== apiKey) {
     res.status(401).json({ message: "Not authenticated" });
     return;
   }
@@ -63,6 +63,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             recurringEvent: true,
             bookingFields: true,
             metadata: true,
+            team: {
+              select: {
+                hideBranding: true,
+                bannerUrl: true,
+              },
+            },
+            owner: {
+              select: {
+                hideBranding: true,
+                bannerUrl: true,
+              },
+            },
           },
         },
         responses: true,
@@ -130,6 +142,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         uid: booking.uid,
         recurringEvent: parseRecurringEvent(booking.eventType?.recurringEvent),
         destinationCalendar: selectedDestinationCalendar ? [selectedDestinationCalendar] : [],
+        hideBranding:
+          booking?.eventType?.owner?.hideBranding ?? booking?.eventType?.team?.hideBranding ?? false,
+        bannerUrl: booking?.eventType?.owner?.bannerUrl ?? booking?.eventType?.team?.bannerUrl ?? null,
       };
 
       await sendOrganizerRequestReminderEmail(evt, booking?.eventType?.metadata as EventTypeMetadata);

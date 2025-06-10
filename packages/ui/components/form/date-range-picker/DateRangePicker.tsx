@@ -14,13 +14,19 @@ type DatePickerWithRangeProps = {
   dates: { startDate: Date; endDate?: Date };
   onDatesChange: ({ startDate, endDate }: { startDate?: Date; endDate?: Date }) => void;
   disabled?: boolean;
+  minDate?: Date;
+  maxDate?: Date;
+  placeholder?: string;
 };
 
 export function DatePickerWithRange({
   className,
   dates,
+  minDate,
+  maxDate,
   onDatesChange,
   disabled,
+  placeholder,
 }: React.HTMLAttributes<HTMLDivElement> & DatePickerWithRangeProps) {
   // Even though this is uncontrolled we need to do a bit of logic to improve the UX when selecting dates
   function _onDatesChange(onChangeValues: DateRange | undefined) {
@@ -49,13 +55,15 @@ export function DatePickerWithRange({
                 format(dates.startDate, "LLL dd, y")
               )
             ) : (
-              <span>Pick a date</span>
+              <span>{placeholder ?? "Pick a date"}</span>
             )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             initialFocus
+            fromDate={minDate}
+            toDate={maxDate}
             mode="range"
             defaultMonth={dates?.startDate}
             selected={{ from: dates?.startDate, to: dates?.endDate }}

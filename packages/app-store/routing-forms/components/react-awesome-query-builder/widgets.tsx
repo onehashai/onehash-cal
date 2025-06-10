@@ -8,7 +8,8 @@ import type {
   ProviderProps,
 } from "react-awesome-query-builder";
 
-import { Button as CalButton, TextField, TextArea } from "@calcom/ui";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { Button as CalButton, TextField, TextArea, DatePicker } from "@calcom/ui";
 import { Icon } from "@calcom/ui";
 
 const Select = dynamic(
@@ -118,7 +119,7 @@ const TextWidget = (props: TextLikeComponentPropsRAQB) => {
       containerClassName="w-full"
       type={type}
       value={textValue}
-      labelSrOnly={noLabel}
+      noLabel={noLabel}
       placeholder={placeholder}
       disabled={readOnly}
       onChange={onChange}
@@ -224,6 +225,7 @@ function SelectWidget({ listValues, setValue, value, ...remainingProps }: Select
 }
 
 function Button({ config, type, label, onClick, readonly }: ButtonProps) {
+  const { t } = useLocale();
   if (type === "delRule" || type == "delGroup") {
     return (
       <button className="ml-5">
@@ -233,10 +235,10 @@ function Button({ config, type, label, onClick, readonly }: ButtonProps) {
   }
   let dataTestId = "";
   if (type === "addRule") {
-    label = config?.operators.__calReporting ? "Add Filter" : "Add rule";
+    label = config?.operators.__calReporting ? t("add_filter") : t("add_rule");
     dataTestId = "add-rule";
   } else if (type == "addGroup") {
-    label = "Add rule group";
+    label = t("add_rule_group");
     dataTestId = "add-rule-group";
   }
   return (
@@ -299,7 +301,7 @@ function Conjs({ not, setNot, config, conjunctionOptions, setConjunction, disabl
       value = value == "any" ? "none" : "all";
     }
     const selectValue = options.find((option) => option.value === value);
-    const summary = !config.operators.__calReporting ? "Rule group when" : "Query where";
+    const summary = !config.operators.__calReporting ? "where" : "Query where";
     return (
       <div className="flex items-center text-sm">
         <span>{summary}</span>
@@ -360,6 +362,44 @@ const FieldSelect = function FieldSelect(props: FieldProps) {
 
 const Provider = ({ children }: ProviderProps) => children;
 
+const DatePickerWidget = ({
+  value,
+  setValue,
+  readOnly,
+  placeholder,
+  customProps,
+  type,
+  name,
+  ...remainingProps
+}: TextLikeComponentPropsRAQB) => {
+  const onChange = (date: Date | null) => {
+    if (date) {
+      console.log(value);
+      console.log(name);
+      setValue(date.toDateString());
+    } else {
+      setValue("");
+    }
+  };
+
+  const dateValue = value ? new Date(value) : null;
+
+  return (
+    <div className="w-full">
+      <DatePicker
+        date={dateValue || new Date()}
+        onDatesChange={(date) => onChange(date)}
+        disabled={readOnly}
+        // name={name}
+        // type={type}
+        // onChange={(date: any) => onChange(date)}
+        {...customProps}
+        {...remainingProps}
+      />
+    </div>
+  );
+};
+
 const widgets = {
   TextWidget,
   TextAreaWidget,
@@ -371,6 +411,7 @@ const widgets = {
   ButtonGroup,
   Conjs,
   Provider,
+  DatePickerWidget,
 };
 
 export default widgets;

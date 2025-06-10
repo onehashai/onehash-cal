@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import type Stripe from "stripe";
 import { z } from "zod";
 
-import stripe from "@calcom/features/ee/payments/server/stripe";
+import stripe from "@calcom/features/oe/payments/server/stripe";
 import { HttpError } from "@calcom/lib/http-error";
 import { defaultHandler, defaultResponder } from "@calcom/lib/server";
 import prisma from "@calcom/prisma";
@@ -79,9 +79,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       },
     },
   });
-
-  // Sync Services: Close.com
-  // closeComUpdateTeam(prevTeam, team);
 
   // redirect to team screen
   res.redirect(302, `/settings/teams/${team.id}/onboard-members?event=team_created`);

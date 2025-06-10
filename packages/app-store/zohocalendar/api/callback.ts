@@ -18,12 +18,8 @@ import { appKeysSchema as zohoKeysSchema } from "../zod";
 
 const log = logger.getSubLogger({ prefix: [`[[zohocalendar/api/callback]`] });
 
-function getOAuthBaseUrl(domain: string): string {
-  return `https://accounts.zoho.${domain}/oauth/v2`;
-}
-
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
-  const { code, location } = req.query;
+  const { code, "accounts-server": accountsServer } = req.query;
 
   const state = decodeOAuthState(req);
 
@@ -32,14 +28,18 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
 
-  if (location && typeof location !== "string") {
-    res.status(400).json({ message: "`location` must be a string" });
-    return;
-  }
+  // if (location && typeof location !== "string") {
+  //   res.status(400).json({ message: "`location` must be a string" });
+  //   return;
+  // }
 
   if (!req.session?.user?.id) {
     return res.status(401).json({ message: "You must be logged in to do this" });
   }
+
+  const hostname = new URL(accountsServer as string).hostname;
+  const parts = hostname.split(".");
+  const domain = parts.slice(-2).join(".");
 
   const appKeys = await getAppKeysFromSlug(config.slug);
   const { client_id, client_secret } = zohoKeysSchema.parse(appKeys);
@@ -51,11 +51,21 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     redirect_uri: `${WEBAPP_URL}/api/integrations/${config.slug}/callback`,
     code,
   };
-  const server_location = location === "us" ? "com" : location;
+
+  // let server_location;
+
+  // if (location === "us") {
+  //   server_location = "com";
+  // } else if (location === "au") {
+  //   server_location = "com.au";
+  // } else {
+  //   server_location = location;
+  // }
 
   const query = stringify(params);
+  const url = `https://accounts.${domain}/oauth/v2/token`;
 
-  const response = await fetch(`${getOAuthBaseUrl(server_location || "com")}/token?${query}`, {
+  const response = await fetch(`${url}?${query}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json; charset=utf-8",
@@ -63,6 +73,8 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   });
 
   const responseBody = await JSON.parse(await response.text());
+
+  console.log(`responseBody ${responseBody}`);
 
   if (!response.ok || responseBody.error) {
     log.error("get access_token failed", responseBody);
@@ -73,14 +85,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     access_token: responseBody.access_token,
     refresh_token: responseBody.refresh_token,
     expires_in: Math.round(+new Date() / 1000 + responseBody.expires_in),
-    server_location: server_location || "com",
+    domain,
   };
 
-  function getCalenderUri(domain: string): string {
-    return `https://calendar.zoho.${domain}/api/v1/calendars`;
-  }
-
-  const calendarResponse = await fetch(getCalenderUri(server_location || "com"), {
+  const calendarResponse = await fetch(`https://calendar.${domain}/api/v1/calendars`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${key.access_token}`,

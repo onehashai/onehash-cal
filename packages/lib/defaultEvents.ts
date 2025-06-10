@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 
-import { DailyLocationType } from "@calcom/app-store/locations";
+import { JitsiLocationType } from "@calcom/app-store/locations";
 import slugify from "@calcom/lib/slugify";
 import { PeriodType, SchedulingType } from "@calcom/prisma/enums";
 import type { userSelect } from "@calcom/prisma/selects";
@@ -65,7 +65,7 @@ const commons = {
   periodDays: null,
   slotInterval: null,
   offsetStart: 0,
-  locations: [{ type: DailyLocationType }],
+  locations: [{ type: JitsiLocationType }],
   customInputs,
   disableGuests: true,
   minimumBookingNotice: 120,
@@ -85,6 +85,7 @@ const commons = {
   onlyShowFirstAvailableSlot: false,
   id: 0,
   hideCalendarNotes: false,
+  hideCalendarEventDetails: false,
   recurringEvent: null,
   destinationCalendar: null,
   team: null,
@@ -104,11 +105,16 @@ const commons = {
   metadata: EventTypeMetaDataSchema.parse({}),
   bookingFields: [],
   assignAllTeamMembers: false,
+  assignRRMembersUsingSegment: false,
+  rrSegmentQueryValue: null,
   isRRWeightsEnabled: false,
   rescheduleWithSameRoundRobinHost: false,
   useEventTypeDestinationCalendarEmail: false,
   secondaryEmailId: null,
   secondaryEmail: null,
+  autoTranslateDescriptionEnabled: false,
+  fieldTranslations: [],
+  maxLeadThreshold: null,
 };
 
 export const dynamicEvent = {
@@ -121,7 +127,11 @@ export const dynamicEvent = {
   position: 0,
   ...commons,
   metadata: EventTypeMetaDataSchema.parse({ multipleDuration: [15, 30, 45, 60, 90] }),
+  disableGuests: false,
 };
+
+//Default event for external bookings fetched from gcal
+// export const gCalExtEvent = {};
 
 export const defaultEvents = [dynamicEvent];
 
@@ -171,4 +181,4 @@ export const getUsernameList = (users: string | string[] | undefined): string[] 
 
 export default defaultEvents;
 
-export type AwaitedGetDefaultEvent = Awaited<ReturnType<typeof getDefaultEvent>>;
+export type DefaultEvent = Awaited<ReturnType<typeof getDefaultEvent>>;

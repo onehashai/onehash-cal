@@ -1,6 +1,7 @@
-import { isSMSOrWhatsappAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
+import { isSMSOrWhatsappAction } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
 import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
+import { WorkflowRepository } from "@calcom/lib/server/repository/workflow";
 import type { PrismaClient } from "@calcom/prisma";
 import { WorkflowActions } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
@@ -15,7 +16,6 @@ import {
   upsertSmsReminderFieldForEventTypes,
   deleteRemindersOfActiveOnIds,
   isAuthorizedToAddActiveOnIds,
-  deleteAllWorkflowReminders,
   scheduleWorkflowNotifications,
   verifyEmailSender,
   removeSmsReminderFieldForEventTypes,
@@ -324,7 +324,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     //step was deleted
     if (!newStep) {
       // cancel all workflow reminders from deleted steps
-      await deleteAllWorkflowReminders(remindersFromStep);
+      await WorkflowRepository.deleteAllWorkflowReminders(remindersFromStep);
 
       await ctx.prisma.workflowStep.delete({
         where: {
@@ -363,11 +363,13 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
           sender: newStep.sender,
           numberVerificationPending: false,
           includeCalendarEvent: newStep.includeCalendarEvent,
+          //TODO:NOSHOW DYNAMIC
+          // disableOnMarkNoShow: newStep.disableOnMarkNoShow,
         },
       });
 
       // cancel all notifications of edited step
-      await deleteAllWorkflowReminders(remindersFromStep);
+      await WorkflowRepository.deleteAllWorkflowReminders(remindersFromStep);
 
       // schedule notifications for edited steps
       await scheduleWorkflowNotifications(

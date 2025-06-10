@@ -51,6 +51,7 @@ export async function getBookingData<T extends z.ZodType>({
       calEventUserFieldsResponses: undefined,
       calEventResponses: undefined,
       customInputs: undefined,
+      attendeePhoneNumber: reqBodyWithLegacyProps.phone,
     };
   }
   if (!reqBody.responses) {
@@ -67,6 +68,7 @@ export async function getBookingData<T extends z.ZodType>({
     ...reqBody,
     name: responses.name,
     email: responses.email,
+    attendeePhoneNumber: responses.phone,
     guests: responses.guests ? responses.guests : [],
     location: responses.location?.optionValue || responses.location?.value || "",
     smsReminderNumber: responses.smsReminderNumber,

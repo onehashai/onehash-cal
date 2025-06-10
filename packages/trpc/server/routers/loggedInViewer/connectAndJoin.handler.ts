@@ -1,4 +1,4 @@
-import { sendScheduledEmails } from "@calcom/emails";
+import { sendScheduledEmailsAndSMS } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { getTranslation } from "@calcom/lib/server/i18n";
@@ -23,11 +23,11 @@ type Options = {
 export const Handler = async ({ ctx, input }: Options) => {
   const { token } = input;
   const { user } = ctx;
-  const isLoggedInUserPartOfOrg = !!user.organization.id;
+  // const isLoggedInUserPartOfOrg = !!user.organization.id;
 
-  if (!isLoggedInUserPartOfOrg) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Logged in user is not member of Organization" });
-  }
+  // if (!isLoggedInUserPartOfOrg) {
+  //   throw new TRPCError({ code: "UNAUTHORIZED", message: "Logged in user is not member of Organization" });
+  // }
 
   const tOrganizer = await getTranslation(user?.locale ?? "en", "common");
 
@@ -128,6 +128,14 @@ export const Handler = async ({ ctx, input }: Options) => {
           metadata: true,
           customInputs: true,
           parentId: true,
+          team: {
+            select: {
+              id: true,
+              name: true,
+              bannerUrl: true,
+              hideBranding: true,
+            },
+          },
         },
       },
       location: true,
@@ -202,11 +210,21 @@ export const Handler = async ({ ctx, input }: Options) => {
     requiresConfirmation: false,
     eventTypeId: eventType?.id,
     videoCallData,
+    team: !!updatedBooking.eventType?.team
+      ? {
+          name: updatedBooking.eventType.team.name,
+          id: updatedBooking.eventType.team.id,
+          members: [],
+        }
+      : undefined,
+    hideBranding:
+      updatedBooking.eventType?.owner?.hideBranding ?? updatedBooking.eventType?.team?.hideBranding ?? false,
+    bannerUrl: updatedBooking.eventType?.team?.bannerUrl ?? updatedBooking.eventType?.owner?.bannerUrl,
   };
 
   const eventTypeMetadata = EventTypeMetaDataSchema.parse(updatedBooking?.eventType?.metadata);
 
-  await sendScheduledEmails(
+  await sendScheduledEmailsAndSMS(
     {
       ...evt,
     },

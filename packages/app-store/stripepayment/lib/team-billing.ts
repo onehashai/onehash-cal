@@ -8,7 +8,7 @@ export function getRequestedSlugError(error: unknown, requestedSlug: string) {
   // https://www.prisma.io/docs/reference/api-reference/error-reference#p2002
   if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
     statusCode = 400;
-    message = `It seems like the requestedSlug: '${requestedSlug}' is already taken. Please contact support at help@cal.com so we can resolve this issue.`;
+    message = `It seems like the requestedSlug: '${requestedSlug}' is already taken. Please contact support at support@onehash.ai so we can resolve this issue.`;
   } else if (error instanceof Error) {
     message = error.message;
   }

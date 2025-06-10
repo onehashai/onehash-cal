@@ -1,11 +1,12 @@
 import type { GetServerSidePropsContext } from "next";
 import { z } from "zod";
 
-import { orgDomainConfig } from "@calcom/ee/organizations/lib/orgDomains";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import getBookingInfo from "@calcom/features/bookings/lib/getBookingInfo";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { parseRecurringEvent } from "@calcom/lib";
 import { getDefaultEvent } from "@calcom/lib/defaultEvents";
+import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import { maybeGetBookingUidFromSeat } from "@calcom/lib/server/maybeGetBookingUidFromSeat";
 import { BookingRepository } from "@calcom/lib/server/repository/booking";
 import prisma from "@calcom/prisma";
@@ -44,11 +45,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     "@lib/booking"
   );
 
-  const ssr = await ssrInit(context);
+  const ssr = await ssrInit(context, {
+    noI18nPreload: false,
+    noQueryPrefetch: true,
+  });
   const session = await getServerSession(context);
   let tz: string | null = null;
   let userTimeFormat: number | null = null;
   let requiresLoginToUpdate = false;
+
   if (session) {
     const user = await ssr.viewer.me.fetch();
     tz = user.timeZone;
@@ -120,6 +125,17 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     metadata: EventTypeMetaDataSchema.parse(eventTypeRaw.metadata),
     recurringEvent: parseRecurringEvent(eventTypeRaw.recurringEvent),
     customInputs: customInputSchema.array().parse(eventTypeRaw.customInputs),
+    bookingFields: eventTypeRaw.bookingFields.map((field) => {
+      return {
+        ...field,
+        label: field.type === "boolean" ? markdownToSafeHTML(field.label || "") : field.label || "",
+        defaultLabel:
+          field.type === "boolean" ? markdownToSafeHTML(field.defaultLabel || "") : field.defaultLabel || "",
+      };
+    }),
+    hideBranding: eventTypeRaw.owner?.hideBranding ?? eventTypeRaw.team?.hideBranding ?? false,
+    bannerUrl: eventTypeRaw.owner?.bannerUrl ?? eventTypeRaw.team?.bannerUrl ?? null,
+    faviconUrl: eventTypeRaw.owner?.faviconUrl ?? eventTypeRaw.team?.faviconUrl ?? null,
   };
 
   const profile = {
@@ -168,13 +184,11 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       }
     }
   }
-
   const { currentOrgDomain } = orgDomainConfig(context.req);
   return {
     props: {
       orgSlug: currentOrgDomain,
       themeBasis: eventType.team ? eventType.team.slug : eventType.users[0]?.username,
-      hideBranding: eventType.team ? eventType.team.hideBranding : eventType.users[0].hideBranding,
       profile,
       eventType,
       recurringBookings: await getRecurringBookings(bookingInfo.recurringEventId),
@@ -185,6 +199,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       ...(tz && { tz }),
       userTimeFormat,
       requiresLoginToUpdate,
+      isLoggedInUserHost: isLoggedInUserHost ?? false,
       rescheduledToUid,
     },
   };

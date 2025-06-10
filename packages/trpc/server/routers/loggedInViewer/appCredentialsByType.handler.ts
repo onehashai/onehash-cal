@@ -13,27 +13,33 @@ type AppCredentialsByTypeOptions = {
 
 /** Used for grabbing credentials on specific app pages */
 export const appCredentialsByTypeHandler = async ({ ctx, input }: AppCredentialsByTypeOptions) => {
-  const { user } = ctx;
-  const userAdminTeams = await UserRepository.getUserAdminTeams(ctx.user.id);
+  try {
+    const { user } = ctx;
+    const userAdminTeams = await UserRepository.getUserAdminTeams(ctx.user.id);
+    const userAdminTeamsIds = userAdminTeams?.teams?.map(({ team }) => team.id) ?? [];
 
-  const credentials = await prisma.credential.findMany({
-    where: {
-      OR: [
-        { userId: user.id },
-        {
-          teamId: {
-            in: userAdminTeams,
+    const credentials = await prisma.credential.findMany({
+      where: {
+        OR: [
+          { userId: user.id },
+          {
+            teamId: {
+              in: userAdminTeamsIds,
+            },
           },
-        },
-      ],
-      type: input.appType,
-    },
-  });
+        ],
+        type: input.appType,
+      },
+    });
 
-  // For app pages need to return which teams the user can install the app on
-  // return user.credentials.filter((app) => app.type == input.appType).map((credential) => credential.id);
-  return {
-    credentials,
-    userAdminTeams,
-  };
+    // For app pages need to return which teams the user can install the app on
+    // return user.credentials.filter((app) => app.type == input.appType).map((credential) => credential.id);
+    return {
+      credentials,
+      userAdminTeams: userAdminTeamsIds,
+    };
+  } catch (e) {
+    console.log("in_here_E", e);
+    throw e;
+  }
 };

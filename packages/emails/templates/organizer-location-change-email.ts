@@ -11,14 +11,12 @@ export default class OrganizerLocationChangeEmail extends OrganizerScheduledEmai
     return {
       icalEvent: generateIcsFile({
         calEvent: this.calEvent,
-        title: this.t("event_location_changed"),
-        subtitle: this.t("emailed_you_and_any_other_attendees"),
         role: GenerateIcsRole.ORGANIZER,
         status: "CONFIRMED",
       }),
       from: `${EMAIL_FROM_NAME} <${this.getMailerOptions().from}>`,
       to: toAddresses.join(","),
-      replyTo: [this.calEvent.organizer.email, ...this.calEvent.attendees.map(({ email }) => email)],
+      replyTo: [...this.calEvent.attendees.map(({ email }) => email)],
       subject: `${this.t("location_changed_event_type_subject", {
         eventType: this.calEvent.type,
         name: this.calEvent.attendees[0].name,

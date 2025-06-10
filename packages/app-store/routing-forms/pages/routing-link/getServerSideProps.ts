@@ -1,4 +1,4 @@
-import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
 import type { Prisma } from "@calcom/prisma/client";
 import { userMetadata } from "@calcom/prisma/zod-utils";
 import type { AppGetServerSidePropsContext, AppPrisma } from "@calcom/types/AppGetServerSideProps";
@@ -81,6 +81,9 @@ export const getServerSideProps = async function getServerSideProps(
           brandColor: true,
           darkBrandColor: true,
           metadata: true,
+          faviconUrl: true,
+          bannerUrl: true,
+          hideBranding: true,
         },
       },
       team: {
@@ -91,6 +94,9 @@ export const getServerSideProps = async function getServerSideProps(
           },
           parentId: true,
           metadata: true,
+          faviconUrl: true,
+          bannerUrl: true,
+          hideBranding: true,
         },
       },
     },

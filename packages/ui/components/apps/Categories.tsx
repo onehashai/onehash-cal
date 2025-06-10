@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { AppCategories } from "@calcom/prisma/enums";
 
-import { Icon } from "../..";
+import { Icon } from "../icon";
 import { SkeletonText } from "../skeleton";
 import { Slider } from "./Slider";
 
@@ -46,7 +47,9 @@ export function AppStoreCategories({
                 className="dark:invert"
               />
               {isLocaleReady ? (
-                <h3 className="text-emphasis text-sm font-semibold capitalize">{category.name}</h3>
+                <h3 className="text-emphasis text-sm font-semibold capitalize">
+                  {category.name === AppCategories.onehash ? "OneHash" : category.name}
+                </h3>
               ) : (
                 <SkeletonText invisible />
               )}

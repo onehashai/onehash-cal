@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { CalendarSwitch } from "@calcom/features/calendars/CalendarSwitch";
 
 interface IConnectedCalendarItem {
@@ -23,7 +25,7 @@ const ConnectedCalendarItem = (prop: IConnectedCalendarItem) => {
   return (
     <>
       <div className="flex flex-row items-center p-4">
-        <img src={logo} alt={name} className="m-1 h-8 w-8" />
+        <Image src={logo} alt={name} className="m-1" width={32} height={32} />{" "}
         <div className="mx-4">
           <p className="font-sans text-sm font-bold leading-5">
             {name}
@@ -35,7 +37,7 @@ const ConnectedCalendarItem = (prop: IConnectedCalendarItem) => {
           <div className="fle-row flex">
             <span
               title={externalId}
-              className="max-w-44 text-subtle mt-1 overflow-hidden text-ellipsis whitespace-nowrap font-sans text-sm">
+              className="text-subtle max-w-44 mt-1 overflow-hidden text-ellipsis whitespace-nowrap font-sans text-sm">
               {externalId}{" "}
             </span>
           </div>

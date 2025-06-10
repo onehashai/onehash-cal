@@ -1,6 +1,6 @@
 import React from "react";
 
-import { CAL_URL, LOGO, WEBAPP_URL } from "./constants";
+import { CAL_URL, OG_IMAGE, WEBAPP_URL } from "./constants";
 
 // Ensures tw prop is typed.
 declare module "react" {
@@ -14,6 +14,7 @@ export interface MeetingImageProps {
   title: string;
   profile: { name: string; image?: string | null };
   users?: { name: string; username: string }[];
+  bannerUrl?: string | null;
 }
 
 export interface AppImageProps {
@@ -56,48 +57,54 @@ const makeAbsoluteUrl = (url: string) => (/^https?:\/\//.test(url) ? url : `${CA
  * 4. Team event (round robin) http://localhost:3000/api/social/og/image?type=meeting&title=Round%20Robin%20Seeded%20Team%20Event&meetingProfileName=Seeded%20Team
  * 5. Dynamic collective (2 persons) http://localhost:3000/api/social/og/image?type=meeting&title=15min&meetingProfileName=Team%20Pro%20Example,%20Pro%20Example&names=Team%20Pro%20Example&names=Pro%20Example&usernames=teampro&usernames=pro
  */
-export const constructMeetingImage = (
-  { title, users = [], profile }: MeetingImageProps,
-  encodeUri = true
-): string => {
-  const url = [
-    `?type=meeting`,
-    `&title=${encodeURIComponent(title)}`,
-    `&meetingProfileName=${encodeURIComponent(profile.name)}`,
-    profile.image && `&meetingImage=${encodeURIComponent(makeAbsoluteUrl(profile.image))}`,
-    `${users.map((user) => `&names=${encodeURIComponent(user.name)}`).join("")}`,
-    `${users.map((user) => `&usernames=${encodeURIComponent(user.username)}`).join("")}`,
-    // Joining a multiline string for readability.
-  ].join("");
+export const constructMeetingImage = ({
+  title,
+  users = [],
+  profile,
+  bannerUrl,
+}: MeetingImageProps): string => {
+  const params = new URLSearchParams({
+    type: "meeting",
+    title,
+    meetingProfileName: profile.name,
+  });
 
-  return encodeUri ? encodeURIComponent(url) : url;
+  if (profile.image) {
+    params.set("meetingImage", makeAbsoluteUrl(profile.image));
+  }
+  if (bannerUrl) {
+    params.set("bannerUrl", makeAbsoluteUrl(bannerUrl));
+  }
+
+  users.forEach((user) => {
+    params.append("names", user.name);
+    params.append("usernames", user.username);
+  });
+
+  return encodeURIComponent(`/api/social/og/image?${params.toString()}`);
 };
 
 /**
  * Test url:
  * http://localhost:3000/api/social/og/image?type=app&name=Huddle01&slug=/api/app-store/huddle01video/icon.svg&description=Huddle01%20is%20a%20new%20video%20conferencing%20software%20native%20to%20Web3%20and%20is%20comparable%20to%20a%20decentralized%20version%20of%20Zoom.%20It%20supports%20conversations%20for...
  */
-export const constructAppImage = ({ name, slug, description }: AppImageProps, encodeUri = true): string => {
-  const url = [
-    `?type=app`,
-    `&name=${encodeURIComponent(name)}`,
-    `&slug=${encodeURIComponent(slug)}`,
-    `&description=${encodeURIComponent(description)}`,
-    // Joining a multiline string for readability.
-  ].join("");
-
-  return encodeUri ? encodeURIComponent(url) : url;
+export const constructAppImage = ({ name, slug, description }: AppImageProps): string => {
+  const params = new URLSearchParams({
+    type: "app",
+    name,
+    slug,
+    description,
+  });
+  return encodeURIComponent(`/api/social/og/image?${params.toString()}`);
 };
 
-export const constructGenericImage = ({ title, description }: GenericImageProps, encodeUri = true) => {
-  const url = [
-    `?type=generic`,
-    `&title=${encodeURIComponent(title)}`,
-    `&description=${encodeURIComponent(description)}`,
-    // Joining a multiline string for readability.
-  ].join("");
-
-  return encodeUri ? encodeURIComponent(url) : url;
+export const constructGenericImage = ({ title, description }: GenericImageProps) => {
+  const params = new URLSearchParams({
+    type: "generic",
+    title,
+    description,
+  });
+  return encodeURIComponent(`/api/social/og/image?${params.toString()}`);
 };
 
 const Wrapper = ({ children, variant = "light", rotateBackground }: WrapperProps) => (
@@ -114,7 +121,7 @@ const Wrapper = ({ children, variant = "light", rotateBackground }: WrapperProps
   </div>
 );
 
-export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
+export const Meeting = ({ title, users = [], profile, bannerUrl }: MeetingImageProps) => {
   // We filter attendees here based on whether they have an image and filter duplicates.
   // Users ALWAYS have an image (albeit a gray empty person avatar), so this mainly filters out
   // any non existing images for dynamic collectives, while at the same time removing them from
@@ -122,12 +129,10 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
   const attendees = (profile.image ? [profile, ...users] : users).filter(
     (value, index, self) => self.findIndex((v) => v.name === value.name) == index
   );
-
   // Construct list of avatar urls, removes duplicates and empty profile images
   const avatars = attendees
     .map((user) => {
       if ("image" in user && user?.image) return user.image;
-      if ("username" in user && user?.username) return `${CAL_URL}/${user.username}/avatar.png`;
       return null;
     })
     .filter(Boolean) as string[];
@@ -135,12 +140,12 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
   // In case there is NO other attendee than the single meeting profile without an image, we add
   // that name back in here, since the event probably is a round robin event.
   const names = attendees.length > 0 ? attendees.map((user) => user.name) : [profile.name];
-
+  const logo = bannerUrl ?? OG_IMAGE;
   return (
     <Wrapper variant="dark">
-      <div tw="h-full flex flex-col justify-start">
+      <div tw="h-4/5 flex w-full flex-col justify-center items-center">
         <div tw="flex items-center justify-center" style={{ fontFamily: "cal", fontWeight: 300 }}>
-          <img src={`${WEBAPP_URL}/${LOGO}`} width="350" alt="Logo" />
+          <img src={logo} width="400" height="100" alt="Logo" />
           {avatars.length > 0 && (
             <div style={{ color: "#111827" }} tw="font-bold text-[92px] mx-8 bottom-2">
               /
@@ -149,7 +154,7 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
           <div tw="flex flex-row">
             {avatars.slice(0, 3).map((avatar) => (
               <img
-                tw="rounded-full mr-[-36px] border-[6px] border-[#CDCED2]"
+                tw="rounded-full  border-[6px] border-[#CDCED2]"
                 key={avatar}
                 src={avatar}
                 alt="Profile picture"
@@ -165,13 +170,18 @@ export const Meeting = ({ title, users = [], profile }: MeetingImageProps) => {
         </div>
         <div style={{ color: "#111827" }} tw="relative flex text-[54px] w-full flex-col mt-auto">
           <div
-            tw="flex w-[1040px] overflow-hidden"
+            tw="flex w-full max-w-[1040px] overflow-hidden justify-center text-ellipsis"
             style={{ whiteSpace: "nowrap", fontFamily: "cal", textOverflow: "ellipsis" }}>
             Meet {joinMultipleNames(names)}
           </div>
           <div
-            tw="flex mt-3 w-[1040px] overflow-hidden"
-            style={{ whiteSpace: "nowrap", fontFamily: "inter", textOverflow: "ellipsis" }}>
+            tw="flex mt-3 w-full max-w-[1040px] overflow-hidden text-ellipsis"
+            style={{
+              whiteSpace: "nowrap",
+              fontFamily: "inter",
+              textOverflow: "ellipsis",
+              paddingLeft: "1rem",
+            }}>
             {title}
           </div>
         </div>
@@ -214,7 +224,7 @@ const VisualBlur = ({ visualSlug }: { visualSlug: string }) => {
 
 export const App = ({ name, description, slug }: AppImageProps) => (
   <Wrapper>
-    <img src={`${WEBAPP_URL}/${LOGO}`} width="150" alt="Logo" tw="absolute right-[48px] top-[48px]" />
+    <img src={OG_IMAGE} width="150" alt="Logo" tw="absolute right-[48px] top-[48px]" />
 
     <VisualBlur visualSlug={slug} />
 
@@ -238,14 +248,14 @@ export const Generic = ({ title, description }: GenericImageProps) => (
   <Wrapper>
     <div tw="h-full flex flex-col justify-start">
       <div tw="flex items-center justify-center" style={{ fontFamily: "cal", fontWeight: 300 }}>
-        <img src={`${WEBAPP_URL}/cal-logo-word-black.svg`} width="350" alt="Logo" />
+        <img src={OG_IMAGE} width="350" alt="Logo" />
       </div>
 
       <div style={{ color: "#111827" }} tw="relative flex text-[54px] w-full flex-col mt-auto">
         <div tw="flex w-[1040px]" style={{ fontFamily: "cal" }}>
           {title}
         </div>
-        <div tw="flex mt-3 w-[1040px]" style={{ fontFamily: "inter" }}>
+        <div tw="flex mt-3 w-[1040px] text-2xl" style={{ fontFamily: "inter" }}>
           {description}
         </div>
       </div>

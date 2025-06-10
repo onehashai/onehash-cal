@@ -60,7 +60,9 @@ export function transformDateOverridesForAtom(
       acc.push({ ranges: [newValue] });
       return acc;
     }
+    // if (acc[dayRangeIndex].ranges) {
     acc[dayRangeIndex].ranges.push(newValue);
+    // }
     return acc;
   }, [] as { ranges: TimeRange[] }[]);
 }
@@ -69,6 +71,9 @@ export const transformScheduleToAvailabilityForAtom = (schedule: { availability:
   return schedule.availability.reduce(
     (schedule: Schedule, availability) => {
       availability.days.forEach((day) => {
+        // if (!schedule[day]) {
+        //   schedule[day] = [];
+        // }
         schedule[day].push({
           start: new Date(
             Date.UTC(

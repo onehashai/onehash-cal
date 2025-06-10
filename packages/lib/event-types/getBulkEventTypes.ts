@@ -1,3 +1,4 @@
+import { JitsiLocationType } from "@calcom/app-store/locations";
 import { getAppFromLocationValue } from "@calcom/app-store/utils";
 import { prisma } from "@calcom/prisma";
 import { eventTypeLocations as eventTypeLocationsSchema } from "@calcom/prisma/zod-utils";
@@ -18,11 +19,18 @@ const getBulkEventTypes = async (userId: number) => {
   const eventTypesWithLogo = eventTypes.map((eventType) => {
     const locationParsed = eventTypeLocationsSchema.safeParse(eventType.locations);
 
-    // some events has null as location for legacy reasons, so this fallbacks to daily video
+    //CHANGE:JITSI
+    // // some events has null as location for legacy reasons, so this fallbacks to daily video
+    // const app = getAppFromLocationValue(
+    //   locationParsed.success && locationParsed.data?.[0]?.type
+    //     ? locationParsed.data[0].type
+    //     : "integrations:daily"
+    // );
+    // some events has null as location for legacy reasons, so this fallbacks to jitsi video
     const app = getAppFromLocationValue(
       locationParsed.success && locationParsed.data?.[0]?.type
         ? locationParsed.data[0].type
-        : "integrations:daily"
+        : JitsiLocationType
     );
     return {
       ...eventType,

@@ -1,4 +1,3 @@
-import type { SelectedCalendar } from "@prisma/client";
 // eslint-disable-next-line no-restricted-imports
 import { sortBy } from "lodash";
 
@@ -15,6 +14,7 @@ import type {
   EventBusyDate,
   IntegrationCalendar,
   NewCalendarEventType,
+  SelectedCalendar,
 } from "@calcom/types/Calendar";
 import type { CredentialPayload } from "@calcom/types/Credential";
 import type { EventResult } from "@calcom/types/EventManager";
@@ -40,7 +40,7 @@ export const getCalendarCredentials = (credentials: Array<CredentialPayload>) =>
 
 export const getConnectedCalendars = async (
   calendarCredentials: ReturnType<typeof getCalendarCredentials>,
-  selectedCalendars: { externalId: string }[],
+  selectedCalendars: { externalId: string; googleSyncEnabled: boolean }[],
   destinationCalendarExternalId?: string
 ) => {
   let destinationCalendar: IntegrationCalendar | undefined;
@@ -67,6 +67,8 @@ export const getConnectedCalendars = async (
               primary: cal.primary || null,
               isSelected: selectedCalendars.some((selected) => selected.externalId === cal.externalId),
               credentialId,
+              googleSyncEnabled: selectedCalendars.find((selected) => selected.externalId === cal.externalId)
+                ?.googleSyncEnabled,
             };
           }),
           ["primary"]

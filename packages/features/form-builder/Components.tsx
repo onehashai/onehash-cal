@@ -35,6 +35,7 @@ export const isValidValueProp: Record<Component["propsType"], (val: unknown) => 
   text: (val) => typeof val === "string",
   textList: (val) => val instanceof Array && val.every((v) => typeof v === "string"),
   variants: (val) => (typeof val === "object" && val !== null) || typeof val === "string",
+  date: (val) => typeof val === "string",
 };
 
 type Component =
@@ -89,6 +90,17 @@ type Component =
       >(
         props: TProps
       ) => JSX.Element;
+    }
+  | {
+      propsType: "date";
+      factory: <
+        TProps extends TextLikeComponentProps<string> & {
+          dateFormat?: string;
+          timeFormat?: string;
+        }
+      >(
+        props: TProps
+      ) => JSX.Element;
     };
 
 // TODO: Share FormBuilder components across react-query-awesome-builder(for Routing Forms) widgets.
@@ -97,16 +109,16 @@ type Component =
 export const Components: Record<FieldType, Component> = {
   text: {
     propsType: propsTypes.text,
-    factory: (props) => <Widgets.TextWidget noLabel={true} {...props} />,
+    factory: (props) => <Widgets.TextWidget id={props.name} noLabel={true} {...props} />,
   },
   textarea: {
     propsType: propsTypes.textarea,
     // TODO: Make rows configurable in the form builder
-    factory: (props) => <Widgets.TextAreaWidget rows={3} {...props} />,
+    factory: (props) => <Widgets.TextAreaWidget id={props.name} rows={3} {...props} />,
   },
   number: {
     propsType: propsTypes.number,
-    factory: (props) => <Widgets.NumberWidget noLabel={true} {...props} />,
+    factory: (props) => <Widgets.NumberWidget id={props.name} noLabel={true} {...props} />,
   },
   name: {
     propsType: propsTypes.name,
@@ -211,7 +223,7 @@ export const Components: Record<FieldType, Component> = {
       if (!props) {
         return <div />;
       }
-      return <Widgets.TextWidget type="email" noLabel={true} {...props} />;
+      return <Widgets.TextWidget type="email" id={props.name} noLabel={true} {...props} />;
     },
   },
   address: {
@@ -219,6 +231,7 @@ export const Components: Record<FieldType, Component> = {
     factory: (props) => {
       return (
         <AddressInput
+          id={props.name}
           onChange={(val) => {
             props.setValue(val);
           }}
@@ -248,6 +261,7 @@ export const Components: Record<FieldType, Component> = {
                 {value.map((field, index) => (
                   <li key={index}>
                     <EmailField
+                      id={`${props.name}.${index}`}
                       disabled={readOnly}
                       value={value[index]}
                       className={inputClassName}
@@ -304,8 +318,8 @@ export const Components: Record<FieldType, Component> = {
                 value.push("");
                 setValue(value);
               }}
-              className="mr-auto">
-              {label}
+              className="mr-auto h-fit whitespace-normal text-left">
+              <span className="flex-1">{label}</span>
             </Button>
           )}
         </>
@@ -319,7 +333,7 @@ export const Components: Record<FieldType, Component> = {
         ...props,
         listValues: props.options.map((o) => ({ title: o.label, value: o.value })),
       };
-      return <Widgets.MultiSelectWidget {...newProps} />;
+      return <Widgets.MultiSelectWidget id={props.name} {...newProps} />;
     },
   },
   select: {
@@ -329,7 +343,7 @@ export const Components: Record<FieldType, Component> = {
         ...props,
         listValues: props.options.map((o) => ({ title: o.label, value: o.value })),
       };
-      return <Widgets.SelectWidget {...newProps} />;
+      return <Widgets.SelectWidget id={props.name} {...newProps} />;
     },
   },
   checkbox: {
@@ -454,7 +468,9 @@ export const Components: Record<FieldType, Component> = {
                         checked={value?.value === option.value}
                       />
                       <span className="text-emphasis me-2 ms-2 text-sm">
-                        {getCleanLabel(option.label) ?? ""}
+                        {option.value === "somewhereElse"
+                          ? t("somewhere_else")
+                          : getCleanLabel(option.label) ?? ""}
                       </span>
                       <span>
                         {option.value === "phone" && (
@@ -467,13 +483,15 @@ export const Components: Record<FieldType, Component> = {
               ) : (
                 // Use the only option itself to determine if the field is required or not.
                 <>
-                  <Label className="flex">
+                  <Label className="flex items-center">
                     {/* We still want to show the label of the field if it is changed by the user otherwise the best label would be the option label */}
-                    {getCleanLabel(
-                      didUserProvideLabel(label, translatedDefaultLabel) ? label : options[0].label
-                    )}
+                    {options[0].value === "somewhereElse"
+                      ? translatedDefaultLabel
+                      : getCleanLabel(
+                          didUserProvideLabel(label, translatedDefaultLabel) ? label : options[0].label
+                        )}
                     {!readOnly && optionsInputs[options[0].value]?.required ? (
-                      <span className="text-default mb-1 ml-1 text-sm font-medium">*</span>
+                      <span className="text-default -mb-2 ml-1 text-sm font-medium">*</span>
                     ) : null}
                     {options[0].value === "phone" && (
                       <InfoBadge content={t("number_in_international_format")} />
@@ -540,6 +558,21 @@ export const Components: Record<FieldType, Component> = {
     propsType: propsTypes.url,
     factory: (props) => {
       return <Widgets.TextWidget type="url" noLabel={true} {...props} />;
+    },
+  },
+  date: {
+    propsType: propsTypes.date,
+    factory: (props: any) => {
+      return (
+        <Widgets.DatePickerWidget
+          type="date"
+          id={props.name}
+          noLabel={true}
+          dateFormat="yyyy-MM-dd"
+          timeFormat="HH:mm"
+          {...props}
+        />
+      );
     },
   },
 } as const;

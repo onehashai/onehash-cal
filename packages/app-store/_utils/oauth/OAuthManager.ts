@@ -465,7 +465,6 @@ export class OAuthManager {
         throw new Error("`fetchNewTokenObject` could not refresh the token");
       }
     }
-
     const clonedResponse = response.clone();
     myLog.debug(
       "Response from refreshOAuthToken",

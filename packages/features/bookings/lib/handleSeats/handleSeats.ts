@@ -1,7 +1,8 @@
 // eslint-disable-next-line no-restricted-imports
 import dayjs from "@calcom/dayjs";
 import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhookTrigger";
-import { scheduleWorkflowReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
+import { scheduleWorkflowReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
+import type { EventPayloadType } from "@calcom/features/webhooks/lib/sendPayload";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { HttpError } from "@calcom/lib/http-error";
 import prisma from "@calcom/prisma";
@@ -30,6 +31,7 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
     eventTrigger,
     evt,
     workflows,
+    rescheduledBy,
   } = newSeatedBookingObject;
 
   const loggerWithEventDetails = createLoggerWithEventDetails(eventType.id, reqBodyUser, eventType.slug);
@@ -61,6 +63,8 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
       status: true,
       smsReminderNumber: true,
       endTime: true,
+      metadata: true,
+      responses: true,
     },
   });
 
@@ -75,7 +79,9 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
 
   // See if attendee is already signed up for timeslot
   if (
-    seatedBooking.attendees.find((attendee) => attendee.email === invitee[0].email) &&
+    seatedBooking.attendees.find((attendee) => {
+      return attendee.email === invitee[0].email;
+    }) &&
     dayjs.utc(seatedBooking.startTime).format() === evt.startTime
   ) {
     throw new HttpError({ statusCode: 409, message: ErrorCode.AlreadySignedUpForBooking });
@@ -91,7 +97,7 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
       loggerWithEventDetails
     );
   } else {
-    resultBooking = await createNewSeat(newSeatedBookingObject, seatedBooking);
+    resultBooking = await createNewSeat(newSeatedBookingObject, seatedBooking, reqBodyMetadata);
   }
 
   // If the resultBooking is defined we should trigger workflows else, trigger in handleNewBooking
@@ -100,6 +106,22 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
       ...(typeof resultBooking.metadata === "object" && resultBooking.metadata),
       ...reqBodyMetadata,
     };
+
+    const attendeeMap = resultBooking.attendees.reduce(
+      (
+        mapObj: {
+          [key: string]: number;
+        },
+        attendee
+      ) => {
+        mapObj[attendee.email] = attendee.id;
+        return mapObj;
+      },
+      {}
+    );
+    evt.attendees.forEach((attendee: { id?: number; email: string; name: string }) => {
+      attendee.id = attendeeMap[attendee.email];
+    });
     try {
       await scheduleWorkflowReminders({
         workflows,
@@ -112,11 +134,14 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
               slug: eventType.slug,
               schedulingType: eventType.schedulingType,
               hosts: eventType.hosts,
+              title: eventType.title,
+              id: eventType.id,
             },
           },
         },
         isNotConfirmed: evt.requiresConfirmation || false,
         isRescheduleEvent: !!rescheduleUid,
+        isFirstRecurringEvent: true,
         emailAttendeeSendToOverride: bookerEmail,
         seatReferenceUid: evt.attendeeSeatId,
       });
@@ -124,7 +149,7 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
       loggerWithEventDetails.error("Error while scheduling workflow reminders", JSON.stringify({ error }));
     }
 
-    const webhookData = {
+    const webhookData: EventPayloadType = {
       ...evt,
       ...eventTypeInfo,
       uid: resultBooking?.uid || uid,
@@ -141,6 +166,7 @@ const handleSeats = async (newSeatedBookingObject: NewSeatedBookingObject) => {
       eventTypeId,
       status: "ACCEPTED",
       smsReminderNumber: seatedBooking?.smsReminderNumber || undefined,
+      rescheduledBy,
     };
 
     await handleWebhookTrigger({ subscriberOptions, eventTrigger, webhookData });

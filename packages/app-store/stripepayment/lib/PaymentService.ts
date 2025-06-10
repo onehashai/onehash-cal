@@ -3,7 +3,8 @@ import Stripe from "stripe";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 
-import { sendAwaitingPaymentEmail } from "@calcom/emails";
+import { sendAwaitingPaymentEmailAndSMS } from "@calcom/emails";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
@@ -56,17 +57,31 @@ export class PaymentService implements IAbstractPaymentService {
   }
 
   /* This method is for creating charges at the time of booking */
-  async create(
-    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-    bookingId: Booking["id"],
-    userId: Booking["userId"],
-    username: string | null,
-    bookerName: string,
-    bookerEmail: string,
-    paymentOption: PaymentOption,
-    eventTitle?: string,
-    bookingTitle?: string
-  ) {
+  async create({
+    payment,
+    bookingId,
+    userId,
+    username,
+    bookerName,
+    paymentOption,
+    bookerEmail,
+    bookerPhoneNumber,
+    eventTitle,
+    bookingTitle,
+    responses,
+  }: {
+    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+    bookingId: Booking["id"];
+    userId: Booking["userId"];
+    username: string | null;
+    bookerName: string;
+    paymentOption: PaymentOption;
+    bookerEmail: string;
+    bookerPhoneNumber?: string | null;
+    eventTitle?: string;
+    bookingTitle?: string;
+    responses?: Prisma.JsonValue;
+  }) {
     try {
       // Ensure that the payment service can support the passed payment option
       if (paymentOptionEnum.parse(paymentOption) !== "ON_BOOKING") {
@@ -77,27 +92,61 @@ export class PaymentService implements IAbstractPaymentService {
         throw new Error("Stripe credentials not found");
       }
 
+      const responsesObj =
+        isPrismaObjOrUndefined(responses) &&
+        (responses as {
+          [key: string]: unknown;
+        });
+
       const customer = await retrieveOrCreateStripeCustomerByEmail(
+        this.credentials.stripe_user_id,
         bookerEmail,
-        this.credentials.stripe_user_id
+        bookerPhoneNumber,
+        bookerName,
+        responsesObj && {
+          line1: responsesObj["_line1"] as string,
+          postal_code: responsesObj["postal_code"] as string,
+          city: responsesObj["city"] as string,
+          state: responsesObj["state"] as string,
+          country: responsesObj["country"] as string,
+        }
       );
 
       const params: Stripe.PaymentIntentCreateParams = {
         amount: payment.amount,
         currency: payment.currency,
-        payment_method_types: ["card"],
         customer: customer.id,
+        description: bookingTitle,
         metadata: {
-          identifier: "cal.com",
+          identifier: "OneHash Cal",
           bookingId,
           calAccountId: userId,
           calUsername: username,
           bookerName,
-          bookerEmail,
+          bookerEmail: bookerEmail,
+          bookerPhoneNumber: bookerPhoneNumber ?? null,
           eventTitle: eventTitle || "",
           bookingTitle: bookingTitle || "",
         },
       };
+
+      // curl https://api.stripe.com/v1/payment_intents \
+      // -u "sk_test_tR3PYbcVNZZ796tH88S4VQ2u:" \
+      // -d amount = 2000 \
+      // -d currency = usd \
+      // -d "automatic_payment_methods[enabled]" = true
+
+      // const paymentIntent = await fetch("https://api.stripe.com/v1/payment_intents", {
+      //   method: 'POST',
+      //   body:  new URLSearchParams(params),
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     "Authorization": `Bearer ${process.env.STRIPE_PRIVATE_KEY || ""}`,
+      //   }
+      // })
+
+      // console.log("_paymentIntent",paymentIntent);
+      // throw new Error("PaymentIntent")
 
       const paymentIntent = await this.stripe.paymentIntents.create(params, {
         stripeAccount: this.credentials.stripe_user_id,
@@ -142,8 +191,9 @@ export class PaymentService implements IAbstractPaymentService {
   async collectCard(
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
     bookingId: Booking["id"],
+    paymentOption: PaymentOption,
     bookerEmail: string,
-    paymentOption: PaymentOption
+    bookerPhoneNumber?: string | null
   ): Promise<Payment> {
     try {
       if (!this.credentials) {
@@ -156,8 +206,9 @@ export class PaymentService implements IAbstractPaymentService {
       }
 
       const customer = await retrieveOrCreateStripeCustomerByEmail(
+        this.credentials.stripe_user_id,
         bookerEmail,
-        this.credentials.stripe_user_id
+        bookerPhoneNumber
       );
 
       const params = {
@@ -165,6 +216,7 @@ export class PaymentService implements IAbstractPaymentService {
         payment_method_types: ["card"],
         metadata: {
           bookingId,
+          bookerPhoneNumber: bookerPhoneNumber ?? null,
         },
       };
 
@@ -292,10 +344,6 @@ export class PaymentService implements IAbstractPaymentService {
     }
   }
 
-  async update(): Promise<Payment> {
-    throw new Error("Method not implemented.");
-  }
-
   async refund(paymentId: Payment["id"]): Promise<Payment> {
     try {
       const payment = await this.getPayment({
@@ -340,7 +388,7 @@ export class PaymentService implements IAbstractPaymentService {
     paymentData: Payment,
     eventTypeMetadata?: EventTypeMetadata
   ): Promise<void> {
-    await sendAwaitingPaymentEmail(
+    await sendAwaitingPaymentEmailAndSMS(
       {
         ...event,
         paymentInfo: {
@@ -388,6 +436,9 @@ export class PaymentService implements IAbstractPaymentService {
     }
   }
 
+  async update(): Promise<Payment> {
+    throw new Error("Method not implemented.");
+  }
   getPaymentPaidStatus(): Promise<string> {
     throw new Error("Method not implemented.");
   }

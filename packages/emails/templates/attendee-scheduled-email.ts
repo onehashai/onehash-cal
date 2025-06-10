@@ -15,8 +15,14 @@ export default class AttendeeScheduledEmail extends BaseEmail {
   attendee: Person;
   showAttendees: boolean | undefined;
   t: TFunction;
+  disableCancelAndRescheduleMeeting: boolean | undefined;
 
-  constructor(calEvent: CalendarEvent, attendee: Person, showAttendees?: boolean | undefined) {
+  constructor(
+    calEvent: CalendarEvent,
+    attendee: Person,
+    showAttendees?: boolean | undefined,
+    disableCancelAndRescheduleMeeting?: boolean
+  ) {
     super();
     if (!showAttendees && calEvent.seatsPerTimeSlot) {
       this.calEvent = cloneDeep(calEvent);
@@ -27,6 +33,7 @@ export default class AttendeeScheduledEmail extends BaseEmail {
     this.name = "SEND_BOOKING_CONFIRMATION";
     this.attendee = attendee;
     this.t = attendee.language.translate;
+    this.disableCancelAndRescheduleMeeting = disableCancelAndRescheduleMeeting;
   }
 
   protected async getNodeMailerPayload(): Promise<Record<string, unknown>> {
@@ -35,23 +42,24 @@ export default class AttendeeScheduledEmail extends BaseEmail {
     return {
       icalEvent: generateIcsFile({
         calEvent: this.calEvent,
-        title: this.calEvent.recurringEvent?.count
-          ? this.t("your_event_has_been_scheduled_recurring")
-          : this.t("your_event_has_been_scheduled"),
         role: GenerateIcsRole.ATTENDEE,
-        subtitle: this.t("emailed_you_and_any_other_attendees"),
         status: "CONFIRMED",
       }),
       to: `${this.attendee.name} <${this.attendee.email}>`,
       from: `${this.calEvent.organizer.name} <${this.getMailerOptions().from}>`,
-      replyTo: [...this.calEvent.attendees.map(({ email }) => email), this.calEvent.organizer.email],
+      replyTo: this.calEvent.organizer.email,
       subject: `${this.calEvent.title}`,
-      html: await renderEmail("AttendeeScheduledEmail", {
-        calEvent: clonedCalEvent,
-        attendee: this.attendee,
-      }),
+      html: await this.getHtml(clonedCalEvent, this.attendee),
       text: this.getTextBody(),
     };
+  }
+
+  async getHtml(calEvent: CalendarEvent, attendee: Person) {
+    return await renderEmail("AttendeeScheduledEmail", {
+      calEvent,
+      attendee,
+      disableCancelAndRescheduleMeeting: this.disableCancelAndRescheduleMeeting,
+    });
   }
 
   protected getTextBody(title = "", subtitle = "emailed_you_and_any_other_attendees"): string {
@@ -65,7 +73,7 @@ ${this.t(
 )}
 ${this.t(subtitle)}
 
-${getRichDescription(this.calEvent, this.t)}
+${getRichDescription(this.calEvent, this.t, false, true, false)}
 `.trim();
   }
 

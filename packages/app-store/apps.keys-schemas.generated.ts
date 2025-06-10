@@ -23,6 +23,7 @@ import { appKeysSchema as make_zod_ts } from "./make/zod";
 import { appKeysSchema as matomo_zod_ts } from "./matomo/zod";
 import { appKeysSchema as metapixel_zod_ts } from "./metapixel/zod";
 import { appKeysSchema as mock_payment_app_zod_ts } from "./mock-payment-app/zod";
+import { appKeysSchema as nextcloudtalk_zod_ts } from "./nextcloudtalk/zod";
 import { appKeysSchema as office365calendar_zod_ts } from "./office365calendar/zod";
 import { appKeysSchema as office365video_zod_ts } from "./office365video/zod";
 import { appKeysSchema as paypal_zod_ts } from "./paypal/zod";
@@ -30,6 +31,7 @@ import { appKeysSchema as pipedrive_crm_zod_ts } from "./pipedrive-crm/zod";
 import { appKeysSchema as plausible_zod_ts } from "./plausible/zod";
 import { appKeysSchema as posthog_zod_ts } from "./posthog/zod";
 import { appKeysSchema as qr_code_zod_ts } from "./qr_code/zod";
+import { appKeysSchema as razorpay_zod_ts } from "./razorpay/zod";
 import { appKeysSchema as routing_forms_zod_ts } from "./routing-forms/zod";
 import { appKeysSchema as salesforce_zod_ts } from "./salesforce/zod";
 import { appKeysSchema as shimmervideo_zod_ts } from "./shimmervideo/zod";
@@ -70,6 +72,7 @@ export const appKeysSchemas = {
   matomo: matomo_zod_ts,
   metapixel: metapixel_zod_ts,
   "mock-payment-app": mock_payment_app_zod_ts,
+  nextcloudtalk: nextcloudtalk_zod_ts,
   office365calendar: office365calendar_zod_ts,
   office365video: office365video_zod_ts,
   paypal: paypal_zod_ts,
@@ -77,6 +80,7 @@ export const appKeysSchemas = {
   plausible: plausible_zod_ts,
   posthog: posthog_zod_ts,
   qr_code: qr_code_zod_ts,
+  razorpay: razorpay_zod_ts,
   "routing-forms": routing_forms_zod_ts,
   salesforce: salesforce_zod_ts,
   shimmervideo: shimmervideo_zod_ts,

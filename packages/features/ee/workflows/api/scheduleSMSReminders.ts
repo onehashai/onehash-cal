@@ -20,7 +20,7 @@ import smsReminderTemplate from "../lib/reminders/templates/smsReminderTemplate"
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const apiKey = req.headers.authorization || req.query.apiKey;
-  if (process.env.CRON_API_KEY !== apiKey) {
+  if (process.env.CRON_SECRET !== apiKey) {
     res.status(401).json({ message: "Not authenticated" });
     return;
   }
@@ -134,6 +134,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           meetingUrl: bookingMetadataSchema.parse(reminder.booking?.metadata || {})?.videoCallUrl,
           cancelLink: `${bookerUrl}/booking/${reminder.booking.uid}?cancel=true`,
           rescheduleLink: `${bookerUrl}/reschedule/${reminder.booking.uid}`,
+          attendeeTimezone: reminder.booking.attendees[0].timeZone,
+          eventTimeInAttendeeTimezone: dayjs(reminder.booking.startTime).tz(
+            reminder.booking.attendees[0].timeZone
+          ),
+          eventEndTimeInAttendeeTimezone: dayjs(reminder.booking?.endTime).tz(
+            reminder.booking.attendees[0].timeZone
+          ),
         };
         const customMessage = customTemplate(
           reminder.workflowStep.reminderBody || "",
@@ -145,6 +152,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       } else if (reminder.workflowStep.template === WorkflowTemplates.REMINDER) {
         message = smsReminderTemplate(
           false,
+          reminder.booking.user?.locale || "en",
           reminder.workflowStep.action,
           getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
           reminder.booking?.startTime.toISOString() || "",

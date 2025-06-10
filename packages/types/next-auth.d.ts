@@ -14,6 +14,7 @@ declare module "next-auth" {
     profileId?: number | null;
     upId: string;
     user: User;
+    keycloak_token: string | null | undefined;
   }
 
   interface User extends Omit<DefaultUser, "id"> {
@@ -68,5 +69,7 @@ declare module "next-auth/jwt" {
     };
     organizationId?: number | null;
     locale?: string;
+    // keycloak_token?: string | null;
+    hasValidLicense: boolean;
   }
 }

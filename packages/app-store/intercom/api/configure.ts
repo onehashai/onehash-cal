@@ -27,13 +27,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const input: InputComponent = {
     type: "input",
     id: "submit_booking_url",
-    label: "Enter your Cal.com link",
-    placeholder: "https://cal.com/valentinchmara/30min",
+    label: "Enter your Cal.id link",
+    placeholder: "https://cal.id/valentinchmara/30min",
     save_state: "unsaved",
     action: {
       type: "submit",
     },
-    aria_label: "Enter your Cal.com link",
+    aria_label: "Enter your Cal.id link",
   };
 
   const defaultCanvasData: NewCanvas = {

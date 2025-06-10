@@ -1,3 +1,5 @@
+"use client";
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -5,10 +7,10 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
 import React, { Suspense, useEffect, useState, useMemo } from "react";
 
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import Shell from "@calcom/features/shell/Shell";
 import { classNames } from "@calcom/lib";
-import { HOSTED_CAL_FEATURES, WEBAPP_URL } from "@calcom/lib/constants";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
@@ -41,14 +43,20 @@ const tabs: VerticalTabItemProps[] = [
     children: [
       { name: "password", href: "/settings/security/password" },
       { name: "impersonation", href: "/settings/security/impersonation" },
-      { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
+      // { name: "2fa_auth", href: "/settings/security/two-factor-auth" },
     ],
   },
+  // {
+  //   name: "billing",
+  //   href: "/settings/billing",
+  //   icon: "credit-card",
+  //   children: [{ name: "manage_billing", href: "/settings/billing" }],
+  // },
   {
-    name: "billing",
-    href: "/settings/billing",
-    icon: "credit-card",
-    children: [{ name: "manage_billing", href: "/settings/billing" }],
+    name: "import",
+    href: "/settings/import",
+    icon: "calendar-plus",
+    children: [{ name: "calendly_integration", href: "/settings/import/calendly" }],
   },
   {
     name: "developer",
@@ -83,23 +91,23 @@ const tabs: VerticalTabItemProps[] = [
         name: "privacy",
         href: "/settings/organizations/privacy",
       },
-      {
-        name: "billing",
-        href: "/settings/organizations/billing",
-      },
+      // {
+      //   name: "billing",
+      //   href: "/settings/organizations/billing",
+      // },
       { name: "OAuth Clients", href: "/settings/organizations/platform/oauth-clients" },
-      {
-        name: "SSO",
-        href: "/settings/organizations/sso",
-      },
-      {
-        name: "directory_sync",
-        href: "/settings/organizations/dsync",
-      },
-      {
-        name: "admin_api",
-        href: "https://cal.com/docs/enterprise-features/api/api-reference/bookings#admin-access",
-      },
+      // {
+      //   name: "SSO",
+      //   href: "/settings/organizations/sso",
+      // },
+      // {
+      //   name: "directory_sync",
+      //   href: "/settings/organizations/dsync",
+      // },
+      // {
+      //   name: "admin_api",
+      //   href: "https://cal.com/docs/enterprise-features/api/api-reference/bookings#admin-access",
+      // },
     ],
   },
   {
@@ -132,13 +140,16 @@ const tabs: VerticalTabItemProps[] = [
   },
 ];
 
-tabs.find((tab) => {
-  if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
-    tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
-    // TODO: Enable dsync for self hosters
-    // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
-  }
-});
+// tabs.find((tab) => {
+//   if (tab.name === "security" && !HOSTED_CAL_FEATURES) {
+//     tab.children?.push({ name: "sso_configuration", href: "/settings/security/sso" });
+//     // TODO: Enable dsync for self hosters
+//     // tab.children?.push({ name: "directory_sync", href: "/settings/security/dsync" });
+//   }
+//   if (tab.name === "admin" && IS_CALCOM) {
+//     tab.children?.push({ name: "create_license_key", href: "/settings/license-key/new" });
+//   }
+// });
 
 // The following keys are assigned to admin only
 const adminRequiredKeys = ["admin"];
@@ -188,10 +199,11 @@ const useTabs = () => {
         !user?.twoFactorEnabled &&
         !user?.passwordAdded
       ) {
-        const filtered = tab?.children?.filter(
-          (childTab) => childTab.href !== "/settings/security/two-factor-auth"
-        );
-        return { ...tab, children: filtered };
+        return { ...tab };
+        // const filtered = tab?.children?.filter(
+        //   (childTab) => childTab.href !== "/settings/security/two-factor-auth"
+        // );
+        // return { ...tab, children: filtered };
       } else if (tab.href === "/settings/developer") {
         const filtered = tab?.children?.filter(
           (childTab) => isOrgAdminOrOwner || childTab.name !== "admin_api"
@@ -216,18 +228,18 @@ const useTabs = () => {
 
 const BackButtonInSidebar = ({ name }: { name: string }) => {
   return (
-    <Link
-      href="/"
-      className="hover:bg-subtle todesktop:mt-10 [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-emphasis group my-6 flex h-6 max-h-6 w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium leading-4 transition"
+    <div
+      onClick={() => window.history.back()}
+      className="hover:bg-subtle todesktop:mt-10 [&[aria-current='page']]:bg-emphasis [&[aria-current='page']]:text-emphasis group-hover:text-default text-emphasis group my-6 flex h-6 max-h-6 w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium leading-4"
       data-testid={`vertical-tab-${name}`}>
       <Icon
         name="arrow-left"
         className="h-4 w-4 stroke-[2px] ltr:mr-[10px] rtl:ml-[10px] rtl:rotate-180 md:mt-0"
       />
-      <Skeleton title={name} as="p" className="max-w-36 min-h-4 truncate" loadingClassName="ms-3">
+      <Skeleton title={name} as="p" className="min-h-4 max-w-36 truncate" loadingClassName="ms-3">
         {name}
       </Skeleton>
-    </Link>
+    </div>
   );
 };
 
@@ -254,6 +266,7 @@ const TeamListCollapsible = () => {
         const tabMembers = Array.from(document.getElementsByTagName("a")).filter(
           (bottom) => bottom.dataset.testid === "vertical-tab-Members"
         )[1];
+        // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- Settings layout isn't embedded
         tabMembers?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     }
@@ -333,7 +346,7 @@ const TeamListCollapsible = () => {
                   />
                   <VerticalTabItem
                     name={t("event_types_page_title")}
-                    href={`/event-types?teamIds=${team.id}`}
+                    href={`/event-types?teamId=${team.id}`}
                     textClassNames="px-3 text-emphasis font-medium text-sm"
                     disableChevron
                   />
@@ -357,7 +370,7 @@ const TeamListCollapsible = () => {
                         disableChevron
                       />
                       {/* Hide if there is a parent ID */}
-                      {!team.parentId ? (
+                      {/* {!team.parentId ? (
                         <>
                           <VerticalTabItem
                             name={t("billing")}
@@ -366,7 +379,13 @@ const TeamListCollapsible = () => {
                             disableChevron
                           />
                         </>
-                      ) : null}
+                      ) : null} */}
+                      <VerticalTabItem
+                        name={t("booking_limits")}
+                        href={`/settings/teams/${team.id}/bookingLimits`}
+                        textClassNames="px-3 text-emphasis font-medium text-sm"
+                        disableChevron
+                      />
                     </>
                   )}
                 </CollapsibleContent>
@@ -413,6 +432,7 @@ const SettingsSidebarContainer = ({
         const tabMembers = Array.from(document.getElementsByTagName("a")).filter(
           (bottom) => bottom.dataset.testid === "vertical-tab-Members"
         )[1];
+        // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- Settings layout isn't embedded
         tabMembers?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     }
@@ -646,14 +666,12 @@ const MobileSettingsContainer = (props: { onSideContainerOpen?: () => void }) =>
   );
 };
 
-export default function SettingsLayout({
-  children,
-  hideHeader,
-  ...rest
-}: {
+export type SettingsLayoutProps = {
   children: React.ReactNode;
   hideHeader?: boolean;
-} & ComponentProps<typeof Shell>) {
+} & ComponentProps<typeof Shell>;
+
+export default function SettingsLayout({ children, hideHeader, ...rest }: SettingsLayoutProps) {
   const pathname = usePathname();
   const state = useState(false);
   const { t } = useLocale();

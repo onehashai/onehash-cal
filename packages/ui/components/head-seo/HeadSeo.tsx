@@ -19,6 +19,7 @@ export type HeadSeoProps = {
   meeting?: MeetingImageProps;
   isBrandingHidden?: boolean;
   origin?: string;
+  bannerUrl?: string;
 };
 
 /**
@@ -87,10 +88,22 @@ export const HeadSeo = (props: HeadSeoProps): JSX.Element => {
     isBrandingHidden,
   } = props;
 
-  const image = getSeoImage("ogImage") + constructGenericImage({ title, description });
   const truncatedDescription = truncateOnWord(description, 158);
   const pageTitle = `${title}${isBrandingHidden ? "" : ` | ${APP_NAME}`}`;
-  let seoObject = buildSeoMeta({
+
+  // Function to construct the image based on the type of content
+  const getImage = () => {
+    if (meeting) {
+      return getSeoImage("ogImage") + constructMeetingImage(meeting);
+    }
+    if (app) {
+      return getSeoImage("ogImage") + constructAppImage({ ...app, description: truncatedDescription });
+    }
+    return getSeoImage("ogImage") + constructGenericImage({ title, description });
+  };
+
+  const image = getImage();
+  const seoObject = buildSeoMeta({
     title: pageTitle,
     image,
     description: truncatedDescription,
@@ -98,31 +111,6 @@ export const HeadSeo = (props: HeadSeoProps): JSX.Element => {
     siteName,
   });
 
-  if (meeting) {
-    const pageImage = getSeoImage("ogImage") + constructMeetingImage(meeting);
-    seoObject = buildSeoMeta({
-      title: pageTitle,
-      description: truncatedDescription,
-      image: pageImage,
-      canonical,
-      siteName,
-    });
-  }
-
-  if (app) {
-    const pageImage =
-      getSeoImage("ogImage") + constructAppImage({ ...app, description: truncatedDescription });
-    seoObject = buildSeoMeta({
-      title: pageTitle,
-      description: truncatedDescription,
-      image: pageImage,
-      canonical,
-      siteName,
-    });
-  }
-
-  // Instead of doing a blackbox deep merge which can be tricky implementation wise and need a good implementation, we should generate the object manually as we know the properties
-  // Goal is to avoid big dependency
   const seoProps: NextSeoProps = {
     ...nextSeoProps,
     ...seoObject,
@@ -131,7 +119,7 @@ export const HeadSeo = (props: HeadSeoProps): JSX.Element => {
       ...seoObject.openGraph,
       images: [...(nextSeoProps.openGraph?.images || []), ...seoObject.openGraph.images],
     },
-    additionalMetaTags: [...(nextSeoProps.additionalMetaTags || [])],
+    additionalMetaTags: [...(nextSeoProps.additionalMetaTags || []), ...seoObject.additionalMetaTags],
   };
 
   return <NextSeo {...seoProps} />;

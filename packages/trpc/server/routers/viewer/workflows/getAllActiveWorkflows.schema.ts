@@ -5,7 +5,7 @@ import {
   WORKFLOW_ACTIONS,
   WORKFLOW_TEMPLATES,
   WORKFLOW_TRIGGER_EVENTS,
-} from "@calcom/ee/workflows/lib/constants";
+} from "@calcom/features/oe/workflows/lib/constants";
 import { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 
 const ZWorkflow = z.object({
@@ -28,6 +28,7 @@ const ZWorkflow = z.object({
       sender: z.string().nullable(),
       includeCalendarEvent: z.boolean(),
       numberVerificationPending: z.boolean(),
+      disableOnMarkNoShow: z.boolean().nullable(),
     })
     .array(),
 });

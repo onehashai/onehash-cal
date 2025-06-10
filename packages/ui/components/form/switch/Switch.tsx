@@ -44,7 +44,7 @@ const Switch = (
         {LockedIcon && <div className="mr-2">{LockedIcon}</div>}
         <PrimitiveSwitch.Root
           className={cx(
-            isChecked ? "bg-brand-default dark:bg-brand-emphasis" : "bg-emphasis",
+            isChecked ? "bg-blue-500 dark:bg-blue-500" : "bg-emphasis",
             primitiveProps.disabled && "cursor-not-allowed",
             small ? "h-4 w-[27px]" : "h-5 w-[34px]",
             "focus:ring-brand-default rounded-full shadow-none transition focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:ring-offset-1",

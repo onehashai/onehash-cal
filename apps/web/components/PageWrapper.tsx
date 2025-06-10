@@ -1,11 +1,11 @@
+"use client";
+
 import { DefaultSeo } from "next-seo";
-import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import Head from "next/head";
 import Script from "next/script";
 
 import "@calcom/embed-core/src/embed-iframe";
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { IS_CALCOM, WEBAPP_URL } from "@calcom/lib/constants";
 import { buildCanonical } from "@calcom/lib/next-seo.config";
 import { IconSprites } from "@calcom/ui";
@@ -21,7 +21,13 @@ export interface CalPageWrapper {
   PageWrapper?: AppProps["Component"]["PageWrapper"];
 }
 
-const interFont = Inter({ subsets: ["latin"], variable: "--font-inter", preload: true, display: "swap" });
+// const interFont = Inter({ subsets: ["latin"], variable: "--font-inter", preload: true, display: "swap" });
+const interFont = localFont({
+  src: "../fonts/Inter.woff2",
+  variable: "--font-inter",
+  preload: true,
+  display: "swap",
+});
 const calFont = localFont({
   src: "../fonts/CalSans-SemiBold.woff2",
   variable: "--font-cal",
@@ -38,6 +44,8 @@ function PageWrapper(props: AppProps) {
     pageStatus = "404";
   } else if (router.pathname === "/500") {
     pageStatus = "500";
+  } else if (router.pathname === "/403") {
+    pageStatus = "403";
   }
 
   // On client side don't let nonce creep into DOM
@@ -77,6 +85,9 @@ function PageWrapper(props: AppProps) {
       <Script
         nonce={nonce}
         id="page-status"
+        // It is strictly not necessary to disable, but in a future update of react/no-danger this will error.
+        // And we don't want it to error here anyways
+        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: `window.CalComPageStatus = '${pageStatus}'` }}
       />
 
@@ -90,9 +101,9 @@ function PageWrapper(props: AppProps) {
 
       {getLayout(
         Component.requiresLicense ? (
-          <LicenseRequired>
+          <>
             <Component {...pageProps} err={err} />
-          </LicenseRequired>
+          </>
         ) : (
           <Component {...pageProps} err={err} />
         )

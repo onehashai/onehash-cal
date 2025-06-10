@@ -32,7 +32,6 @@ export const InstallAppButtonChild = ({
       </Button>
     );
   }
-
   return (
     <Button
       data-testid="install-app-button"

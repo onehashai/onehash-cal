@@ -42,7 +42,7 @@ export default function Error500() {
             </pre>
           </div>
         )}
-        <Button href="mailto:support@cal.com">{t("contact_support")}</Button>
+        <Button href="mailto:support@onehash.ai">{t("contact_support")}</Button>
         <Button color="secondary" href="javascript:history.back()" className="ml-2">
           {t("go_back")}
         </Button>

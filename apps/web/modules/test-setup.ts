@@ -39,7 +39,7 @@ vi.mock("@calcom/core/event", () => ({
   getEventName: vi.fn(),
 }));
 
-vi.mock("@calcom/ee/organizations/lib/orgDomains", () => ({
+vi.mock("@calcom/features/oe/organizations/lib/orgDomains", () => ({
   getOrgFullOrigin: vi.fn(),
 }));
 
@@ -150,7 +150,7 @@ vi.mock("@calcom/trpc/react", () => ({
 
 vi.mock("@calcom/ui", () => ({
   HeadSeo: vi.fn(),
-  useCalcomTheme: vi.fn(),
+  useBrandTheme: vi.fn(),
   Icon: vi.fn(),
   UnpublishedEntity: vi.fn(),
   UserAvatar: vi.fn(),

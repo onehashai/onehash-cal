@@ -25,9 +25,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (safeRedirectUrl) return_url = safeRedirectUrl;
   }
 
+  const configuration = await stripe.billingPortal.configurations.create({
+    business_profile: {
+      headline: "OneHash, Inc. partners with Stripe for simplified billing",
+    },
+    features: {
+      subscription_update: {
+        default_allowed_updates: ["price", "promotion_code", "quantity"],
+        enabled: true,
+        proration_behavior: "always_invoice",
+        products: [
+          {
+            product: process.env.STRIPE_TEAM_PRODUCT_ID as string,
+            prices: [process.env.STRIPE_TEAM_MONTHLY_PRICE_ID as string],
+          },
+        ],
+      },
+      customer_update: {
+        enabled: true,
+        allowed_updates: ["email", "address"],
+      },
+      payment_method_update: {
+        enabled: true,
+      },
+      subscription_cancel: {
+        cancellation_reason: {
+          enabled: true,
+          options: ["too_expensive", "missing_features", "switched_service", "unused", "other"],
+        },
+        enabled: true,
+        mode: "at_period_end",
+      },
+      subscription_pause: {
+        enabled: false,
+      },
+      invoice_history: {
+        enabled: true,
+      },
+    },
+  });
+
   const stripeSession = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url,
+    configuration: configuration.id,
   });
 
   res.redirect(302, stripeSession.url);

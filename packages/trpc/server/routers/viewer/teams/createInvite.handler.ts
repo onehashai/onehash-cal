@@ -46,9 +46,13 @@ export const createInviteHandler = async ({ ctx, input }: CreateInviteOptions) =
 
   return { token, inviteLink: await getInviteLink(token, isOrganizationOrATeamInOrganization) };
 };
-
 async function getInviteLink(token = "", isOrgContext = false) {
-  const teamInviteLink = `${WEBAPP_URL}/teams?token=${token}`;
+  const urlSearchParams = new URLSearchParams({
+    callbackUrl: `teams?token=${token}`,
+  });
+
+  const teamInviteLink = `${WEBAPP_URL}/auth/login?${urlSearchParams.toString()}`;
+  //TODO:ORG
   const orgInviteLink = `${WEBAPP_URL}/signup?token=${token}&callbackUrl=/getting-started`;
   if (isOrgContext) return orgInviteLink;
   return teamInviteLink;

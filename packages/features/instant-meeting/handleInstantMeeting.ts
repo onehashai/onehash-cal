@@ -4,14 +4,15 @@ import type { NextApiRequest } from "next";
 import short from "short-uuid";
 import { v5 as uuidv5 } from "uuid";
 
-import { createInstantMeetingWithCalVideo } from "@calcom/core/videoClient";
+import { createInstantMeetingWithJitsiVideo } from "@calcom/core/videoClient";
 import dayjs from "@calcom/dayjs";
 import getBookingDataSchema from "@calcom/features/bookings/lib/getBookingDataSchema";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
-import { getCustomInputsResponses } from "@calcom/features/bookings/lib/handleNewBooking";
 import { getBookingData } from "@calcom/features/bookings/lib/handleNewBooking/getBookingData";
+import { getCustomInputsResponses } from "@calcom/features/bookings/lib/handleNewBooking/getCustomInputsResponses";
 import { getEventTypesFromDB } from "@calcom/features/bookings/lib/handleNewBooking/getEventTypesFromDB";
 import { getFullName } from "@calcom/features/form-builder/utils";
+import { sendNotification } from "@calcom/features/notifications/sendNotification";
 import { sendGenericWebhookPayload } from "@calcom/features/webhooks/lib/sendPayload";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -20,6 +21,8 @@ import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server";
 import prisma from "@calcom/prisma";
 import { BookingStatus, WebhookTriggerEvents } from "@calcom/prisma/enums";
+
+import { subscriptionSchema } from "./schema";
 
 const handleInstantMeetingWebhookTrigger = async (args: {
   eventTypeId: number;
@@ -86,6 +89,74 @@ const handleInstantMeetingWebhookTrigger = async (args: {
   }
 };
 
+const triggerBrowserNotifications = async (args: {
+  title: string;
+  connectAndJoinUrl: string;
+  teamId?: number | null;
+}) => {
+  const { title, connectAndJoinUrl, teamId } = args;
+
+  if (!teamId) {
+    logger.warn("No teamId provided, skipping browser notification trigger");
+    return;
+  }
+
+  const subscribers = await prisma.membership.findMany({
+    where: {
+      teamId,
+      accepted: true,
+    },
+    select: {
+      user: {
+        select: {
+          id: true,
+          NotificationsSubscriptions: {
+            select: {
+              id: true,
+              subscription: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const promises = subscribers.map((sub) => {
+    const subscription = sub.user?.NotificationsSubscriptions?.[0]?.subscription;
+    if (!subscription) return Promise.resolve();
+
+    const parsedSubscription = subscriptionSchema.safeParse(JSON.parse(subscription));
+
+    if (!parsedSubscription.success) {
+      logger.error("Invalid subscription", parsedSubscription.error, JSON.stringify(sub.user));
+      return Promise.resolve();
+    }
+
+    return sendNotification({
+      subscription: {
+        endpoint: parsedSubscription.data.endpoint,
+        keys: {
+          auth: parsedSubscription.data.keys.auth,
+          p256dh: parsedSubscription.data.keys.p256dh,
+        },
+      },
+      title: title,
+      body: "User is waiting for you to join. Click to Connect",
+      url: connectAndJoinUrl,
+      actions: [
+        {
+          action: "connect-action",
+          title: "Connect and join",
+          type: "button",
+          image: "https://cal.id/api/logo?type=icon",
+        },
+      ],
+    });
+  });
+
+  await Promise.allSettled(promises);
+};
+
 export type HandleInstantMeetingResponse = {
   message: string;
   meetingTokenId: number;
@@ -97,9 +168,10 @@ export type HandleInstantMeetingResponse = {
 
 async function handler(req: NextApiRequest) {
   let eventType = await getEventTypesFromDB(req.body.eventTypeId);
+  const isOrgTeamEvent = !!eventType?.team && !!eventType?.team?.parentId;
   eventType = {
     ...eventType,
-    bookingFields: getBookingFieldsWithSystemFields(eventType),
+    bookingFields: getBookingFieldsWithSystemFields({ ...eventType, isOrgTeamEvent }),
   };
 
   if (!eventType.team?.id) {
@@ -148,19 +220,36 @@ async function handler(req: NextApiRequest) {
   }, [] as typeof invitee);
 
   const attendeesList = [...invitee, ...guests];
-  const calVideoMeeting = await createInstantMeetingWithCalVideo(dayjs.utc(reqBody.end).toISOString());
+  // const calVideoMeeting = await createInstantMeetingWithCalVideo(dayjs.utc(reqBody.end).toISOString());
 
-  if (!calVideoMeeting) {
-    throw new Error("Cal Video Meeting Creation Failed");
+  // if (!calVideoMeeting) {
+  //   throw new Error("Cal Video Meeting Creation Failed");
+  // }
+
+  // const bookingReferenceToCreate = [
+  //   {
+  //     type: calVideoMeeting.type,
+  //     uid: calVideoMeeting.id,
+  //     meetingId: calVideoMeeting.id,
+  //     meetingPassword: calVideoMeeting.password,
+  //     meetingUrl: calVideoMeeting.url,
+  //   },
+  // ];
+
+  const instantMeetingTitle = tAttendees("instant_meeting_with_title", { name: invitee[0].name });
+  const instantVideoMeeting = await createInstantMeetingWithJitsiVideo(instantMeetingTitle);
+
+  if (!instantVideoMeeting) {
+    throw new Error("Instant Video Meeting Creation Failed");
   }
 
   const bookingReferenceToCreate = [
     {
-      type: calVideoMeeting.type,
-      uid: calVideoMeeting.id,
-      meetingId: calVideoMeeting.id,
-      meetingPassword: calVideoMeeting.password,
-      meetingUrl: calVideoMeeting.url,
+      type: instantVideoMeeting.type,
+      uid: instantVideoMeeting.id,
+      meetingId: instantVideoMeeting.id,
+      meetingPassword: instantVideoMeeting.password,
+      meetingUrl: instantVideoMeeting.url,
     },
   ];
 
@@ -168,7 +257,7 @@ async function handler(req: NextApiRequest) {
   const newBookingData: Prisma.BookingCreateInput = {
     uid,
     responses: reqBody.responses === null ? Prisma.JsonNull : reqBody.responses,
-    title: tAttendees("instant_meeting_with_title", { name: invitee[0].name }),
+    title: instantMeetingTitle,
     startTime: dayjs.utc(reqBody.start).toDate(),
     endTime: dayjs.utc(reqBody.end).toDate(),
     description: reqBody.notes,
@@ -177,13 +266,13 @@ async function handler(req: NextApiRequest) {
     references: {
       create: bookingReferenceToCreate,
     },
-    location: "integrations:daily",
+    location: "integrations:jitsi",
     eventType: {
       connect: {
         id: reqBody.eventTypeId,
       },
     },
-    metadata: { ...reqBody.metadata, videoCallUrl: `${WEBAPP_URL}/video/${uid}` },
+    metadata: { ...reqBody.metadata, videoCallUrl: instantVideoMeeting.url },
     attendees: {
       createMany: {
         data: attendeesList,
@@ -249,6 +338,12 @@ async function handler(req: NextApiRequest) {
   await handleInstantMeetingWebhookTrigger({
     eventTypeId: eventType.id,
     webhookData,
+    teamId: eventType.team?.id,
+  });
+
+  await triggerBrowserNotifications({
+    title: newBooking.title,
+    connectAndJoinUrl: webhookData.connectAndJoinUrl,
     teamId: eventType.team?.id,
   });
 

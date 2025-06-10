@@ -13,8 +13,13 @@ const {
   orgUserTypeEmbedRoutePath,
 } = require("./pagesAndRewritePaths");
 
+if (!process.env.NEXTAUTH_URL) throw new Error("Please set NEXTAUTH_URL");
+
 if (!process.env.NEXTAUTH_SECRET) throw new Error("Please set NEXTAUTH_SECRET");
 if (!process.env.CALENDSO_ENCRYPTION_KEY) throw new Error("Please set CALENDSO_ENCRYPTION_KEY");
+
+if (!process.env.NEXT_PUBLIC_WEBAPP_URL) throw new Error("Please set NEXT_PUBLIC_WEBAPP_URL");
+if (!process.env.NEXT_PUBLIC_API_V2_URL) throw new Error("Please set NEXT_PUBLIC_API_V2_URL");
 const isOrganizationsEnabled =
   process.env.ORGANIZATIONS_ENABLED === "1" || process.env.ORGANIZATIONS_ENABLED === "true";
 // To be able to use the version in the app without having to import package.json
@@ -47,8 +52,6 @@ if (!process.env.EMAIL_FROM) {
     "EMAIL_FROM environment variable is not set, this may indicate mailing is currently disabled. Please refer to the .env.example file."
   );
 }
-
-if (!process.env.NEXTAUTH_URL) throw new Error("Please set NEXTAUTH_URL");
 
 if (!process.env.NEXT_PUBLIC_API_V2_URL) {
   console.error("Please set NEXT_PUBLIC_API_V2_URL");
@@ -178,19 +181,22 @@ const nextConfig = {
     serverComponentsExternalPackages: ["next-i18next"],
     optimizePackageImports: ["@calcom/ui"],
     instrumentationHook: true,
+    serverActions: true,
   },
   i18n: {
     ...i18n,
+    defaultLocale: "en",
+    locales: ["en"],
     localeDetection: false,
   },
-  productionBrowserSourceMaps: false,
+  productionBrowserSourceMaps: process.env.SENTRY_DISABLE_CLIENT_SOURCE_MAPS === "0",
   /* We already do type check on GH actions */
   typescript: {
-    ignoreBuildErrors: !!process.env.CI,
+    ignoreBuildErrors: 1,
   },
   /* We already do linting on GH actions */
   eslint: {
-    ignoreDuringBuilds: !!process.env.CI,
+    ignoreDuringBuilds: 1,
   },
   transpilePackages: [
     "@calcom/app-store",
@@ -204,7 +210,6 @@ const nextConfig = {
     "@calcom/lib",
     "@calcom/prisma",
     "@calcom/trpc",
-    "@calcom/ui",
   ],
   modularizeImports: {
     "@calcom/features/insights/components": {
@@ -215,16 +220,26 @@ const nextConfig = {
     lodash: {
       transform: "lodash/{{member}}",
     },
-    // TODO: We need to have all components in `@calcom/ui/components` in order to use this
-    // "@calcom/ui": {
-    //   transform: "@calcom/ui/components/{{member}}",
-    // },
   },
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
+    ],
+    // unoptimized: true,
   },
   webpack: (config, { webpack, buildId, isServer }) => {
     if (isServer) {
+      if (process.env.SENTRY_DISABLE_SERVER_SOURCE_MAPS === "1") {
+        config.devtool = false;
+      }
+
       // Module not found fix @see https://github.com/boxyhq/jackson/issues/1535#issuecomment-1704381612
       config.plugins.push(
         new webpack.IgnorePlugin({
@@ -291,8 +306,8 @@ const nextConfig = {
         destination: "/apps/routing-forms/routing-link/:formQuery*",
       },
       {
-        source: "/router",
-        destination: "/apps/routing-forms/router",
+        source: "/router/:path*",
+        destination: "/apps/routing-forms/router/:path*",
       },
       {
         source: "/success/:path*",
@@ -384,11 +399,29 @@ const nextConfig = {
       }, */
     ];
 
+    // PostHog rewrites
+    afterFiles.push(
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+      {
+        source: "/ingest/decide",
+        destination: "https://us.i.posthog.com/decide",
+      }
+    );
+
     return {
       beforeFiles,
       afterFiles,
     };
   },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
   async headers() {
     // This header can be set safely as it ensures the browser will load the resources even when COEP is set.
     // But this header must be set only on those resources that are safe to be loaded in a cross-origin context e.g. all embeddable pages's resources
@@ -437,6 +470,22 @@ const nextConfig = {
         source: "/:path*/embed",
         // COEP require-corp header is set conditionally when flag.coep is set to true
         headers: [CORP_CROSS_ORIGIN_HEADER],
+      },
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "cal.com",
+          },
+        ],
+        headers: [
+          // make sure to pass full referer URL for booking pages
+          {
+            key: "Referrer-Policy",
+            value: "no-referrer-when-downgrade",
+          },
+        ],
       },
       // These resources loads through embed as well, so they need to have CORP_CROSS_ORIGIN_HEADER
       ...[
@@ -556,7 +605,7 @@ const nextConfig = {
             type: "query",
             key: "callbackUrl",
             // prettier-ignore
-            value: "^(?!https?:\/\/).*$",
+            value: "^(?!https?:\\/\\/).*$",
           },
         ],
         destination: "/404",
@@ -589,11 +638,7 @@ const nextConfig = {
         destination: "/apps/installed/conferencing",
         permanent: true,
       },
-      {
-        source: "/apps/installed",
-        destination: "/apps/installed/calendar",
-        permanent: true,
-      },
+      { source: "/apps/installed", destination: "/apps/installed/calendar", permanent: true },
       {
         source: "/settings/organizations/platform/:path*",
         destination: "/settings/platform",
@@ -649,10 +694,17 @@ const nextConfig = {
 if (!!process.env.NEXT_PUBLIC_SENTRY_DSN) {
   plugins.push((nextConfig) =>
     withSentryConfig(nextConfig, {
-      autoInstrumentServerFunctions: true,
+      autoInstrumentServerFunctions: false,
       hideSourceMaps: true,
       // disable source map generation for the server code
       disableServerWebpackPlugin: !!process.env.SENTRY_DISABLE_SERVER_WEBPACK_PLUGIN,
+      silent: false,
+      sourcemaps: {
+        disable: process.env.SENTRY_DISABLE_SERVER_SOURCE_MAPS === "1",
+      },
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
+      project: process.env.SENTRY_PROJECT,
     })
   );
 }

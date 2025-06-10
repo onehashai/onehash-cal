@@ -2,7 +2,7 @@ export type ZohoAuthCredentials = {
   access_token: string;
   refresh_token: string;
   expires_in: number;
-  server_location: string;
+  domain?: string;
 };
 
 export type FreeBusy = {

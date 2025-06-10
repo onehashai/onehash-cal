@@ -1,7 +1,7 @@
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { Icon, List } from "@calcom/ui";
+import { Icon, List, showToast, Button } from "@calcom/ui";
 
 import { AppConnectionItem } from "../components/AppConnectionItem";
 import { ConnectedCalendarItem } from "../components/ConnectedCalendarItem";
@@ -27,6 +27,23 @@ const ConnectedCalendars = (props: IConnectCalendarsProps) => {
   );
   const disabledNextButton = firstCalendar === undefined;
   const destinationCalendar = queryConnectedCalendars.data?.destinationCalendar;
+
+  const mutation = trpc.viewer.updateProfile.useMutation({
+    onSuccess: async (_data, _context) => {
+      nextStep();
+    },
+    onError: () => {
+      showToast(t("problem_saving_user_profile"), "error");
+    },
+  });
+
+  const handleNextStep = () => {
+    mutation.mutate({
+      metadata: {
+        currentOnboardingStep: "connected-video",
+      },
+    });
+  };
   return (
     <>
       {/* Already connected calendars  */}
@@ -77,18 +94,19 @@ const ConnectedCalendars = (props: IConnectCalendarsProps) => {
 
       {queryIntegrations.isPending && <StepConnectionLoader />}
 
-      <button
+      <Button
         type="button"
         data-testid="save-calendar-button"
         className={classNames(
-          "text-inverted bg-inverted border-inverted mt-8 flex w-full flex-row justify-center rounded-md border p-2 text-center text-sm",
+          "text-inverted bg-inverted border-inverted mt-8 flex w-full flex-row justify-center rounded-md border bg-blue-500 p-2 text-center text-sm hover:bg-blue-600",
           disabledNextButton ? "cursor-not-allowed opacity-20" : ""
         )}
-        onClick={() => nextStep()}
+        onClick={() => handleNextStep()}
+        loading={mutation.isPending}
         disabled={disabledNextButton}>
         {firstCalendar ? `${t("continue")}` : `${t("next_step_text")}`}
         <Icon name="arrow-right" className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
-      </button>
+      </Button>
     </>
   );
 };

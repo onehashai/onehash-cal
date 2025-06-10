@@ -11,14 +11,12 @@ export default class OrganizerAddGuestsEmail extends OrganizerScheduledEmail {
     return {
       icalEvent: generateIcsFile({
         calEvent: this.calEvent,
-        title: this.t("new_guests_added"),
-        subtitle: this.t("emailed_you_and_any_other_attendees"),
         role: GenerateIcsRole.ORGANIZER,
         status: "CONFIRMED",
       }),
       from: `${APP_NAME} <${this.getMailerOptions().from}>`,
       to: toAddresses.join(","),
-      replyTo: [this.calEvent.organizer.email, ...this.calEvent.attendees.map(({ email }) => email)],
+      replyTo: [...this.calEvent.attendees.map(({ email }) => email)],
       subject: `${this.t("guests_added_event_type_subject", {
         eventType: this.calEvent.type,
         name: this.calEvent.attendees[0].name,

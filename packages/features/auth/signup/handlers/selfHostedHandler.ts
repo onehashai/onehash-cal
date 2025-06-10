@@ -8,7 +8,6 @@ import { IS_PREMIUM_USERNAME_ENABLED } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { isUsernameReservedDueToMigration } from "@calcom/lib/server/username";
 import slugify from "@calcom/lib/slugify";
-import { closeComUpsertTeamUser } from "@calcom/lib/sync/SyncServiceManager";
 import { validateAndGetCorrectedUsernameAndEmail } from "@calcom/lib/validateUsername";
 import prisma from "@calcom/prisma";
 import { IdentityProvider } from "@calcom/prisma/enums";
@@ -118,8 +117,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         team,
       });
 
-      closeComUpsertTeamUser(team, user, membership.role);
-
       // Accept any child team invites for orgs.
       if (team.parent) {
         await joinAnyChildTeamOnOrgInvite({
@@ -145,7 +142,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const checkUsername = await checkPremiumUsername(correctedUsername);
       if (checkUsername.premium) {
         res.status(422).json({
-          message: "Sign up from https://cal.com/signup to claim your premium username",
+          message: "Sign up from https://cal.id/signup to claim your premium username",
         });
         return;
       }

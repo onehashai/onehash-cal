@@ -1,7 +1,6 @@
 "use client";
 
 // eslint-disable-next-line no-restricted-imports
-import { noop } from "lodash";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
@@ -56,14 +55,14 @@ export function WizardLayout({
                   </>
                 )}
               </header>
-              <Steps maxSteps={maxSteps} currentStep={currentStep} navigateToStep={noop} />
+              <Steps maxSteps={maxSteps} currentStep={currentStep} disableNavigation />
             </div>
             <StepCard>{children}</StepCard>
           </div>
         </div>
         {isOptionalCallback && (
           <div className="mt-4 flex justify-center">
-            <Button color="minimal" onClick={isOptionalCallback}>
+            <Button data-testid="handle-later-button" color="minimal" onClick={isOptionalCallback}>
               {t("ill_do_this_later")}
             </Button>
           </div>

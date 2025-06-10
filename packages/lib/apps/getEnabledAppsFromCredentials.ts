@@ -60,7 +60,6 @@ const getEnabledAppsFromCredentials = async (
     }
     return reducedArray;
   }, [] as EnabledApp[]);
-
   return filteredApps;
 };
 

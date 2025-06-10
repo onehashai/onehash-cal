@@ -22,16 +22,19 @@ declare namespace NodeJS {
     readonly EMAIL_SERVER_PORT: string | undefined;
     readonly EMAIL_SERVER_USER: string | undefined;
     readonly EMAIL_SERVER_PASSWORD: string | undefined;
-    readonly CRON_API_KEY: string | undefined;
+    readonly CRON_SECRET: string | undefined;
     readonly CRON_ENABLE_APP_SYNC: string | undefined;
     readonly NEXT_PUBLIC_STRIPE_PUBLIC_KEY: string | undefined;
     readonly STRIPE_PRIVATE_KEY: string | undefined;
     readonly STRIPE_CLIENT_ID: string | undefined;
     readonly STRIPE_WEBHOOK_SECRET: string | undefined;
     readonly STRIPE_WEBHOOK_SECRET_APPS: string | undefined;
+    readonly STRIPE_TEAM_PRODUCT_ID: `prod_${string}` | undefined;
     readonly PAYMENT_FEE_PERCENTAGE: number | undefined;
     readonly PAYMENT_FEE_FIXED: number | undefined;
     readonly NEXT_PUBLIC_INTERCOM_APP_ID: string | undefined;
+    readonly NEXT_PUBLIC_POSTHOG_KEY: string | undefined;
+    readonly NEXT_PUBLIC_POSTHOG_HOST: string | undefined;
     readonly TANDEM_CLIENT_ID: string | undefined;
     readonly TANDEM_CLIENT_SECRET: string | undefined;
     readonly TANDEM_BASE_URL: string | undefined;
@@ -58,6 +61,8 @@ declare namespace NodeJS {
     readonly NEXT_PUBLIC_APP_NAME: string | "Cal";
     readonly NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS: string | "help@cal.com";
     readonly NEXT_PUBLIC_COMPANY_NAME: string | "Cal.com, Inc.";
+    readonly NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL: string | undefined;
+    readonly NEXT_PUBLIC_WEBSITE_TERMS_URL: string | undefined;
     /**
      *  "strict" -> Strict CSP
      *  "non-strict" -> Strict CSP except the usage of unsafe-inline for `style-src`

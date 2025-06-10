@@ -2,7 +2,10 @@
 
 import classNames from "classnames";
 import type { InferGetServerSidePropsType } from "next";
+import dynamic from "next/dynamic";
+import Head from "next/head";
 import Link from "next/link";
+import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
 import {
@@ -11,17 +14,21 @@ import {
   useEmbedStyles,
   useIsEmbed,
 } from "@calcom/embed-core/embed-iframe";
-import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { EventTypeDescriptionLazy as EventTypeDescription } from "@calcom/features/eventtypes/components";
 import EmptyPage from "@calcom/features/eventtypes/components/EmptyPage";
+import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { SIGNUP_URL } from "@calcom/lib/constants";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import useTheme from "@calcom/lib/hooks/useTheme";
-import { HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
+import { Button, HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
 
-import { type getServerSideProps } from "./users-public-view.getServerSideProps";
+import type { UserNotFoundProps, UserFoundProps } from "@server/lib/[user]/getServerSideProps";
+import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
-export function UserPage(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const { users, profile, eventTypes, markdownStrippedBio, entity } = props;
+function UserFound(props: UserFoundProps) {
+  const { users, profile, eventTypes, markdownStrippedBio, entity, isOrgSEOIndexable } = props;
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   const [user] = users; //To be used when we only have a single user, not dynamic group
   useTheme(profile.theme);
@@ -48,6 +55,14 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
       telemetry.event(telemetryEventTypes.embedView, collectPageParameters("/[user]"));
     }
   }, [telemetry, router.asPath]); */
+
+  useEffect(() => {
+    if (props.faviconUrl) {
+      const defaultFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+      defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
+    }
+  }, [props.faviconUrl]);
+
   if (entity.considerUnpublished) {
     return (
       <div className="flex h-full min-h-[calc(100dvh)] items-center justify-center">
@@ -58,8 +73,20 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
 
   const isEventListEmpty = eventTypes.length === 0;
   const isOrg = !!user?.profile?.organization;
+
+  const allowSEOIndexing = isOrg
+    ? isOrgSEOIndexable
+      ? profile.allowSEOIndexing
+      : false
+    : profile.allowSEOIndexing;
+
   return (
     <>
+      {props.faviconUrl && (
+        <Head>
+          <link rel="icon" href={props.faviconUrl} type="image/x-icon" />
+        </Head>
+      )}
       <HeadSeo
         origin={getOrgFullOrigin(entity.orgSlug ?? null)}
         title={profile.name}
@@ -68,10 +95,11 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
           title: markdownStrippedBio,
           profile: { name: `${profile.name}`, image: user.avatarUrl || null },
           users: [{ username: `${user.username}`, name: `${user.name}` }],
+          bannerUrl: props.bannerUrl,
         }}
         nextSeoProps={{
-          noindex: !profile.allowSEOIndexing,
-          nofollow: !profile.allowSEOIndexing,
+          noindex: !allowSEOIndexing,
+          nofollow: !allowSEOIndexing,
         }}
       />
 
@@ -111,6 +139,7 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
               <>
                 <div
                   className="  text-subtle break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
+                  // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{ __html: props.safeBio }}
                 />
               </>
@@ -153,10 +182,70 @@ export function UserPage(props: InferGetServerSidePropsType<typeof getServerSide
           </div>
 
           {isEventListEmpty && <EmptyPage name={profile.name || "User"} />}
+          <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+            <PoweredBy logoOnly hideBranding={props.hideBranding} bannerUrl={props.bannerUrl ?? undefined} />
+          </div>
         </main>
         <Toaster position="bottom-right" />
       </div>
     </>
+  );
+}
+
+function UserNotFound(props: UserNotFoundProps) {
+  const { slug } = props;
+  const { t } = useLocale();
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+
+  return (
+    <>
+      <HeadSeo
+        origin={getOrgFullOrigin(null)}
+        title="Oops no one's here"
+        description="Register and claim this Cal ID username before it’s gone!"
+        nextSeoProps={{
+          noindex: true,
+          nofollow: true,
+        }}
+      />
+      <div className="flex min-h-screen flex-col items-center justify-center px-10 md:p-0">
+        <div className="bg-default w-full max-w-xl rounded-lg p-10 text-center shadow-lg">
+          <div className="flex flex-col items-center">
+            <h2 className="mt-4 text-3xl font-semibold text-gray-800">No man’s land - Conquer it today!</h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Claim username <span className="font-semibold">{`'${slug}'`}</span> on{" "}
+              <span className="font-semibold">Cal ID</span> now before someone else does! 🗓️🔥
+            </p>
+          </div>
+
+          <div className="mt-6">
+            <Button color="primary" href={SIGNUP_URL} target="_blank">
+              {t("register_now")}
+            </Button>
+          </div>
+
+          <div className="mt-6 text-base text-gray-500">
+            Or Lost your way? &nbsp;
+            <Link href="/auth/login" className="text-blue-600 hover:underline">
+              Log in to your personal space
+            </Link>
+          </div>
+        </div>
+        <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
+          <PoweredBy logoOnly />
+        </div>
+      </div>
+    </>
+  );
+}
+
+export type UserPageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
+
+function UserPage(props: UserPageProps) {
+  return props.userFound ? (
+    <UserFound {...props.userFound} />
+  ) : (
+    <UserNotFound slug={props.userNotFound?.slug || "User"} />
   );
 }
 

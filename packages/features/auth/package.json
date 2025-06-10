@@ -2,8 +2,8 @@
   "name": "@calcom/feature-auth",
   "sideEffects": false,
   "private": true,
-  "description": "Cal.com's main auth code",
-  "authors": "Cal.com, Inc.",
+  "description": "OneHash's main auth code",
+  "authors": "OneHash, Inc.",
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
@@ -13,6 +13,7 @@
     "@calcom/trpc": "*",
     "@calcom/ui": "*",
     "bcryptjs": "^2.4.3",
+    "dub": "^0.35.0",
     "handlebars": "^4.7.7",
     "jose": "^4.13.1",
     "lru-cache": "^9.0.3",

@@ -14,7 +14,7 @@ import * as twilio from "../lib/reminders/providers/twilioProvider";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const apiKey = req.headers.authorization || req.query.apiKey;
-  if (process.env.CRON_API_KEY !== apiKey) {
+  if (process.env.CRON_SECRET !== apiKey) {
     res.status(401).json({ message: "Not authenticated" });
     return;
   }
@@ -77,6 +77,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const templateFunction = getWhatsappTemplateFunction(reminder.workflowStep.template);
       const message = templateFunction(
         false,
+        reminder.booking.user?.locale || "en",
         reminder.workflowStep.action,
         getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat),
         reminder.booking?.startTime.toISOString() || "",

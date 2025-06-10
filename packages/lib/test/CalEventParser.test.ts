@@ -30,7 +30,7 @@ describe("getLocation", () => {
     expect(getLocation(calEvent)).toEqual(getVideoCallUrlFromCalEvent(calEvent));
   });
   it("should return an integration provider name from event", () => {
-    const provideName = "Cal.com";
+    const provideName = "OneHash";
     const calEvent = buildCalendarEvent({
       videoCallData: undefined,
       location: `integrations:${provideName}`,

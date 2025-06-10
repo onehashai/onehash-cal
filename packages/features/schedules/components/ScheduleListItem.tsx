@@ -96,7 +96,7 @@ export function ScheduleListItem({
           </DropdownMenuTrigger>
           {!isPending && data && (
             <DropdownMenuContent>
-              <DropdownMenuItem className="min-w-40 focus:ring-muted">
+              <DropdownMenuItem className="focus:ring-muted min-w-40">
                 {!schedule.isDefault && (
                   <DropdownItem
                     type="button"
@@ -124,7 +124,7 @@ export function ScheduleListItem({
                   {t("duplicate")}
                 </DropdownItem>
               </DropdownMenuItem>
-              <DropdownMenuItem className="min-w-40 focus:ring-muted">
+              <DropdownMenuItem className="focus:ring-muted min-w-40">
                 <DropdownItem
                   type="button"
                   color="destructive"

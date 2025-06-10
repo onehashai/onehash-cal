@@ -91,7 +91,7 @@ export const OrgAutoInviteEmail = (
         <p style={{ fontWeight: 400, margin: 0 }}>
           <>
             {props.language("have_any_questions")}{" "}
-            <a href="mailto:support@cal.com" style={{ color: "#3E3E3E" }} target="_blank" rel="noreferrer">
+            <a href="mailto:support@onehash.ai" style={{ color: "#3E3E3E" }} target="_blank" rel="noreferrer">
               <>{props.language("contact")}</>
             </a>{" "}
             {props.language("our_support_team")}

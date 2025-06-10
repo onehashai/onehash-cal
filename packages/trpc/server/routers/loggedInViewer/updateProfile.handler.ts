@@ -11,12 +11,11 @@ import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server";
-import { uploadAvatar } from "@calcom/lib/server/avatar";
+import { uploadLogo } from "@calcom/lib/server/avatar";
 import { checkUsername } from "@calcom/lib/server/checkUsername";
 import { updateNewTeamMemberEventTypes } from "@calcom/lib/server/queries";
 import { resizeBase64Image } from "@calcom/lib/server/resizeBase64Image";
 import slugify from "@calcom/lib/slugify";
-import { updateWebUser as syncServicesUpdateWebUser } from "@calcom/lib/sync/SyncServiceManager";
 import { validateBookerLayouts } from "@calcom/lib/validateBookerLayouts";
 import { prisma } from "@calcom/prisma";
 import { userMetadata as userMetadataSchema } from "@calcom/prisma/zod-utils";
@@ -39,6 +38,7 @@ type UpdateProfileOptions = {
 export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions) => {
   const { user } = ctx;
   const userMetadata = handleUserMetadata({ ctx, input });
+
   const locale = input.locale || user.locale;
   const emailVerification = await getFeatureFlag(prisma, "email-verification");
 
@@ -152,9 +152,31 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
 
   // if defined AND a base 64 string, upload and update the avatar URL
   if (input.avatarUrl && input.avatarUrl.startsWith("data:image/png;base64,")) {
-    data.avatarUrl = await uploadAvatar({
-      avatar: await resizeBase64Image(input.avatarUrl),
+    data.avatarUrl = await uploadLogo({
+      logo: await resizeBase64Image(input.avatarUrl),
       userId: user.id,
+    });
+  }
+
+  if (
+    input.bannerUrl &&
+    (input.bannerUrl.startsWith("data:image/png;base64,") || input.bannerUrl == "delete")
+  ) {
+    data.bannerUrl = await uploadLogo({
+      logo: input.bannerUrl == "delete" ? "delete" : await resizeBase64Image(input.bannerUrl),
+      userId: user.id,
+      isBanner: true,
+    });
+  }
+
+  if (
+    input.faviconUrl &&
+    (input.faviconUrl.startsWith("data:image/png;base64,") || input.faviconUrl == "delete")
+  ) {
+    data.faviconUrl = await uploadLogo({
+      logo: input.faviconUrl == "delete" ? "delete" : await resizeBase64Image(input.faviconUrl),
+      userId: user.id,
+      isFavicon: true,
     });
   }
 
@@ -256,6 +278,15 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
     throw e; // make sure other errors are rethrown
   }
 
+  // if (input.hasOwnProperty("name")) {
+  //   const userDetails: WelcomeEmailProps = {
+  //     user: {
+  //       email: updatedUser.email,
+  //       name: updatedUser.name,
+  //     },
+  //   };
+  //   await sendWelcomeUserEmail(userDetails);
+  // }
   if (user.timeZone !== data.timeZone && updatedUser.schedules.length > 0) {
     // on timezone change update timezone of default schedule
     const defaultScheduleId = await getDefaultScheduleId(user.id, prisma);
@@ -281,9 +312,6 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
       },
     });
   }
-
-  // Sync Services
-  await syncServicesUpdateWebUser(updatedUser);
 
   // Notify stripe about the change
   if (updatedUser && updatedUser.metadata && hasKeyInMetadata(updatedUser, "stripeCustomerId")) {

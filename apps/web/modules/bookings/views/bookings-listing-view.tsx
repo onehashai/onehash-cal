@@ -6,19 +6,20 @@ import { z } from "zod";
 
 import { WipeMyCalActionButton } from "@calcom/app-store/wipemycalother/components";
 import dayjs from "@calcom/dayjs";
+import ExportBookingsButton from "@calcom/features/bookings/components/ExportBookingsButton";
 import { FilterToggle } from "@calcom/features/bookings/components/FilterToggle";
 import { FiltersContainer } from "@calcom/features/bookings/components/FiltersContainer";
 import type { filterQuerySchema } from "@calcom/features/bookings/lib/useFilterQuery";
 import { useFilterQuery } from "@calcom/features/bookings/lib/useFilterQuery";
 import Shell from "@calcom/features/shell/Shell";
+import { useInViewObserver } from "@calcom/lib/hooks/useInViewObserver";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import type { HorizontalTabItemProps, VerticalTabItemProps } from "@calcom/ui";
-import { Alert, Button, EmptyScreen, HorizontalTabs } from "@calcom/ui";
+import { Alert, Button, EmptyScreen, HorizontalTabs, showToast } from "@calcom/ui";
 
-import { useInViewObserver } from "@lib/hooks/useInViewObserver";
 import useMeQuery from "@lib/hooks/useMeQuery";
 
 import BookingListItem from "@components/booking/BookingListItem";
@@ -28,6 +29,13 @@ import { validStatuses } from "~/bookings/lib/validStatuses";
 
 type BookingListingStatus = z.infer<NonNullable<typeof filterQuerySchema>>["status"];
 type BookingOutput = RouterOutputs["viewer"]["bookings"]["get"]["bookings"][0];
+type AllBookingOutput = RouterOutputs["viewer"]["bookings"]["getAll"][0];
+type BookingListingByStatusType = "Unconfirmed" | "Cancelled" | "Recurring" | "Upcoming" | "Past";
+type BookingExportType = AllBookingOutput & {
+  type: BookingListingByStatusType;
+  startDate: string;
+  interval: string;
+};
 
 type RecurringInfo = {
   recurringEventId: string | null;
@@ -75,10 +83,12 @@ export default function Bookings() {
   const params = useParamsWithFallback();
   const { data: filterQuery } = useFilterQuery();
   const { status } = params ? querySchema.parse(params) : { status: "upcoming" as const };
-  const { t } = useLocale();
+  const {
+    t,
+    i18n: { language },
+  } = useLocale();
   const user = useMeQuery().data;
   const [isFiltersVisible, setIsFiltersVisible] = useState<boolean>(false);
-
   const query = trpc.viewer.bookings.get.useInfiniteQuery(
     {
       limit: 10,
@@ -88,11 +98,21 @@ export default function Bookings() {
       },
     },
     {
-      // first render has status `undefined`
       enabled: true,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     }
   );
+  // if (!query.isFetching && query.status === "success") {
+  //   console.log(
+  //     "query.data",
+  //     query.data?.pages.map((page) =>
+  //       JSON.stringify({
+  //         bookings: page.bookings,
+  //         recurringInfo: page.recurringInfo,
+  //       })
+  //     )
+  //   );
+  // }
 
   // Animate page (tab) transitions to look smoothing
 
@@ -101,6 +121,140 @@ export default function Bookings() {
       query.fetchNextPage();
     }
   });
+
+  const { status: _status, ...filterQueryWithoutStatus } = filterQuery;
+
+  // Define the mutation first
+  const { mutate: fetchAllBookingsMutation, isPending } = trpc.viewer.bookings.export.useMutation({
+    async onSuccess(response) {
+      showToast(response.message, "success");
+    },
+    onError() {
+      showToast(t("unexpected_error_try_again"), "error");
+    },
+  });
+
+  // const handleExportBookings = (allBookings: AllBookingOutput[]) => {
+  //   const getTypeAndStartDate = (booking) => {
+  //     const endTime = new Date(booking.endTime);
+  //     const isUpcoming = endTime >= new Date();
+  //     let type: BookingListingByStatusType | null;
+  //     let startDate: string;
+
+  //     if (isUpcoming) {
+  //       type =
+  //         booking.status === BookingStatus.PENDING
+  //           ? "Unconfirmed"
+  //           : booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED
+  //           ? "Cancelled"
+  //           : booking.recurringEventId !== null
+  //           ? "Recurring"
+  //           : "Upcoming";
+
+  //       startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("ddd, D MMM");
+  //     } else {
+  //       type =
+  //         booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED
+  //           ? "Cancelled"
+  //           : "Past";
+
+  //       startDate = dayjs(booking.startTime).tz(user?.timeZone).locale(language).format("D MMMM YYYY");
+  //     }
+
+  //     return { type, startDate };
+  //   };
+
+  //   const allBookingsWithType: BookingExportType[] = allBookings.map((booking) => {
+  //     const { type, startDate } = getTypeAndStartDate(booking);
+
+  //     const interval = `${formatTime(booking.startTime, user?.timeFormat, user?.timeZone)} to ${formatTime(
+  //       booking.endTime,
+  //       user?.timeFormat,
+  //       user?.timeZone
+  //     )}`;
+
+  //     return {
+  //       ...booking,
+  //       type,
+  //       startDate: `"${startDate}"`,
+  //       interval,
+  //       description: `"${booking.description}"`,
+  //     };
+  //   });
+
+  //   const header = [
+  //     "ID",
+  //     "Title",
+  //     "Description",
+  //     "Status",
+  //     "Event",
+  //     "Date",
+  //     "Interval",
+  //     "Location",
+  //     "Attendees",
+  //     "Paid",
+  //     "Currency",
+  //     "Amount",
+  //     "Payment Status",
+  //     "Rescheduled",
+  //     "Recurring Event ID",
+  //     "Is Recorded",
+  //   ];
+
+  //   const formatLocation = (location: string | null) => {
+  //     if (location == null) return "N/A";
+  //     const cleanLocation = location.includes("integrations:")
+  //       ? location
+  //           .replace("integrations:", "")
+  //           .split(":")
+  //           .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+  //           .join(" ")
+  //           .trim()
+  //       : location;
+
+  //     return cleanLocation.includes("\n") ? cleanLocation.replace("\n", " ").trim() : cleanLocation;
+  //   };
+
+  //   const csvData = allBookingsWithType.map((booking) => [
+  //     booking.id,
+  //     booking.title,
+  //     booking.description,
+  //     booking.type,
+  //     booking.eventType?.title ?? "",
+  //     booking.startDate,
+  //     booking.interval,
+  //     formatLocation(booking.location),
+  //     booking.attendees.map((attendee) => attendee.email).join(";"),
+  //     booking.paid.toString(),
+  //     booking.payment.map((pay) => pay.currency).join(";"),
+  //     booking.payment.map((pay) => pay.amount / 100).join(";"),
+  //     booking.payment.map((pay) => pay.success).join(";"),
+  //     booking.rescheduled?.toString() ?? "",
+  //     booking.recurringEventId ?? "",
+  //     booking.isRecorded.toString(),
+  //   ]);
+
+  //   const csvContent = [header.join(","), ...csvData.map((row) => row.join(","))].join("\n");
+
+  //   const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`);
+  //   const link = document.createElement("a");
+  //   link.setAttribute("href", encodedUri);
+  //   link.setAttribute("download", "all-bookings.csv");
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
+
+  // Define the export bookings function after the mutation
+
+  const handleOnClickExportBookings = async () => {
+    fetchAllBookingsMutation({
+      filters: {
+        ...filterQueryWithoutStatus,
+      },
+    });
+    return;
+  };
 
   const isEmpty = !query.data?.pages[0]?.bookings.length;
 
@@ -135,7 +289,6 @@ export default function Bookings() {
         recurringInfoToday = page.recurringInfo.find(
           (info) => info.recurringEventId === booking.recurringEventId
         );
-
         return (
           dayjs(booking.startTime).tz(user?.timeZone).format("YYYY-MM-DD") ===
           dayjs().tz(user?.timeZone).format("YYYY-MM-DD")
@@ -151,12 +304,18 @@ export default function Bookings() {
       hideHeadingOnMobile
       heading={t("bookings")}
       subtitle={t("bookings_description")}
-      title="Bookings"
-      description="Create events to share for people to book on your calendar.">
+      title={t("bookings")}
+      description={t("bookings_description")}>
       <div className="flex flex-col">
         <div className="flex flex-row flex-wrap justify-between">
           <HorizontalTabs tabs={tabs} />
-          <FilterToggle setIsFiltersVisible={setIsFiltersVisible} />
+          <div className="flex flex-wrap gap-2">
+            <FilterToggle setIsFiltersVisible={setIsFiltersVisible} />
+            <ExportBookingsButton
+              handleOnClickExportBookings={handleOnClickExportBookings}
+              isLoading={isPending}
+            />
+          </div>
         </div>
         <FiltersContainer isFiltersVisible={isFiltersVisible} />
         <main className="w-full">

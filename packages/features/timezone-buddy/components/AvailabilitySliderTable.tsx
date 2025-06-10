@@ -1,33 +1,40 @@
+"use client";
+
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
+import { getCoreRowModel, getFilteredRowModel, useReactTable } from "@tanstack/react-table";
+import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import dayjs from "@calcom/dayjs";
+import { DataTable, DataTableToolbar } from "@calcom/features/data-table";
 import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
 import type { DateRange } from "@calcom/lib/date-ranges";
+import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import type { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc";
 import type { UserProfile } from "@calcom/types/UserProfile";
-import { Button, ButtonGroup, DataTable, UserAvatar } from "@calcom/ui";
+import { Button, ButtonGroup, UserAvatar, Checkbox, showToast, Icon, Tooltip } from "@calcom/ui";
 
+import { GroupMeetingDialog } from "../../../../apps/web/components/dialog/GroupMeetingDialog";
 import { UpgradeTip } from "../../tips/UpgradeTip";
 import { createTimezoneBuddyStore, TBContext } from "../store";
 import { AvailabilityEditSheet } from "./AvailabilityEditSheet";
+import { CellHighlightContainer } from "./CellHighlightContainer";
 import { TimeDial } from "./TimeDial";
 
 export interface SliderUser {
   id: number;
-  username: string | null;
+  username: string;
   name: string | null;
-  organizationId: number;
-  avatarUrl: string | null;
+  organizationId: number | null;
+  avatarUrl?: string | null;
   email: string;
   timeZone: string;
-  role: MembershipRole;
   defaultScheduleId: number | null;
   dateRanges: DateRange[];
   profile: UserProfile;
+  teamName: string[];
 }
 
 function UpgradeTeamTip() {
@@ -46,7 +53,7 @@ function UpgradeTeamTip() {
             <Button color="primary" href={`${WEBAPP_URL}/settings/teams/new`}>
               {t("create_team")}
             </Button>
-            <Button color="minimal" href="https://go.cal.com/teams-video" target="_blank">
+            <Button color="minimal" href="https://www.onehash.ai/cal" target="_blank">
               {t("learn_more")}
             </Button>
           </ButtonGroup>
@@ -57,31 +64,210 @@ function UpgradeTeamTip() {
   );
 }
 
+const MoreOptions: React.FC<{
+  user: SliderUser;
+  setEditSheetOpen: Dispatch<SetStateAction<boolean>>;
+  setSelectedUser: Dispatch<SetStateAction<SliderUser | null>>;
+}> = ({ user, setEditSheetOpen, setSelectedUser }) => {
+  const [opened, setOpened] = useState<boolean>(false);
+  const { t } = useLocale();
+  return (
+    // <div className="flex gap-2">
+    <div>
+      <Tooltip content={t("view_schedule")}>
+        <Button
+          type="button"
+          variant="icon"
+          color="secondary"
+          onClick={(e) => {
+            setEditSheetOpen(true);
+            setSelectedUser(user);
+            e.stopPropagation();
+          }}
+          className="ltr:radix-state-open:rounded-r-md rtl:radix-state-open:rounded-l-md">
+          <Icon name="calendar" className=" h-6 w-6 dark:text-white" aria-hidden="true" />
+        </Button>
+      </Tooltip>
+    </div>
+    //   {/* <div
+    //     onClick={(e) => {
+    //       e.stopPropagation();
+    //     }}>
+    //     <Dropdown
+    //       // onToggle={setOpened}
+    //       open={opened}
+    //       onOpenChange={(_) => {
+    //         setOpened(!opened);
+    //       }}>
+    //       <DropdownMenuTrigger asChild>
+    //         <div className="flex gap-2">
+    //           <Tooltip content={t("view_membership")}>
+    //             <Button
+    //               type="button"
+    //               variant="icon"
+    //               color="secondary"
+    //               className="ltr:radix-state-open:rounded-r-md rtl:radix-state-open:rounded-l-md">
+    //               <Icon name="users" className=" h-6 w-6 dark:text-white" aria-hidden="true" />
+    //             </Button>
+    //           </Tooltip>
+    //         </div>
+    //       </DropdownMenuTrigger>
+    //       <DropdownMenuContent className="min-w-[200px]">
+    //         {user.teamName.map((item, index) => {
+    //           const _teamName = item.charAt(0).toUpperCase() + item.slice(1);
+    //           return (
+    //             <DropdownMenuItem key={index}>
+    //               <DropdownItem type="button">{_teamName}</DropdownItem>
+    //             </DropdownMenuItem>
+    //           );
+    //         })}
+    //       </DropdownMenuContent>
+    //     </Dropdown>
+    //   </div> */}
+
+    // </div>
+  );
+};
+
 export function AvailabilitySliderTable(props: { userTimeFormat: number | null }) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [browsingDate, setBrowsingDate] = useState(dayjs());
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SliderUser | null>(null);
+  const [searchString, setSearchString] = useState("");
+  const debouncedSearchString = useDebounce(searchString, 500);
+
+  const tbStore = createTimezoneBuddyStore({
+    browsingDate: browsingDate.toDate(),
+  });
 
   const { data, isPending, fetchNextPage, isFetching } = trpc.viewer.availability.listTeam.useInfiniteQuery(
     {
-      limit: 10,
+      limit: 20,
       loggedInUsersTz: dayjs.tz.guess() || "Europe/London",
       startDate: browsingDate.startOf("day").toISOString(),
       endDate: browsingDate.endOf("day").toISOString(),
+      searchString: debouncedSearchString,
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       placeholderData: keepPreviousData,
     }
   );
+  // Assuming `data` is defined and has the appropriate structure
+  // Assuming `data` is defined and has the appropriate structure
+  const [flatData, totalFetched] = useMemo(() => {
+    const userMap = new Map<string, SliderUser>();
+
+    // Collect the original data to calculate totalFetched
+    const originalData = data?.pages?.flatMap((page) => page.rows) ?? [];
+    const totalFetched = originalData.length;
+
+    originalData.forEach((user) => {
+      if (userMap.has(user.username)) {
+        const existingUser = userMap.get(user.username) as SliderUser;
+        existingUser.teamName.push(user.teamName);
+      } else {
+        userMap.set(user.username, {
+          ...user,
+          teamName: [user.teamName],
+        });
+      }
+    });
+
+    // Return the merged users and totalFetched as an array
+    return [Array.from(userMap.values()), totalFetched] as [SliderUser[], number];
+  }, [data]);
+
+  const totalDBRowCount = data?.pages?.[0]?.meta?.totalRowCount ?? 0;
+
+  //TEAM MEMBER MEETING SCHEDULING LOGIC
+  // const [isMemberSelectEnabled, setIsMemberSelectEnabled] = useState<boolean>(false);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const handleSelectAll = useCallback(
+    (selected: boolean) => {
+      if (selected) {
+        const allUsernames = flatData.map((user) => user.username);
+        setSelectedMembers(allUsernames);
+      } else {
+        setSelectedMembers([]);
+      }
+    },
+    [flatData]
+  );
+
+  const handleSelectMember = (username: string) => {
+    setSelectedMembers((prevSelected) =>
+      prevSelected.includes(username)
+        ? prevSelected.filter((member) => member !== username)
+        : [...prevSelected, username]
+    );
+  };
+  const [meetingUrl, setMeetingUrl] = useState<string>("");
+  const [isOpenDialog, setIsOpenDialog] = useState<boolean>(false);
+
+  const handleBookMembers = () => {
+    if (selectedMembers.length == 0) {
+      showToast("Please select atleast one member", "error");
+      return;
+    }
+    const url = `${WEBAPP_URL}/${selectedMembers.join("+")}`;
+    setMeetingUrl(url);
+    setIsOpenDialog(true);
+    // const openCalendar = () => {
+    //   // Dimensions and other properties of the popup window
+    //   const width = 800;
+    //   const height = 600;
+    //   const left = (window.innerWidth - width) / 2;
+    //   const top = (window.innerHeight - height) / 2;
+    //   const options = `width=${width},height=${height},left=${left},top=${top},resizable,scrollbars=yes,status=1`;
+
+    //   const url = `${WEBAPP_URL}/${selectedMembers.join("+")}`;
+    //   console.log(`url: ${url}`);
+    //   window.open(url, "_blank", options);
+    // };
+
+    // openCalendar();
+  };
 
   const memorisedColumns = useMemo(() => {
-    const cols: ColumnDef<SliderUser>[] = [
+    const cols: ColumnDef<SliderUser>[] = [];
+
+    // if (isMemberSelectEnabled) {
+    cols.push({
+      id: "select",
+      size: 40,
+      header: ({ table }) => {
+        return (
+          <div className="max-w-32">
+            <Checkbox
+              checked={table.getIsAllPageRowsSelected()}
+              onCheckedChange={(value) => {
+                handleSelectAll(!!value);
+                table.toggleAllPageRowsSelected(!!value);
+              }}
+              aria-label="Select all"
+              className="translate-y-[2px]"
+            />
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        return (
+          <div className="max-w-32">
+            <Checkbox checked={row.getIsSelected()} aria-label="Select row" className="translate-y-[2px]" />
+          </div>
+        );
+      },
+    });
+    // }
+
+    cols.push(
       {
         id: "member",
-        accessorFn: (data) => data.email,
+        accessorFn: (data) => data.username,
         header: "Member",
+        size: 250,
         cell: ({ row }) => {
           const { username, email, timeZone, name, avatarUrl, profile } = row.original;
           return (
@@ -91,8 +277,8 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
                 user={{
                   username,
                   name,
-                  avatarUrl,
-                  profile,
+                  avatarUrl: avatarUrl ?? null,
+                  profile: profile,
                 }}
               />
               <div className="">
@@ -104,11 +290,31 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
             </div>
           );
         },
+        filterFn: (row, id, value) => {
+          return row.original.username?.toLowerCase().includes(value.toLowerCase()) || false;
+        },
+      },
+      {
+        id: "memberships",
+        accessorFn: (data) => data.teamName,
+        header: "More",
+        size: 100,
+        cell: ({ row }) => {
+          // const { teamName } = row.original;
+          return (
+            <MoreOptions
+              user={row.original}
+              setEditSheetOpen={setEditSheetOpen}
+              setSelectedUser={setSelectedUser}
+            />
+          );
+        },
       },
       {
         id: "timezone",
         accessorFn: (data) => data.timeZone,
         header: "Timezone",
+        size: 160,
         cell: ({ row }) => {
           const { timeZone } = row.original;
           const timeRaw = dayjs().tz(timeZone);
@@ -130,9 +336,12 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
       },
       {
         id: "slider",
+        meta: {
+          autoWidth: true,
+        },
         header: () => {
           return (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center space-x-2">
               <ButtonGroup containerProps={{ className: "space-x-0" }}>
                 <Button
                   color="minimal"
@@ -153,19 +362,13 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
         },
         cell: ({ row }) => {
           const { timeZone, dateRanges } = row.original;
-          // return <pre>{JSON.stringify(dateRanges, null, 2)}</pre>;
           return <TimeDial timezone={timeZone} dateRanges={dateRanges} />;
         },
-      },
-    ];
+      }
+    );
 
     return cols;
-  }, [browsingDate]);
-
-  //we must flatten the array of arrays from the useInfiniteQuery hook
-  const flatData = useMemo(() => data?.pages?.flatMap((page) => page.rows) ?? [], [data]) as SliderUser[];
-  const totalDBRowCount = data?.pages?.[0]?.meta?.totalRowCount ?? 0;
-  const totalFetched = flatData.length;
+  }, [browsingDate, handleSelectAll]);
 
   //called on scroll and possibly on mount to fetch more data as the user scrolls and reaches bottom of table
   const fetchMoreOnBottomReached = useCallback(
@@ -185,8 +388,15 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
     fetchMoreOnBottomReached(tableContainerRef.current);
   }, [fetchMoreOnBottomReached]);
 
+  const { t } = useLocale();
+  const table = useReactTable({
+    data: flatData,
+    columns: memorisedColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
   // This means they are not apart of any teams so we show the upgrade tip
-  if (!flatData.length) return <UpgradeTeamTip />;
+  if (!flatData.length && !data?.pages?.[0]?.meta?.isApartOfAnyTeam) return <UpgradeTeamTip />;
 
   return (
     <TBContext.Provider
@@ -194,22 +404,29 @@ export function AvailabilitySliderTable(props: { userTimeFormat: number | null }
         browsingDate: browsingDate.toDate(),
       })}>
       <>
-        <div className="relative -mx-2 w-[calc(100%+16px)] overflow-x-scroll px-2 lg:-mx-6 lg:w-[calc(100%+48px)] lg:px-6">
+        <GroupMeetingDialog isOpenDialog={isOpenDialog} setIsOpenDialog={setIsOpenDialog} link={meetingUrl} />
+
+        <CellHighlightContainer>
           <DataTable
-            variant="compact"
-            searchKey="member"
+            table={table}
             tableContainerRef={tableContainerRef}
-            columns={memorisedColumns}
             onRowMouseclick={(row) => {
-              setEditSheetOpen(true);
-              setSelectedUser(row.original);
+              const { username } = row.original;
+              handleSelectMember(username);
+              row.toggleSelected();
             }}
-            data={flatData}
             isPending={isPending}
-            // tableOverlay={<HoverOverview />}
-            onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}
-          />
-        </div>
+            onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}>
+            <DataTableToolbar.Root>
+              <div className=" flex">
+                <DataTableToolbar.SearchBar table={table} onSearch={(value) => setSearchString(value)} />
+                <DataTableToolbar.CTA type="button" color="primary" onClick={handleBookMembers}>
+                  {t("book_members")}
+                </DataTableToolbar.CTA>
+              </div>
+            </DataTableToolbar.Root>
+          </DataTable>
+        </CellHighlightContainer>
         {selectedUser && editSheetOpen ? (
           <AvailabilityEditSheet
             open={editSheetOpen}

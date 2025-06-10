@@ -25,22 +25,33 @@ async function getTeamMembers({
   teamIds,
   cursor,
   limit,
+  searchString,
 }: {
   teamId?: number;
   organizationId: number | null;
   teamIds?: number[];
   cursor: number | null | undefined;
   limit: number;
+  searchString?: string | null;
 }) {
   const memberships = await prisma.membership.findMany({
     where: {
       teamId: {
         in: teamId ? [teamId] : teamIds,
       },
+      ...(searchString
+        ? {
+            OR: [
+              { user: { username: { contains: searchString } } },
+              { user: { name: { contains: searchString } } },
+              { user: { email: { contains: searchString } } },
+            ],
+          }
+        : {}),
     },
     select: {
       id: true,
-      role: true,
+
       user: {
         select: {
           avatarUrl: true,
@@ -53,14 +64,49 @@ async function getTeamMembers({
           defaultScheduleId: true,
         },
       },
+      team: {
+        select: {
+          name: true,
+        },
+      },
     },
     cursor: cursor ? { id: cursor } : undefined,
     take: limit + 1, // We take +1 as itll be used for the next cursor
     orderBy: {
       id: "asc",
     },
-    distinct: ["userId"],
   });
+
+  // // Merge memberships by user.username and join team names
+  // const mergedMemberships = memberships.reduce((acc, membership) => {
+  //   const username = membership.user.username;
+
+  //   // Ensure username is defined and not null
+  //   if (username) {
+  //     if (!acc[username]) {
+  //       acc[username] = {
+  //         user: { ...membership.user },
+  //         teamNames: new Set([membership.team.name]),
+  //         id: membership.id,
+  //       };
+  //     } else {
+  //       acc[username].teamNames.add(membership.team.name);
+  //       //overidding id to support pagination
+  //       acc[username].id = membership.id;
+  //     }
+  //   }
+
+  //   return acc;
+  // }, {} as Record<string, { user: any; teamNames: Set<string>; id: number }>);
+
+  // // Convert to the desired format
+  // const result = Object.values(mergedMemberships).map(({ user, teamNames, id }) => ({
+  //   id,
+  //   user,
+  //   team: { name: Array.from(teamNames) },
+  // }));
+
+  // Now, `result` contains the merged memberships in the desired format
 
   const membershipWithUserProfile = [];
   for (const membership of memberships) {
@@ -83,12 +129,13 @@ async function buildMember(member: Member, dateFrom: Dayjs, dateTo: Dayjs) {
       id: member.user.id,
       organizationId: member.user.profile?.organizationId ?? null,
       name: member.user.name,
-      username: member.user.username,
+      username: member.user.username as string,
       email: member.user.email,
       timeZone: member.user.timeZone,
-      role: member.role,
       defaultScheduleId: -1,
       dateRanges: [] as DateRange[],
+      teamName: member.team.name,
+      profile: member.user.profile,
     };
   }
 
@@ -114,27 +161,36 @@ async function buildMember(member: Member, dateFrom: Dayjs, dateTo: Dayjs) {
 
   return {
     id: member.user.id,
-    username: member.user.username,
+    username: member.user.username as string,
     email: member.user.email,
     avatarUrl: member.user.avatarUrl,
     profile: member.user.profile,
     organizationId: member.user.profile?.organizationId,
     name: member.user.name,
     timeZone,
-    role: member.role,
     defaultScheduleId: member.user.defaultScheduleId ?? -1,
     dateRanges,
+    teamName: member.team.name,
   };
 }
 
 async function getInfoForAllTeams({ ctx, input }: GetOptions) {
-  const { cursor, limit } = input;
+  const { cursor, limit, searchString } = input;
 
   // Get all teamIds for the user
   const teamIds = await prisma.membership
     .findMany({
       where: {
         userId: ctx.user.id,
+        ...(searchString
+          ? {
+              OR: [
+                { user: { username: { contains: searchString } } },
+                { user: { name: { contains: searchString } } },
+                { user: { email: { contains: searchString } } },
+              ],
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -152,6 +208,7 @@ async function getInfoForAllTeams({ ctx, input }: GetOptions) {
     organizationId: ctx.user.organizationId,
     cursor,
     limit,
+    searchString,
   });
 
   // Get total team count across all teams the user is in (for pagination)
@@ -169,12 +226,11 @@ async function getInfoForAllTeams({ ctx, input }: GetOptions) {
 }
 
 export const listTeamAvailabilityHandler = async ({ ctx, input }: GetOptions) => {
-  const { cursor, limit } = input;
+  const { cursor, limit, searchString } = input;
   const teamId = input.teamId || ctx.user.organizationId;
 
   let teamMembers: Member[] = [];
   let totalTeamMembers = 0;
-
   if (!teamId) {
     // Get all users TODO:
     const teamAllInfo = await getInfoForAllTeams({ ctx, input });
@@ -198,6 +254,15 @@ export const listTeamAvailabilityHandler = async ({ ctx, input }: GetOptions) =>
       totalTeamMembers = await prisma.membership.count({
         where: {
           teamId: teamId,
+          ...(searchString
+            ? {
+                OR: [
+                  { user: { username: { contains: searchString } } },
+                  { user: { name: { contains: searchString } } },
+                  { user: { email: { contains: searchString } } },
+                ],
+              }
+            : {}),
         },
       });
 
@@ -207,6 +272,7 @@ export const listTeamAvailabilityHandler = async ({ ctx, input }: GetOptions) =>
         cursor,
         limit,
         organizationId: ctx.user.organizationId,
+        searchString,
       });
     }
   }
@@ -224,11 +290,26 @@ export const listTeamAvailabilityHandler = async ({ ctx, input }: GetOptions) =>
 
   const members = await Promise.all(buildMembers);
 
+  let belongsToTeam = true;
+
+  if (totalTeamMembers === 0) {
+    const membership = await prisma.membership.findFirst({
+      where: {
+        userId: ctx.user.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+    belongsToTeam = !!membership;
+  }
+
   return {
     rows: members || [],
     nextCursor,
     meta: {
       totalRowCount: totalTeamMembers,
+      isApartOfAnyTeam: belongsToTeam,
     },
   };
 };

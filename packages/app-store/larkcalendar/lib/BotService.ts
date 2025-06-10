@@ -7,18 +7,18 @@ const log = logger.getSubLogger({ prefix: [`[[LarkTenantCredential]`] });
 
 const msg = {
   en_us: {
-    title: "Welcome to Cal.com!",
+    title: "Welcome to OneHash!",
     content: [
       [
         {
           tag: "text",
-          text: "Cal.com is an open source scheduling infrastructure.",
+          text: "OneHash is an open source scheduling infrastructure.",
         },
       ],
       [
         {
           tag: "text",
-          text: 'It allows users to send a unique "cal.com" URL that allows anyone to create bookings on their calendars',
+          text: 'It allows users to send a unique "OneHash" URL that allows anyone to create bookings on their calendars',
         },
       ],
       [
@@ -36,7 +36,7 @@ const msg = {
       [
         {
           tag: "text",
-          text: "1. Visit https://cal.com and sign up for an account.",
+          text: "1. Visit https://cal.onehash.ai and sign up for an account.",
         },
       ],
       [

@@ -316,7 +316,7 @@ export const useIsEmbed = (embedSsr?: boolean) => {
     const _isValidNamespace = isValidNamespace(namespace);
     if (parent !== window && !_isValidNamespace) {
       log(
-        "Looks like you have iframed cal.com but not using Embed Snippet. Directly using an iframe isn't recommended."
+        "Looks like you have iframed OneHash but not using Embed Snippet. Directly using an iframe isn't recommended."
       );
     }
     setIsEmbed(window?.isEmbed?.() || false);
@@ -345,7 +345,7 @@ const methods = {
 
     if (stylesConfig) {
       console.warn(
-        "Cal.com Embed: `styles` prop is deprecated. Use `cssVarsPerTheme` instead to achieve the same effect. Here is a list of CSS variables that are supported. https://github.com/calcom/cal.com/blob/main/packages/config/tailwind-preset.js#L19"
+        "OneHash Embed: `styles` prop is deprecated. Use `cssVarsPerTheme` instead to achieve the same effect. Here is a list of CSS variables that are supported. https://github.com/calcom/cal.com/blob/main/packages/config/tailwind-preset.js#L19"
       );
     }
 
@@ -554,6 +554,7 @@ function main() {
       document.getElementsByTagName("main")[0] ||
       document.documentElement;
     if (e.target.contains(mainElement)) {
+      // Because the iframe can take the entire width but the actual content could still be smaller and everything beyond that would be considered backdrop
       sdkActionManager?.fire("__closeIframe", {});
     }
   });

@@ -42,7 +42,7 @@
 
 <!-- ABOUT THE PROJECT -->
 
-## About the Project
+## About The Project
 
 <img width="100%" alt="booking-screen" src="https://github.com/calcom/cal.com/assets/8019099/407e727e-ff19-4ca4-bcae-049dca05cf02">
 
@@ -108,13 +108,11 @@ To get a local copy up and running, please follow these simple steps.
 
 ### Prerequisites
 
-Here is what you need to be able to run Cal.com.
+Here is what you need to be able to run Cal.
 
 - Node.js (Version: >=18.x)
 - PostgreSQL (Version: >=13.x)
 - Yarn _(recommended)_
-
-> If you want to enable any of the available integrations, you may want to obtain additional credentials for each one. More details on this can be found below under the [integrations section](#integrations).
 
 ## Development
 
@@ -138,8 +136,10 @@ Here is what you need to be able to run Cal.com.
 3. Install packages with yarn
 
    ```sh
-   yarn
+   sudo yarn
    ```
+
+   Note: Incorrect node version may cause issues in running yarn.
 
 4. Set up your `.env` file
 
@@ -164,8 +164,8 @@ Here is what you need to be able to run Cal.com.
 
 #### Quick start with `yarn dx`
 
-> - **Requires Docker and Docker Compose to be installed**
-> - Will start a local Postgres instance with a few test users - the credentials will be logged in the console
+    > - **Requires Docker and Docker Compose to be installed**
+    > - Will start a local Postgres instance with a few test users - the credentials will be logged in the console
 
 ```sh
 yarn dx
@@ -173,11 +173,29 @@ yarn dx
 
 #### Development tip
 
-> Add `NEXT_PUBLIC_DEBUG=1` anywhere in your `.env` to get logging information for all the queries and mutations driven by **tRPC**.
+Add `NEXT_PUBLIC_LOGGER_LEVEL={level}` to your .env file to control the logging verbosity for all tRPC queries and mutations.\
+Where {level} can be one of the following:
+
+`0` for silly \
+`1` for trace \
+`2` for debug \
+`3` for info \
+`4` for warn \
+`5` for error \
+`6` for fatal
+
+When you set `NEXT_PUBLIC_LOGGER_LEVEL={level}` in your .env file, it enables logging at that level and higher. Here's how it works:
+
+The logger will include all logs that are at the specified level or higher. For example: \
+
+- If you set `NEXT_PUBLIC_LOGGER_LEVEL=2`, it will log from level 2 (debug) upwards, meaning levels 2 (debug), 3 (info), 4 (warn), 5 (error), and (fatal) will be logged. \
+- If you set `NEXT_PUBLIC_LOGGER_LEVEL=3`, it will log from level 3 (info) upwards, meaning levels 3 (info), 4 (warn), 5 (error), and 6 (fatal) will be logged, but level 2 (debug) and level 1 (trace) will be ignored. \
 
 ```sh
-echo 'NEXT_PUBLIC_DEBUG=1' >> .env
+echo 'NEXT_PUBLIC_LOGGER_LEVEL=3' >> .env
 ```
+
+for Logger level to be set at info, for example.
 
 #### Gitpod Setup
 
@@ -372,7 +390,7 @@ You can deploy Cal.com on [Railway](https://railway.app) using the button above.
 
 Currently Vercel Pro Plan is required to be able to Deploy this application with Vercel, due to limitations on the number of serverless functions on the free plan.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcalcom%2Fcal.com&env=DATABASE_URL,NEXT_PUBLIC_WEBAPP_URL,NEXTAUTH_URL,NEXTAUTH_SECRET,CRON_API_KEY,CALENDSO_ENCRYPTION_KEY&envDescription=See%20all%20available%20env%20vars&envLink=https%3A%2F%2Fgithub.com%2Fcalcom%2Fcal.com%2Fblob%2Fmain%2F.env.example&project-name=cal&repo-name=cal.com&build-command=cd%20../..%20%26%26%20yarn%20build&root-directory=apps%2Fweb%2F)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcalcom%2Fcal.com&env=DATABASE_URL,NEXT_PUBLIC_WEBAPP_URL,NEXTAUTH_URL,NEXTAUTH_SECRET,CRON_SECRET,CALENDSO_ENCRYPTION_KEY&envDescription=See%20all%20available%20env%20vars&envLink=https%3A%2F%2Fgithub.com%2Fcalcom%2Fcal.com%2Fblob%2Fmain%2F.env.example&project-name=cal&repo-name=cal.com&build-command=cd%20../..%20%26%26%20yarn%20build&root-directory=apps%2Fweb%2F)
 
 ### Render
 
@@ -399,25 +417,25 @@ Cal.com, Inc. is a commercial open source company, which means some parts of thi
 > [!NOTE]  
 > Our philosophy is simple, all "Singleplayer APIs" are open-source under AGPLv3. All commercial "Multiplayer APIs" are under a commercial license.
 
-|   | AGPLv3  | EE  | 
-|---|---|---|
-| Self-host for commercial purposes	  | ✅  |  ✅ |
-| Clone privately  | ✅  | ✅  |
-| Fork publicly  | ✅  | ✅ |
-| Requires CLA  |  ✅ | ✅  |
-| Official Support| ❌ | ✅ |
-| Derivative work privately | ❌  | ✅ |
-| SSO | ❌  | ✅ |
-| Admin Panel | ❌  | ✅ |
-| Impersonation | ❌  | ✅ |
-| Managed Event Types | ❌  | ✅ |
-| Organizations | ❌  | ✅ |
-| Payments | ❌  | ✅ |
-| Platform | ❌  | ✅ |
-| Teams | ❌  | ✅ |
-| Users | ❌  | ✅ |
-| Video | ❌  | ✅ |
-| Workflows | ❌  | ✅ |
+|                                   | AGPLv3 | EE  |
+| --------------------------------- | ------ | --- |
+| Self-host for commercial purposes | ✅     | ✅  |
+| Clone privately                   | ✅     | ✅  |
+| Fork publicly                     | ✅     | ✅  |
+| Requires CLA                      | ✅     | ✅  |
+|  Official Support                 | ❌     | ✅  |
+| Derivative work privately         | ❌     | ✅  |
+|  SSO                              | ❌     | ✅  |
+| Admin Panel                       | ❌     | ✅  |
+| Impersonation                     | ❌     | ✅  |
+| Managed Event Types               | ❌     | ✅  |
+| Organizations                     | ❌     | ✅  |
+| Payments                          | ❌     | ✅  |
+| Platform                          | ❌     | ✅  |
+| Teams                             | ❌     | ✅  |
+| Users                             | ❌     | ✅  |
+| Video                             | ❌     | ✅  |
+| Workflows                         | ❌     | ✅  |
 
 > [!TIP]
 > We work closely with the community and always invite feedback about what should be open and what is fine to be commercial. This list is not set and stone and we have moved things from commercial to open in the past. Please open a [discussion](https://github.com/calcom/cal.com/discussions) if you feel like something is wrong.
@@ -513,17 +531,18 @@ following
 
 1. Open [Zoom Marketplace](https://marketplace.zoom.us/) and sign in with your Zoom account.
 2. On the upper right, click "Develop" => "Build App".
-3. On "OAuth", select "Create".
+3. Select "General App" , click "Create".
 4. Name your App.
-5. Choose "User-managed app" as the app type.
-6. De-select the option to publish the app on the Zoom App Marketplace.
-7. Click "Create".
-8. Now copy the Client ID and Client Secret to your `.env` file into the `ZOOM_CLIENT_ID` and `ZOOM_CLIENT_SECRET` fields.
-9. Set the Redirect URL for OAuth `<Cal.com URL>/api/integrations/zoomvideo/callback` replacing Cal.com URL with the URI at which your application runs.
-10. Also add the redirect URL given above as an allow list URL and enable "Subdomain check". Make sure, it says "saved" below the form.
-11. You don't need to provide basic information about your app. Instead click on "Scopes" and then on "+ Add Scopes". On the left, click the category "Meeting" and check the scope `meeting:write`.
-12. Click "Done".
-13. You're good to go. Now you can easily add your Zoom integration in the Cal.com settings.
+5. Choose "User-managed app" for "Select how the app is managed".
+6. De-select the option to publish the app on the Zoom App Marketplace, if asked.
+7. Now copy the Client ID and Client Secret to your `.env` file into the `ZOOM_CLIENT_ID` and `ZOOM_CLIENT_SECRET` fields.
+8. Set the "OAuth Redirect URL" under "OAuth Information" as `<Cal.com URL>/api/integrations/zoomvideo/callback` replacing Cal.com URL with the URI at which your application runs.
+9. Also add the redirect URL given above as an allow list URL and enable "Subdomain check". Make sure, it says "saved" below the form.
+10. You don't need to provide basic information about your app. Instead click on "Scopes" and then on "+ Add Scopes". On the left,
+    1. click the category "Meeting" and check the scope `meeting:write:meeting`.
+    2. click the category "User" and check the scope `user:read:settings`.
+11. Click "Done".
+12. You're good to go. Now you can easily add your Zoom integration in the Cal.com settings.
 
 ### Obtaining Daily API Credentials
 
@@ -542,7 +561,7 @@ following
 5. Set the Redirect URL for OAuth `<Cal.com URL>/api/integrations/basecamp3/callback` replacing Cal.com URL with the URI at which your application runs.
 6. Click on done and copy the Client ID and secret into the `BASECAMP3_CLIENT_ID` and `BASECAMP3_CLIENT_SECRET` fields.
 7. Set the `BASECAMP3_CLIENT_SECRET` env variable to `{your_domain} ({support_email})`.
-   For example, `Cal.com (support@cal.com)`.
+   For example, `Cal.com (support@onehash.ai)`.
 
 ### Obtaining HubSpot Client ID and Secret
 

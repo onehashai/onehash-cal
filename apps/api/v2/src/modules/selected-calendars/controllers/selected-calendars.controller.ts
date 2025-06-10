@@ -23,7 +23,7 @@ import { SUCCESS_STATUS } from "@calcom/platform-constants";
   path: "/v2/selected-calendars",
   version: API_VERSIONS_VALUES,
 })
-@DocsTags("Selected-Calendars")
+@DocsTags("Selected Calendars")
 export class SelectedCalendarsController {
   constructor(
     private readonly calendarsRepository: CalendarsRepository,

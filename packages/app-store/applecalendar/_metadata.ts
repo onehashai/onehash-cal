@@ -12,10 +12,10 @@ export const metadata = {
   categories: ["calendar"],
   category: "calendar",
   logo: "icon.svg",
-  publisher: "Cal.com",
+  publisher: "OneHash",
   slug: "apple-calendar",
-  url: "https://cal.com/",
-  email: "help@cal.com",
+  url: "https://www.onehash.ai",
+  email: "support@onehash.ai",
   dirName: "applecalendar",
   isOAuth: false,
 } as AppMeta;

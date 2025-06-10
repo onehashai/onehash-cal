@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { resizeBase64Image } from "@calcom/lib/server/resizeBase64Image";
 import slugify from "@calcom/lib/slugify";
+import { intervalLimitsType } from "@calcom/prisma/zod-utils";
 
 export const ZUpdateInputSchema = z.object({
   id: z.number(),
@@ -22,6 +23,10 @@ export const ZUpdateInputSchema = z.object({
   brandColor: z.string().optional(),
   darkBrandColor: z.string().optional(),
   theme: z.string().optional().nullable(),
+  bookingLimits: intervalLimitsType.optional(),
+  includeManagedEventsInLimits: z.boolean().optional(),
+  bannerUrl: z.string().nullable().optional(),
+  faviconUrl: z.string().nullable().optional(),
 });
 
 export type TUpdateInputSchema = z.infer<typeof ZUpdateInputSchema>;

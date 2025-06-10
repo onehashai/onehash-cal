@@ -6,7 +6,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { TRPCClientErrorLike } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import type { AppRouter } from "@calcom/trpc/server/routers/_app";
-import { Button, Form, Icon } from "@calcom/ui";
+import { Button, Form, Icon, showToast } from "@calcom/ui";
 
 interface ISetupAvailabilityProps {
   nextStep: () => void;
@@ -33,16 +33,34 @@ const SetupAvailability = (props: ISetupAvailabilityProps) => {
     },
   });
 
+  const mutation = trpc.viewer.updateProfile.useMutation({
+    onSuccess: async (_data, _context) => {
+      nextStep();
+    },
+    onError: () => {
+      showToast(t("problem_saving_user_profile"), "error");
+    },
+  });
+
+  const handleNextStep = () => {
+    mutation.mutate({
+      metadata: {
+        currentOnboardingStep: "user-profile",
+      },
+    });
+  };
+
   const mutationOptions = {
     onError: (error: TRPCClientErrorLike<AppRouter>) => {
       throw new Error(error.message);
     },
     onSuccess: () => {
-      nextStep();
+      handleNextStep();
     },
   };
   const createSchedule = trpc.viewer.availability.schedule.create.useMutation(mutationOptions);
   const updateSchedule = trpc.viewer.availability.schedule.update.useMutation(mutationOptions);
+
   return (
     <Form
       form={availabilityForm}

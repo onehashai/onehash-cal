@@ -4,7 +4,7 @@ import type { Payment, Prisma, PaymentOption, Booking } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 import "vitest-fetch-mock";
 
-import { sendAwaitingPaymentEmail } from "@calcom/emails";
+import { sendAwaitingPaymentEmailAndSMS } from "@calcom/emails";
 import logger from "@calcom/lib/logger";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 import type { IAbstractPaymentService } from "@calcom/types/PaymentService";
@@ -21,21 +21,38 @@ export function getMockPaymentService() {
   class MockPaymentService implements IAbstractPaymentService {
     // TODO: We shouldn't need to implement adding a row to Payment table but that's a requirement right now.
     // We should actually delegate table creation to the core app. Here, only the payment app specific logic should come
-    async create(
-      payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-      bookingId: Booking["id"],
-      userId: Booking["userId"],
-      username: string | null,
-      bookerName: string | null,
-      bookerEmail: string,
-      paymentOption: PaymentOption
-    ) {
+    async create({
+      payment,
+      bookingId,
+      userId,
+      username,
+      bookerName,
+      paymentOption,
+      bookingUid,
+      bookerEmail,
+      bookerPhoneNumber,
+      eventTitle,
+      bookingTitle,
+      responses,
+    }: {
+      payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+      bookingId: Booking["id"];
+      userId: Booking["userId"];
+      username: string | null;
+      bookerName: string;
+      paymentOption: PaymentOption;
+      bookingUid: string;
+      bookerEmail: string;
+      bookerPhoneNumber?: string | null;
+      eventTitle?: string;
+      bookingTitle?: string;
+      responses?: Prisma.JsonValue;
+    }): Promise<Payment> {
       const paymentCreateData = {
         id: 1,
         uid: paymentUid,
         appId: null,
         bookingId,
-        // booking       Booking?       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
         fee: 10,
         success: true,
         refunded: false,
@@ -64,7 +81,7 @@ export function getMockPaymentService() {
       paymentData: Payment
     ): Promise<void> {
       // TODO: App implementing PaymentService is supposed to send email by itself at the moment.
-      await sendAwaitingPaymentEmail({
+      await sendAwaitingPaymentEmailAndSMS({
         ...event,
         paymentInfo: {
           link: createPaymentLink(/*{

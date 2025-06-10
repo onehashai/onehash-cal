@@ -2,7 +2,7 @@
 
 # .env file
 .env
-!packages/prisma/.env
+packages/prisma/.env
 
 # dependencies
 node_modules
@@ -50,7 +50,6 @@ yarn-error.log*
 
 ### VisualStudioCode template
 .vscode/*
-!.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
@@ -68,6 +67,7 @@ tsconfig.tsbuildinfo
 # Prisma generated files
 packages/prisma/zod/*.ts
 packages/prisma/enums
+packages/prisma/.env
 
 # Builds
 dist
@@ -97,5 +97,8 @@ apps/auth
 !.yarn/sdks
 !.yarn/versions
 
+
+**/.secrets
+
+
 packages/features/oe/similarity.md
-.secrets

@@ -59,8 +59,7 @@ export const teamsAndUserProfilesQuery = async ({ ctx, input }: TeamsAndUserProf
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
   }
 
-  let teamsData;
-
+  let teamsData = [];
   if (input?.includeOrg) {
     teamsData = user.teams.map((membership) => ({
       ...membership,

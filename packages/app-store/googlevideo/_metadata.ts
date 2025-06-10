@@ -14,10 +14,10 @@ export const metadata = {
   title: "Google Meet",
   variant: "conferencing",
   logo: "logo.webp",
-  publisher: "Cal.com",
-  url: "https://cal.com/",
+  publisher: "OneHash",
+  url: "https://www.onehash.ai",
   isGlobal: false,
-  email: "help@cal.com",
+  email: "support@onehash.ai",
   appData: {
     location: {
       linkType: "dynamic",

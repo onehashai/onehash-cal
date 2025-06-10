@@ -8,7 +8,6 @@ import prisma from "@calcom/prisma";
 import getAppKeysFromSlug from "../../_utils/getAppKeysFromSlug";
 import getInstalledAppPath from "../../_utils/getInstalledAppPath";
 import createOAuthAppCredential from "../../_utils/oauth/createOAuthAppCredential";
-import { decodeOAuthState } from "../../_utils/oauth/decodeOAuthState";
 
 const log = logger.getSubLogger({ prefix: [`[[intercom/api/callback]`] });
 
@@ -86,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     req
   );
 
-  const state = decodeOAuthState(req);
+  // const state = decodeOAuthState(req);
 
   res.redirect(
     getSafeRedirectUrl(`${WEBAPP_URL}/apps/installed/automation?hl=intercom`) ??

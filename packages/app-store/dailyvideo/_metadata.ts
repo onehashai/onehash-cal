@@ -11,12 +11,12 @@ export const metadata = {
   url: "https://daily.co",
   categories: ["conferencing"],
   logo: "icon.svg",
-  publisher: "Cal.com",
+  publisher: "OneHash",
   category: "conferencing",
   slug: "daily-video",
   title: "Cal Video",
-  isGlobal: true,
-  email: "help@cal.com",
+  isGlobal: false,
+  email: "support@onehash.ai",
   appData: {
     location: {
       linkType: "dynamic",

@@ -10,5 +10,5 @@
   "devDependencies": {
     "@calcom/types": "*"
   },
-  "description": "Paypal payment app by Cal.com"
+  "description": "Paypal payment app by OneHash"
 }

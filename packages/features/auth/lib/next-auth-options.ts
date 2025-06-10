@@ -1,4 +1,7 @@
+import { calendar_v3 } from "@googleapis/calendar";
 import type { Membership, Team, UserPermissionRole } from "@prisma/client";
+import { OAuth2Client } from "googleapis-common";
+import type { NextApiResponse } from "next";
 import type { AuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { encode } from "next-auth/jwt";
@@ -6,14 +9,17 @@ import type { Provider } from "next-auth/providers";
 import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
+import KeyCloakProvider from "next-auth/providers/keycloak";
 
+import { updateProfilePhotoGoogle } from "@calcom/app-store/_utils/oauth/updateProfilePhotoGoogle";
+import GoogleCalendarService from "@calcom/app-store/googlecalendar/lib/CalendarService";
 import { LicenseKeySingleton } from "@calcom/ee/common/server/LicenseKeyService";
 import createUsersAndConnectToOrg from "@calcom/features/ee/dsync/lib/users/createUsersAndConnectToOrg";
 import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/ImpersonationProvider";
-import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { clientSecretVerifier, hostedCal, isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
+import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-import { HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
+import { GOOGLE_CALENDAR_SCOPES, GOOGLE_OAUTH_SCOPES, HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
 import { ENABLE_PROFILE_SWITCHER, IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
 import { defaultCookies } from "@calcom/lib/default-cookies";
@@ -21,6 +27,7 @@ import { isENVDev } from "@calcom/lib/env";
 import logger from "@calcom/lib/logger";
 import { randomString } from "@calcom/lib/random";
 import { safeStringify } from "@calcom/lib/safeStringify";
+import { CredentialRepository } from "@calcom/lib/server/repository/credential";
 import { ProfileRepository } from "@calcom/lib/server/repository/profile";
 import { UserRepository } from "@calcom/lib/server/repository/user";
 import slugify from "@calcom/lib/slugify";
@@ -28,6 +35,7 @@ import prisma from "@calcom/prisma";
 import { IdentityProvider, MembershipRole } from "@calcom/prisma/enums";
 import { teamMetadataSchema, userMetadata } from "@calcom/prisma/zod-utils";
 
+import { KEYCLOAK_COOKIE_DOMAIN } from "./../../../lib/constants";
 import { ErrorCode } from "./ErrorCode";
 import { isPasswordValid } from "./isPasswordValid";
 import CalComAdapter from "./next-auth-custom-adapter";
@@ -41,7 +49,11 @@ const GOOGLE_LOGIN_ENABLED = process.env.GOOGLE_LOGIN_ENABLED === "true";
 const IS_GOOGLE_LOGIN_ENABLED = !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_LOGIN_ENABLED);
 const ORGANIZATIONS_AUTOLINK =
   process.env.ORGANIZATIONS_AUTOLINK === "1" || process.env.ORGANIZATIONS_AUTOLINK === "true";
-
+//keycloak credentials
+const IS_KEYCLOAK_LOGIN_ENABLED = process.env.KEYCLOAK_LOGIN_ENABLED === "true";
+const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "";
+const KEYCLOAK_CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || "";
+const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER || "";
 const usernameSlug = (username: string) => `${slugify(username)}-${randomString(6).toLowerCase()}`;
 const getDomainFromEmail = (email: string): string => email.split("@")[1];
 const getVerifiedOrganizationByAutoAcceptEmailDomain = async (domain: string) => {
@@ -75,7 +87,7 @@ export const checkIfUserBelongsToActiveTeam = <T extends UserTeams>(user: T) =>
 
     const metadata = teamMetadataSchema.safeParse(m.team.metadata);
 
-    return metadata.success && metadata.data?.subscriptionId;
+    return metadata.success;
   });
 
 const checkIfUserShouldBelongToOrg = async (idP: IdentityProvider, email: string) => {
@@ -98,7 +110,7 @@ const checkIfUserShouldBelongToOrg = async (idP: IdentityProvider, email: string
 const providers: Provider[] = [
   CredentialsProvider({
     id: "credentials",
-    name: "Cal.com",
+    name: "OneHash",
     type: "credentials",
     credentials: {
       email: { label: "Email Address", type: "email", placeholder: "john.doe@example.com" },
@@ -235,6 +247,7 @@ const providers: Provider[] = [
         belongsToActiveTeam: hasActiveTeams,
         locale: user.locale,
         profile: user.allProfiles[0],
+        createdDate: user.createdDate,
       };
     },
   }),
@@ -246,6 +259,24 @@ if (IS_GOOGLE_LOGIN_ENABLED) {
     GoogleProvider({
       clientId: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
+      authorization: {
+        params: {
+          scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    })
+  );
+}
+
+if (IS_KEYCLOAK_LOGIN_ENABLED) {
+  providers.push(
+    KeyCloakProvider({
+      clientId: KEYCLOAK_CLIENT_ID,
+      clientSecret: KEYCLOAK_CLIENT_SECRET,
+      issuer: KEYCLOAK_ISSUER,
       allowDangerousEmailAccountLinking: true,
     })
   );
@@ -281,6 +312,8 @@ if (isSAMLLoginEnabled) {
       const user = await UserRepository.findByEmailAndIncludeProfilesAndPassword({
         email: profile.email || "",
       });
+      if (!user) throw new Error(ErrorCode.UserNotFound);
+
       return {
         id: profile.id || 0,
         firstName: profile.firstName || "",
@@ -399,12 +432,20 @@ const mapIdentityProvider = (providerName: string) => {
     case "saml-idp":
     case "saml":
       return IdentityProvider.SAML;
+    case "keycloak":
+      return IdentityProvider.KEYCLOAK;
     default:
       return IdentityProvider.GOOGLE;
   }
 };
 
-export const AUTH_OPTIONS: AuthOptions = {
+export const getOptions = ({
+  res,
+  keycloak_token,
+}: {
+  res?: NextApiResponse;
+  keycloak_token?: string;
+}): AuthOptions => ({
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   adapter: calcomAdapter,
@@ -455,6 +496,12 @@ export const AUTH_OPTIONS: AuthOptions = {
     }) {
       log.debug("callbacks:jwt", safeStringify({ token, user, account, trigger, session }));
       // The data available in 'session' depends on what data was supplied in update method call of session
+      const licenseKeyService = await LicenseKeySingleton.getInstance();
+
+      const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
+
+      token["hasValidLicense"] = hasValidLicense;
+
       if (trigger === "update") {
         return {
           ...token,
@@ -555,7 +602,7 @@ export const AUTH_OPTIONS: AuthOptions = {
       if (account.type === "credentials") {
         // return token if credentials,saml-idp
         if (account.provider === "saml-idp") {
-          return token;
+          return { ...token, upId: user.profile?.upId ?? token.upId ?? null } as JWT;
         }
         // any other credentials, add user info
         return {
@@ -580,7 +627,14 @@ export const AUTH_OPTIONS: AuthOptions = {
         if (!account.provider || !account.providerAccountId) {
           return token;
         }
-        const idP = account.provider === "saml" ? IdentityProvider.SAML : IdentityProvider.GOOGLE;
+        const idP =
+          account.provider === "saml"
+            ? IdentityProvider.SAML
+            : account.provider === "google"
+            ? IdentityProvider.GOOGLE
+            : account.provider === "keycloak"
+            ? IdentityProvider.KEYCLOAK
+            : IdentityProvider.KEYCLOAK;
 
         const existingUser = await prisma.user.findFirst({
           where: {
@@ -597,6 +651,63 @@ export const AUTH_OPTIONS: AuthOptions = {
 
         if (!existingUser) {
           return await autoMergeIdentities();
+        }
+
+        const grantedScopes = account.scope?.split(" ") ?? [];
+        if (
+          account.provider === "google" &&
+          !(await CredentialRepository.findFirstByAppIdAndUserId({
+            userId: user.id as number,
+            appId: "google-calendar",
+          })) &&
+          GOOGLE_CALENDAR_SCOPES.every((scope) => grantedScopes.includes(scope))
+        ) {
+          // Installing Google Calendar by default
+          const credentialkey = {
+            access_token: account.access_token,
+            refresh_token: account.refresh_token,
+            id_token: account.id_token,
+            token_type: account.token_type,
+            expires_at: account.expires_at,
+          };
+          const gcalCredential = await CredentialRepository.create({
+            userId: user.id as number,
+            key: credentialkey,
+            appId: "google-calendar",
+            type: "google_calendar",
+          });
+          const gCalService = new GoogleCalendarService({
+            ...gcalCredential,
+            user: null,
+          });
+
+          if (
+            !(await CredentialRepository.findFirstByUserIdAndType({
+              userId: user.id as number,
+              type: "google_video",
+            }))
+          ) {
+            await CredentialRepository.create({
+              type: "google_video",
+              key: {},
+              userId: user.id as number,
+              appId: "google-meet",
+            });
+          }
+
+          const oAuth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+          oAuth2Client.setCredentials(credentialkey);
+          const calendar = new calendar_v3.Calendar({
+            auth: oAuth2Client,
+          });
+          const primaryCal = await gCalService.getPrimaryCalendar(calendar);
+          if (primaryCal?.id) {
+            await gCalService.createSelectedCalendar({
+              externalId: primaryCal.id,
+              userId: user.id as number,
+            });
+          }
+          await updateProfilePhotoGoogle(oAuth2Client, user.id as number);
         }
 
         return {
@@ -621,15 +732,12 @@ export const AUTH_OPTIONS: AuthOptions = {
     },
     async session({ session, token, user }) {
       log.debug("callbacks:session - Session callback called", safeStringify({ session, token, user }));
-      const licenseKeyService = await LicenseKeySingleton.getInstance();
-      const hasValidLicense = await licenseKeyService.checkLicense();
-
       const profileId = token.profileId;
       const calendsoSession: Session = {
         ...session,
         profileId,
         upId: token.upId || session.upId,
-        hasValidLicense,
+        hasValidLicense: token.hasValidLicense,
         user: {
           ...session.user,
           id: token.id as number,
@@ -656,6 +764,12 @@ export const AUTH_OPTIONS: AuthOptions = {
         profile,
         account,
       } = params;
+      if (account && "refresh_expires_in" in account) {
+        delete account.refresh_expires_in;
+      }
+      if (account && "not-before-policy" in account) {
+        delete account["not-before-policy"];
+      }
 
       log.debug("callbacks:signin", safeStringify(params));
 
@@ -733,11 +847,12 @@ export const AUTH_OPTIONS: AuthOptions = {
         }
         /* --- END FIXES LEGACY ISSUE WHERE 'identityProviderId' was accidentally set to userId --- */
         if (existingUser) {
+          account.userId = existingUser.id.toString();
           // In this case there's an existing user and their email address
           // hasn't changed since they last logged in.
           if (existingUser.email === user.email) {
             try {
-              // If old user without Account entry we link their google account
+              // If old user without Account entry we link their keycloak account
               if (existingUser.accounts.length === 0) {
                 const linkAccountWithUserData = {
                   ...account,
@@ -794,6 +909,7 @@ export const AUTH_OPTIONS: AuthOptions = {
         });
 
         if (existingUserWithEmail) {
+          account.userId = existingUserWithEmail.id.toString();
           // if self-hosted then we can allow auto-merge of identity providers if email is verified
           if (
             !hostedCal &&
@@ -837,10 +953,12 @@ export const AUTH_OPTIONS: AuthOptions = {
             }
           }
 
-          // User signs up with email/password and then tries to login with Google/SAML using the same email
+          // User signs up with email/password or Google and then tries to login with Google/SAML/Keycloak using the same email
           if (
-            existingUserWithEmail.identityProvider === IdentityProvider.CAL &&
-            (idP === IdentityProvider.GOOGLE || idP === IdentityProvider.SAML)
+            existingUserWithEmail.identityProvider === (IdentityProvider.CAL || IdentityProvider.GOOGLE) &&
+            (idP === IdentityProvider.GOOGLE ||
+              idP === IdentityProvider.SAML ||
+              idP === IdentityProvider.KEYCLOAK)
           ) {
             await prisma.user.update({
               where: { email: existingUserWithEmail.email },
@@ -900,6 +1018,7 @@ export const AUTH_OPTIONS: AuthOptions = {
             }),
           },
         });
+        account.userId = newUser.id.toString();
 
         const linkAccountNewUserData = { ...account, userId: newUser.id, providerEmail: user.email };
         await calcomAdapter.linkAccount(linkAccountNewUserData);
@@ -919,12 +1038,65 @@ export const AUTH_OPTIONS: AuthOptions = {
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.includes("auth/login")) return `${baseUrl}/event-types`;
+      // if (url.includes("event-types")) return `${baseUrl}/event-types`;
       // Allows callback URLs on the same domain
-      else if (new URL(url).hostname === new URL(WEBAPP_URL).hostname) return url;
-      return baseUrl;
+      return url;
+      // else if (new URL(url).hostname === new URL(WEBAPP_URL).hostname) return url;
+      // return baseUrl;
     },
   },
-};
+  events: {
+    async signIn(message) {
+      //setting keycloak session in Db and token in cookie
+      const { account } = message;
+      let browser_token = "";
+      if (account?.id_token) {
+        browser_token = randomString(256);
+        await prisma.keycloakSessionInfo.create({
+          data: {
+            browserToken: browser_token,
+            metadata: account,
+          },
+        });
+        const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
+        const useSecureCookies = WEBAPP_URL?.startsWith("https://");
+        if (res)
+          res.setHeader("Set-Cookie", [
+            `keycloak_token=${browser_token}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
+              useSecureCookies ? "None" : "Lax"
+            }; Max-Age=${7776000}`,
+            `loggedInUserId=${encodeURIComponent(
+              account?.userId || ""
+            )}; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; SameSite=${
+              useSecureCookies ? "None" : "Lax"
+            }; Expires=Fri, 31 Dec 9999 23:59:59 GMT`,
+          ]);
+      }
+    },
+    async signOut(_) {
+      //Cleaning the keycloak cookie and session
+      if (keycloak_token) {
+        await prisma.keycloakSessionInfo.deleteMany({
+          where: {
+            browserToken: keycloak_token,
+          },
+        });
+        const keycloak_cookie_domain = KEYCLOAK_COOKIE_DOMAIN || "";
+        const useSecureCookies = WEBAPP_URL?.startsWith("https://");
+        if (res)
+          res.setHeader("Set-Cookie", [
+            `keycloak_token=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; HttpOnly; SameSite=${
+              useSecureCookies ? "None" : "Lax"
+            }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+            `loggedInUserId=; Domain=${keycloak_cookie_domain}; Path=/; Secure=${useSecureCookies}; SameSite=${
+              useSecureCookies ? "None" : "Lax"
+            }; Max-Age=0; Expires=${new Date(0).toUTCString()}`,
+          ]);
+      }
+    },
+  },
+});
 
 /**
  * Identifies the profile the user should be logged into.

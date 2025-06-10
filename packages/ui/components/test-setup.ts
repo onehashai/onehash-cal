@@ -1,20 +1,18 @@
 import matchers from "@testing-library/jest-dom/matchers";
 import { cleanup } from "@testing-library/react";
+import React from "react";
 import { afterEach, expect, vi } from "vitest";
 
-vi.mock("next-auth/react", () => ({
-  useSession() {
-    return {};
-  },
-}));
+// For next.js webapp compponent that use "preserve" for jsx in tsconfig.json
+global.React = React;
 
-vi.mock("@calcom/features/ee/organizations/hooks", () => ({
+vi.mock("@calcom/features/oe/organizations/hooks", () => ({
   useOrgBrandingValues() {
     return {};
   },
 }));
 
-vi.mock("@calcom/features/ee/organizations/context/provider", () => ({
+vi.mock("@calcom/features/oe/organizations/context/provider", () => ({
   useOrgBranding() {
     return {};
   },

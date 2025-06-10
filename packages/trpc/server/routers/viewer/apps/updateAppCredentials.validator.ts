@@ -18,7 +18,7 @@ export const handleCustomValidations = async ({
   try {
     const validator = (await validatorGetter()).default;
     return await validator({ input, ctx });
-  } catch (error) {
-    throw new TRPCError({ code: "BAD_REQUEST" });
+  } catch (error: any) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
   }
 };

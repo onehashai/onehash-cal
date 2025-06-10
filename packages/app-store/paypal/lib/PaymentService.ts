@@ -32,10 +32,13 @@ export class PaymentService implements IAbstractPaymentService {
     }
   }
 
-  async create(
-    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
-    bookingId: Booking["id"]
-  ) {
+  async create({
+    payment,
+    bookingId,
+  }: {
+    payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">;
+    bookingId: Booking["id"];
+  }) {
     try {
       const booking = await prisma.booking.findFirst({
         select: {
@@ -105,8 +108,8 @@ export class PaymentService implements IAbstractPaymentService {
   async collectCard(
     payment: Pick<Prisma.PaymentUncheckedCreateInput, "amount" | "currency">,
     bookingId: number,
-    _bookerEmail: string,
-    paymentOption: PaymentOption
+    paymentOption: PaymentOption,
+    _bookerEmail?: string | null
   ): Promise<Payment> {
     // Ensure that the payment service can support the passed payment option
     if (paymentOptionEnum.parse(paymentOption) !== "HOLD") {

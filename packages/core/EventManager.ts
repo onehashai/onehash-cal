@@ -6,8 +6,10 @@ import type { z } from "zod";
 
 import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
 import { FAKE_DAILY_CREDENTIAL } from "@calcom/app-store/dailyvideo/lib/VideoApiAdapter";
-import { appKeysSchema as calVideoKeysSchema } from "@calcom/app-store/dailyvideo/zod";
-import { getEventLocationTypeFromApp, MeetLocationType } from "@calcom/app-store/locations";
+//CHANGE:JITSI
+// import { appKeysSchema as calVideoKeysSchema } from "@calcom/app-store/dailyvideo/zod";
+import { appKeysSchema as JitsiVideoKeysSchema } from "@calcom/app-store/jitsivideo/zod";
+import { getLocationFromApp, JitsiLocationType, MeetLocationType } from "@calcom/app-store/locations";
 import getApps from "@calcom/app-store/utils";
 import { getUid } from "@calcom/lib/CalEventParser";
 import logger from "@calcom/lib/logger";
@@ -57,7 +59,7 @@ const latestCredentialFirst = <T extends HasId>(a: T, b: T) => {
 };
 
 export const getLocationRequestFromIntegration = (location: string) => {
-  const eventLocationType = getEventLocationTypeFromApp(location);
+  const eventLocationType = getLocationFromApp(location);
   if (eventLocationType) {
     const requestId = uuidv5(location, uuidv5.URL);
 
@@ -96,11 +98,16 @@ export type EventManagerUser = {
 
 type createdEventSchema = z.infer<typeof createdEventSchema>;
 
+export type EventManagerInitParams = {
+  user: EventManagerUser;
+  eventTypeAppMetadata?: z.infer<typeof EventTypeAppMetadataSchema>;
+};
+
 export default class EventManager {
   calendarCredentials: CredentialPayload[];
   videoCredentials: CredentialPayload[];
   crmCredentials: CredentialPayload[];
-  appOptions: AppOptions;
+  appOptions?: z.infer<typeof EventTypeAppMetadataSchema>;
 
   /**
    * Takes an array of credentials and initializes a new instance of the EventManager.
@@ -113,8 +120,6 @@ export default class EventManager {
       app.credentials.map((creds) => ({ ...creds, appName: app.name }))
     );
     // This includes all calendar-related apps, traditional calendars such as Google Calendar
-    // (type google_calendar) and non-traditional calendars such as CRMs like Close.com
-    // (type closecom_other_calendar)
     this.calendarCredentials = appCredentials
       .filter(
         // Backwards compatibility until CRM manager is implemented
@@ -132,7 +137,7 @@ export default class EventManager {
       (cred) => cred.type.endsWith("_crm") || cred.type.endsWith("_other_calendar")
     );
 
-    this.appOptions = this.generateAppOptions(eventTypeAppMetadata);
+    this.appOptions = eventTypeAppMetadata;
   }
 
   /**
@@ -145,12 +150,31 @@ export default class EventManager {
   public async create(event: CalendarEvent): Promise<CreateUpdateResult> {
     const evt = processLocation(event);
 
-    // Fallback to cal video if no location is set
+    // // Fallback to cal video if no location is set
+    // if (!evt.location) {
+    //   // See if cal video is enabled & has keys
+    //   const calVideo = await prisma.app.findFirst({
+    //     where: {
+    //       slug: "daily-video",
+    //     },
+    //     select: {
+    //       keys: true,
+    //       enabled: true,
+    //     },
+    //   });
+
+    //   const calVideoKeys = calVideoKeysSchema.safeParse(calVideo?.keys);
+
+    //   if (calVideo?.enabled && calVideoKeys.success) evt["location"] = "integrations:daily";
+    // }
+
+    //CHANGE:JITSI
+    // Fallback to jitsi if no location is set
     if (!evt.location) {
-      // See if cal video is enabled & has keys
-      const calVideo = await prisma.app.findFirst({
+      // See if jitsi video is enabled & has keys
+      const jitsiVideo = await prisma.app.findFirst({
         where: {
-          slug: "daily-video",
+          slug: "jitsi",
         },
         select: {
           keys: true,
@@ -158,20 +182,46 @@ export default class EventManager {
         },
       });
 
-      const calVideoKeys = calVideoKeysSchema.safeParse(calVideo?.keys);
+      const jitsiVideoKeys = JitsiVideoKeysSchema.safeParse(jitsiVideo?.keys);
 
-      if (calVideo?.enabled && calVideoKeys.success) evt["location"] = "integrations:daily";
+      if (jitsiVideo?.enabled && jitsiVideoKeys.success) evt["location"] = JitsiLocationType;
     }
 
-    // Fallback to Cal Video if Google Meet is selected w/o a Google Cal
+    //CHANGE:JITSI
+    // // Fallback to Cal Video if Google Meet is selected w/o a Google Cal
+    // // @NOTE: destinationCalendar it's an array now so as a fallback we will only check the first one
+    // const [mainHostDestinationCalendar] =
+    //   (evt.destinationCalendar as [undefined | NonNullable<typeof evt.destinationCalendar>[number]]) ?? [];
+    // if (evt.location === MeetLocationType && mainHostDestinationCalendar?.integration !== "google_calendar") {
+    //   log.warn("Falling back to Cal Video integration as Google Calendar not installed");
+    //   evt["location"] = "integrations:daily";
+    // }
+
+    //Fallback:We are using google meet public url to create an open google meet room as of now,
     // @NOTE: destinationCalendar it's an array now so as a fallback we will only check the first one
     const [mainHostDestinationCalendar] =
       (evt.destinationCalendar as [undefined | NonNullable<typeof evt.destinationCalendar>[number]]) ?? [];
     if (evt.location === MeetLocationType && mainHostDestinationCalendar?.integration !== "google_calendar") {
-      log.warn("Falling back to Cal Video integration as Google Calendar not installed");
-      evt["location"] = "integrations:daily";
-      evt["conferenceCredentialId"] = undefined;
+      log.warn("Falling back to using google meet public url  Google Calendar not installed");
+      //TODO:We are using google meet public url to create an open google meet room as of now,
+
+      const meetSlug = `${evt.title
+        .replace(/[^\w\s]|_/g, "")
+        .replace(/\s+/g, "-")
+        .substring(0, 10)}-${evt.uid}`;
+      evt.videoCallData = {
+        type: "google_video",
+        id: evt.uid,
+        password: "",
+        url: `https://g.co/meet/${meetSlug}`,
+      };
+      //TODO:try this
+      // evt["location"] = JitsiLocationType;
+      // log.warn("Falling back to Cal Video integration as Google Calendar not installed");
+      // evt["location"] = "integrations:daily";
+      // evt["conferenceCredentialId"] = undefined;
     }
+
     const isDedicated = evt.location ? isDedicatedIntegration(evt.location) : null;
 
     const results: Array<EventResult<Exclude<Event, AdditionalInformation>>> = [];
@@ -186,9 +236,12 @@ export default class EventManager {
         result.type = result.createdEvent.type;
         //responses data is later sent to webhook
         if (evt.location && evt.responses) {
-          evt.responses["location"].value = {
-            optionValue: "",
-            value: evt.location,
+          evt.responses["location"] = {
+            ...(evt.responses["location"] ?? {}),
+            value: {
+              optionValue: "",
+              value: evt.location,
+            },
           };
         }
       }
@@ -256,9 +309,12 @@ export default class EventManager {
         result.type = result.createdEvent.type;
         //responses data is later sent to webhook
         if (evt.location && evt.responses) {
-          evt.responses["location"].value = {
-            optionValue: "",
-            value: evt.location,
+          evt.responses["location"] = {
+            ...(evt.responses["location"] ?? {}),
+            value: {
+              optionValue: "",
+              value: evt.location,
+            },
           };
         }
       }
@@ -532,7 +588,6 @@ export default class EventManager {
       isBookingInRecurringSeries,
     });
   }
-
   private async deleteEventsAndMeetings({
     event,
     bookingReferences,
@@ -963,29 +1018,32 @@ export default class EventManager {
     const createdEvents = [];
     const uid = getUid(event);
     for (const credential of this.crmCredentials) {
-      const crm = new CrmManager(credential);
+      const currentAppOption = this.getAppOptionsFromEventMetadata(credential);
+
+      const crm = new CrmManager(credential, currentAppOption);
 
       let success = true;
-      const skipContactCreation = this.appOptions.crm.skipContactCreation.includes(credential.appId || "");
-      const createdEvent = await crm.createEvent(event, skipContactCreation).catch((error) => {
+      const createdEvent = await crm.createEvent(event, currentAppOption).catch((error) => {
         success = false;
-        log.warn(`Error creating crm event for ${credential.type}`, error);
+        log.warn(`Error creating crm event for ${credential.type}`, JSON.stringify(error));
       });
 
-      createdEvents.push({
-        type: credential.type,
-        appName: credential.appId || "",
-        uid,
-        success,
-        createdEvent: {
-          id: createdEvent?.id || "",
+      if (createdEvent) {
+        createdEvents.push({
           type: credential.type,
+          appName: credential.appId || "",
+          uid,
+          success,
+          createdEvent: {
+            id: createdEvent?.id || "",
+            type: credential.type,
+            credentialId: credential.id,
+          },
+          id: createdEvent?.id || "",
+          originalEvent: event,
           credentialId: credential.id,
-        },
-        id: createdEvent?.id || "",
-        originalEvent: event,
-        credentialId: credential.id,
-      });
+        });
+      }
     }
     return createdEvents;
   }
@@ -1025,20 +1083,10 @@ export default class EventManager {
     }
   }
 
-  private generateAppOptions(eventTypeAppMetadata?: z.infer<typeof EventTypeAppMetadataSchema>) {
-    const appOptions: AppOptions = {
-      crm: {
-        skipContactCreation: [],
-      },
-    };
+  private getAppOptionsFromEventMetadata(credential: CredentialPayload) {
+    if (!this.appOptions || !credential.appId) return {};
 
-    if (eventTypeAppMetadata) {
-      for (const key in eventTypeAppMetadata) {
-        const app = eventTypeAppMetadata[key as keyof typeof eventTypeAppMetadata];
-        if (app?.skipContactCreation) appOptions.crm.skipContactCreation.push(key);
-      }
-    }
-
-    return appOptions;
+    if (credential.appId in this.appOptions)
+      return this.appOptions[credential.appId as keyof typeof this.appOptions];
   }
 }

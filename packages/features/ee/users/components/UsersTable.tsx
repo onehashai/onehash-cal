@@ -23,7 +23,7 @@ import {
   TextField,
 } from "@calcom/ui";
 
-import { withLicenseRequired } from "../../common/components/LicenseRequired";
+// import { withLicenseRequired } from "../../common/components/LicenseRequired";
 
 const { Cell, ColumnTitle, Header, Row } = Table;
 
@@ -116,6 +116,7 @@ function UsersTableBare() {
           })),
         };
       });
+      utils.viewer.admin.listPaginated.invalidate();
     },
   });
 
@@ -150,7 +151,7 @@ function UsersTableBare() {
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
 
   return (
-    <>
+    <div>
       <TextField
         placeholder="username or email"
         label="Search"
@@ -159,7 +160,7 @@ function UsersTableBare() {
       <div
         className="border-subtle rounded-md border"
         ref={tableContainerRef}
-        onScroll={() => fetchMoreOnBottomReached()}
+        onScroll={() => fetchMoreOnBottomReached(tableContainerRef.current)}
         style={{
           height: "calc(100vh - 30vh)",
           overflow: "auto",
@@ -187,14 +188,16 @@ function UsersTableBare() {
                     />
 
                     <div className="text-subtle ml-4 font-medium">
-                      <span className="text-default">{user.name}</span>
-                      <span className="ml-3">/{user.username}</span>
-                      {user.locked && (
-                        <span className="ml-3">
-                          <Icon name="lock" />
-                        </span>
-                      )}
-                      <br />
+                      <div className="flex flex-row">
+                        <span className="text-default">{user.name}</span>
+                        <span className="ml-3">/{user.username}</span>
+                        {user.locked && (
+                          <span className="ml-3">
+                            <Icon name="lock" />
+                          </span>
+                        )}
+                        <br />
+                      </div>
                       <span className="break-all">{user.email}</span>
                     </div>
                   </div>
@@ -293,7 +296,7 @@ function UsersTableBare() {
           </DialogContent>
         </Dialog>
       )}
-    </>
+    </div>
   );
 }
 
@@ -321,4 +324,5 @@ const DeleteUserDialog = ({
   );
 };
 
-export const UsersTable = withLicenseRequired(UsersTableBare);
+// export const UsersTable = withLicenseRequired(UsersTableBare);
+export const UsersTable = UsersTableBare;

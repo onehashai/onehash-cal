@@ -9,6 +9,7 @@ export const createBooking = async (data: BookingCreateBody) => {
     Omit<BookingResponse, "startTime" | "endTime"> & {
       startTime: string;
       endTime: string;
+      paymentLink?: string;
     }
   >("/api/book/event", data);
   return response;

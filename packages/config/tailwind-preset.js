@@ -17,6 +17,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        "primary-color": "var(--primary-color)",
+        "hover-primary-color": "var(--hover-primary-color)",
         emphasis: "var(--cal-bg-emphasis)",
         default: "var(--cal-bg, white)",
         subtle: "var(--cal-bg-subtle)",
@@ -128,6 +130,8 @@ module.exports = {
         "booker-width": "var(--cal-border-booker-width, 1px)",
       },
       fontFamily: {
+        // sans: ["Poppins", "ui-sans-serif", "system-ui", "sans-serif"],
+
         cal: ["var(--font-cal)", ...fontFamily.serif],
         sans: ["var(--font-inter)", ...fontFamily.sans],
         mono: ["Roboto Mono", "monospace"],

@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
+import { Transform } from "class-transformer";
 import { IsNumber, IsString, IsOptional, IsArray, ValidateNested, Validate } from "class-validator";
 
 import { IsYearMonthDays } from "./validators/isYearMonthDays";
@@ -9,6 +10,7 @@ export class Calendar {
     description: "The credential ID for the calendar",
     type: Number,
   })
+  @Transform(({ value }: { value: string }) => value && parseInt(value))
   @IsNumber()
   credentialId!: number;
 
@@ -22,16 +24,19 @@ export class Calendar {
 
 export class CalendarBusyTimesInput {
   @ApiProperty({
-    description: "The time zone of the logged-in user",
     type: String,
+    required: true,
+    description: "The timezone of the logged in user represented as a string",
+    example: "America/New_York",
   })
   @IsString()
   loggedInUsersTz!: string;
 
   @ApiProperty({
-    description: "The start date in YYYY-MM-DD format",
     type: String,
     required: false,
+    description: "The starting date for the busy times query",
+    example: "2023-10-01",
   })
   @IsString()
   @IsOptional()
@@ -42,6 +47,7 @@ export class CalendarBusyTimesInput {
     description: "The end date in YYYY-MM-DD format",
     type: String,
     required: false,
+    example: "2023-10-31",
   })
   @IsString()
   @IsOptional()
@@ -49,9 +55,11 @@ export class CalendarBusyTimesInput {
   dateTo?: string | null;
 
   @ApiProperty({
-    description: "Array of calendar objects to load",
     type: [Calendar],
     isArray: true,
+    required: true,
+    description: "An array of Calendar objects representing the calendars to be loaded",
+    example: `[{ credentialId: "1", externalId: "AQgtJE7RnHEeyisVq2ENs2gAAAgEGAAAACgtJE7RnHEeyisVq2ENs2gAAAhSDAAAA" }, { credentialId: "2", externalId: "AQM7RnHEeyisVq2ENs2gAAAhFDBBBBB" }]`,
   })
   @IsArray()
   @ValidateNested({ each: true })
