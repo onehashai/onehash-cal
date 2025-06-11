@@ -31,11 +31,10 @@ import { viewerTeamsRouter } from "./teams/_router";
 import { webhookRouter } from "./webhook/_router";
 import { workflowsRouter } from "./workflows/_router";
 
-export const viewerRouter = mergeRouters(
+// First, create the router without exporting it
+const _viewerRouter = mergeRouters(
   loggedInViewerRouter,
-
   router({
-    loggedInViewerRouter,
     public: publicViewerRouter,
     auth: authRouter,
     deploymentSetup: deploymentSetupRouter,
@@ -54,8 +53,6 @@ export const viewerRouter = mergeRouters(
     dsync: dsyncRouter,
     insights: insightsRouter,
     payments: paymentsRouter,
-    // NOTE: Add all app related routes in the bottom till the problem described in @calcom/app-store/trpc-routers.ts is solved.
-    // After that there would just one merge call here for all the apps.
     appRoutingForms: app_RoutingForms,
     appBasecamp3: app_Basecamp3,
     features: featureFlagRouter,
@@ -69,3 +66,9 @@ export const viewerRouter = mergeRouters(
     routingForms: routingFormsRouter,
   })
 );
+
+// Now explicitly infer and define the type
+export type ViewerRouterType = typeof _viewerRouter;
+
+// Export the router with the explicit type annotation
+export const viewerRouter: ViewerRouterType = _viewerRouter;

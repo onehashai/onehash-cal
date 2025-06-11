@@ -57,6 +57,9 @@ export class EventTypesService {
       organization: { isOrgAdmin },
       profile: { id: profileId },
       metadata: user.metadata,
+      role: user.role,
+      email: user.email,
+      username: user.username,
     };
   }
 

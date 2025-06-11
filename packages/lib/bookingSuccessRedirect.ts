@@ -23,7 +23,7 @@ function getNewSearchParams(args: {
   return newSearchParams;
 }
 
-type SuccessRedirectBookingType = Pick<
+export type SuccessRedirectBookingType = Pick<
   BookingResponse | PaymentPageProps["booking"],
   "uid" | "title" | "description" | "startTime" | "endTime" | "location" | "attendees" | "user" | "responses"
 >;

@@ -1,11 +1,11 @@
 import type { MailData } from "@sendgrid/helpers/classes/mail";
 import type { EventStatus } from "ics";
-import type { ScheduleEmailReminderAction } from "oe/workflows/lib/types";
 import { v4 as uuidv4 } from "uuid";
 
 import dayjs from "@calcom/dayjs";
 import generateIcsString from "@calcom/emails/lib/generateIcsString";
 import { preprocessNameFieldDataWithVariant } from "@calcom/features/form-builder/utils";
+import type { ScheduleEmailReminderAction } from "@calcom/features/oe/workflows/lib/types";
 import { WEBSITE_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server/i18n";

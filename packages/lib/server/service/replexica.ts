@@ -5,9 +5,11 @@ import { REPLEXICA_API_KEY } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 
 export class ReplexicaService {
-  private static engine = new ReplexicaEngine({
-    apiKey: REPLEXICA_API_KEY,
-  });
+  private static engine = REPLEXICA_API_KEY
+    ? new ReplexicaEngine({
+        apiKey: REPLEXICA_API_KEY,
+      })
+    : undefined;
 
   /**
    * Localizes text from one language to another
@@ -21,7 +23,7 @@ export class ReplexicaService {
     sourceLocale: string,
     targetLocale: string
   ): Promise<string | null> {
-    if (!text?.trim()) {
+    if (!text?.trim() || !this.engine) {
       return null;
     }
 
@@ -51,6 +53,9 @@ export class ReplexicaService {
     targetLocales: string[]
   ): Promise<string[]> {
     try {
+      if (!this.engine) {
+        return [];
+      }
       const result = await this.engine.batchLocalizeText(text, {
         sourceLocale: sourceLocale as LocaleCode,
         targetLocales: targetLocales as LocaleCode[],
@@ -71,7 +76,7 @@ export class ReplexicaService {
    * @returns The localized texts array
    */
   static async localizeTexts(texts: string[], sourceLocale: string, targetLocale: string): Promise<string[]> {
-    if (!texts.length) {
+    if (!texts.length || !this.engine) {
       return texts;
     }
 

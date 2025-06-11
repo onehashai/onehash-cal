@@ -72,7 +72,9 @@ type BookingWithUser = Booking & { user: DatabaseUser | null };
 
 type DatabaseMetadata = z.infer<typeof bookingMetadataSchema>;
 
-const seatedBookingMetadataSchema = z.object({}).catchall(z.string());
+const seatedBookingMetadataSchema = z
+  .object({})
+  .catchall(z.union([z.string(), z.boolean(), z.record(z.any())]));
 
 @Injectable()
 export class OutputBookingsService_2024_08_13 {
@@ -120,7 +122,7 @@ export class OutputBookingsService_2024_08_13 {
     const bookingTransformed = plainToClass(BookingOutput_2024_08_13, booking, { strategy: "excludeAll" });
     // note(Lauris): I don't know why plainToClass erases bookings responses and metadata so attaching manually
     bookingTransformed.bookingFieldsResponses = bookingResponses;
-    bookingTransformed.metadata = this.getUserDefinedMetadata(metadata);
+    bookingTransformed.metadata = this.getUserDefinedMetadata(metadata) as Record<string, string>;
     return bookingTransformed;
   }
 
@@ -209,7 +211,7 @@ export class OutputBookingsService_2024_08_13 {
     });
     // note(Lauris): I don't know why plainToClass erases bookings responses and metadata so attaching manually
     bookingTransformed.bookingFieldsResponses = bookingResponses;
-    bookingTransformed.metadata = this.getUserDefinedMetadata(metadata);
+    bookingTransformed.metadata = this.getUserDefinedMetadata(metadata) as Record<string, string>;
     return bookingTransformed;
   }
 
@@ -267,7 +269,9 @@ export class OutputBookingsService_2024_08_13 {
       };
       const attendeeParsed = plainToClass(SeatedAttendee, attendeeData, { strategy: "excludeAll" });
       attendeeParsed.bookingFieldsResponses = responses || {};
-      attendeeParsed.metadata = seatedBookingMetadataSchema.parse(attendee.bookingSeat?.metadata);
+      attendeeParsed.metadata = seatedBookingMetadataSchema.parse(attendee.bookingSeat?.metadata) as
+        | Record<string, string>
+        | undefined;
       // note(Lauris): as of now email is not returned for privacy
       delete attendeeParsed.bookingFieldsResponses.email;
 
@@ -366,7 +370,9 @@ export class OutputBookingsService_2024_08_13 {
       };
       const attendeeParsed = plainToClass(SeatedAttendee, attendeeData, { strategy: "excludeAll" });
       attendeeParsed.bookingFieldsResponses = responses || {};
-      attendeeParsed.metadata = seatedBookingMetadataSchema.parse(attendee.bookingSeat?.metadata);
+      attendeeParsed.metadata = seatedBookingMetadataSchema.parse(attendee.bookingSeat?.metadata) as
+        | Record<string, string>
+        | undefined;
       // note(Lauris): as of now email is not returned for privacy
       delete attendeeParsed.bookingFieldsResponses.email;
       return attendeeParsed;

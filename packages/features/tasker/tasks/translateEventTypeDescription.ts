@@ -8,7 +8,7 @@ export const ZTranslateEventTypeDescriptionPayloadSchema = z.object({
   eventTypeId: z.number(),
   userId: z.number(),
   description: z.string(),
-  userLocale: z.string(),
+  userLocale: z.string().nullable(),
 });
 
 const SUPPORTED_LOCALES = [
@@ -43,7 +43,7 @@ export async function translateEventTypeDescription(payload: string): Promise<vo
   try {
     const translatedDescriptions = await Promise.all(
       targetLocales.map((targetLocale) =>
-        ReplexicaService.localizeText(description, userLocale, targetLocale)
+        ReplexicaService.localizeText(description, userLocale ?? "en", targetLocale)
       )
     );
 
@@ -61,7 +61,7 @@ export async function translateEventTypeDescription(payload: string): Promise<vo
       await EventTypeTranslationRepository.upsertManyDescriptionTranslations(
         validTranslations.map(({ translatedText, targetLocale }) => ({
           eventTypeId,
-          sourceLocale: userLocale,
+          sourceLocale: userLocale ?? "en",
           targetLocale,
           translatedText,
           userId,

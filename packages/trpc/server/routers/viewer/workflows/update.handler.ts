@@ -297,6 +297,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
       const { senderName, ...rest } = {
         ...foundStep,
         numberVerificationPending: false,
+        disableOnMarkNoShow: foundStep.disableOnMarkNoShow ?? null,
         sender: getSender({
           action: foundStep.action,
           sender: foundStep.sender || null,

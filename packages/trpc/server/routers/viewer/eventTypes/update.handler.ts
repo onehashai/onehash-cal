@@ -40,7 +40,7 @@ type User = {
   metadata: SessionUser["metadata"];
   email: SessionUser["email"];
   organizationId: number | null;
-  locale: string;
+  locale?: string | null;
 };
 
 type UpdateOptions = {
@@ -516,7 +516,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     await tasker.create("translateEventTypeDescription", {
       eventTypeId: id,
       description,
-      userLocale: ctx.user.locale,
+      userLocale: ctx.user.locale ?? null,
       userId: ctx.user.id,
     });
   }

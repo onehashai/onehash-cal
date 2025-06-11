@@ -11,6 +11,7 @@ import { updateQueryParam, getQueryParam } from "@calcom/features/bookings/Booke
 import { createBooking, createRecurringBooking, createInstantBooking } from "@calcom/features/bookings/lib";
 import type { BookerEvent } from "@calcom/features/bookings/types";
 import { getFullName } from "@calcom/features/form-builder/utils";
+import type { SuccessRedirectBookingType } from "@calcom/lib/bookingSuccessRedirect";
 import { useBookingSuccessRedirect } from "@calcom/lib/bookingSuccessRedirect";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localStorage } from "@calcom/lib/webstorage";
@@ -283,7 +284,7 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
       bookingSuccessRedirect({
         successRedirectUrl: event?.data?.successRedirectUrl || "",
         query,
-        booking: booking,
+        booking: booking as SuccessRedirectBookingType,
         forwardParamsSuccessRedirect:
           event?.data?.forwardParamsSuccessRedirect === undefined
             ? true
@@ -371,7 +372,7 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
       bookingSuccessRedirect({
         successRedirectUrl: event?.data?.successRedirectUrl || "",
         query,
-        booking,
+        booking: booking as SuccessRedirectBookingType,
         forwardParamsSuccessRedirect:
           event?.data?.forwardParamsSuccessRedirect === undefined
             ? true

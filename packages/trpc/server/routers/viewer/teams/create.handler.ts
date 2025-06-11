@@ -1,4 +1,4 @@
-import { generateTeamCheckoutSession } from "@calcom/features/oe/teams/lib/payments";
+import { createOrganizationPaymentSession } from "@calcom/features/oe/teams/lib/payments";
 import { IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { uploadLogo } from "@calcom/lib/server/avatar";
 import { ProfileRepository } from "@calcom/lib/server/repository/profile";
@@ -32,7 +32,7 @@ const generateCheckoutSession = async ({
     return;
   }
 
-  const checkoutSession = await generateTeamCheckoutSession({
+  const checkoutSession = await createOrganizationPaymentSession({
     teamSlug,
     teamName,
     userId,

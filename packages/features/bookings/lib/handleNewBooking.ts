@@ -1876,6 +1876,7 @@ async function handler(
       paymentLink: (isPrismaObjOrUndefined(payment?.data)?.paymentLink as string) || undefined,
       isDryRun,
       ...(isDryRun ? { troubleshooterData } : {}),
+      seatReferenceUid: evt.attendeeSeatId,
     };
   }
 
