@@ -31,6 +31,7 @@ const blockRestrictedSubDomain = (requestHeaders: Headers, originalUrl: URL): Ne
       const rootDomain = parts.slice(-2).join(".");
       const url = new URL(originalUrl);
       url.hostname = `app.${rootDomain}`;
+      url.port = "";
       return NextResponse.redirect(url);
     }
   }
