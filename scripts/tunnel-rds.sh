@@ -91,4 +91,4 @@ echo "🛡️ Using key: $PEM_KEY"
 echo "🌐 Tunnel will be open on localhost:$PORT_LOCAL"
 
 # Start the SSH tunnel
-ssh -i "$PEM_KEY" -L "$PORT_LOCAL:$RDS_ENDPOINT:5432" "$EC2_DNS"
+autossh -M 0 -i "$PEM_KEY" -L "$PORT_LOCAL:$RDS_ENDPOINT:5432" "$EC2_DNS"
