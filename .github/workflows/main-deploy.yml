@@ -114,6 +114,10 @@ jobs:
           check "${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_STAG }}" "NEXT_PUBLIC_POSTHOG_KEY_STAG"
           check "${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_PROD }}" "NEXT_PUBLIC_POSTHOG_KEY_PROD"
           check "${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" "NEXT_PUBLIC_POSTHOG_HOST"
+          check "${{ secrets.NEXT_PUBLIC_ONEHASH_CRM_URL }}" "NEXT_PUBLIC_ONEHASH_CRM_URL"
+          check "${{ secrets.NEXT_PUBLIC_ONEHASH_ERP_URL }}" "NEXT_PUBLIC_ONEHASH_ERP_URL"
+
+
           
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
@@ -286,6 +290,8 @@ jobs:
             NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS=${{ secrets.NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS }}
             NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
             NEXT_PUBLIC_POSTHOG_KEY=${{ steps.key_values.outputs.NEXT_PUBLIC_POSTHOG_KEY }}
+            NEXT_PUBLIC_ONEHASH_ERP_URL=${{secrets.NEXT_PUBLIC_ONEHASH_ERP_URL}}
+            NEXT_PUBLIC_ONEHASH_CRM_URL=${{secrets.NEXT_PUBLIC_ONEHASH_CRM_URL}}
 
       - name: Check Docker build status
         shell: bash
