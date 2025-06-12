@@ -21,11 +21,28 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
 };
 
 const globalRoutes = ["/", "/login", "/embed", "/video", "/auth"];
+const allowedSubDomains = ["app", "www"];
 
+const blockRestrictedSubDomain = (requestHeaders: Headers, originalUrl: URL): NextResponse | undefined => {
+  const hostname = requestHeaders.get("host");
+  if (hostname) {
+    const parts = hostname.split(".");
+    if (parts.length > 2 && !allowedSubDomains.includes(parts[0])) {
+      const rootDomain = parts.slice(-2).join(".");
+      const url = new URL(originalUrl);
+      url.hostname = `app.${rootDomain}`;
+      url.port = "";
+      return NextResponse.redirect(url);
+    }
+  }
+};
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;
   const requestHeaders = new Headers(req.headers);
 
+  // //TODO: blocking restricted subdomain other than www and app for now
+  // const redirect = blockRestrictedSubDomain(requestHeaders, url.clone());
+  // if (redirect) return redirect;
   requestHeaders.set("x-url", req.url);
   requestHeaders.set("Access-Control-Allow-Origin", "*");
 
@@ -166,6 +183,7 @@ export const config = {
   // Next.js Doesn't support spread operator in config matcher, so, we must list all paths explicitly here.
   // https://github.com/vercel/next.js/discussions/42458
   matcher: [
+    "/",
     "/:path*/embed",
     "/api/auth/signup",
     "/api/trpc/:path*",
