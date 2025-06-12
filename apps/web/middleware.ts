@@ -40,9 +40,9 @@ const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;
   const requestHeaders = new Headers(req.headers);
 
-  //TODO: blocking restricted subdomain other than www and app for now
-  const redirect = blockRestrictedSubDomain(requestHeaders, url.clone());
-  if (redirect) return redirect;
+  // //TODO: blocking restricted subdomain other than www and app for now
+  // const redirect = blockRestrictedSubDomain(requestHeaders, url.clone());
+  // if (redirect) return redirect;
   requestHeaders.set("x-url", req.url);
   requestHeaders.set("Access-Control-Allow-Origin", "*");
 
