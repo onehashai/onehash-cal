@@ -1,7 +1,6 @@
 import { get } from "@vercel/edge-config";
 import { getToken } from "next-auth/jwt";
 import { collectEvents } from "next-collect/server";
-import type { NextURL } from "next/dist/server/web/next-url";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
@@ -24,13 +23,14 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
 const globalRoutes = ["/", "/login", "/embed", "/video", "/auth"];
 const allowedSubDomains = ["app", "www"];
 
-const blockRestrictedSubDomain = (requestHeaders: Headers, originalUrl: NextURL) => {
+const blockRestrictedSubDomain = (requestHeaders: Headers, originalUrl: URL): NextResponse | undefined => {
   const hostname = requestHeaders.get("host");
   if (hostname) {
     const parts = hostname.split(".");
     if (parts.length > 2 && !allowedSubDomains.includes(parts[0])) {
-      const url = originalUrl;
-      url.hostname = `app.${hostname?.split(".").slice(-2).join(".")}`;
+      const rootDomain = parts.slice(-2).join(".");
+      const url = new URL(originalUrl);
+      url.hostname = `app.${rootDomain}`;
       return NextResponse.redirect(url);
     }
   }
@@ -40,8 +40,8 @@ const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const requestHeaders = new Headers(req.headers);
 
   //TODO: blocking restricted subdomain other than www and app for now
-  blockRestrictedSubDomain(requestHeaders, req.nextUrl.clone());
-
+  const redirect = blockRestrictedSubDomain(requestHeaders, url.clone());
+  if (redirect) return redirect;
   requestHeaders.set("x-url", req.url);
   requestHeaders.set("Access-Control-Allow-Origin", "*");
 
