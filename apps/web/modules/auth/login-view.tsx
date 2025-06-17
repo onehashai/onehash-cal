@@ -41,11 +41,6 @@ export default function Login() {
     if (!callbackUrl) return;
     if (/"\//.test(callbackUrl)) callbackUrl = callbackUrl.substring(1);
 
-    // // If not absolute URL, make it absolute
-    // if (!/^https?:\/\//.test(callbackUrl)) {
-    //   callbackUrl = `${WEBAPP_URL}/${callbackUrl}`;
-    // }
-
     const safeCallbackUrl = getSafeRedirectUrl(callbackUrl);
 
     callbackUrl = safeCallbackUrl || "";
