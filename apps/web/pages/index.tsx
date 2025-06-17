@@ -1,38 +1,48 @@
 import type { GetServerSidePropsContext } from "next";
 import Head from "next/head";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { DEMO_URL, SIGNUP_URL } from "@calcom/lib/constants";
 
 function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter();
+  const [signUpUrl, setSignUpUrl] = useState("");
   const handleGotoLoginPage = () => {
-    window.location.href = "/auth/login";
+    const url = new URL(window.location.href);
+    url.pathname = "/auth/login";
+    window.location.href = url.href;
   };
-  // const handleGotoSignupPage = () => {
-  //   handleGettingStarted();
-  // };
-  // const handleGettingStarted = () => {
-  //   window.open("https://www.google.com", "_blank");
-  // };
+
+  const getSignUpUrlWithCurrentParams = () => {
+    if (!SIGNUP_URL) throw new Error("SIGNUP_URL not defined");
+    const currentParams = new URLSearchParams(window.location.search);
+    const url = new URL(SIGNUP_URL);
+    currentParams.forEach((value, key) => {
+      url.searchParams.append(key, value);
+    });
+    return url.href;
+  };
+
+  useEffect(() => {
+    if (window) {
+      const signUpUrlWithParams = getSignUpUrlWithCurrentParams();
+      setSignUpUrl(signUpUrlWithParams);
+    }
+  }, []);
 
   const handleGoToApp = () => {
+    const url = new URL(window.location.href);
     if (process.env.NODE_ENV === "production") {
-      const url = new URL(window.location.href);
       const hostnameParts = url.hostname.split(".");
-
       if (hostnameParts.length === 2) {
         // hostnameParts.unshift("app");
         url.hostname = hostnameParts.join(".");
       }
-
-      url.pathname = "/event-types";
-      window.location.href = url.href;
-    } else {
-      // In development or non-production environment
-      window.location.href = `${window.location.href}event-types`;
     }
+    url.pathname = "/event-types";
+    window.location.href = url.href;
   };
 
   // const handleScheduleDemo = () => {
@@ -150,7 +160,7 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
                       Log in
                     </button>
                     <a
-                      href={SIGNUP_URL}
+                      href={signUpUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="bg-primary-color hover:bg-hover-primary-color flex items-center justify-center rounded-full px-4 py-2 text-white transition md:px-6">
@@ -186,7 +196,7 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
 
               <div id="getting-started" className="mt-16 flex flex-col gap-4 md:flex-row">
                 <a
-                  href={SIGNUP_URL}
+                  href={signUpUrl}
                   target="_blank"
                   className="bg-primary-color hover:bg-hover-primary-color flex w-full items-center justify-center rounded-full px-6 py-2 text-white transition md:h-14 md:w-40">
                   Get Started
