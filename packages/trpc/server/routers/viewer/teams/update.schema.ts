@@ -4,6 +4,10 @@ import { resizeBase64Image } from "@calcom/lib/server/resizeBase64Image";
 import slugify from "@calcom/lib/slugify";
 import { intervalLimitsType } from "@calcom/prisma/zod-utils";
 
+import { Design } from ".prisma/client";
+
+const DesignEnum = z.nativeEnum(Design);
+
 export const ZUpdateInputSchema = z.object({
   id: z.number(),
   bio: z.string().optional(),
@@ -27,6 +31,7 @@ export const ZUpdateInputSchema = z.object({
   includeManagedEventsInLimits: z.boolean().optional(),
   bannerUrl: z.string().nullable().optional(),
   faviconUrl: z.string().nullable().optional(),
+  design: DesignEnum.default(Design.MODERN),
 });
 
 export type TUpdateInputSchema = z.infer<typeof ZUpdateInputSchema>;

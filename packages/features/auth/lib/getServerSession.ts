@@ -112,6 +112,7 @@ export async function getServerSession(options: {
       createdAt: user.createdDate,
       customBrandingEnabled: user.bannerUrl != undefined,
       timezone: user.timeZone,
+      design: user.design,
     },
     profileId: token.profileId,
     upId,

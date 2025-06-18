@@ -66,6 +66,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     theme: input.theme,
     bookingLimits: input.bookingLimits ?? undefined,
     includeManagedEventsInLimits: input.includeManagedEventsInLimits ?? undefined,
+    design: input.design,
   };
 
   if (input.logo && input.logo.startsWith("data:image/png;base64,")) {

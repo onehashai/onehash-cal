@@ -134,5 +134,6 @@ export const meHandler = async ({ ctx, input }: MeOptions) => {
     ...(passwordAdded ? { passwordAdded } : {}),
     bannerUrl: user.bannerUrl,
     faviconUrl: user.faviconUrl,
+    design: user.design,
   };
 };

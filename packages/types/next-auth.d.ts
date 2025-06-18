@@ -1,7 +1,7 @@
 import type { User as PrismaUser, UserPermissionRole } from "@prisma/client";
 import type { DefaultUser } from "next-auth";
 
-import type { MembershipRole } from "@calcom/prisma/enums";
+import type { MembershipRole, Design } from "@calcom/prisma/enums";
 
 import type { UserProfile } from "./UserProfile";
 
@@ -44,6 +44,7 @@ declare module "next-auth" {
     createdAt: Date;
     customBrandingEnabled: boolean;
     timezone: string;
+    design: Design;
   }
 }
 

@@ -174,6 +174,7 @@ export async function getTeamWithMembers(args: {
       },
       faviconUrl: true,
       bannerUrl: true,
+      design: true,
     },
   } as const;
 
@@ -347,6 +348,7 @@ export async function getTeamWithoutMembers(args: {
       },
       bannerUrl: true,
       faviconUrl: true,
+      design: true,
     },
   } as const;
 

@@ -17,6 +17,7 @@ import { useHasPaidPlan } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useTheme from "@calcom/lib/hooks/useTheme";
 import { validateBookerLayouts } from "@calcom/lib/validateBookerLayouts";
+import { Design } from "@calcom/prisma/client";
 import type { userMetadata } from "@calcom/prisma/zod-utils";
 import { trpc } from "@calcom/trpc/react";
 import type { RouterOutputs } from "@calcom/trpc/react";
@@ -35,6 +36,7 @@ import {
   BannerUploader,
   ImageUploader,
   Avatar,
+  Select,
 } from "@calcom/ui";
 
 import LinkPreview from "./preview-components/link-preview";
@@ -136,6 +138,16 @@ const AppearanceView = ({
     reset: resetUserThemeReset,
   } = userThemeFormMethods;
 
+  const designFormMethods = useForm({
+    defaultValues: {
+      design: user.design,
+    },
+  });
+
+  const {
+    formState: { isSubmitting: isDesignFormSubmitting, isDirty: isDesignFormDirty },
+  } = designFormMethods;
+
   const bannerFormMethods = useForm({
     defaultValues: {
       bannerUrl: user.bannerUrl,
@@ -214,12 +226,76 @@ const AppearanceView = ({
 
   return (
     <div>
+      <Form
+        form={designFormMethods}
+        handleSubmit={(values) => {
+          console.log("values", values);
+          mutation.mutate(values);
+        }}>
+        <Controller
+          control={designFormMethods.control}
+          name="design"
+          render={({ field: { value, onChange } }) => {
+            const designOptions = Object.values(Design).map((value) => ({
+              label: value.charAt(0) + value.slice(1).toLowerCase(),
+              value,
+            }));
+
+            return (
+              <div className="mt-3">
+                <div
+                  className={classNames(
+                    "border-subtle flex justify-between space-x-3 rounded-lg rounded-b-none border border-b-0 px-4 py-6 sm:px-6"
+                  )}>
+                  <div className="w-full">
+                    <div className="flex w-full items-center gap-x-2">
+                      <Label
+                        className={classNames("mt-0.5 w-full text-base font-semibold leading-none")}
+                        htmlFor="theme-select">
+                        {t("theme_style")} {/* Add this translation key */}
+                      </Label>
+                    </div>
+                    <p className={classNames("text-default -mt-1.5 text-sm leading-normal")}>
+                      {t("choose_your_theme_style")} {/* Add this translation key */}
+                    </p>
+                  </div>
+                </div>
+                <div className="border-subtle my-auto h-full rounded-lg rounded-t-none border p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="mr-4 flex-1">
+                      <Select
+                        id="theme-select"
+                        value={designOptions.find((option) => option.value === value)}
+                        onChange={(selectedOption) => onChange(selectedOption?.value)}
+                        options={designOptions}
+                        placeholder={t("select_theme_style")}
+                        className="w-full"
+                        isSearchable={false}
+                        isClearable={false}
+                      />
+                    </div>
+                    <Button
+                      className="my-auto"
+                      loading={mutation.isPending}
+                      disabled={isDesignFormSubmitting || !isDesignFormDirty}
+                      color="primary"
+                      type="submit">
+                      {t("update")}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          }}
+        />
+      </Form>
       <div className="border-subtle mt-6 flex items-center rounded-t-lg border p-6 text-sm">
         <div>
           <p className="text-default text-base font-semibold">{t("app_theme")}</p>
           <p className="text-default">{t("app_theme_applies_note")}</p>
         </div>
       </div>
+
       <Form
         form={userAppThemeFormMethods}
         handleSubmit={({ appTheme }) => {

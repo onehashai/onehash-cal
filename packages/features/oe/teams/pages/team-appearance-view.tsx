@@ -25,9 +25,11 @@ import {
   Label,
   Avatar,
   BannerUploader,
+  Select,
 } from "@calcom/ui";
 
 import ThemeLabel from "../../../settings/ThemeLabel";
+import { Design } from ".prisma/client";
 
 interface ColorSchemeFormData {
   brandColor: string;
@@ -52,6 +54,16 @@ const TeamDisplayComponent = ({ team }: TeamDisplayProps) => {
 
   const [brandingVisibility, setBrandingVisibility] = useState(team?.hideBranding ?? false);
   const [memberBookingVisibility, setMemberBookingVisibility] = useState(team?.hideBookATeamMember ?? false);
+
+  const designFormMethods = useForm({
+    defaultValues: {
+      design: team.design,
+    },
+  });
+
+  const {
+    formState: { isSubmitting: isDesignFormSubmitting, isDirty: isDesignFormDirty },
+  } = designFormMethods;
 
   const themeFormController = useForm<{ theme: string | null | undefined }>({
     defaultValues: {
@@ -136,6 +148,71 @@ const TeamDisplayComponent = ({ team }: TeamDisplayProps) => {
     <>
       {hasAdministrativeAccess ? (
         <>
+          <Form
+            form={designFormMethods}
+            handleSubmit={(values) => {
+              updateMutation.mutate({
+                id: team.id,
+                ...values,
+              });
+            }}>
+            <Controller
+              control={designFormMethods.control}
+              name="design"
+              render={({ field: { value, onChange } }) => {
+                const designOptions = Object.values(Design).map((value) => ({
+                  label: value.charAt(0) + value.slice(1).toLowerCase(),
+                  value,
+                }));
+
+                return (
+                  <div className="mt-3">
+                    <div
+                      className={classNames(
+                        "border-subtle flex justify-between space-x-3 rounded-lg rounded-b-none border border-b-0 px-4 py-6 sm:px-6"
+                      )}>
+                      <div className="w-full">
+                        <div className="flex w-full items-center gap-x-2">
+                          <Label
+                            className={classNames("mt-0.5 w-full text-base font-semibold leading-none")}
+                            htmlFor="theme-select">
+                            {t("theme_style")} {/* Add this translation key */}
+                          </Label>
+                        </div>
+                        <p className={classNames("text-default -mt-1.5 text-sm leading-normal")}>
+                          {t("choose_your_theme_style")} {/* Add this translation key */}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="border-subtle my-auto h-full rounded-lg rounded-t-none border p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="mr-4 flex-1">
+                          <Select
+                            id="theme-select"
+                            value={designOptions.find((option) => option.value === value)}
+                            onChange={(selectedOption) => onChange(selectedOption?.value)}
+                            options={designOptions}
+                            placeholder={t("select_theme_style")}
+                            className="w-full"
+                            isSearchable={false}
+                            isClearable={false}
+                          />
+                        </div>
+                        <Button
+                          className="my-auto"
+                          loading={updateMutation.isPending}
+                          disabled={isDesignFormSubmitting || !isDesignFormDirty}
+                          color="primary"
+                          type="submit">
+                          {t("update")}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          </Form>
           <Form
             form={themeFormController}
             handleSubmit={({ theme }) => {

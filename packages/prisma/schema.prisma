@@ -49,6 +49,11 @@ enum CaptchaType {
   HIGH   @map("high")
 }
 
+enum Design {
+  MODERN @map("modern")
+  LEGACY @map("legacy")
+}
+
 model Host {
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           Int
@@ -377,6 +382,7 @@ model User {
   bannerUrl                  String?
   faviconUrl                 String?
   // workflowInsights    WorkflowInsights[] 
+  design                     Design                       @default(MODERN)
 
   @@unique([email])
   @@unique([email, username])
@@ -487,6 +493,7 @@ model Team {
   includeManagedEventsInLimits Boolean @default(false)
   faviconUrl                   String?
   // workflowInsights      WorkflowInsights[]
+  design                       Design  @default(MODERN)
 
   @@unique([slug, parentId])
   @@index([parentId])

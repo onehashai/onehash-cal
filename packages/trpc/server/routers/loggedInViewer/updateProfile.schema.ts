@@ -3,6 +3,8 @@ import { z } from "zod";
 import { FULL_NAME_LENGTH_MAX_LIMIT } from "@calcom/lib/constants";
 import { bookerLayouts, userMetadata } from "@calcom/prisma/zod-utils";
 
+import { Design } from ".prisma/client";
+
 export const updateUserMetadataAllowedKeys = z.object({
   sessionTimeout: z.number().optional(), // Minutes
   defaultBookerLayouts: bookerLayouts.optional(),
@@ -10,6 +12,7 @@ export const updateUserMetadataAllowedKeys = z.object({
   phoneNumber: z.string().optional(),
 });
 
+const DesignEnum = z.nativeEnum(Design);
 export const ZUpdateProfileInputSchema = z.object({
   username: z.string().optional(),
   name: z.string().max(FULL_NAME_LENGTH_MAX_LIMIT).optional(),
@@ -52,6 +55,7 @@ export const ZUpdateProfileInputSchema = z.object({
     .optional(),
   bannerUrl: z.string().nullable().optional(),
   faviconUrl: z.string().nullable().optional(),
+  design: DesignEnum.default(Design.MODERN),
 });
 
 export type TUpdateProfileInputSchema = z.infer<typeof ZUpdateProfileInputSchema>;

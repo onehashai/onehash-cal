@@ -75,6 +75,7 @@ export async function getUserFromSession(ctx: TRPCContextInner, session: Maybe<S
       profiles: true,
       bannerUrl: true,
       faviconUrl: true,
+      design: true,
     },
   });
 
