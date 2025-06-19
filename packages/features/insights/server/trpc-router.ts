@@ -104,18 +104,20 @@ const buildBaseWhereCondition = async ({
       ],
     };
   }
-
+  {
+    /*To show events only from team or personal*/
+  }
   if (teamId && !isAll && !eventTypeId) {
-    const usersFromTeam = await ctx.insightsDb.membership.findMany({
-      where: {
-        teamId: teamId,
-        accepted: true,
-      },
-      select: {
-        userId: true,
-      },
-    });
-    const userIdsFromTeam = usersFromTeam.map((u) => u.userId);
+    // const usersFromTeam = await ctx.insightsDb.membership.findMany({
+    //   where: {
+    //     teamId: teamId,
+    //     accepted: true,
+    //   },
+    //   select: {
+    //     userId: true,
+    //   },
+    // });
+    // const userIdsFromTeam = usersFromTeam.map((u) => u.userId);
     whereCondition = {
       ...whereCondition,
       OR: [
@@ -123,12 +125,12 @@ const buildBaseWhereCondition = async ({
           teamId,
           isTeamBooking: true,
         },
-        {
-          userId: {
-            in: userIdsFromTeam,
-          },
-          isTeamBooking: false,
-        },
+        // {
+        //   userId: {
+        //     in: userIdsFromTeam,
+        //   },
+        //   isTeamBooking: false,
+        // },
       ],
     };
   }
@@ -516,6 +518,7 @@ export const insightsRouter = router({
 
       return result;
     }),
+
   popularEventTypes: userBelongsToTeamProcedure.input(rawDataInputSchema).query(async ({ ctx, input }) => {
     const { teamId, startDate, endDate, memberUserId, userId, isAll, eventTypeId } = input;
 
