@@ -13,6 +13,7 @@ import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { UserRepository } from "@calcom/lib/server/repository/user";
 import { stripMarkdown } from "@calcom/lib/stripMarkdown";
+import type { Design } from "@calcom/prisma/client";
 import { RedirectType, type EventType, type User } from "@calcom/prisma/client";
 import type { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 import type { UserProfile } from "@calcom/types/UserProfile";
@@ -73,6 +74,7 @@ export type UserFoundProps = {
   hideBranding: boolean;
   bannerUrl: string | null;
   faviconUrl: string | null;
+  design: Design;
 } & EmbedProps;
 
 export type UserNotFoundProps = {
@@ -229,6 +231,7 @@ export const getServerSideProps: GetServerSideProps<UserPageProps> = async (cont
         hideBranding: user.hideBranding,
         bannerUrl: user.bannerUrl,
         faviconUrl: user.faviconUrl,
+        design: user.design,
       },
     },
   };

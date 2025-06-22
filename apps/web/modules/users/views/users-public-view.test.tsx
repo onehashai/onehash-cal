@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
+import { Design } from "@calcom/prisma/client";
 import { HeadSeo } from "@calcom/ui";
 
 import UserPage from "./users-public-view";
@@ -62,6 +63,7 @@ function mockedUserPageComponentProps(props: Partial<React.ComponentProps<typeof
       hideBranding: false,
       bannerUrl: null,
       faviconUrl: null,
+      design: Design.LEGACY,
     },
   } satisfies React.ComponentProps<typeof UserPage>;
 }

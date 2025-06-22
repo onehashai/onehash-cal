@@ -73,6 +73,7 @@ const userSelect = Prisma.validator<Prisma.UserSelect>()({
   isPlatformManaged: true,
   bannerUrl: true,
   faviconUrl: true,
+  design: true,
 });
 
 export class UserRepository {

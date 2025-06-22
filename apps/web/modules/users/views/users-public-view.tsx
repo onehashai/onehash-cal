@@ -1,11 +1,14 @@
 "use client";
 
 import classNames from "classnames";
+import { Calendar, Clock, Handshake, MessageCircle, Coffee, Link as LinkIcon, Mic } from "lucide-react";
 import type { InferGetServerSidePropsType } from "next";
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import * as React from "react";
 import { Toaster } from "react-hot-toast";
 
 import {
@@ -21,12 +24,13 @@ import { SIGNUP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import useTheme from "@calcom/lib/hooks/useTheme";
-import { Button, HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
+import { Design } from "@calcom/prisma/client";
+import { Badge, Button, HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
 
 import type { UserNotFoundProps, UserFoundProps } from "@server/lib/[user]/getServerSideProps";
 import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
-function UserFound(props: UserFoundProps) {
+function UserFoundLegacy(props: UserFoundProps) {
   const { users, profile, eventTypes, markdownStrippedBio, entity, isOrgSEOIndexable } = props;
   const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
@@ -239,14 +243,235 @@ function UserNotFound(props: UserNotFoundProps) {
   );
 }
 
+const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={classNames("bg-card text-card-foreground rounded-lg border shadow-sm", className)}
+      {...props}
+    />
+  )
+);
+Card.displayName = "Card";
+
+const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={classNames("flex flex-col space-y-1.5 p-6", className)} {...props} />
+  )
+);
+CardHeader.displayName = "CardHeader";
+
+const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+  ({ className, ...props }, ref) => (
+    <h3
+      ref={ref}
+      className={classNames("text-2xl font-semibold leading-none tracking-tight", className)}
+      {...props}
+    />
+  )
+);
+CardTitle.displayName = "CardTitle";
+
+const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => (
+    <p ref={ref} className={classNames("text-muted-foreground text-sm", className)} {...props} />
+  )
+);
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => <div ref={ref} className={classNames("p-6 pt-0", className)} {...props} />
+);
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={classNames("flex items-center p-6 pt-0", className)} {...props} />
+  )
+);
+CardFooter.displayName = "CardFooter";
+
+function UserFoundModern(props: UserFoundProps) {
+  const navigate = useRouter();
+
+  const eventTypes = [
+    {
+      title: "OneHash Demo",
+      description:
+        "Unlock workflow automation with OneHash! Let's dive into personalized one-on-one discussions to tailor solutions for your specific needs. 🚀😊",
+      duration: ["60m", "90m"],
+      icon: <Calendar className="h-6 w-6" />,
+      color: "text-blue-600",
+    },
+    {
+      title: "Onboarding Call",
+      description:
+        "Welcome aboard! Let's dive into a personalized one-on-one discussions to understand OneHash solutions for your specific needs. 🚀😊",
+      duration: ["30m", "45m", "60m", "120m"],
+      icon: <Handshake className="h-6 w-6" />,
+      color: "text-green-600",
+    },
+    {
+      title: "Quick Chat",
+      description:
+        "👋 AMA - Whether you're looking to brainstorm 💡, collaborate 🤝, or simply want to say hello 👋, I'm here to connect. Let's team up and make amazing things happen together! ⭐",
+      duration: ["15m", "30m"],
+      icon: <Coffee className="h-6 w-6" />,
+      color: "text-orange-600",
+    },
+    {
+      title: "Partnership",
+      description:
+        "Let's team up! 🚀 Explore alliances, product collaborations 📧, integrations 🔗, and referral business partnerships 🏢 with us. ⭐✨",
+      duration: ["30m", "45m"],
+      icon: <LinkIcon className="h-6 w-6" />,
+      color: "text-purple-600",
+    },
+    {
+      title: "Interview",
+      description:
+        "Ready to take the next step in your career? 🚀 Schedule a call with the amazing team to discuss your skills, aspirations, and how you can contribute to our innovative projects.",
+      duration: [],
+      icon: <Mic className="h-6 w-6" />,
+      color: "text-red-600",
+    },
+  ];
+
+  return (
+    <div className="bg-background min-h-screen">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          />
+        </div>
+
+        {/* Tech Elements */}
+        <div className="absolute left-10 top-20 opacity-20">
+          <Calendar className="h-20 w-20 text-blue-500" />
+        </div>
+        <div className="absolute right-20 top-40 opacity-20">
+          <MessageCircle className="h-16 w-16 text-purple-500" />
+        </div>
+        <div className="absolute bottom-20 left-20 opacity-20">
+          <LinkIcon className="h-14 w-14 text-indigo-500" />
+        </div>
+
+        <div className="relative mx-auto max-w-4xl px-6 py-16">
+          <div className="mb-12 text-center">
+            <div className="relative mb-6 inline-block">
+              <div className="mx-auto h-32 w-32 overflow-hidden rounded-full shadow-xl ring-4 ring-white">
+                <img
+                  src="/lovable-uploads/df583ec2-f284-4738-a266-b6ef31dc18e9.png"
+                  alt="Manas Jha"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-green-500">
+                <div className="h-3 w-3 rounded-full bg-white" />
+              </div>
+            </div>
+
+            <h1 className="mb-4 text-4xl font-bold text-gray-900 md:text-5xl">Manas Jha</h1>
+
+            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600">
+              Business Head @ OneHash | Building integrated software ecosystem | Consultant | SaaS | CRM
+              Strategy
+            </p>
+
+            {/* <div className="flex flex-wrap justify-center gap-2 mt-6">
+              <Badge variant="secondary" className="px-3 py-1">OneHash</Badge>
+              <Badge variant="secondary" className="px-3 py-1">SaaS</Badge>
+              <Badge variant="secondary" className="px-3 py-1">CRM Strategy</Badge>
+              <Badge variant="secondary" className="px-3 py-1">Consultant</Badge>
+            </div> */}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="mx-auto max-w-4xl px-6 py-12">
+        <div className="mb-12 text-center">
+          <h2 className="mb-4 text-3xl font-bold text-gray-900">Schedule a Meeting</h2>
+          <p className="text-lg text-gray-600">Choose the type of conversation that best fits your needs</p>
+        </div>
+
+        <div className="grid gap-6">
+          {eventTypes.map((event, index) => (
+            <Card
+              key={index}
+              className="group border-0 shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
+              <CardHeader className="pb-4">
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`rounded-xl bg-gray-50 p-3 ${event.color} transition-transform duration-300 group-hover:scale-110`}>
+                    {event.icon}
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="mb-2 text-xl font-semibold text-gray-900">{event.title}</CardTitle>
+                    <CardDescription className="leading-relaxed text-gray-600">
+                      {event.description}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-400" />
+                    <div className="flex gap-2">
+                      {event.duration.map((duration, idx) => (
+                        <Badge key={idx} className="text-sm">
+                          {duration}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button
+                    className="px-6 py-2 text-white transition-all duration-300 hover:scale-105"
+                    style={{ backgroundColor: "#4285F4" }}
+                    onClick={() => navigate.push("/schedule")}>
+                    Schedule
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-16 border-t border-gray-200 py-8 text-center">
+          <p className="mb-4 text-gray-500">Powered by modern scheduling technology</p>
+          <div className="flex justify-center gap-6 text-sm text-gray-400">
+            <span>🔒 Secure</span>
+            <span>⚡ Fast</span>
+            <span>📱 Mobile Friendly</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export type UserPageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
 function UserPage(props: UserPageProps) {
-  return props.userFound ? (
-    <UserFound {...props.userFound} />
-  ) : (
-    <UserNotFound slug={props.userNotFound?.slug || "User"} />
-  );
+  if (props.userFound) {
+    if (props.userFound.design === Design.LEGACY) {
+      return <UserFoundLegacy {...props.userFound} />;
+    } else {
+      return <UserFoundModern {...props.userFound} />;
+    }
+  } else {
+    return <UserNotFound slug={props.userNotFound?.slug || "User"} />;
+  }
 }
 
 export default UserPage;
