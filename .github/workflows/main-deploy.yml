@@ -657,11 +657,24 @@ jobs:
               log_message "INFO" "✅ Successfully logged into Docker Hub"
             fi
 
-            if ! exec_command "Docker run" "docker run -d -it -e IS_ROLLBACK=\"$IS_ROLLBACK\" --name \"$CONTAINER_NAME\" --env-file \"/home/onehash/.env\" -p ${NEW_PORT}:3001 \"${DOCKERHUB_USERNAME}/${REPO_NAME}:${DOCKER_IMAGE_TAG}\""; then
-              log_message "ERROR" "❌ Failed to start Docker container '$CONTAINER_NAME' - aborting deployment"
-              exit 1
+            # if ! exec_command "Docker run" "docker run -d -it -e IS_ROLLBACK=\"$IS_ROLLBACK\" --name \"$CONTAINER_NAME\" --env-file \"/home/onehash/.env\" -p ${NEW_PORT}:3001 \"${DOCKERHUB_USERNAME}/${REPO_NAME}:${DOCKER_IMAGE_TAG}\""; then
+            #   log_message "ERROR" "❌ Failed to start Docker container '$CONTAINER_NAME' - aborting deployment"
+            #   exit 1
+            # else
+            #   log_message "INFO" "✅ Docker container '$CONTAINER_NAME' started successfully on port $NEW_PORT"
+            # fi
+
+            if ! exec_command "Docker run" "docker run -d -it \
+              --add-host=host.docker.internal:host-gateway \
+              -e IS_ROLLBACK=\"$IS_ROLLBACK\" \
+              --name \"$CONTAINER_NAME\" \
+              --env-file \"/home/onehash/.env\" \
+              -p ${NEW_PORT}:3001 \
+              \"${DOCKERHUB_USERNAME}/${REPO_NAME}:${DOCKER_IMAGE_TAG}\""; then
+                log_message "ERROR" "❌ Failed to start Docker container '$CONTAINER_NAME' - aborting deployment"
+                exit 1
             else
-              log_message "INFO" "✅ Docker container '$CONTAINER_NAME' started successfully on port $NEW_PORT"
+                log_message "INFO" "✅ Docker container '$CONTAINER_NAME' started successfully on port $NEW_PORT"
             fi
 
             # HEALTH CHECK with progress tracking and better error handling
