@@ -128,7 +128,7 @@ function BookingListItem(booking: BookingItemProps) {
   const [rejectionReason, setRejectionReason] = useState<string>("");
   const [rejectionDialogIsOpen, setRejectionDialogIsOpen] = useState(false);
   const [chargeCardDialogIsOpen, setChargeCardDialogIsOpen] = useState(false);
-  const [viewRecordingsDialogIsOpen, setViewRecordingsDialogIsOpen] = useState<boolean>(false);
+  // const [viewRecordingsDialogIsOpen, setViewRecordingsDialogIsOpen] = useState<boolean>(false);
   const [markNoShowDialogIsOpen, setMarkNoShowDialogIsOpen] = useState<boolean>(false);
 
   const [isNoShowDialogOpen, setIsNoShowDialogOpen] = useState<boolean>(false);
@@ -443,17 +443,17 @@ function BookingListItem(booking: BookingItemProps) {
     !booking.isRecorded &&
     (!booking.location || booking.location === "integrations:daily" || booking?.location?.trim() === "");
 
-  const showRecordingActions: ActionType[] = [
-    {
-      id: "view_recordings",
-      label: showCheckRecordingButton ? t("check_for_recordings") : t("view_recordings"),
-      onClick: () => {
-        setViewRecordingsDialogIsOpen(true);
-      },
-      color: showCheckRecordingButton ? "secondary" : "primary",
-      disabled: mutation.status === "pending",
-    },
-  ];
+  // const showRecordingActions: ActionType[] = [
+  //   {
+  //     id: "view_recordings",
+  //     label: showCheckRecordingButton ? t("check_for_recordings") : t("view_recordings"),
+  //     onClick: () => {
+  //       setViewRecordingsDialogIsOpen(true);
+  //     },
+  //     color: showCheckRecordingButton ? "secondary" : "primary",
+  //     disabled: mutation.status === "pending",
+  //   },
+  // ];
 
   const showPendingPayment = paymentAppData.enabled && booking.payment.length && !booking.paid;
   const [expanded, setExpanded] = useState(false);
@@ -562,14 +562,14 @@ function BookingListItem(booking: BookingItemProps) {
           paymentCurrency={booking.payment[0].currency}
         />
       )}
-      {(showViewRecordingsButton || showCheckRecordingButton) && (
+      {/* {(showViewRecordingsButton || showCheckRecordingButton) && (
         <ViewRecordingsDialog
           booking={booking}
           isOpenDialog={viewRecordingsDialogIsOpen}
           setIsOpenDialog={setViewRecordingsDialogIsOpen}
           timeFormat={userTimeFormat ?? null}
         />
-      )}
+      )} */}
       <MarkNoShowDialog
         isOpenDialog={markNoShowDialogIsOpen}
         setIsOpenDialog={setMarkNoShowDialogIsOpen}
@@ -782,9 +782,9 @@ function BookingListItem(booking: BookingItemProps) {
           ) : null}
           {isBookingInPast && isPending && !isConfirmed ? <TableActions actions={bookedActions} /> : null}
           {isBookingInPast && isConfirmed ? <TableActions actions={bookedActions} /> : null}
-          {(showViewRecordingsButton || showCheckRecordingButton) && (
+          {/* {(showViewRecordingsButton || showCheckRecordingButton) && (
             <TableActions actions={showRecordingActions} />
-          )}
+          )} */}
           {isCancelled && booking.rescheduled && (
             <div className="hidden h-full items-center md:flex">
               <RequestSentMessage />

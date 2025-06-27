@@ -11,7 +11,9 @@ import { updateQueryParam, getQueryParam } from "@calcom/features/bookings/Booke
 import { createBooking, createRecurringBooking, createInstantBooking } from "@calcom/features/bookings/lib";
 import type { BookerEvent } from "@calcom/features/bookings/types";
 import { getFullName } from "@calcom/features/form-builder/utils";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { useBookingSuccessRedirect } from "@calcom/lib/bookingSuccessRedirect";
+import { useCustomerIO } from "@calcom/lib/hooks/useCustomerIO";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localStorage } from "@calcom/lib/webstorage";
 import { BookingStatus } from "@calcom/prisma/enums";
@@ -176,6 +178,7 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
     },
     [_instantBooking.data]
   );
+  const { trackEvent: trackEventCIO } = useCustomerIO();
 
   const createBookingMutation = useMutation({
     mutationFn: createBooking,
@@ -225,6 +228,17 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
             isRecurring: false,
           })
         );
+        const meeting_duration = dayjs(booking.endTime).diff(dayjs(booking.startTime), "minute");
+        const trackingPayload = {
+          id: booking.id,
+          event_type_id: booking.eventTypeId,
+          scheduled_by: isPrismaObjOrUndefined(booking.responses)?.name ?? "",
+          meeting_duration,
+          created_at: booking.createdAt,
+          start_time: booking.startTime,
+          is_rescheduled: true,
+        };
+        trackEventCIO("Booking Rescheduled", trackingPayload);
       } else {
         sdkActionManager?.fire("bookingSuccessful", {
           booking: booking,
@@ -246,6 +260,17 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, teamMemb
             isRecurring: false,
           })
         );
+
+        const meeting_duration = dayjs(booking.endTime).diff(dayjs(booking.startTime), "minute");
+        const trackingPayload = {
+          id: booking.id,
+          event_type_id: booking.eventTypeId,
+          scheduled_by: isPrismaObjOrUndefined(booking.responses)?.name ?? "",
+          meeting_duration,
+          created_at: booking.createdAt,
+          start_time: booking.startTime,
+        };
+        trackEventCIO("Booking Created", trackingPayload);
       }
 
       if (paymentUid) {

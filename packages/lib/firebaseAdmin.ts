@@ -48,15 +48,21 @@ class FirebaseService {
       const formattedMetadata = Object.fromEntries(
         Object.entries(metadata).map(([key, value]) => [key, String(value)])
       );
-      //Passing title and body inside data too ,because we are using custom notifications instead of default mobile system ones
       const message = {
-        // notification: payload,
-        data: { ...formattedMetadata, ...payload },
+        notification: payload,
+        data: {
+          ...formattedMetadata,
+        },
         topic,
+        //Android config
         android: {
           priority: "high" as "high" | "normal",
+          notification: {
+            channel_id: "high_importance_channel",
+            sound: "default",
+          },
         },
-        // APNS (Apple) config
+        //Apple Push Notification config (APN)
         apns: {
           payload: {
             aps: {
@@ -64,12 +70,13 @@ class FirebaseService {
             },
           },
           headers: {
-            "apns-push-type": "background",
-            "apns-priority": "5", // Must be `5` when `contentAvailable` is set to true.
-            "apns-topic": "io.flutter.plugins.firebase.messaging", // bundle identifier
+            "apns-push-type": "alert",
+            "apns-priority": "10", // Must be `5` when `contentAvailable` is set to true.
+            "apns-topic": "id.cal.ios", // bundle identifier
           },
         },
       };
+
       const response = await admin.messaging().send(message);
       return response;
     } catch (error) {

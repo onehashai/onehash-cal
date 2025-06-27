@@ -97,6 +97,15 @@ else
     echo "Docker Compose is already installed."
 fi
 
+if ! command -v autossh &> /dev/null
+then
+    echo "AutoSSH not found. Installing..."
+    sudo apt-get install -y autossh
+    echo "AutoSSH installed successfully!"
+else
+    echo "AutoSSH is already installed."
+fi
+
 # Adding current user to the Docker group
 sudo usermod -aG docker $USER
 # Apply changes to groups
