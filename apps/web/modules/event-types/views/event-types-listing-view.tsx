@@ -225,31 +225,39 @@ const Item = ({
             <EventTypeDescription eventType={type} shortenDescription />
           </div>
         ) : (
-          <Link href={`/event-types/${type.id}?tabName=setup`} title={type.title}>
-            <div>
-              <span
-                className="text-default font-semibold ltr:mr-1 rtl:ml-1"
-                data-testid={`event-type-title-${type.id}`}>
-                {type.title}
-              </span>
-              {group.profile.slug ? (
-                <small
-                  className="text-subtle hidden font-normal leading-4 sm:inline"
-                  data-testid={`event-type-slug-${type.id}`}>
-                  {`/${group.profile.slug}/${type.slug}`}
-                </small>
-              ) : null}
-              {readOnly && (
-                <Badge variant="gray" className="ml-2" data-testid="readonly-badge">
-                  {t("readonly")}
-                </Badge>
-              )}
-            </div>
-            <EventTypeDescription
-              eventType={{ ...type, descriptionAsSafeHTML: type.safeDescription }}
-              shortenDescription
+          <div className="flex">
+            <Icon
+              name="badge-check"
+              className="mx-1 inline h-6 w-6 rounded-xl  bg-gray-50 p-3 hover:scale-105 "
             />
-          </Link>
+            <Link href={`/event-types/${type.id}?tabName=setup`} title={type.title}>
+              <div>
+                <div>
+                  <span
+                    className="text-default font-semibold ltr:mr-1 rtl:ml-1"
+                    data-testid={`event-type-title-${type.id}`}>
+                    {type.title}
+                  </span>
+                  {group.profile.slug ? (
+                    <small
+                      className="text-subtle hidden font-normal leading-4 sm:inline"
+                      data-testid={`event-type-slug-${type.id}`}>
+                      {`/${group.profile.slug}/${type.slug}`}
+                    </small>
+                  ) : null}
+                  {readOnly && (
+                    <Badge variant="gray" className="ml-2" data-testid="readonly-badge">
+                      {t("readonly")}
+                    </Badge>
+                  )}
+                </div>
+                <EventTypeDescription
+                  eventType={{ ...type, descriptionAsSafeHTML: type.safeDescription }}
+                  shortenDescription
+                />
+              </div>
+            </Link>
+          </div>
         )}
       </div>
     </div>
