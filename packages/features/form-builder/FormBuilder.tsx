@@ -68,7 +68,7 @@ export const FormBuilder = function FormBuilder({
   description: string;
   addFieldLabel: string;
   disabled: boolean;
-  LockedIcon: false | JSX.Element;
+  LockedIcon?: false | JSX.Element | null;
   /**
    * A readonly dataStore that is used to lookup the options for the fields. It works in conjunction with the field.getOptionAt property which acts as the key in options
    */
@@ -178,11 +178,14 @@ export const FormBuilder = function FormBuilder({
             }
             const groupedBySourceLabel = sources.reduce((groupBy, source) => {
               const item = groupBy[source.label] || [];
-              if (source.type === "user" || source.type === "default") {
+              if (source.type === "user" || (source.type === "default" && field.name !== "phone")) {
                 return groupBy;
               }
-              item.push(source);
-              groupBy[source.label] = item;
+              if (source.type !== "default") {
+                item.push(source);
+                groupBy[source.label] = item;
+                return groupBy;
+              }
               return groupBy;
             }, {} as Record<string, NonNullable<(typeof field)["sources"]>>);
 
@@ -243,7 +246,7 @@ export const FormBuilder = function FormBuilder({
                     {!isFieldEditableSystem && !isFieldEditableSystemButHidden && !disabled && (
                       <Switch
                         data-testid="toggle-field"
-                        disabled={isFieldEditableSystem}
+                        disabled={field.sources?.some((s) => s.label === "Workflow")}
                         checked={!field.hidden}
                         onCheckedChange={(checked) => {
                           update(index, { ...field, hidden: !checked });
