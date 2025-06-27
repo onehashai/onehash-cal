@@ -15,7 +15,10 @@ export async function getEventTypesPublic(userId: number) {
   const eventTypesWithHidden = await getEventTypesWithHiddenFromDB(userId);
 
   const eventTypesRaw = eventTypesWithHidden.filter((evt) => !evt.hidden);
-
+  console.log(
+    "eventtypemetadata_",
+    eventTypesRaw.map((e) => e.metadata)
+  );
   return eventTypesRaw.map((eventType) => ({
     ...eventType,
     metadata: EventTypeMetaDataSchema.parse(eventType.metadata || {}),

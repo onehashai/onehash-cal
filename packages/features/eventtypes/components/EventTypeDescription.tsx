@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { useMemo } from "react";
+import React from "react";
 import type { z } from "zod";
 
 import { Price } from "@calcom/features/bookings/components/event-meta/Price";
@@ -137,3 +138,12 @@ export const EventTypeDescription = ({
 };
 
 export default EventTypeDescription;
+
+const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => (
+    <p ref={ref} className={classNames("text-muted-foreground text-sm", className)} {...props} />
+  )
+);
+CardDescription.displayName = "CardDescription";
+
+export { CardDescription };

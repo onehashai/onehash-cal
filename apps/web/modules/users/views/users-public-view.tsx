@@ -1,12 +1,11 @@
 "use client";
 
 import classNames from "classnames";
-import { Calendar, Clock, Handshake, MessageCircle, Coffee, Link as LinkIcon, Mic } from "lucide-react";
+import { Calendar, Clock, MessageCircle, Link as LinkIcon } from "lucide-react";
 import type { InferGetServerSidePropsType } from "next";
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import * as React from "react";
 import { Toaster } from "react-hot-toast";
@@ -17,15 +16,19 @@ import {
   useEmbedStyles,
   useIsEmbed,
 } from "@calcom/embed-core/embed-iframe";
-import { EventTypeDescriptionLazy as EventTypeDescription } from "@calcom/features/eventtypes/components";
+import {
+  EventTypeDescriptionLazy as EventTypeDescription,
+  EventTypeIconCard,
+} from "@calcom/features/eventtypes/components";
 import EmptyPage from "@calcom/features/eventtypes/components/EmptyPage";
 import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { SIGNUP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import useTheme from "@calcom/lib/hooks/useTheme";
 import { Design } from "@calcom/prisma/client";
-import { Badge, Button, HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
+import { ModernBadge, Button, HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui";
 
 import type { UserNotFoundProps, UserFoundProps } from "@server/lib/[user]/getServerSideProps";
 import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
@@ -247,7 +250,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={classNames("bg-card text-card-foreground rounded-lg border shadow-sm", className)}
+      className={classNames("bg-card text-card-foreground rounded-lg border shadow-md ", className)}
       {...props}
     />
   )
@@ -256,7 +259,7 @@ Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={classNames("flex flex-col space-y-1.5 p-6", className)} {...props} />
+    <div ref={ref} className={classNames("flex flex-col space-y-1.5 px-5 pt-3", className)} {...props} />
   )
 );
 CardHeader.displayName = "CardHeader";
@@ -265,22 +268,17 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HT
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={classNames("text-2xl font-semibold leading-none tracking-tight", className)}
+      className={classNames("text-md font-semibold leading-none tracking-tight md:text-xl", className)}
       {...props}
     />
   )
 );
 CardTitle.displayName = "CardTitle";
 
-const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  ({ className, ...props }, ref) => (
-    <p ref={ref} className={classNames("text-muted-foreground text-sm", className)} {...props} />
-  )
-);
-CardDescription.displayName = "CardDescription";
-
 const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => <div ref={ref} className={classNames("p-6 pt-0", className)} {...props} />
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={classNames("px-4 pb-3 pt-0", className)} {...props} />
+  )
 );
 CardContent.displayName = "CardContent";
 
@@ -292,53 +290,25 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 CardFooter.displayName = "CardFooter";
 
 function UserFoundModern(props: UserFoundProps) {
-  const navigate = useRouter();
+  const { users, eventTypes } = props;
 
-  const eventTypes = [
-    {
-      title: "OneHash Demo",
-      description:
-        "Unlock workflow automation with OneHash! Let's dive into personalized one-on-one discussions to tailor solutions for your specific needs. 🚀😊",
-      duration: ["60m", "90m"],
-      icon: <Calendar className="h-6 w-6" />,
-      color: "text-blue-600",
-    },
-    {
-      title: "Onboarding Call",
-      description:
-        "Welcome aboard! Let's dive into a personalized one-on-one discussions to understand OneHash solutions for your specific needs. 🚀😊",
-      duration: ["30m", "45m", "60m", "120m"],
-      icon: <Handshake className="h-6 w-6" />,
-      color: "text-green-600",
-    },
-    {
-      title: "Quick Chat",
-      description:
-        "👋 AMA - Whether you're looking to brainstorm 💡, collaborate 🤝, or simply want to say hello 👋, I'm here to connect. Let's team up and make amazing things happen together! ⭐",
-      duration: ["15m", "30m"],
-      icon: <Coffee className="h-6 w-6" />,
-      color: "text-orange-600",
-    },
-    {
-      title: "Partnership",
-      description:
-        "Let's team up! 🚀 Explore alliances, product collaborations 📧, integrations 🔗, and referral business partnerships 🏢 with us. ⭐✨",
-      duration: ["30m", "45m"],
-      icon: <LinkIcon className="h-6 w-6" />,
-      color: "text-purple-600",
-    },
-    {
-      title: "Interview",
-      description:
-        "Ready to take the next step in your career? 🚀 Schedule a call with the amazing team to discuss your skills, aspirations, and how you can contribute to our innovative projects.",
-      duration: [],
-      icon: <Mic className="h-6 w-6" />,
-      color: "text-red-600",
-    },
-  ];
+  const [user] = users; //To be used when we only have a single user, not dynamic group
+
+  const {
+    // So it doesn't display in the Link (and make tests fail)
+    user: _user,
+    orgSlug: _orgSlug,
+    redirect: _redirect,
+    ...query
+  } = useRouterQuery();
+
+  function getSafeString(value: unknown, fallback: string): string {
+    return typeof value === "string" && value.trim() !== "" ? value : fallback;
+  }
+  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background min-h-screen [zoom:0.75] ">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         {/* Background Pattern */}
@@ -362,27 +332,20 @@ function UserFoundModern(props: UserFoundProps) {
           <LinkIcon className="h-14 w-14 text-indigo-500" />
         </div>
 
-        <div className="relative mx-auto max-w-4xl px-6 py-16">
-          <div className="mb-12 text-center">
+        <div className="relative mx-auto max-w-5xl px-6 py-6 md:px-0">
+          <div className=" text-center">
             <div className="relative mb-6 inline-block">
               <div className="mx-auto h-32 w-32 overflow-hidden rounded-full shadow-xl ring-4 ring-white">
-                <img
-                  src="/lovable-uploads/df583ec2-f284-4738-a266-b6ef31dc18e9.png"
-                  alt="Manas Jha"
-                  className="h-full w-full object-cover"
-                />
+                <img src={user.avatarUrl ?? ""} alt="Manas Jha" className="h-full w-full object-cover" />
               </div>
               <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-green-500">
                 <div className="h-3 w-3 rounded-full bg-white" />
               </div>
             </div>
 
-            <h1 className="mb-4 text-4xl font-bold text-gray-900 md:text-5xl">Manas Jha</h1>
+            <h1 className="mb-4 text-4xl font-bold text-gray-900 md:text-5xl">{user.name}</h1>
 
-            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600">
-              Business Head @ OneHash | Building integrated software ecosystem | Consultant | SaaS | CRM
-              Strategy
-            </p>
+            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600">{user.bio}</p>
 
             {/* <div className="flex flex-wrap justify-center gap-2 mt-6">
               <Badge variant="secondary" className="px-3 py-1">OneHash</Badge>
@@ -396,64 +359,90 @@ function UserFoundModern(props: UserFoundProps) {
 
       {/* Main Content */}
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <div className="mb-12 text-center">
+        {/* <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl font-bold text-gray-900">Schedule a Meeting</h2>
           <p className="text-lg text-gray-600">Choose the type of conversation that best fits your needs</p>
-        </div>
+        </div> */}
 
         <div className="grid gap-6">
-          {eventTypes.map((event, index) => (
-            <Card
-              key={index}
-              className="group border-0 shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`rounded-xl bg-gray-50 p-3 ${event.color} transition-transform duration-300 group-hover:scale-110`}>
-                    {event.icon}
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="mb-2 text-xl font-semibold text-gray-900">{event.title}</CardTitle>
-                    <CardDescription className="leading-relaxed text-gray-600">
-                      {event.description}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <div className="flex gap-2">
-                      {event.duration.map((duration, idx) => (
-                        <Badge key={idx} className="text-sm">
-                          {duration}
-                        </Badge>
-                      ))}
+          {eventTypes.map((event, index) => {
+            const iconParams = isPrismaObjOrUndefined(isPrismaObjOrUndefined(event.metadata)?.iconParams);
+            const iconName = getSafeString(iconParams?.icon, "Calendar");
+            const iconColor = getSafeString(iconParams?.color, "text-blue-600");
+            return (
+              <Card
+                key={index}
+                className="group border-0 shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-4">
+                    <EventTypeIconCard iconName={iconName} color={iconColor} />
+                    <div className="flex-1">
+                      <CardTitle className=" font-semibold text-gray-900">{event.title}</CardTitle>
+                      {event.descriptionAsSafeHTML && (
+                        <div
+                          className="mt-2 leading-relaxed text-gray-600"
+                          // eslint-disable-next-line react/no-danger
+                          dangerouslySetInnerHTML={{
+                            __html: event.descriptionAsSafeHTML || "",
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
+                </CardHeader>
 
-                  <Button
-                    className="px-6 py-2 text-white transition-all duration-300 hover:scale-105"
-                    style={{ backgroundColor: "#4285F4" }}
-                    onClick={() => navigate.push("/schedule")}>
-                    Schedule
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <div className="flex gap-2">
+                        {event.metadata?.multipleDuration ? (
+                          event.metadata.multipleDuration.map((duration, idx) => (
+                            <ModernBadge variant="outline" key={idx} className="text-sm">
+                              {duration}
+                            </ModernBadge>
+                          ))
+                        ) : (
+                          <ModernBadge variant="outline" className="text-sm">
+                            {event.length}
+                          </ModernBadge>
+                        )}
+                      </div>
+                    </div>
+
+                    <Link
+                      href={{
+                        pathname: `/${user.profile.username}/${event.slug}`,
+                        query,
+                      }}
+                      color="primary"
+                      className="rounded-lg px-3 py-1.5 text-white transition-all duration-300 hover:scale-105 md:px-6 md:py-2"
+                      style={{ backgroundColor: "#4285F4" }}
+                      onClick={() => {
+                        sdkActionManager?.fire("eventTypeSelected", {
+                          eventType: event,
+                        });
+                      }}>
+                      Schedule
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Footer */}
-        <div className="mt-16 border-t border-gray-200 py-8 text-center">
+        {/* <div className="mt-16 border-t border-gray-200 py-8 text-center">
           <p className="mb-4 text-gray-500">Powered by modern scheduling technology</p>
           <div className="flex justify-center gap-6 text-sm text-gray-400">
             <span>🔒 Secure</span>
             <span>⚡ Fast</span>
             <span>📱 Mobile Friendly</span>
           </div>
+        </div> */}
+        <div key="logo" className={classNames("mt-8 flex w-full justify-center [&_img]:h-[48px]")}>
+          <PoweredBy logoOnly hideBranding={props.hideBranding} bannerUrl={props.bannerUrl ?? undefined} />
         </div>
       </div>
     </div>

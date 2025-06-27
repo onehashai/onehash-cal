@@ -3,3 +3,4 @@ export { UpgradeTeamsBadge } from "./UpgradeTeamsBadge";
 export { UpgradeOrgsBadge } from "./UpgradeOrgsBadge";
 export { InfoBadge } from "./InfoBadge";
 export type { BadgeProps } from "./Badge";
+export { ModernBadge, ModernBadgeVariants } from "./ModernBadge";

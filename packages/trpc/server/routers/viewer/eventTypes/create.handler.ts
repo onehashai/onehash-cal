@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
-import { isPrismaObjOrUndefined } from "@calcom/lib";
+import { getEventIconAndColor, isPrismaObjOrUndefined } from "@calcom/lib";
 import { IS_DEV, ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
 import { getDefaultLocations } from "@calcom/lib/server";
 import { EventTypeRepository } from "@calcom/lib/server/repository/eventType";
@@ -48,11 +48,19 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
   const locations: EventTypeLocation[] =
     inputLocations && inputLocations.length !== 0 ? inputLocations : await getDefaultLocations(ctx.user);
 
+  const eventIconInfo = await getEventIconAndColor(rest.title, rest.description ?? "");
+  const metadataWithIcon = {
+    ...metadata,
+    iconParams: {
+      icon: eventIconInfo.icon,
+      color: eventIconInfo.color,
+    },
+  };
   const data: Prisma.EventTypeCreateInput = {
     ...rest,
     length: typeof length === "number" ? length : length[0],
     owner: teamId ? undefined : { connect: { id: userId } },
-    metadata: (metadata as Prisma.InputJsonObject) ?? undefined,
+    metadata: (metadataWithIcon as Prisma.InputJsonObject) ?? undefined,
     // Only connecting the current user for non-managed event types and non team event types
     users: isManagedEventType || schedulingType ? undefined : { connect: { id: userId } },
     locations,

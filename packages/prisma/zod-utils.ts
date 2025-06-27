@@ -117,6 +117,12 @@ export const EventTypeMetaDataSchema = z
     whatsappNumber: z.string().optional(),
     billingAddressRequired: z.boolean().optional(),
     disableCancelAndRescheduleMeeting: z.boolean().optional(),
+    iconParams: z
+      .object({
+        icon: z.string().optional(),
+        color: z.string().optional(),
+      })
+      .optional(),
   })
   .nullable();
 
