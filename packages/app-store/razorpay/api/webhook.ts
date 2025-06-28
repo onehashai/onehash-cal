@@ -109,7 +109,7 @@ async function handlePaymentLinkPaid({
     // throw new HttpCode({ statusCode: 404, message: "Payment not found" });
   }
 
-  if (!payment.success) {
+  if (payment && !payment.success) {
     await handlePaymentSuccess(payment.id, payment.bookingId, { paymentId });
   }
 }
