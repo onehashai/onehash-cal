@@ -98,9 +98,18 @@ async function handlePaymentLinkPaid({
     where: { externalId: paymentLinkId },
     select: { id: true, bookingId: true, success: true },
   });
-  if (!payment) throw new HttpCode({ statusCode: 404, message: "Payment not found" });
+  if (!payment) {
+    logger.warn({
+      message: "Payment not found for the given payment link",
+      paymentLinkId,
+      paymentId,
+    });
+    //Not throwing 404 here, as this is a webhook and we don't want to fail the webhook processing
+    // as payment link could be created outside of cal.id too and failing here multiple times will cause webhook to be disabled
+    // throw new HttpCode({ statusCode: 404, message: "Payment not found" });
+  }
 
-  if (!payment.success) {
+  if (payment && !payment.success) {
     await handlePaymentSuccess(payment.id, payment.bookingId, { paymentId });
   }
 }
