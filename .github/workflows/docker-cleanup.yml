@@ -1,0 +1,104 @@
+name: Prune Docker Images
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # Every day at 1 AM UTC
+  workflow_dispatch:     # Allows manual trigger
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up jq
+        run: sudo apt-get install -y jq
+
+      - name: Prune old Docker tags Staging
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPO: onehashai/cal_stag
+        run: |
+          echo "Logging into Docker Hub..."
+          echo "$DOCKER_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
+
+          echo "Fetching tags..."
+          tags_json=$(curl -s -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+            "https://hub.docker.com/v2/repositories/$REPO/tags/?page_size=100")
+
+          tags=$(echo "$tags_json" | jq -r '.results[] | "\(.name) \(.last_updated)"' | sort -rk2)
+
+          total=$(echo "$tags" | wc -l)
+          echo "Found $total tags in $REPO"
+
+          if [ "$total" -le 5 ]; then
+            echo "Nothing to delete."
+            exit 0
+          fi
+
+          tags_to_delete=$(echo "$tags" | tail -n +6 | awk '{print $1}')
+
+          for tag in $tags_to_delete; do
+            echo "Deleting tag: $tag"
+
+            digest=$(curl -s -I -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+              -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+              "https://registry-1.docker.io/v2/$REPO/manifests/$tag" \
+              | awk '/Docker-Content-Digest/ {print $2}' | tr -d $'\r')
+
+            if [ -n "$digest" ]; then
+              curl -s -X DELETE -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+                "https://registry-1.docker.io/v2/$REPO/manifests/$digest"
+              echo "Deleted tag: $tag"
+            else
+              echo "Could not find digest for tag: $tag"
+            fi
+          done
+
+          echo "Pruning completed."
+
+      - name: Prune old Docker tags Production
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPO: onehashai/cal_prod
+        run: |
+          echo "Logging into Docker Hub..."
+          echo "$DOCKER_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
+
+          echo "Fetching tags..."
+          tags_json=$(curl -s -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+            "https://hub.docker.com/v2/repositories/$REPO/tags/?page_size=100")
+
+          tags=$(echo "$tags_json" | jq -r '.results[] | "\(.name) \(.last_updated)"' | sort -rk2)
+
+          total=$(echo "$tags" | wc -l)
+          echo "Found $total tags in $REPO"
+
+          if [ "$total" -le 5 ]; then
+            echo "Nothing to delete."
+            exit 0
+          fi
+
+          tags_to_delete=$(echo "$tags" | tail -n +6 | awk '{print $1}')
+
+          for tag in $tags_to_delete; do
+            echo "Deleting tag: $tag"
+
+            digest=$(curl -s -I -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+              -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+              "https://registry-1.docker.io/v2/$REPO/manifests/$tag" \
+              | awk '/Docker-Content-Digest/ {print $2}' | tr -d $'\r')
+
+            if [ -n "$digest" ]; then
+              curl -s -X DELETE -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+                "https://registry-1.docker.io/v2/$REPO/manifests/$digest"
+              echo "Deleted tag: $tag"
+            else
+              echo "Could not find digest for tag: $tag"
+            fi
+          done
+
+          echo "Pruning completed."
