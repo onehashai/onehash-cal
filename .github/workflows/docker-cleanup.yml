@@ -1,0 +1,118 @@
+name: Prune Docker Images
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # Every day at 1 AM UTC
+  workflow_dispatch:     # Allows manual trigger
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up jq
+        run: sudo apt-get install -y jq
+
+      - name: Login to Docker Hub and get token
+        id: dockerhub_login
+        shell: bash
+        run: |
+          TOKEN=$(curl -s -H "Content-Type: application/json" \
+                      -X POST \
+                      -d '{"username": "${{ secrets.DOCKERHUB_USERNAME }}", "password": "${{ secrets.DOCKERHUB_TOKEN }}"}' \
+                      https://hub.docker.com/v2/users/login/ | jq -r .token)
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "Failed to get Docker Hub JWT token"
+            exit 1
+          fi
+          echo "token=${TOKEN}" >> $GITHUB_OUTPUT
+
+
+
+      - name: Prune old Docker tags Staging
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPO: onehashai/cal_stag
+        run: |
+          echo "Fetching tags using JWT token..."
+          tags_json=$(curl -s -H "Authorization: JWT ${{ steps.dockerhub_login.outputs.token }}" \
+            "https://hub.docker.com/v2/repositories/$REPO/tags/?page_size=100")
+
+          tags=$(echo "$tags_json" | jq -r '.results[] | "\(.name) \(.last_updated)"' | sort -rk2)
+
+          total=$(echo "$tags" | wc -l)
+          echo "Found $total tags in $REPO"
+
+          if [ "$total" -le 5 ]; then
+            echo "Nothing to delete."
+            exit 0
+          fi
+
+          tags_to_delete=$(echo "$tags" | tail -n +6 | awk '{print $1}')
+
+          for tag in $tags_to_delete; do
+            echo "Deleting tag: $tag"
+
+            # For deleting tags, you need to use the Registry API, which requires PAT token, not JWT
+            # So use your original DOCKER_TOKEN secret for this part
+            digest=$(curl -s -I -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+              -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+              "https://registry-1.docker.io/v2/$REPO/manifests/$tag" \
+              | awk '/Docker-Content-Digest/ {print $2}' | tr -d $'\r')
+
+            if [ -n "$digest" ]; then
+              curl -s -X DELETE -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+                "https://registry-1.docker.io/v2/$REPO/manifests/$digest"
+              echo "Deleted tag: $tag"
+            else
+              echo "Could not find digest for tag: $tag"
+            fi
+          done
+
+          echo "Pruning completed."
+
+      - name: Prune old Docker tags Production
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPO: onehashai/cal_prod
+        run: |  
+          echo "Fetching tags using JWT token..."
+          tags_json=$(curl -s -H "Authorization: JWT ${{ steps.dockerhub_login.outputs.token }}" \
+            "https://hub.docker.com/v2/repositories/$REPO/tags/?page_size=100")
+
+          tags=$(echo "$tags_json" | jq -r '.results[] | "\(.name) \(.last_updated)"' | sort -rk2)
+
+          total=$(echo "$tags" | wc -l)
+          echo "Found $total tags in $REPO"
+
+          if [ "$total" -le 5 ]; then
+            echo "Nothing to delete."
+            exit 0
+          fi
+
+          tags_to_delete=$(echo "$tags" | tail -n +6 | awk '{print $1}')
+
+          for tag in $tags_to_delete; do
+            echo "Deleting tag: $tag"
+
+            # For deleting tags, you need to use the Registry API, which requires PAT token, not JWT
+            # So use your original DOCKER_TOKEN secret for this part
+            digest=$(curl -s -I -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+              -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+              "https://registry-1.docker.io/v2/$REPO/manifests/$tag" \
+              | awk '/Docker-Content-Digest/ {print $2}' | tr -d $'\r')
+
+            if [ -n "$digest" ]; then
+              curl -s -X DELETE -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+                "https://registry-1.docker.io/v2/$REPO/manifests/$digest"
+              echo "Deleted tag: $tag"
+            else
+              echo "Could not find digest for tag: $tag"
+            fi
+          done
+
+          echo "Pruning completed."
