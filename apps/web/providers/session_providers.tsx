@@ -68,7 +68,7 @@ export default function SessionManager({ children }: { children: React.ReactNode
           email,
           first_name,
           last_name,
-          created_at: createdAt,
+          created_at: Date.parse(createdAt),
           slug: username,
           onboarding_completed: completedOnboarding,
           custom_branding: customBrandingEnabled,
