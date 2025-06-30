@@ -3,6 +3,7 @@ import { useCallback } from "react";
 // Type definitions for Customer.io analytics
 interface CustomerIOAnalytics {
   track: (event: string, payload?: Record<string, any>) => void;
+  identify: (id: number | string, payload: Record<string, any>) => void;
 }
 
 declare global {
