@@ -443,6 +443,24 @@ const handleDeleteCredential = async ({
     });
   }
 
+  if (credential.app?.slug === "pabbly") {
+    await prisma.webhook.deleteMany({
+      where: {
+        // userId: userId,
+        ...(teamId ? { teamId } : { userId }),
+        subscriberUrl: {
+          startsWith: "https://connect.pabbly.com/workflow/sendwebhookdata",
+        },
+      },
+    });
+
+    deleteWebhookScheduledTriggers({
+      appId: credential.appId,
+      userId: teamId ? undefined : userId,
+      teamId,
+    });
+  }
+
   let metadata = userMetadataSchema.parse(userMetadata);
 
   if (credential.app?.slug === metadata?.defaultConferencingApp?.appSlug) {
