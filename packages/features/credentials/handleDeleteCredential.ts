@@ -453,12 +453,6 @@ const handleDeleteCredential = async ({
         },
       },
     });
-
-    deleteWebhookScheduledTriggers({
-      appId: credential.appId,
-      userId: teamId ? undefined : userId,
-      teamId,
-    });
   }
 
   let metadata = userMetadataSchema.parse(userMetadata);
