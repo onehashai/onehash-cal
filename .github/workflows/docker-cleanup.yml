@@ -15,17 +15,30 @@ jobs:
       - name: Set up jq
         run: sudo apt-get install -y jq
 
+      - name: Login to Docker Hub and get token
+        id: dockerhub_login
+        shell: bash
+        run: |
+          TOKEN=$(curl -s -H "Content-Type: application/json" \
+                      -X POST \
+                      -d '{"username": "${{ secrets.DOCKERHUB_USERNAME }}", "password": "${{ secrets.DOCKERHUB_TOKEN }}"}' \
+                      https://hub.docker.com/v2/users/login/ | jq -r .token)
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "Failed to get Docker Hub JWT token"
+            exit 1
+          fi
+          echo "token=${TOKEN}" >> $GITHUB_OUTPUT
+
+
+
       - name: Prune old Docker tags Staging
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           REPO: onehashai/cal_stag
         run: |
-          echo "Logging into Docker Hub..."
-          echo "$DOCKER_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
-
-          echo "Fetching tags..."
-          tags_json=$(curl -s -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+          echo "Fetching tags using JWT token..."
+          tags_json=$(curl -s -H "Authorization: JWT ${{ steps.dockerhub_login.outputs.token }}" \
             "https://hub.docker.com/v2/repositories/$REPO/tags/?page_size=100")
 
           tags=$(echo "$tags_json" | jq -r '.results[] | "\(.name) \(.last_updated)"' | sort -rk2)
@@ -43,6 +56,8 @@ jobs:
           for tag in $tags_to_delete; do
             echo "Deleting tag: $tag"
 
+            # For deleting tags, you need to use the Registry API, which requires PAT token, not JWT
+            # So use your original DOCKER_TOKEN secret for this part
             digest=$(curl -s -I -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
               -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
               "https://registry-1.docker.io/v2/$REPO/manifests/$tag" \
@@ -64,12 +79,9 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           REPO: onehashai/cal_prod
-        run: |
-          echo "Logging into Docker Hub..."
-          echo "$DOCKER_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
-
-          echo "Fetching tags..."
-          tags_json=$(curl -s -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
+        run: |  
+          echo "Fetching tags using JWT token..."
+          tags_json=$(curl -s -H "Authorization: JWT ${{ steps.dockerhub_login.outputs.token }}" \
             "https://hub.docker.com/v2/repositories/$REPO/tags/?page_size=100")
 
           tags=$(echo "$tags_json" | jq -r '.results[] | "\(.name) \(.last_updated)"' | sort -rk2)
@@ -87,6 +99,8 @@ jobs:
           for tag in $tags_to_delete; do
             echo "Deleting tag: $tag"
 
+            # For deleting tags, you need to use the Registry API, which requires PAT token, not JWT
+            # So use your original DOCKER_TOKEN secret for this part
             digest=$(curl -s -I -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
               -u "$DOCKER_USERNAME:$DOCKER_TOKEN" \
               "https://registry-1.docker.io/v2/$REPO/manifests/$tag" \
