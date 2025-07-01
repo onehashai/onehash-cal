@@ -278,6 +278,7 @@ if (IS_KEYCLOAK_LOGIN_ENABLED) {
       clientSecret: KEYCLOAK_CLIENT_SECRET,
       issuer: KEYCLOAK_ISSUER,
       allowDangerousEmailAccountLinking: true,
+      checks: [],
     })
   );
 }
@@ -1037,13 +1038,9 @@ export const getOptions = ({
      */
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (url.includes("auth/login")) return `${baseUrl}/event-types`;
-      // if (url.includes("event-types")) return `${baseUrl}/event-types`;
-      // Allows callback URLs on the same domain
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
       return url;
-      // else if (new URL(url).hostname === new URL(WEBAPP_URL).hostname) return url;
-      // return baseUrl;
     },
   },
   events: {
