@@ -71,7 +71,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
     return {
       redirect: {
-        destination: "/",
+        destination: "/event-types",
         permanent: false,
       },
     };
