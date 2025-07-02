@@ -128,7 +128,7 @@ describe("handleNewBooking", () => {
               email: booker.email,
               name: booker.name,
               location: { optionValue: "", value: BookingLocations.CalVideo },
-              smsReminderNumber: "000",
+              phone: "+911234567890",
             },
           },
         });
@@ -142,7 +142,7 @@ describe("handleNewBooking", () => {
 
         expectSMSWorkflowToBeTriggered({
           sms,
-          toNumber: "000",
+          toNumber: "+911234567890",
         });
 
         expectWorkflowToBeTriggered({
@@ -227,7 +227,7 @@ describe("handleNewBooking", () => {
               email: booker.email,
               name: booker.name,
               location: { optionValue: "", value: BookingLocations.CalVideo },
-              smsReminderNumber: "000",
+              phone: "+911234567890",
             },
           },
         });
@@ -241,7 +241,7 @@ describe("handleNewBooking", () => {
 
         expectSMSWorkflowToBeNotTriggered({
           sms,
-          toNumber: "000",
+          toNumber: "+911234567890",
         });
       },
       timeout
@@ -374,7 +374,7 @@ describe("handleNewBooking", () => {
               email: booker.email,
               name: booker.name,
               location: { optionValue: "", value: BookingLocations.CalVideo },
-              smsReminderNumber: "000",
+              phone: "+911234567890",
             },
           },
         });
@@ -388,7 +388,7 @@ describe("handleNewBooking", () => {
 
         expectSMSWorkflowToBeTriggered({
           sms,
-          toNumber: "000",
+          toNumber: "+911234567890",
         });
 
         expectWorkflowToBeTriggered({
@@ -519,7 +519,7 @@ describe("handleNewBooking", () => {
               email: booker.email,
               name: booker.name,
               location: { optionValue: "", value: BookingLocations.CalVideo },
-              smsReminderNumber: "000",
+              phone: "+911234567890",
             },
           },
         });
@@ -533,7 +533,7 @@ describe("handleNewBooking", () => {
 
         expectSMSWorkflowToBeNotTriggered({
           sms,
-          toNumber: "000",
+          toNumber: "+911234567890",
         });
       },
       timeout
@@ -755,7 +755,7 @@ describe("handleNewBooking", () => {
             email: booker.email,
             name: booker.name,
             location: { optionValue: "", value: BookingLocations.CalVideo },
-            smsReminderNumber: "000",
+            phone: "+911234567890",
           },
         },
       });
@@ -769,7 +769,7 @@ describe("handleNewBooking", () => {
 
       expectSMSWorkflowToBeTriggered({
         sms,
-        toNumber: "000",
+        toNumber: "+911234567890",
       });
     });
   });

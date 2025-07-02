@@ -1,0 +1,17 @@
+{
+  "/*": "Don't modify slug - If required, do it using cli edit command",
+  "name": "Pabbly",
+  "slug": "pabbly",
+  "type": "pabbly_onehash",
+  "logo": "icon.png",
+  "url": "https://www.pabbly.com/connect/integrations/cal-id/",
+  "variant": "automation",
+  "categories": ["automation"],
+  "publisher": "OneHash",
+  "email": "support@onehash.ai",
+  "description": "Build and automate anything in one powerful visual platform.",
+  "isTemplate": false,
+  "__createdUsingCli": true,
+  "__template": "basic",
+  "dirName": "pabbly"
+}

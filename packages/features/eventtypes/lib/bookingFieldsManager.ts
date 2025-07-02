@@ -52,7 +52,7 @@ async function getEventType(eventTypeId: EventType["id"]) {
  * @param eventTypeId
  */
 export async function upsertBookingField(
-  fieldToAdd: Omit<Field, "required">,
+  // fieldToAdd: Omit<Field, "required">,
   source: NonNullable<Field["sources"]>[number],
   eventTypeId: EventType["id"]
 ) {
@@ -60,7 +60,7 @@ export async function upsertBookingField(
   let fieldFound = false;
 
   const newFields = eventType.bookingFields.map((f) => {
-    if (f.name === fieldToAdd.name) {
+    if (f.name === "phone") {
       fieldFound = true;
 
       const currentSources = f.sources ? f.sources : ([] as NonNullable<typeof f.sources>[]);
@@ -86,18 +86,19 @@ export async function upsertBookingField(
         // If any source requires the field, mark the field required
         required: newSources.some((s) => s.fieldRequired),
         sources: newSources,
+        hidden: false,
       };
       return newField;
     }
     return f;
   });
-  if (!fieldFound) {
-    newFields.push({
-      ...fieldToAdd,
-      required: source.fieldRequired,
-      sources: [source],
-    });
-  }
+  // if (!fieldFound) {
+  //   newFields.push({
+  //     ...fieldToAdd,
+  //     required: source.fieldRequired,
+  //     sources: [source],
+  //   });
+  // }
   await prisma.eventType.update({
     where: {
       id: eventTypeId,

@@ -725,12 +725,13 @@ export default function Success(props: PageProps) {
                             // We show notes in additional notes section
                             // We show rescheduleReason at the top
                             if (!field) return null;
+
                             const isSystemField = SystemField.safeParse(field.name);
                             // SMS_REMINDER_NUMBER_FIELD is a system field but doesn't have a dedicated place in the UI. So, it would be shown through the following responses list
                             // TITLE is also an identifier for booking question "What is this meeting about?"
                             if (
                               isSystemField.success &&
-                              field.name !== SMS_REMINDER_NUMBER_FIELD &&
+                              // field.name !== SMS_REMINDER_NUMBER_FIELD &&
                               field.name !== TITLE_FIELD
                             )
                               return null;
@@ -843,7 +844,7 @@ export default function Success(props: PageProps) {
                               allRemainingBookings={allRemainingBookings}
                               seatReferenceUid={seatReferenceUid}
                               bookingCancelledEventProps={bookingCancelledEventProps}
-                              isLoggedInUserHost={!!props.isLoggedInUserHost ?? false}
+                              isLoggedInUserHost={!!(props.isLoggedInUserHost ?? false)}
                               currentUserEmail={currentUserEmail}
                             />
                           </>
