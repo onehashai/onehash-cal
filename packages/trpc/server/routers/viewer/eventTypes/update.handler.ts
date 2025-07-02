@@ -2,11 +2,11 @@ import { Prisma } from "@prisma/client";
 import type { NextApiResponse, GetServerSidePropsContext } from "next";
 
 import type { appDataSchemas } from "@calcom/app-store/apps.schemas.generated";
-import updateChildrenEventTypes from "@calcom/features/oe/managed-event-types/lib/handleChildrenEventTypes";
+import updateChildrenEventTypes from "@calcom/features/ee/managed-event-types/lib/handleChildrenEventTypes";
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
-} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
+} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
 import tasker from "@calcom/features/tasker";
 import { isPrismaObjOrUndefined, validateIntervalLimitOrder } from "@calcom/lib";
 import { IS_DEV, ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";

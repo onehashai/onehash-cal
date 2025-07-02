@@ -1,11 +1,11 @@
 import { z } from "zod";
 
+import type { WorkflowType } from "@calcom/features/ee/workflows/components/WorkflowListPage";
+import { deleteScheduledEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+import { deleteScheduledSMSReminder } from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
+import { deleteScheduledWhatsappReminder } from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
+import type { WorkflowStep } from "@calcom/features/ee/workflows/lib/types";
 import { hasFilter } from "@calcom/features/filters/lib/hasFilter";
-import type { WorkflowType } from "@calcom/features/oe/workflows/components/WorkflowListPage";
-import { deleteScheduledEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
-import { deleteScheduledSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/whatsappReminderManager";
-import type { WorkflowStep } from "@calcom/features/oe/workflows/lib/types";
 import prisma from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/client";
 import { Prisma } from "@calcom/prisma/client";

@@ -5,14 +5,14 @@ import type { TFunction } from "next-i18next";
 import { useMemo } from "react";
 import type { UseFormReturn } from "react-hook-form";
 
+import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
+import type { Workflow } from "@calcom/features/ee/workflows/lib/types";
 import type {
   EventTypeSetupProps,
   AvailabilityOption,
   FormValues,
   EventTypeApps,
 } from "@calcom/features/eventtypes/lib/types";
-import useLockedFieldsManager from "@calcom/features/oe/managed-event-types/hooks/useLockedFieldsManager";
-import type { Workflow } from "@calcom/features/oe/workflows/lib/types";
 import getPaymentAppData from "@calcom/lib/getPaymentAppData";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { VerticalTabItemProps } from "@calcom/ui";

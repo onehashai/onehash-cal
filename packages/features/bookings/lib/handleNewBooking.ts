@@ -31,16 +31,16 @@ import getICalUID from "@calcom/emails/lib/getICalUID";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
 import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhookTrigger";
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
-import { getFullName } from "@calcom/features/form-builder/utils";
-import { subscriptionSchema } from "@calcom/features/instant-meeting/schema";
-import { sendNotification } from "@calcom/features/notifications/sendNotification";
-import AssignmentReasonRecorder from "@calcom/features/oe/round-robin/assignmentReason/AssignmentReasonRecorder";
+import AssignmentReasonRecorder from "@calcom/features/ee/round-robin/assignmentReason/AssignmentReasonRecorder";
 import {
   allowDisablingAttendeeConfirmationEmails,
   allowDisablingHostConfirmationEmails,
-} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
-import { scheduleWorkflowReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
-import { scheduleMandatoryReminder } from "@calcom/features/oe/workflows/lib/reminders/scheduleMandatoryReminder";
+} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
+import { scheduleWorkflowReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
+import { scheduleMandatoryReminder } from "@calcom/features/ee/workflows/lib/reminders/scheduleMandatoryReminder";
+import { getFullName } from "@calcom/features/form-builder/utils";
+import { subscriptionSchema } from "@calcom/features/instant-meeting/schema";
+import { sendNotification } from "@calcom/features/notifications/sendNotification";
 import { UsersRepository } from "@calcom/features/users/users.repository";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";

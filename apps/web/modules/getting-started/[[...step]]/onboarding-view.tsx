@@ -34,7 +34,7 @@ const steps = [
   "import-data",
 ] as const;
 
-const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
 
 const stepTransform = (step: (typeof steps)[number]) => {
   const stepIndex = steps.indexOf(step);

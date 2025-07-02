@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import TeamMemberAddition from "@calcom/features/oe/teams/components/TeamMemberAddition";
+import TeamMemberAddition from "@calcom/features/ee/teams/components/TeamMemberAddition";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { WizardLayout } from "@calcom/ui";
 

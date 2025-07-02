@@ -1,4 +1,4 @@
-import { CreateANewTeamForm } from "@calcom/features/oe/teams/components";
+import { CreateANewTeamForm } from "@calcom/features/ee/teams/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Dialog, DialogContent } from "@calcom/ui";

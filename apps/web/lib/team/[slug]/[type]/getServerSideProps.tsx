@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import type { GetBookingType } from "@calcom/features/bookings/lib/get-booking";
 import { getBookingForReschedule } from "@calcom/features/bookings/lib/get-booking";
-import { getSlugOrRequestedSlug, orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug, orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUsernameList } from "@calcom/lib/defaultEvents";
 import { getBookerBaseUrlSync } from "@calcom/lib/getBookerUrl/client";

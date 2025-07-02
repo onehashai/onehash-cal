@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 
+import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import type { FormValues, EventTypeSetupProps } from "@calcom/features/eventtypes/lib/types";
-import useLockedFieldsManager from "@calcom/features/oe/managed-event-types/hooks/useLockedFieldsManager";
 import { WebhookForm } from "@calcom/features/webhooks/components";
 import EventTypeWebhookListItem from "@calcom/features/webhooks/components/EventTypeWebhookListItem";
 import type { WebhookFormSubmitData } from "@calcom/features/webhooks/components/WebhookForm";

@@ -1,6 +1,6 @@
 import type { getEventTypeResponse } from "@calcom/features/bookings/lib/handleNewBooking/getEventTypesFromDB";
-import { scheduleEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
-import type { Workflow } from "@calcom/features/oe/workflows/lib/types";
+import { scheduleEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+import type { Workflow } from "@calcom/features/ee/workflows/lib/types";
 import type { getDefaultEvent } from "@calcom/lib/defaultEvents";
 import logger from "@calcom/lib/logger";
 import { WorkflowTriggerEvents, TimeUnit, WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";

@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 
 import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookingBadge";
-import { KBarTrigger } from "@calcom/features/kbar/Kbar";
 import {
   useOrgBranding,
   type OrganizationBranding,
-} from "@calcom/features/oe/organizations/context/provider";
+} from "@calcom/features/ee/organizations/context/provider";
+import { KBarTrigger } from "@calcom/features/kbar/Kbar";
 import { classNames, isPrismaObjOrUndefined } from "@calcom/lib";
 import useIsWebView from "@calcom/lib/hooks/useIsWebView";
 import { useLocale } from "@calcom/lib/hooks/useLocale";

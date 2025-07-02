@@ -17,7 +17,7 @@ import {
   textFilter,
   isTextFilterValue,
 } from "@calcom/features/data-table";
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import classNames from "@calcom/lib/classNames";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import {

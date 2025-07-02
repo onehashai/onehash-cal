@@ -1,7 +1,7 @@
 import { stringify } from "querystring";
 import z from "zod";
 
-import { orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import logger from "@calcom/lib/logger";
 import { TRPCError } from "@calcom/trpc/server";
 import type { AppGetServerSidePropsContext, AppPrisma } from "@calcom/types/AppGetServerSideProps";

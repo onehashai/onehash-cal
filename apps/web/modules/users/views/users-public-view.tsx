@@ -14,9 +14,9 @@ import {
   useEmbedStyles,
   useIsEmbed,
 } from "@calcom/embed-core/embed-iframe";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { EventTypeDescriptionLazy as EventTypeDescription } from "@calcom/features/eventtypes/components";
 import EmptyPage from "@calcom/features/eventtypes/components/EmptyPage";
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { SIGNUP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
@@ -28,7 +28,7 @@ import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
 function UserFound(props: UserFoundProps) {
   const { users, profile, eventTypes, markdownStrippedBio, entity, isOrgSEOIndexable } = props;
-  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
 
   const [user] = users; //To be used when we only have a single user, not dynamic group
   useTheme(profile.theme);
@@ -195,7 +195,7 @@ function UserFound(props: UserFoundProps) {
 function UserNotFound(props: UserNotFoundProps) {
   const { slug } = props;
   const { t } = useLocale();
-  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
 
   return (
     <>

@@ -1,5 +1,5 @@
-import type { ReassignmentResult } from "@calcom/features/oe/round-robin/roundRobinReassignment";
-import { roundRobinReassignment } from "@calcom/features/oe/round-robin/roundRobinReassignment";
+import type { ReassignmentResult } from "@calcom/features/ee/round-robin/roundRobinReassignment";
+import { roundRobinReassignment } from "@calcom/features/ee/round-robin/roundRobinReassignment";
 import { BookingRepository } from "@calcom/lib/server/repository/booking";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 

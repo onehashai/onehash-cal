@@ -1,5 +1,5 @@
-import PaymentPage from "@calcom/features/oe/payments/components/PaymentPage";
-import { getServerSideProps } from "@calcom/features/oe/payments/pages/payment";
+import PaymentPage from "@calcom/features/ee/payments/components/PaymentPage";
+import { getServerSideProps } from "@calcom/features/ee/payments/pages/payment";
 import type { inferSSRProps } from "@calcom/types/inferSSRProps";
 
 import PageWrapper from "@components/PageWrapper";
