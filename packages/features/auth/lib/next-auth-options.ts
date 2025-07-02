@@ -499,7 +499,9 @@ export const getOptions = ({
       // The data available in 'session' depends on what data was supplied in update method call of session
       const licenseKeyService = await LicenseKeySingleton.getInstance();
 
-      const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
+      //OE_FEATURE
+      // const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
+      const hasValidLicense = await licenseKeyService.checkLicense();
 
       token["hasValidLicense"] = hasValidLicense;
 

@@ -1,5 +1,6 @@
 "use client";
 
+import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import { TeamsListing } from "@calcom/features/ee/teams/components";
 import Shell from "@calcom/features/shell/Shell";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -35,7 +36,9 @@ function Teams(props: PageProps) {
           </Button>
         )
       }>
-      <TeamsListing />
+      <LicenseRequired>
+        <TeamsListing />
+      </LicenseRequired>
     </Shell>
   );
 }

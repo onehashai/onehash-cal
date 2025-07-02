@@ -16,7 +16,6 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import { showToast, Tooltip, Icon, Button } from "@calcom/ui";
 
 import AllProducts from "../AllProducts";
-import { TeamInviteBadge } from "../TeamInviteBadge";
 import type { NavigationItemType } from "./NavigationItem";
 import { NavigationItem, MobileNavigationItem, MobileNavigationMoreItem } from "./NavigationItem";
 
@@ -53,13 +52,14 @@ const getNavigationItems = (
         } satisfies NavigationItemType,
       ]
     : []),
-  {
-    name: "teams",
-    href: "/teams",
-    icon: "users",
-    onlyDesktop: true,
-    badge: <TeamInviteBadge />,
-  },
+  //OE_FEATURE
+  // {
+  //   name: "teams",
+  //   href: "/teams",
+  //   icon: "users",
+  //   onlyDesktop: true,
+  //   badge: <TeamInviteBadge />,
+  // },
 
   ...(!isWebView
     ? [
@@ -108,12 +108,13 @@ const getNavigationItems = (
     isCurrent: ({ pathname }) => pathname?.startsWith("/apps/routing-forms/") ?? false,
     moreOnMobile: true,
   },
-  {
-    name: "workflows",
-    href: "/workflows",
-    icon: "zap",
-    moreOnMobile: true,
-  },
+  //OE_FEATURE
+  // {
+  //   name: "workflows",
+  //   href: "/workflows",
+  //   icon: "zap",
+  //   moreOnMobile: true,
+  // },
   {
     name: "insights",
     href: "/insights",
