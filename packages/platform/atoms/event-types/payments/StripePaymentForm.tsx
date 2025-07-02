@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import type { SyntheticEvent } from "react";
 
 import getStripe from "@calcom/app-store/stripepayment/lib/client";
-import type { Props, States } from "@calcom/features/oe/payments/components/Payment";
-import { PaymentFormComponent } from "@calcom/features/oe/payments/components/Payment";
-import type { PaymentPageProps } from "@calcom/features/oe/payments/pages/payment";
+import type { Props, States } from "@calcom/features/ee/payments/components/Payment";
+import { PaymentFormComponent } from "@calcom/features/ee/payments/components/Payment";
+import type { PaymentPageProps } from "@calcom/features/ee/payments/pages/payment";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 
 const StripePaymentComponent = (

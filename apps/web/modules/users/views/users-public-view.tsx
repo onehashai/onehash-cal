@@ -2,7 +2,6 @@
 
 import classNames from "classnames";
 import type { InferGetServerSidePropsType } from "next";
-import dynamic from "next/dynamic";
 import Head from "next/head";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -14,9 +13,9 @@ import {
   useEmbedStyles,
   useIsEmbed,
 } from "@calcom/embed-core/embed-iframe";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { EventTypeDescriptionLazy as EventTypeDescription } from "@calcom/features/eventtypes/components";
 import EmptyPage from "@calcom/features/eventtypes/components/EmptyPage";
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { SIGNUP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
@@ -28,7 +27,8 @@ import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
 function UserFound(props: UserFoundProps) {
   const { users, profile, eventTypes, markdownStrippedBio, entity, isOrgSEOIndexable } = props;
-  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+  //   //OE_FEATURE
+  //  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   const [user] = users; //To be used when we only have a single user, not dynamic group
   useTheme(profile.theme);
@@ -182,9 +182,11 @@ function UserFound(props: UserFoundProps) {
           </div>
 
           {isEventListEmpty && <EmptyPage name={profile.name || "User"} />}
+          {/* //OE_FEATURE
+
           <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
             <PoweredBy logoOnly hideBranding={props.hideBranding} bannerUrl={props.bannerUrl ?? undefined} />
-          </div>
+          </div> */}
         </main>
         <Toaster position="bottom-right" />
       </div>
@@ -195,7 +197,8 @@ function UserFound(props: UserFoundProps) {
 function UserNotFound(props: UserNotFoundProps) {
   const { slug } = props;
   const { t } = useLocale();
-  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+  // //OE_FEATURE
+  // const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
 
   return (
     <>
@@ -231,9 +234,10 @@ function UserNotFound(props: UserNotFoundProps) {
             </Link>
           </div>
         </div>
+        {/* //OE_FEATURE
         <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
           <PoweredBy logoOnly />
-        </div>
+        </div> */}
       </div>
     </>
   );

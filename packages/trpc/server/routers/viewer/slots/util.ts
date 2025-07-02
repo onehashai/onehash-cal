@@ -11,7 +11,7 @@ import monitorCallbackAsync, { monitorCallbackSync } from "@calcom/core/sentryWr
 import type { Dayjs } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
-import { getSlugOrRequestedSlug, orgDomainConfig } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug, orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { parseBookingLimit, parseDurationLimit } from "@calcom/lib";
 import { findQualifiedHosts } from "@calcom/lib/bookings/findQualifiedHosts";
 import {

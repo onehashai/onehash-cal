@@ -13,11 +13,11 @@ import getBookingResponsesSchema from "@calcom/features/bookings/lib/getBookingR
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { getEventTypesFromDB } from "@calcom/features/bookings/lib/handleNewBooking/getEventTypesFromDB";
 import AssignmentReasonRecorder from "@calcom/features/ee/round-robin/assignmentReason/AssignmentReasonRecorder";
-import { scheduleWorkflowReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import {
   scheduleEmailReminder,
   deleteScheduledEmailReminder,
-} from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
+} from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+import { scheduleWorkflowReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { SENDER_NAME } from "@calcom/lib/constants";
@@ -267,8 +267,6 @@ export const roundRobinManualReassignment = async ({
     }),
     location: bookingLocation,
     ...(platformClientParams ? platformClientParams : {}),
-    hideBranding: eventType.owner?.hideBranding ?? eventType.team?.hideBranding ?? false,
-    bannerUrl: eventType.owner?.bannerUrl ?? eventType.team?.bannerUrl ?? null,
   };
 
   const credentials = await prisma.credential.findMany({
@@ -348,7 +346,7 @@ export const roundRobinManualReassignment = async ({
   }
 
   if (hasOrganizerChanged) {
-    if (emailsEnabled) {
+    if (emailsEnabled && dayjs(evt.startTime).isAfter(dayjs())) {
       // send email with event updates to attendees
       await sendRoundRobinUpdatedEmailsAndSMS({
         calEvent: evtWithoutCancellationReason,

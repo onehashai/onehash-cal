@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import TeamInviteFromOrg from "@calcom/features/oe/organizations/components/TeamInviteFromOrg";
+import TeamInviteFromOrg from "@calcom/ee/organizations/components/TeamInviteFromOrg";
 import { classNames } from "@calcom/lib";
 import { IS_TEAM_BILLING_ENABLED_CLIENT, MAX_NB_INVITES } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";

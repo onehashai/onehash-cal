@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { NextApiRequest } from "next";
 import { v4 } from "uuid";
 
-import { generateUniqueAPIKey } from "@calcom/features/oe/api-keys/lib/apiKeys";
+import { generateUniqueAPIKey } from "@calcom/features/ee/api-keys/lib/apiKeys";
 import { HttpError } from "@calcom/lib/http-error";
 import { defaultResponder } from "@calcom/lib/server";
 import prisma from "@calcom/prisma";

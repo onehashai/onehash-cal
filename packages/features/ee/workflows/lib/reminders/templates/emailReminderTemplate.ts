@@ -55,7 +55,7 @@ const emailReminderTemplate = (
 
   const branding = !isBrandingDisabled && !isEditingMode ? `<br><br>_<br><br>Scheduling by ${APP_NAME}` : "";
 
-  const endingHtml = `This reminder was triggered by a Workflow in OneHash Cal.${branding}</body>`;
+  const endingHtml = `This reminder was triggered by a Workflow in Cal.${branding}</body>`;
 
   const emailBody = introHtml + eventHtml + dateTimeHtml + attendeeHtml + locationHtml + endingHtml;
 

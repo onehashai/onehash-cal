@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 
 import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-billing";
-import { purchaseTeamOrOrgSubscription } from "@calcom/features/oe/teams/lib/payments";
+import { purchaseTeamOrOrgSubscription } from "@calcom/features/ee/teams/lib/payments";
 import { MINIMUM_NUMBER_OF_ORG_SEATS, WEBAPP_URL } from "@calcom/lib/constants";
 import { getMetadataHelpers } from "@calcom/lib/getMetadataHelpers";
 import logger from "@calcom/lib/logger";

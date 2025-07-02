@@ -23,7 +23,7 @@ import {
   TextField,
 } from "@calcom/ui";
 
-// import { withLicenseRequired } from "../../common/components/LicenseRequired";
+import { withLicenseRequired } from "../../common/components/LicenseRequired";
 
 const { Cell, ColumnTitle, Header, Row } = Table;
 
@@ -160,7 +160,7 @@ function UsersTableBare() {
       <div
         className="border-subtle rounded-md border"
         ref={tableContainerRef}
-        onScroll={() => fetchMoreOnBottomReached(tableContainerRef.current)}
+        onScroll={() => fetchMoreOnBottomReached()}
         style={{
           height: "calc(100vh - 30vh)",
           overflow: "auto",
@@ -324,5 +324,4 @@ const DeleteUserDialog = ({
   );
 };
 
-// export const UsersTable = withLicenseRequired(UsersTableBare);
-export const UsersTable = UsersTableBare;
+export const UsersTable = withLicenseRequired(UsersTableBare);

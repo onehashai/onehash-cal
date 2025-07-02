@@ -179,7 +179,6 @@ const PaymentForm = (props: Props) => {
         elements,
         redirect: "if_required",
       });
-
       if (payload.paymentIntent) {
         params.payment_intent = payload.paymentIntent.id;
         params.payment_intent_client_secret = payload.paymentIntent.client_secret || undefined;

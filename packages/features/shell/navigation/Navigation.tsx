@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 
 import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import UnconfirmedBookingBadge from "@calcom/features/bookings/UnconfirmedBookingBadge";
-import { KBarTrigger } from "@calcom/features/kbar/Kbar";
 import {
   useOrgBranding,
   type OrganizationBranding,
-} from "@calcom/features/oe/organizations/context/provider";
+} from "@calcom/features/ee/organizations/context/provider";
+import { KBarTrigger } from "@calcom/features/kbar/Kbar";
 import { classNames, isPrismaObjOrUndefined } from "@calcom/lib";
 import useIsWebView from "@calcom/lib/hooks/useIsWebView";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -16,7 +16,6 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import { showToast, Tooltip, Icon, Button } from "@calcom/ui";
 
 import AllProducts from "../AllProducts";
-import { TeamInviteBadge } from "../TeamInviteBadge";
 import type { NavigationItemType } from "./NavigationItem";
 import { NavigationItem, MobileNavigationItem, MobileNavigationMoreItem } from "./NavigationItem";
 
@@ -53,13 +52,14 @@ const getNavigationItems = (
         } satisfies NavigationItemType,
       ]
     : []),
-  {
-    name: "teams",
-    href: "/teams",
-    icon: "users",
-    onlyDesktop: true,
-    badge: <TeamInviteBadge />,
-  },
+  //OE_FEATURE
+  // {
+  //   name: "teams",
+  //   href: "/teams",
+  //   icon: "users",
+  //   onlyDesktop: true,
+  //   badge: <TeamInviteBadge />,
+  // },
 
   ...(!isWebView
     ? [
@@ -108,12 +108,13 @@ const getNavigationItems = (
     isCurrent: ({ pathname }) => pathname?.startsWith("/apps/routing-forms/") ?? false,
     moreOnMobile: true,
   },
-  {
-    name: "workflows",
-    href: "/workflows",
-    icon: "zap",
-    moreOnMobile: true,
-  },
+  //OE_FEATURE
+  // {
+  //   name: "workflows",
+  //   href: "/workflows",
+  //   icon: "zap",
+  //   moreOnMobile: true,
+  // },
   {
     name: "insights",
     href: "/insights",

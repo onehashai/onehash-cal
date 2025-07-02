@@ -1,7 +1,7 @@
 import { _generateMetadata, getFixedT } from "app/_utils";
 
 import { getServerSessionForAppDir } from "@calcom/features/auth/lib/get-server-session-for-app-dir";
-import DomainWideDelegationList from "@calcom/features/oe/organizations/pages/settings/domainWideDelegation";
+import DomainWideDelegationList from "@calcom/features/ee/organizations/pages/settings/domainWideDelegation";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
 export const generateMetadata = async () =>

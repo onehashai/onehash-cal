@@ -27,8 +27,12 @@ import {
   useIsEmbed,
 } from "@calcom/embed-core/embed-iframe";
 import { Price } from "@calcom/features/bookings/components/event-meta/Price";
-import { SystemField, TITLE_FIELD } from "@calcom/features/bookings/lib/SystemField";
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import {
+  SMS_REMINDER_NUMBER_FIELD,
+  SystemField,
+  TITLE_FIELD,
+} from "@calcom/features/bookings/lib/SystemField";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { APP_NAME, ONEHASH_CHAT_ORIGIN, WEBAPP_URL } from "@calcom/lib/constants";
 import {
   formatToLocalizedDate,
@@ -235,7 +239,7 @@ export default function Success(props: PageProps) {
   const sendFeedback = async (rating: string, comment: string) => {
     mutation.mutate({ bookingUid: bookingInfo.uid, rating: rateValue, comment: comment });
   };
-  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
 
   function setIsCancellationMode(value: boolean) {
     const _searchParams = new URLSearchParams(searchParams?.toString() ?? undefined);

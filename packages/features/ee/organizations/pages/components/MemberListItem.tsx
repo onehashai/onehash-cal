@@ -1,6 +1,6 @@
 import classNames from "classnames";
 
-import TeamPill, { TeamRole } from "@calcom/features/oe/teams/components/TeamPill";
+import TeamPill, { TeamRole } from "@calcom/ee/teams/components/TeamPill";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import {

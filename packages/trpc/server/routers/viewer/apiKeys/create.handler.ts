@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 
-import { generateUniqueAPIKey } from "@calcom/features/oe/api-keys/lib/apiKeys";
+import { generateUniqueAPIKey } from "@calcom/features/ee/api-keys/lib/apiKeys";
 import prisma from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
 

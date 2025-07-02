@@ -62,7 +62,7 @@ export default function TeamAvailabilityTimes(props: Props) {
         {slots.map((slot) => (
           <div key={slot.time.format()} className="flex flex-row items-center ">
             <a
-              className="border-brand-default text-bookingdarker bg-default  min-w-48 mb-2 mr-3 block flex-grow rounded-md border py-2 text-center font-medium dark:border-transparent dark:bg-gray-600 "
+              className="min-w-48 border-brand-default text-bookingdarker  bg-default mb-2 mr-3 block flex-grow rounded-md border py-2 text-center font-medium dark:border-transparent dark:bg-gray-600 "
               data-testid="time">
               {slot.time.tz(props.selectedTimeZone.toString()).format("HH:mm")}
             </a>
