@@ -65,7 +65,8 @@ const tabs: VerticalTabItemProps[] = [
     children: [
       //
       { name: "webhooks", href: "/settings/developer/webhooks" },
-      { name: "api_keys", href: "/settings/developer/api-keys" },
+      // { name: "api_keys", href: "/settings/developer/api-keys" },
+      //OE_FEATURE
       { name: "admin_api", href: "/settings/organizations/admin-api" },
       // TODO: Add profile level for embeds
       // { name: "embeds", href: "/v2/settings/developer/embeds" },
