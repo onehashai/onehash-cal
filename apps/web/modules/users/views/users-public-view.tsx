@@ -29,7 +29,7 @@ import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 function UserFound(props: UserFoundProps) {
   const { users, profile, eventTypes, markdownStrippedBio, entity, isOrgSEOIndexable } = props;
 
-  const BrandingComponent = dynamic(() => import("@onehash/oe_features/shared_components/BrandingComponent"));
+  const BrandingComponent = dynamic(() => import("@onehash/oe_features/branding/BrandingComponent"));
 
   const [user] = users; //To be used when we only have a single user, not dynamic group
   useTheme(profile.theme);
@@ -201,7 +201,7 @@ function UserFound(props: UserFoundProps) {
 function UserNotFound(props: UserNotFoundProps) {
   const { slug } = props;
   const { t } = useLocale();
-  const BrandingComponent = dynamic(() => import("@onehash/oe_features/shared_components/BrandingComponent"));
+  const BrandingComponent = dynamic(() => import("@onehash/oe_features/branding/BrandingComponent"));
 
   return (
     <>

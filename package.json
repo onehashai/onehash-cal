@@ -13,7 +13,8 @@
     "packages/platform/*",
     "packages/platform/examples/base",
     "example-apps/*",
-    "packages/oe_features/*"
+    "packages/oe_features/*",
+    "packages/ui-kit/*"
   ],
   "scripts": {
     "app-store-cli": "yarn workspace @calcom/app-store-cli",

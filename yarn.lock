@@ -5069,7 +5069,7 @@ __metadata:
     "@next-auth/prisma-adapter": ^1.0.4
     "@next/bundle-analyzer": ^13.1.6
     "@onehash/calendly": "*"
-    "@onehash/oe_features": "*"
+    "@onehash/oe-features": "*"
     "@playwright/test": ^1.45.3
     "@radix-ui/react-avatar": ^1.0.4
     "@radix-ui/react-collapsible": ^1.0.0
@@ -9267,9 +9267,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@onehash/oe_features@*, @onehash/oe_features@workspace:packages/oe_features":
+"@onehash/oe-features@*, @onehash/oe-features@workspace:packages/oe-features":
   version: 0.0.0-use.local
-  resolution: "@onehash/oe_features@workspace:packages/oe_features"
+  resolution: "@onehash/oe-features@workspace:packages/oe-features"
   dependencies:
     typescript: ^5.8.3
   languageName: unknown
@@ -45414,6 +45414,14 @@ __metadata:
   checksum: 7b3897df38b6fc7d7d9f4dcd658599d81aa2b1fb0d074829dd4e5290f7318dbca1f4af2f45acb833b95b1fe0ed4698662ab61b87e94328eb4c0a0d3435baf924
   languageName: node
   linkType: hard
+
+"ui-kit@workspace:packages/ui-kit":
+  version: 0.0.0-use.local
+  resolution: "ui-kit@workspace:packages/ui-kit"
+  dependencies:
+    typescript: ^5.8.3
+  languageName: unknown
+  linkType: soft
 
 "uid@npm:2.0.2":
   version: 2.0.2

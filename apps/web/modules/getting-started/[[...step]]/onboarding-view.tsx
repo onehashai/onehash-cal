@@ -34,7 +34,7 @@ const steps = [
   "import-data",
 ] as const;
 
-const BrandingComponent = dynamic(() => import("@onehash/oe_features/shared_components/BrandingComponent"));
+const BrandingComponent = dynamic(() => import("@onehash/oe_features/branding/BrandingComponent"));
 
 const stepTransform = (step: (typeof steps)[number]) => {
   const stepIndex = steps.indexOf(step);
