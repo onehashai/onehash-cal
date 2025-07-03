@@ -3942,7 +3942,7 @@ __metadata:
     "@sendgrid/client": ^7.7.0
     "@sendgrid/mail": ^7.6.2
     libphonenumber-js: ^1.10.51
-    twilio: ^5.4.2
+    twilio: ^3.80.1
     zod: ^3.22.4
   languageName: unknown
   linkType: soft
@@ -5069,6 +5069,7 @@ __metadata:
     "@next-auth/prisma-adapter": ^1.0.4
     "@next/bundle-analyzer": ^13.1.6
     "@onehash/calendly": "*"
+    "@onehash/oe_features": "*"
     "@playwright/test": ^1.45.3
     "@radix-ui/react-avatar": ^1.0.4
     "@radix-ui/react-collapsible": ^1.0.0
@@ -9263,6 +9264,14 @@ __metadata:
   dependencies:
     "@types/axios": ^0.14.0
     axios: ^1.6.5
+  languageName: unknown
+  linkType: soft
+
+"@onehash/oe_features@*, @onehash/oe_features@workspace:packages/oe_features":
+  version: 0.0.0-use.local
+  resolution: "@onehash/oe_features@workspace:packages/oe_features"
+  dependencies:
+    typescript: ^5.8.3
   languageName: unknown
   linkType: soft
 
@@ -20367,7 +20376,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:*, axios@npm:^1.6.5, axios@npm:^1.6.8, axios@npm:^1.7.4":
+"axios@npm:*, axios@npm:^1.6.5, axios@npm:^1.6.8":
   version: 1.7.7
   resolution: "axios@npm:1.7.7"
   dependencies:
@@ -20400,7 +20409,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:>=0.21.2, axios@npm:^0.26.0":
+"axios@npm:>=0.21.2, axios@npm:^0.26.0, axios@npm:^0.26.1":
   version: 0.26.1
   resolution: "axios@npm:0.26.1"
   dependencies:
@@ -32251,7 +32260,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsonwebtoken@npm:9.0.2, jsonwebtoken@npm:^9.0.0, jsonwebtoken@npm:^9.0.2":
+"jsonwebtoken@npm:9.0.2, jsonwebtoken@npm:^9.0.0":
   version: 9.0.2
   resolution: "jsonwebtoken@npm:9.0.2"
   dependencies:
@@ -37497,6 +37506,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pop-iterate@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "pop-iterate@npm:1.0.1"
+  checksum: 3147476c57bee79a0f07d111d7c8564bf7153cb15614ad49421497f1976825b89746af7a2581a136e8284001a4d5b9cbf2b1d4ac1ca540b089f9bf582ecddb14
+  languageName: node
+  linkType: hard
+
 "possible-typed-array-names@npm:^1.0.0":
   version: 1.0.0
   resolution: "possible-typed-array-names@npm:1.0.0"
@@ -38759,6 +38775,17 @@ __metadata:
   version: 6.0.4
   resolution: "pure-rand@npm:6.0.4"
   checksum: e1c4e69f8bf7303e5252756d67c3c7551385cd34d94a1f511fe099727ccbab74c898c03a06d4c4a24a89b51858781057b83ebbfe740d984240cdc04fead36068
+  languageName: node
+  linkType: hard
+
+"q@npm:2.0.x":
+  version: 2.0.3
+  resolution: "q@npm:2.0.3"
+  dependencies:
+    asap: ^2.0.0
+    pop-iterate: ^1.0.1
+    weak-map: ^1.0.5
+  checksum: ad3c925b242d06bd97c8bc7d57d5c6506bcae876f9172cffea7eacafe93a4f434f06f0eb6f87b59028f7b03dd15ed7fe7c6be8e3ab43173b584d8d40cb3a335d
   languageName: node
   linkType: hard
 
@@ -41164,6 +41191,13 @@ __metadata:
   bin:
     rollup: dist/bin/rollup
   checksum: 268b29e9476165273256ccd56049d6307bc0869d2a832be7751ac347ddaa5a65269cba11eb528b03a88386b7793a23d28d989ffe6abc29a5626e5cbfe8f0e858
+  languageName: node
+  linkType: hard
+
+"rootpath@npm:^0.1.2":
+  version: 0.1.2
+  resolution: "rootpath@npm:0.1.2"
+  checksum: e39fad0912f5757c087e1b9c0a66278bb9cbe5ffbacfb1960f75a4feddf16fe837319a5764abdb73839ef0e6ea8ef155b98eb383b951b25b279c153c50cd13f0
   languageName: node
   linkType: hard
 
@@ -44906,18 +44940,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"twilio@npm:^5.4.2":
-  version: 5.4.2
-  resolution: "twilio@npm:5.4.2"
+"twilio@npm:^3.80.1":
+  version: 3.84.1
+  resolution: "twilio@npm:3.84.1"
   dependencies:
-    axios: ^1.7.4
-    dayjs: ^1.11.9
+    axios: ^0.26.1
+    dayjs: ^1.8.29
     https-proxy-agent: ^5.0.0
-    jsonwebtoken: ^9.0.2
+    jsonwebtoken: ^8.5.1
+    lodash: ^4.17.21
+    q: 2.0.x
     qs: ^6.9.4
+    rootpath: ^0.1.2
     scmp: ^2.1.0
+    url-parse: ^1.5.9
     xmlbuilder: ^13.0.2
-  checksum: 5a0dbd2860a1522282a2a4b151ef47a1e4060a5e9f0dee39b0afa6ee31a639d716bebca36d3482ce3445e87b190dccc88fbf950db3b63bda3ba8b9972404026b
+  checksum: 29bf7e75aa513bc47d3559f4011580cf1a5a994fe07fa4780af542b666e73b101cdc260f6ee96222c84c29638dc25584815535d20476ef3c11c562cc263a601a
   languageName: node
   linkType: hard
 
@@ -45287,6 +45325,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"typescript@npm:^5.8.3":
+  version: 5.8.3
+  resolution: "typescript@npm:5.8.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: cb1d081c889a288b962d3c8ae18d337ad6ee88a8e81ae0103fa1fecbe923737f3ba1dbdb3e6d8b776c72bc73bfa6d8d850c0306eed1a51377d2fccdfd75d92c4
+  languageName: node
+  linkType: hard
+
 "typescript@patch:typescript@5.3.3#~builtin<compat/typescript>":
   version: 5.3.3
   resolution: "typescript@patch:typescript@npm%3A5.3.3#~builtin<compat/typescript>::version=5.3.3&hash=1f5320"
@@ -45324,6 +45372,16 @@ __metadata:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: ade87bce2363ee963eed0e4ca8a312ea02c81873ebd53609bc3f6dc0a57f6e61ad7e3fb8cbb7f7ab8b5081cbee801b023f7c4823ee70b1c447eae050e6c7622b
+  languageName: node
+  linkType: hard
+
+"typescript@patch:typescript@^5.8.3#~builtin<compat/typescript>":
+  version: 5.8.3
+  resolution: "typescript@patch:typescript@npm%3A5.8.3#~builtin<compat/typescript>::version=5.8.3&hash=1f5320"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 1b503525a88ff0ff5952e95870971c4fb2118c17364d60302c21935dedcd6c37e6a0a692f350892bafcef6f4a16d09073fe461158547978d2f16fbe4cb18581c
   languageName: node
   linkType: hard
 
@@ -45696,7 +45754,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"url-parse@npm:^1.4.3, url-parse@npm:^1.5.3, url-parse@npm:^1.5.8":
+"url-parse@npm:^1.4.3, url-parse@npm:^1.5.3, url-parse@npm:^1.5.8, url-parse@npm:^1.5.9":
   version: 1.5.10
   resolution: "url-parse@npm:1.5.10"
   dependencies:
@@ -46470,6 +46528,13 @@ __metadata:
   dependencies:
     defaults: ^1.0.3
   checksum: 814e9d1ddcc9798f7377ffa448a5a3892232b9275ebb30a41b529607691c0491de47cba426e917a4d08ded3ee7e9ba2f3fe32e62ee3cd9c7d3bafb7754bd553c
+  languageName: node
+  linkType: hard
+
+"weak-map@npm:^1.0.5":
+  version: 1.0.8
+  resolution: "weak-map@npm:1.0.8"
+  checksum: ce030b3c6b1a461bda6eac88b3b3be57245ce26330c6ddb98d821d85c0636117ca94693ef8292407066fd367740ec6a1ef6cd9027111453d7ced43f4f78b327a
   languageName: node
   linkType: hard
 

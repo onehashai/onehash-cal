@@ -57,6 +57,7 @@
     "@next-auth/prisma-adapter": "^1.0.4",
     "@next/bundle-analyzer": "^13.1.6",
     "@onehash/calendly": "*",
+    "@onehash/oe_features": "*",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-collapsible": "^1.0.0",
     "@radix-ui/react-dialog": "^1.0.4",

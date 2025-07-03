@@ -53,7 +53,7 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
     brandColor: profile.brandColor,
     darkBrandColor: profile.darkBrandColor,
   });
-  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
+  const BrandingComponent = dynamic(() => import("@onehash/oe_features/shared_components/BrandingComponent"));
 
   const [response, setResponse] = usePrefilledResponse(form);
   const faviconUrl = form.user?.faviconUrl ?? form.team?.faviconUrl;
@@ -207,7 +207,11 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
                   </form>
                 </div>
                 <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-                  <PoweredBy logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
+                  <BrandingComponent
+                    logoOnly
+                    hideBranding={hideBranding}
+                    bannerUrl={bannerUrl ?? undefined}
+                  />
                 </div>
               </div>
             </div>

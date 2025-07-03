@@ -174,7 +174,7 @@ function TeamPage({
     );
 
   const profileImageSrc = getOrgOrTeamAvatar(team);
-  const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
+  const BrandingComponent = dynamic(() => import("@onehash/oe_features/shared_components/BrandingComponent"));
 
   return (
     <>
@@ -281,7 +281,7 @@ function TeamPage({
           </>
         )}
         <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-          <PoweredBy logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
+          <BrandingComponent logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
         </div>
       </main>
     </>

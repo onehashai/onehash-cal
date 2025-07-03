@@ -1,0 +1,13 @@
+{
+  "name": "@onehash/oe_features",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsc -p . --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
