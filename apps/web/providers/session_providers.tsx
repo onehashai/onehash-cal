@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-restricted-imports
+import { capitalize } from "lodash";
 import { signOut } from "next-auth/react";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
@@ -50,6 +52,27 @@ export default function SessionManager({ children }: { children: React.ReactNode
     staleTime: 1000 * 60 * 5,
   });
 
+  function getNameFromField(name: string): [string, string] {
+    // If it's an email address
+    if (name.includes("@")) {
+      const username = name.split("@")[0];
+      const parts = username.split(/[._\-]+/); // e.g., "john_doe" => ["john", "doe"]
+      const words = parts.map((word) => capitalize(word));
+
+      const firstName = words[0] || "";
+      const lastName = words.length > 1 ? words.slice(1).join(" ") : "";
+
+      return [firstName, lastName];
+    }
+
+    // If it's a proper name already
+    const words = name.trim().split(/\s+/); // split by whitespace
+    const firstName = words[0] || "";
+    const lastName = words.length > 1 ? words.slice(1).join(" ") : "";
+
+    return [firstName, lastName];
+  }
+
   //Checks for session and attaches posthog to current user
   const init = async () => {
     if (!userData) {
@@ -62,7 +85,7 @@ export default function SessionManager({ children }: { children: React.ReactNode
         }
         const { id, email, name, username, createdAt, completedOnboarding, customBrandingEnabled, timezone } =
           userData;
-        const [first_name, last_name] = name.trim().split(/\s+/);
+        const [first_name, last_name] = getNameFromField(name);
         const trackingPayload = {
           id,
           email,
