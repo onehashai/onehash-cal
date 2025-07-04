@@ -201,7 +201,9 @@ export const AppPage = ({
 
   // variant not other allows, an app to be shown in calendar category without requiring an actual calendar connection e.g. vimcal
   // Such apps, can only be installed once.
-  const allowedMultipleInstalls = categories.indexOf("calendar") > -1 && variant !== "other";
+  const allowedMultipleInstalls =
+    categories.indexOf("calendar") > -1 ||
+    ((type.startsWith("pabbly") || type.startsWith("make")) && variant !== "other");
   // const allowedMultipleInstalls = true;
   useEffect(() => {
     if (searchParams?.get("defaultInstall") === "true") {
