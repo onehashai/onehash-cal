@@ -12,12 +12,8 @@ import { getSuccessPageLocationMessage, guessEventLocationType } from "@calcom/a
 import dayjs from "@calcom/dayjs";
 // TODO: Use browser locale, implement Intl in Dayjs maybe?
 import "@calcom/dayjs/locales";
-import {
-  SMS_REMINDER_NUMBER_FIELD,
-  SystemField,
-  TITLE_FIELD,
-} from "@calcom/features/bookings/lib/SystemField";
-// import ViewRecordingsDialog from "@calcom/features/ee/video/ViewRecordingsDialog";
+import { SystemField, TITLE_FIELD } from "@calcom/features/bookings/lib/SystemField";
+import ViewRecordingsDialog from "@calcom/features/ee/video/ViewRecordingsDialog";
 import classNames from "@calcom/lib/classNames";
 import { formatTime } from "@calcom/lib/date-fns";
 import getPaymentAppData from "@calcom/lib/getPaymentAppData";
@@ -940,12 +936,13 @@ function BookingListItem(booking: BookingItemProps) {
                   // TITLE is also an identifier for booking question "What is this meeting about?"
                   if (
                     isSystemField.success &&
-                    field.name !== SMS_REMINDER_NUMBER_FIELD &&
+                    // field.name !== SMS_REMINDER_NUMBER_FIELD &&
                     field.name !== TITLE_FIELD
                   )
                     return null;
 
                   const label = String(field.label) || t(String(field.defaultLabel) || "");
+                  // const label = t(String(field.defaultLabel) || "");
 
                   return (
                     <div className="flex items-center" key={label}>

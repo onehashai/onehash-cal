@@ -1,7 +1,7 @@
 "use client";
 
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { Fragment, useState } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { z } from "zod";
 
 import { WipeMyCalActionButton } from "@calcom/app-store/wipemycalother/components";
@@ -298,6 +298,29 @@ export default function Bookings() {
 
   const [animationParentRef] = useAutoAnimate<HTMLDivElement>();
 
+  const tabWithParams = useMemo(() => {
+    if (!filterQuery) return tabs;
+
+    const searchParams = new URLSearchParams();
+
+    Object.entries(filterQuery).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((value) => {
+          searchParams.append(key, String(value));
+        });
+      } else {
+        searchParams.append(key, String(value));
+      }
+    });
+
+    const withParams = searchParams ? `?${searchParams}` : "";
+
+    return tabs.map((tab) => ({
+      ...tab,
+      href: `${tab.href}${withParams}`,
+    }));
+  }, [filterQuery]);
+
   return (
     <Shell
       withoutMain={false}
@@ -308,7 +331,7 @@ export default function Bookings() {
       description={t("bookings_description")}>
       <div className="flex flex-col">
         <div className="flex flex-row flex-wrap justify-between">
-          <HorizontalTabs tabs={tabs} />
+          <HorizontalTabs tabs={tabWithParams} />
           <div className="flex flex-wrap gap-2">
             <FilterToggle setIsFiltersVisible={setIsFiltersVisible} />
             <ExportBookingsButton
