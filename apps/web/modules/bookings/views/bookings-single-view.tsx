@@ -235,7 +235,7 @@ export default function Success(props: PageProps) {
   const sendFeedback = async (rating: string, comment: string) => {
     mutation.mutate({ bookingUid: bookingInfo.uid, rating: rateValue, comment: comment });
   };
-  const BrandingComponent = dynamic(() => import("@onehash/oe_features/branding/BrandingComponent"));
+  const BrandingComponent = dynamic(() => import("@onehash/oe-features/branding/BrandingComponent"));
 
   function setIsCancellationMode(value: boolean) {
     const _searchParams = new URLSearchParams(searchParams?.toString() ?? undefined);

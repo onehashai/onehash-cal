@@ -53,7 +53,7 @@ function RoutingForm({ form, profile, ...restProps }: Props) {
     brandColor: profile.brandColor,
     darkBrandColor: profile.darkBrandColor,
   });
-  const BrandingComponent = dynamic(() => import("@onehash/oe_features/branding/BrandingComponent"));
+  const BrandingComponent = dynamic(() => import("@onehash/oe-features/branding/BrandingComponent"));
 
   const [response, setResponse] = usePrefilledResponse(form);
   const faviconUrl = form.user?.faviconUrl ?? form.team?.faviconUrl;

@@ -31,7 +31,7 @@ import { useBookerStore } from "./store";
 import type { BookerProps, WrappedBookerProps } from "./types";
 
 const loadFramerFeatures = () => import("./framer-features").then((res) => res.default);
-const BrandingComponent = dynamic(() => import("@onehash/oe_features/branding/BrandingComponent"));
+const BrandingComponent = dynamic(() => import("@onehash/oe-features/branding/BrandingComponent"));
 
 const UnpublishedEntity = dynamic(() =>
   import("@calcom/ui/components/unpublished-entity/UnpublishedEntity").then((mod) => mod.UnpublishedEntity)

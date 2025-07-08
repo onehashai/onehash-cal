@@ -174,7 +174,7 @@ function TeamPage({
     );
 
   const profileImageSrc = getOrgOrTeamAvatar(team);
-  const BrandingComponent = dynamic(() => import("@onehash/oe_features/branding/BrandingComponent"));
+  const BrandingComponent = dynamic(() => import("@onehash/oe-features/branding/BrandingComponent"));
 
   return (
     <>
