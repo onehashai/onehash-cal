@@ -1040,7 +1040,8 @@ export const getOptions = ({
      */
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
-      if (url.includes("auth/login")) return `${baseUrl}/event-types`;
+      if (url.includes("auth/login") || url === baseUrl || url === `${baseUrl}/`)
+        return `${baseUrl}/event-types`;
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       return url;
     },
