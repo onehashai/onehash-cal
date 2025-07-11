@@ -195,7 +195,13 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
 
               <div id="getting-started" className="mt-16 flex flex-col gap-4 md:flex-row">
-                {!isLoggedIn && (
+                {isLoggedIn ? (
+                  <button
+                    onClick={handleGoToApp}
+                    className="bg-primary-color hover:bg-hover-primary-color rounded-full px-4 py-2 text-white transition md:px-6">
+                    Get Started
+                  </button>
+                ) : (
                   <a
                     href={signUpUrl}
                     target="_blank"
