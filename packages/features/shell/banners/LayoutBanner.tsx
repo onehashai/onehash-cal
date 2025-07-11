@@ -1,10 +1,10 @@
-import ImpersonatingBanner, {
-  type ImpersonatingBannerProps,
-} from "@calcom/features/oe/impersonation/components/ImpersonatingBanner";
 import {
   OrgUpgradeBanner,
   type OrgUpgradeBannerProps,
-} from "@calcom/features/oe/organizations/components/OrgUpgradeBanner";
+} from "@calcom/features/ee/organizations/components/OrgUpgradeBanner";
+import ImpersonatingBanner, {
+  type ImpersonatingBannerProps,
+} from "@calcom/features/oe/impersonation/components/ImpersonatingBanner";
 import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
 import TeamInviteBanner from "@calcom/features/oe/teams/components/TeamInviteBanner";
 import AdminPasswordBanner, {

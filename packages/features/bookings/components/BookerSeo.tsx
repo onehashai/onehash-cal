@@ -1,6 +1,6 @@
 import type { GetBookingType } from "@calcom/features/bookings/lib/get-booking";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import type { getPublicEvent } from "@calcom/features/eventtypes/lib/getPublicEvent";
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { HeadSeo } from "@calcom/ui";

@@ -3,7 +3,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import InviteLinkSettingsModal from "@calcom/features/oe/teams/components/InviteLinkSettingsModal";
 import { MemberInvitationModalWithoutMembers } from "@calcom/features/oe/teams/components/MemberInvitationModal";
 import { classNames } from "@calcom/lib";

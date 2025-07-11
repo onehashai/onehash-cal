@@ -1,7 +1,7 @@
 import { _generateMetadata } from "app/_utils";
 import { WithLayout } from "app/layoutHOC";
 
-import Page from "@calcom/features/oe/organizations/pages/settings/appearance";
+import Page from "@calcom/features/ee/organizations/pages/settings/appearance";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

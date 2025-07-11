@@ -7,8 +7,8 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { uuid } from "short-uuid";
 
-import { deriveOrgNameFromEmail } from "@calcom/features/oe/organizations/components/CreateANewOrganizationForm";
-import { deriveSlugFromEmail } from "@calcom/features/oe/organizations/components/CreateANewOrganizationForm";
+import { deriveOrgNameFromEmail } from "@calcom/features/ee/organizations/components/CreateANewOrganizationForm";
+import { deriveSlugFromEmail } from "@calcom/features/ee/organizations/components/CreateANewOrganizationForm";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import slugify from "@calcom/lib/slugify";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
