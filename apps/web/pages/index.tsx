@@ -195,12 +195,14 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
 
               <div id="getting-started" className="mt-16 flex flex-col gap-4 md:flex-row">
-                <a
-                  href={signUpUrl}
-                  target="_blank"
-                  className="bg-primary-color hover:bg-hover-primary-color flex w-full items-center justify-center rounded-full px-6 py-2 text-white transition md:h-14 md:w-40">
-                  Get Started
-                </a>
+                {!isLoggedIn && (
+                  <a
+                    href={signUpUrl}
+                    target="_blank"
+                    className="bg-primary-color hover:bg-hover-primary-color flex w-full items-center justify-center rounded-full px-6 py-2 text-white transition md:h-14 md:w-40">
+                    Get Started
+                  </a>
+                )}
 
                 <a
                   href={DEMO_URL}
