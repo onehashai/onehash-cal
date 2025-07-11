@@ -10,10 +10,10 @@ import type { NextRouter as NextPageRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import type { ChildrenEventType } from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
 import { EventType as EventTypeComponent } from "@calcom/features/eventtypes/components/EventType";
 import type { EventTypeSetupProps } from "@calcom/features/eventtypes/lib/types";
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
 import { WEBSITE_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";

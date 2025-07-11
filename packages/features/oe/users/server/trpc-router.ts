@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { RedirectType } from "@calcom/prisma/enums";
 import { _UserModel as UserEntity } from "@calcom/prisma/zod";
 import type { inferRouterOutputs } from "@calcom/trpc";

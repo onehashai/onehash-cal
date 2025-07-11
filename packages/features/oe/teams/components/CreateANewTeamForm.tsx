@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import { subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import slugify from "@calcom/lib/slugify";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import { Alert, Button, DialogFooter, Form, TextField } from "@calcom/ui";
 
-import { useOrgBranding } from "../../organizations/context/provider";
-import { subdomainSuffix } from "../../organizations/lib/orgDomains";
 import type { NewTeamFormValues } from "../lib/types";
 
 interface TeamCreationFormProps {

@@ -4,7 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { z } from "zod";
 
 import { getSession } from "@calcom/features/auth/lib/getSession";
-import { ensureOrganizationIsReviewed } from "@calcom/features/oe/organizations/lib/ensureOrganizationIsReviewed";
+import { ensureOrganizationIsReviewed } from "@calcom/features/ee/organizations/lib/ensureOrganizationIsReviewed";
 import { ProfileRepository } from "@calcom/lib/server/repository/profile";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";

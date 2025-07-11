@@ -1,6 +1,6 @@
 import { _generateMetadata, getTranslate } from "app/_utils";
 
-import PrivacyView from "@calcom/features/oe/organizations/pages/settings/privacy";
+import PrivacyView from "@calcom/features/ee/organizations/pages/settings/privacy";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
 export const generateMetadata = async () =>

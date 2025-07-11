@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import stripe from "@calcom/features/oe/payments/server/stripe";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
