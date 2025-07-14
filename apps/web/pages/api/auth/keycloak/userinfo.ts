@@ -39,6 +39,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
+  const userInfo = await userInfoRes.json();
   if (userInfoRes.status !== 200) {
     await prisma.keycloakSessionInfo.deleteMany({
       where: {
@@ -47,7 +48,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     });
     return res.status(200).json({ message: "Session expired. Please log in again." });
   } else {
-    return res.status(200).json({ message: "Session is active", info: session.user });
+    return res.status(200).json({
+      message: "Session is active",
+      info: { ...session.user, email_verified: userInfo.email_verified },
+    });
   }
 }
 
