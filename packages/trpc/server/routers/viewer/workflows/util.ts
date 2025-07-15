@@ -1,3 +1,9 @@
+import type { Workflow as WorkflowType } from "@onehash/oe-features/workflows/config/types";
+import { isSmsOrWhatsappAction } from "@onehash/oe-features/workflows/config/utils";
+import { scheduleEmailReminder } from "@onehash/oe-features/workflows/managers/emailManager";
+import { scheduleSMSReminder } from "@onehash/oe-features/workflows/managers/smsManager";
+import { scheduleWhatsappReminder } from "@onehash/oe-features/workflows/managers/whatsappManager";
+import { getAllWorkflows } from "@onehash/oe-features/workflows/utils/getWorkflows";
 import type { Workflow } from "@prisma/client";
 import type { z } from "zod";
 
@@ -6,12 +12,6 @@ import {
   // getSmsReminderNumberField,
   getSmsReminderNumberSource,
 } from "@calcom/features/bookings/lib/getBookingFields";
-import { isSMSOrWhatsappAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
-import { getAllWorkflows } from "@calcom/features/ee/workflows/lib/getAllWorkflows";
-import { scheduleEmailReminder } from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
-import { scheduleSMSReminder } from "@calcom/features/ee/workflows/lib/reminders/smsReminderManager";
-import { scheduleWhatsappReminder } from "@calcom/features/ee/workflows/lib/reminders/whatsappReminderManager";
-import type { Workflow as WorkflowType } from "@calcom/features/ee/workflows/lib/types";
 import { removeBookingField, upsertBookingField } from "@calcom/features/eventtypes/lib/bookingFieldsManager";
 import { SENDER_ID, SENDER_NAME } from "@calcom/lib/constants";
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
@@ -179,7 +179,7 @@ export const verifyEmailSender = async (email: string, userId: number, teamId: n
 export function getSender(
   step: Pick<WorkflowStep, "action" | "sender"> & { senderName: string | null | undefined }
 ) {
-  return isSMSOrWhatsappAction(step.action) ? step.sender || SENDER_ID : step.senderName || SENDER_NAME;
+  return isSmsOrWhatsappAction(step.action) ? step.sender || SENDER_ID : step.senderName || SENDER_NAME;
 }
 
 export async function isAuthorized(

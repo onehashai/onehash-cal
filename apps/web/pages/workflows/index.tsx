@@ -1,4 +1,4 @@
-import Workflows from "@calcom/features/ee/workflows/pages/index";
+import { WorkflowsListPage as Workflows } from "@onehash/oe-features/workflows/view/pages";
 
 import PageWrapper from "@components/PageWrapper";
 import type { CalPageWrapper } from "@components/PageWrapper";

@@ -1,1 +1,1 @@
-export { default } from "@calcom/features/ee/workflows/api/scheduleEmailReminders";
+export { default } from "@onehash/oe-features/workflows/cron/queueEmailReminder";

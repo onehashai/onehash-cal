@@ -31,7 +31,8 @@ import { useBookerStore } from "./store";
 import type { BookerProps, WrappedBookerProps } from "./types";
 
 const loadFramerFeatures = () => import("./framer-features").then((res) => res.default);
-const PoweredBy = dynamic(() => import("@calcom/features/ee/components/PoweredBy"));
+const BrandingComponent = dynamic(() => import("@onehash/oe-features/branding/BrandingComponent"));
+
 const UnpublishedEntity = dynamic(() =>
   import("@calcom/ui/components/unpublished-entity/UnpublishedEntity").then((mod) => mod.UnpublishedEntity)
 );
@@ -467,7 +468,7 @@ const BookerComponent = ({
           )}
         {!getQueryParam("widget_view") && (
           <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-            <PoweredBy logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
+            <BrandingComponent logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
           </div>
         )}
       </div>

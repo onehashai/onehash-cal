@@ -99,3 +99,4 @@ apps/auth
 
 
 **/.secrets
+.specstory/
