@@ -14,8 +14,8 @@ import customTemplate from "../templates/customTemplate";
 import type { VariablesType } from "../templates/customTemplate";
 import smsReminderTemplate from "../templates/sms/reminder";
 import { getSenderId } from "../utils/getSenderId";
-import type { PartialWorkflowReminder } from "../utils/getWorklows";
-import { select } from "../utils/getWorklows";
+import type { PartialWorkflowReminder } from "../utils/getWorkflows";
+import { select } from "../utils/getWorkflows";
 
 const fetchPendingNotifications = async () => {
   return prisma.workflowReminder.findMany({

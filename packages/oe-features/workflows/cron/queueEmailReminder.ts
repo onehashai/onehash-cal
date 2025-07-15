@@ -19,7 +19,7 @@ import customTemplate from "../templates/customTemplate";
 import emailRatingTemplate from "../templates/email/ratingTemplate";
 import emailReminderTemplate from "../templates/email/reminder";
 import emailThankYouTemplate from "../templates/email/thankYouTemplate";
-import { getAllRemindersToCancel, getAllUnscheduledReminders } from "../utils/getWorklows";
+import { getAllRemindersToCancel, getAllUnscheduledReminders } from "../utils/getWorkflows";
 
 const removePastNotifications = async (): Promise<void> => {
   await prisma.workflowReminder.deleteMany({

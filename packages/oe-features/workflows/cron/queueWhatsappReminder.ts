@@ -6,8 +6,8 @@ import prisma from "@calcom/prisma";
 import { WorkflowActions, WorkflowMethods } from "@calcom/prisma/enums";
 
 import * as twilio from "../providers/twilio";
-import type { PartialWorkflowReminder } from "../utils/getWorklows";
-import { select } from "../utils/getWorklows";
+import type { PartialWorkflowReminder } from "../utils/getWorkflows";
+import { select } from "../utils/getWorkflows";
 
 const removeExpiredNotifications = async (): Promise<void> => {
   await prisma.workflowReminder.deleteMany({
