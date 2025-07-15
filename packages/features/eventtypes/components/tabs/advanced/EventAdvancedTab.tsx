@@ -1,3 +1,7 @@
+import {
+  canDisableParticipantNotifications,
+  canDisableOrganizerNotifications,
+} from "@onehash/oe-features/workflows/utils/notificationDisableCheck";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import type { z } from "zod";
@@ -8,10 +12,6 @@ import { getEventName } from "@calcom/core/event";
 import getLocationsOptionsForSelect from "@calcom/features/bookings/lib/getLocationOptionsForSelect";
 import DestinationCalendarSelector from "@calcom/features/calendars/DestinationCalendarSelector";
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
 import { MultiplePrivateLinksController } from "@calcom/features/eventtypes/components";
 import type {
   FormValues,
@@ -887,7 +887,7 @@ export const EventAdvancedTab = ({
           )}
         />
       )}
-      {allowDisablingAttendeeConfirmationEmails(workflows) && (
+      {canDisableParticipantNotifications(workflows) && (
         <Controller
           name="metadata.disableStandardEmails.confirmation.attendee"
           render={({ field: { value, onChange } }) => (
@@ -909,7 +909,7 @@ export const EventAdvancedTab = ({
           )}
         />
       )}
-      {allowDisablingHostConfirmationEmails(workflows) && (
+      {canDisableOrganizerNotifications(workflows) && (
         <Controller
           name="metadata.disableStandardEmails.confirmation.host"
           defaultValue={!!formMethods.getValues("seatsPerTimeSlot")}

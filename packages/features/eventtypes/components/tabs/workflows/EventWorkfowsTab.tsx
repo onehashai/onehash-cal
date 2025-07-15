@@ -1,3 +1,6 @@
+import type { WorkflowType } from "@onehash/oe-features/workflows/config/types";
+import { getActionIcon } from "@onehash/oe-features/workflows/utils/getActionicon";
+import SkeletonLoader from "@onehash/oe-features/workflows/view/components/event_workflow_tab_skeleton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -6,9 +9,6 @@ import { Trans } from "react-i18next";
 
 import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
-import SkeletonLoader from "@calcom/features/ee/workflows/components/SkeletonLoaderEventWorkflowsTab";
-import type { WorkflowType } from "@calcom/features/ee/workflows/components/WorkflowListPage";
-import { getActionIcon } from "@calcom/features/ee/workflows/lib/getActionIcon";
 import type { FormValues } from "@calcom/features/eventtypes/lib/types";
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -215,7 +215,13 @@ function EventWorkflowsTab(props: Props) {
       const allSortedWorkflows =
         workflowsDisableProps.isLocked && !isManagedEventType
           ? allActiveWorkflows
-          : allActiveWorkflows.concat(disabledWorkflows);
+          : allActiveWorkflows.concat(
+              disabledWorkflows.map((workflow) => ({
+                ...workflow,
+                readOnly: workflow.readOnly ?? false,
+                steps: workflow.steps ?? [],
+              })) as WorkflowType[]
+            );
       setSortedWorkflows(allSortedWorkflows);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

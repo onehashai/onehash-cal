@@ -1,3 +1,5 @@
+import { workflowSelect } from "@onehash/oe-features/workflows/utils/getWorkflows";
+import { sendCancelledReminders } from "@onehash/oe-features/workflows/utils/reminderScheduler";
 import type { Prisma, WorkflowReminder } from "@prisma/client";
 import type { NextApiRequest } from "next";
 
@@ -8,8 +10,6 @@ import EventManager from "@calcom/core/EventManager";
 import dayjs from "@calcom/dayjs";
 import { sendCancelledEmailsAndSMS } from "@calcom/emails";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
-import { workflowSelect } from "@calcom/features/ee/workflows/lib/getAllWorkflows";
-import { sendCancelledReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { deleteWebhookScheduledTriggers } from "@calcom/features/webhooks/lib/scheduleTrigger";
