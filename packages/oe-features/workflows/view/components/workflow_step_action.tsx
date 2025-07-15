@@ -90,8 +90,11 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
   const [helpDialogVisible, setHelpDialogVisible] = useState(false);
   const [initialRenderComplete, setInitialRenderComplete] = useState(true);
 
+  // Use correct field path for registration
+  const fieldPath = `steps.${index}` as const;
+
   const { ref: subjectFieldRef, ...remainingSubjectProps } = step
-    ? form.register(`steps.${step.stepNumber - 1}.emailSubject`)
+    ? form.register(`${fieldPath}.emailSubject`)
     : { ref: null, name: "" };
   const subjectInputRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -102,14 +105,10 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
   const currentTemplate = { label: t(`${step.template.toLowerCase()}`), value: step.template };
 
   const checkPhoneValidation = (): boolean =>
-    !!step &&
-    !!validPhoneList.find(
-      (number: string) => number === form.getValues(`steps.${step.stepNumber - 1}.sendTo`)
-    );
+    !!step && !!validPhoneList.find((number: string) => number === form.getValues(`${fieldPath}.sendTo`));
 
   const checkEmailValidation = (): boolean =>
-    !!step &&
-    !!validEmailList.find((email: string) => email === form.getValues(`steps.${step.stepNumber - 1}.sendTo`));
+    !!step && !!validEmailList.find((email: string) => email === form.getValues(`${fieldPath}.sendTo`));
 
   const utilsInstance = trpc.useUtils();
 
@@ -129,10 +128,10 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       if (
         step &&
         form?.formState?.errors?.steps &&
-        form.formState.errors.steps[step.stepNumber - 1]?.sendTo &&
+        form.formState.errors.steps[index]?.sendTo &&
         validationResult
       ) {
-        form.clearErrors(`steps.${step.stepNumber - 1}.sendTo`);
+        form.clearErrors(`${fieldPath}.sendTo`);
       }
       utilsInstance.viewer.workflows.getVerifiedNumbers.invalidate();
     },
@@ -161,10 +160,10 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       if (
         step &&
         form?.formState?.errors?.steps &&
-        form.formState.errors.steps[step.stepNumber - 1]?.sendTo &&
+        form.formState.errors.steps[index]?.sendTo &&
         validationResult
       ) {
-        form.clearErrors(`steps.${step.stepNumber - 1}.sendTo`);
+        form.clearErrors(`${fieldPath}.sendTo`);
       }
       utilsInstance.viewer.workflows.getVerifiedEmails.invalidate();
     },
@@ -183,14 +182,14 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       const updatedSubject = `${existingSubject.substring(0, caretPosition)}{${variableText
         .toUpperCase()
         .replace(/ /g, "_")}}${existingSubject.substring(caretPosition)}`;
-      form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, updatedSubject);
+      form.setValue(`${fieldPath}.emailSubject`, updatedSubject);
     }
   };
 
   const updateActionType = (selectedAction: WorkflowActions): void => {
     if (!selectedAction) return;
 
-    const previousAction = form.getValues(`steps.${step.stepNumber - 1}.action`);
+    const previousAction = form.getValues(`${fieldPath}.action`);
 
     const configureNumberSettings = ({
       phoneNumberIsNeeded,
@@ -215,8 +214,8 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       });
 
       if (!isSmsAction(previousAction)) {
-        form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, "");
-        form.setValue(`steps.${step.stepNumber - 1}.sender`, SENDER_ID);
+        form.setValue(`${fieldPath}.reminderBody`, "");
+        form.setValue(`${fieldPath}.sender`, SENDER_ID);
       }
       setSubjectLineRequired(false);
     } else if (
@@ -230,8 +229,8 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       });
 
       if (!isWhatsappAction(previousAction)) {
-        form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, "");
-        form.setValue(`steps.${step.stepNumber - 1}.sender`, "");
+        form.setValue(`${fieldPath}.reminderBody`, "");
+        form.setValue(`${fieldPath}.sender`, "");
       }
       setSubjectLineRequired(false);
     } else {
@@ -242,33 +241,33 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       setAttendeePhoneValidation(false);
     }
 
-    if (form.getValues(`steps.${step.stepNumber - 1}.template`) === WorkflowTemplates.REMINDER) {
+    if (form.getValues(`${fieldPath}.template`) === WorkflowTemplates.REMINDER) {
       if (isSmsOrWhatsappAction(selectedAction) === isSmsOrWhatsappAction(previousAction)) {
         if (isAttendeeAction(previousAction) !== isAttendeeAction(selectedAction)) {
-          const existingContent = form.getValues(`steps.${step.stepNumber - 1}.reminderBody`) || "";
+          const existingContent = form.getValues(`${fieldPath}.reminderBody`) || "";
           const swappedContent = existingContent
             .replaceAll("{ORGANIZER}", "{PLACEHOLDER}")
             .replaceAll("{ATTENDEE}", "{ORGANIZER}")
             .replaceAll("{PLACEHOLDER}", "{ATTENDEE}");
-          form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, swappedContent);
+          form.setValue(`${fieldPath}.reminderBody`, swappedContent);
 
           if (!isSmsOrWhatsappAction(selectedAction)) {
-            const existingSubject = form.getValues(`steps.${step.stepNumber - 1}.emailSubject`) || "";
+            const existingSubject = form.getValues(`${fieldPath}.emailSubject`) || "";
             const updatedSubject = isAttendeeAction(selectedAction)
               ? existingSubject.replace("{ORGANIZER}", "{ATTENDEE}")
               : existingSubject.replace("{ATTENDEE}", "{ORGANIZER}");
-            form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, updatedSubject || "");
+            form.setValue(`${fieldPath}.emailSubject`, updatedSubject || "");
           }
         }
       } else {
         if (isSmsAction(selectedAction)) {
           form.setValue(
-            `steps.${step.stepNumber - 1}.reminderBody`,
+            `${fieldPath}.reminderBody`,
             smsReminderTemplate(true, i18n.language, selectedAction, userTimePreference)
           );
         } else if (isWhatsappAction(selectedAction)) {
           form.setValue(
-            `steps.${step.stepNumber - 1}.reminderBody`,
+            `${fieldPath}.reminderBody`,
             whatsappReminderTemplate(true, i18n.language, selectedAction, userTimePreference)
           );
         } else {
@@ -278,41 +277,41 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
             selectedAction,
             userTimePreference
           );
-          form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, emailTemplate.emailBody);
-          form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, emailTemplate.emailSubject);
+          form.setValue(`${fieldPath}.reminderBody`, emailTemplate.emailBody);
+          form.setValue(`${fieldPath}.emailSubject`, emailTemplate.emailSubject);
         }
       }
     } else {
       const templateType = isWhatsappAction(selectedAction) ? "REMINDER" : "CUSTOM";
-      templateType && form.setValue(`steps.${step.stepNumber - 1}.template`, templateType);
+      templateType && form.setValue(`${fieldPath}.template`, templateType);
     }
 
-    form.unregister(`steps.${step.stepNumber - 1}.sendTo`);
-    form.clearErrors(`steps.${step.stepNumber - 1}.sendTo`);
-    form.setValue(`steps.${step.stepNumber - 1}.action`, selectedAction);
+    form.unregister(`${fieldPath}.sendTo`);
+    form.clearErrors(`${fieldPath}.sendTo`);
+    form.setValue(`${fieldPath}.action`, selectedAction);
     setTemplateRefreshTrigger(!templateRefreshTrigger);
   };
 
   const updateTemplateContent = (selectedTemplate: WorkflowTemplates): void => {
     if (!selectedTemplate) return;
 
-    const currentAction = form.getValues(`steps.${step.stepNumber - 1}.action`);
+    const currentAction = form.getValues(`${fieldPath}.action`);
 
     if (selectedTemplate === WorkflowTemplates.REMINDER) {
       if (isWhatsappAction(currentAction)) {
         form.setValue(
-          `steps.${step.stepNumber - 1}.reminderBody`,
+          `${fieldPath}.reminderBody`,
           whatsappReminderTemplate(true, i18n.language, currentAction, userTimePreference)
         );
       } else if (isSmsAction(currentAction)) {
         form.setValue(
-          `steps.${step.stepNumber - 1}.reminderBody`,
+          `${fieldPath}.reminderBody`,
           smsReminderTemplate(true, i18n.language, currentAction, userTimePreference)
         );
       } else {
         const emailContent = emailReminderTemplate(true, i18n.language, currentAction, userTimePreference);
-        form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, emailContent.emailBody);
-        form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, emailContent.emailSubject);
+        form.setValue(`${fieldPath}.reminderBody`, emailContent.emailBody);
+        form.setValue(`${fieldPath}.emailSubject`, emailContent.emailSubject);
       }
     } else if (selectedTemplate === WorkflowTemplates.RATING) {
       const ratingContent = emailRatingTemplate({
@@ -321,21 +320,21 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
         action: currentAction,
         timeFormat: userTimePreference,
       });
-      form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, ratingContent.emailBody);
-      form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, ratingContent.emailSubject);
+      form.setValue(`${fieldPath}.reminderBody`, ratingContent.emailBody);
+      form.setValue(`${fieldPath}.emailSubject`, ratingContent.emailSubject);
     } else {
       if (isWhatsappAction(currentAction)) {
         form.setValue(
-          `steps.${step.stepNumber - 1}.reminderBody`,
+          `${fieldPath}.reminderBody`,
           getWhatsappTemplateContent(currentAction, i18n.language, selectedTemplate, userTimePreference)
         );
       } else {
-        form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, "");
-        form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, "");
+        form.setValue(`${fieldPath}.reminderBody`, "");
+        form.setValue(`${fieldPath}.emailSubject`, "");
       }
     }
 
-    form.setValue(`steps.${step.stepNumber - 1}.template`, selectedTemplate);
+    form.setValue(`${fieldPath}.template`, selectedTemplate);
     setTemplateRefreshTrigger(!templateRefreshTrigger);
   };
 
@@ -362,7 +361,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
 
           <div className="space-y-3">
             <Controller
-              name={`steps.${step.stepNumber - 1}.action`}
+              name={`${fieldPath}.action`}
               control={form.control}
               render={({ field }) => {
                 const actionLabel = t(`${step.action.toLowerCase()}_action`);
@@ -401,12 +400,12 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
               <Label className="pt-4">{t("custom_phone_number")}</Label>
               <div className="block sm:flex">
                 <Controller
-                  name={`steps.${step.stepNumber - 1}.sendTo`}
+                  name={`${fieldPath}.sendTo`}
                   control={form.control}
                   render={({ field: { value, onChange } }) => (
                     <PhoneInput
                       placeholder={t("phone_number")}
-                      id={`steps.${step.stepNumber - 1}.sendTo`}
+                      id={`${fieldPath}.sendTo`}
                       className="min-w-fit sm:rounded-r-none sm:rounded-bl-md sm:rounded-tl-md"
                       required
                       disabled={readOnly}
@@ -430,16 +429,16 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                   )}
                   onClick={() =>
                     phoneCodeMutation.mutate({
-                      phoneNumber: form.getValues(`steps.${step.stepNumber - 1}.sendTo`) || "",
+                      phoneNumber: form.getValues(`${fieldPath}.sendTo`) || "",
                     })
                   }>
                   {t("send_code")}
                 </Button>
               </div>
 
-              {form.formState.errors.steps && form.formState?.errors?.steps[step.stepNumber - 1]?.sendTo && (
+              {form.formState.errors.steps && form.formState?.errors?.steps[index]?.sendTo && (
                 <p className="mt-1 text-xs text-red-500">
-                  {form.formState?.errors?.steps[step.stepNumber - 1]?.sendTo?.message || ""}
+                  {form.formState?.errors?.steps[index]?.sendTo?.message || ""}
                 </p>
               )}
 
@@ -465,7 +464,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                         disabled={phoneVerificationMutation.isPending || readOnly}
                         onClick={() => {
                           phoneVerificationMutation.mutate({
-                            phoneNumber: form.getValues(`steps.${step.stepNumber - 1}.sendTo`) || "",
+                            phoneNumber: form.getValues(`${fieldPath}.sendTo`) || "",
                             code: verificationDigits,
                             teamId,
                           });
@@ -479,7 +478,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
             </div>
           )}
 
-          {!isWhatsappAction(form.getValues(`steps.${step.stepNumber - 1}.action`)) && (
+          {!isWhatsappAction(form.getValues(`${fieldPath}.action`)) && (
             <div className="bg-muted mt-2 rounded-md p-4 pt-0">
               {requiresSenderIdentification ? (
                 <>
@@ -497,13 +496,12 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                       placeholder={SENDER_ID}
                       disabled={readOnly}
                       maxLength={11}
-                      {...form.register(`steps.${step.stepNumber - 1}.sender`)}
+                      {...form.register(`${fieldPath}.sender`)}
                     />
                   </div>
-                  {form.formState.errors.steps &&
-                    form.formState?.errors?.steps[step.stepNumber - 1]?.sender && (
-                      <p className="mt-1 text-xs text-red-500">{t("sender_id_error_message")}</p>
-                    )}
+                  {form.formState.errors.steps && form.formState?.errors?.steps[index]?.sender && (
+                    <p className="mt-1 text-xs text-red-500">{t("sender_id_error_message")}</p>
+                  )}
                 </>
               ) : (
                 <>
@@ -513,7 +511,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                       type="text"
                       disabled={readOnly}
                       placeholder={SENDER_NAME}
-                      {...form.register(`steps.${step.stepNumber - 1}.senderName`)}
+                      {...form.register(`${fieldPath}.senderName`)}
                     />
                   </div>
                 </>
@@ -524,23 +522,21 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
           {attendeePhoneValidation && (
             <div className="mt-2">
               <Controller
-                name={`steps.${step.stepNumber - 1}.numberRequired`}
+                name={`${fieldPath}.numberRequired`}
                 control={form.control}
                 render={({ field: { value, onChange } }) => (
                   <div className="flex items-center gap-1">
                     <Checkbox
                       disabled={readOnly}
                       checked={value || false}
-                      defaultChecked={form.getValues(`steps.${step.stepNumber - 1}.numberRequired`) || false}
-                      id={`steps.${step.stepNumber - 1}.numberRequired`}
+                      defaultChecked={form.getValues(`${fieldPath}.numberRequired`) || false}
+                      id={`${fieldPath}.numberRequired`}
                       onCheckedChange={(e) => {
                         onChange(e);
-                        form.setValue(`steps.${step.stepNumber - 1}.numberRequired`, e ? true : false);
+                        form.setValue(`${fieldPath}.numberRequired`, e ? true : false);
                       }}
                     />
-                    <Label
-                      htmlFor={`steps.${step.stepNumber - 1}.numberRequired`}
-                      className="ml-2 text-sm text-gray-700">
+                    <Label htmlFor={`${fieldPath}.numberRequired`} className="ml-2 text-sm text-gray-700">
                       {t("make_phone_number_required")}
                     </Label>
                   </div>
@@ -554,7 +550,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
               <Label>{t("email_address")}</Label>
               <div className="block sm:flex">
                 <Controller
-                  name={`steps.${step.stepNumber - 1}.sendTo`}
+                  name={`${fieldPath}.sendTo`}
                   control={form.control}
                   render={({ field: { value, onChange } }) => (
                     <EmailField
@@ -582,7 +578,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                     emailValidationStatus ? "hidden" : "mt-3 sm:mt-0"
                   )}
                   onClick={() => {
-                    const emailAddress = form.getValues(`steps.${step.stepNumber - 1}.sendTo`) || "";
+                    const emailAddress = form.getValues(`${fieldPath}.sendTo`) || "";
                     emailCodeMutation.mutate({
                       email: emailAddress,
                       isVerifyingEmail: true,
@@ -592,9 +588,9 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                 </Button>
               </div>
 
-              {form.formState.errors.steps && form.formState?.errors?.steps[step.stepNumber - 1]?.sendTo && (
+              {form.formState.errors.steps && form.formState?.errors?.steps[index]?.sendTo && (
                 <p className="mt-1 text-xs text-red-500">
-                  {form.formState?.errors?.steps[step.stepNumber - 1]?.sendTo?.message || ""}
+                  {form.formState?.errors?.steps[index]?.sendTo?.message || ""}
                 </p>
               )}
 
@@ -621,7 +617,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                         onClick={() => {
                           emailVerificationMutation.mutate({
                             code: verificationDigits,
-                            email: form.getValues(`steps.${step.stepNumber - 1}.sendTo`) || "",
+                            email: form.getValues(`${fieldPath}.sendTo`) || "",
                             teamId,
                           });
                         }}>
@@ -637,7 +633,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
           <div className="mt-5">
             <Label>{t("message_template")}</Label>
             <Controller
-              name={`steps.${step.stepNumber - 1}.template`}
+              name={`${fieldPath}.template`}
               control={form.control}
               render={({ field }) => (
                 <Select
@@ -687,12 +683,11 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                   required
                   {...remainingSubjectProps}
                 />
-                {form.formState.errors.steps &&
-                  form.formState?.errors?.steps[step.stepNumber - 1]?.emailSubject && (
-                    <p className="mt-1 text-xs text-red-500">
-                      {form.formState?.errors?.steps[step.stepNumber - 1]?.emailSubject?.message || ""}
-                    </p>
-                  )}
+                {form.formState.errors.steps && form.formState?.errors?.steps[index]?.emailSubject && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {form.formState?.errors?.steps[index]?.emailSubject?.message || ""}
+                  </p>
+                )}
               </div>
             )}
 
@@ -703,10 +698,10 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
             </div>
             <Editor
               getText={() => {
-                return form.getValues(`steps.${step.stepNumber - 1}.reminderBody`) || "";
+                return form.getValues(`${fieldPath}.reminderBody`) || "";
               }}
               setText={(text: string) => {
-                form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, text);
+                form.setValue(`${fieldPath}.reminderBody`, text);
                 form.clearErrors();
               }}
               variables={DYNAMIC_TEXT_VARIABLES}
@@ -720,29 +715,26 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
               plainText={isSmsAction(step.action)}
             />
 
-            {form.formState.errors.steps &&
-              form.formState?.errors?.steps[step.stepNumber - 1]?.reminderBody && (
-                <p className="mt-1 text-sm text-red-500">
-                  {form.formState?.errors?.steps[step.stepNumber - 1]?.reminderBody?.message || ""}
-                </p>
-              )}
+            {form.formState.errors.steps && form.formState?.errors?.steps[index]?.reminderBody && (
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState?.errors?.steps[index]?.reminderBody?.message || ""}
+              </p>
+            )}
 
             {subjectLineRequired && (
               <div className="mt-2 flex items-center gap-1">
                 <Controller
-                  name={`steps.${step.stepNumber - 1}.includeCalendarEvent`}
+                  name={`${fieldPath}.includeCalendarEvent`}
                   control={form.control}
                   render={({ field: { value, onChange } }) => (
                     <Checkbox
                       id="include_calendar_event"
                       disabled={readOnly}
                       checked={value || false}
-                      defaultChecked={
-                        form.getValues(`steps.${step.stepNumber - 1}.includeCalendarEvent`) || false
-                      }
+                      defaultChecked={form.getValues(`${fieldPath}.includeCalendarEvent`) || false}
                       onCheckedChange={(e) => {
                         onChange(e);
-                        form.setValue(`steps.${step.stepNumber - 1}.includeCalendarEvent`, e ? true : false);
+                        form.setValue(`${fieldPath}.includeCalendarEvent`, e ? true : false);
                       }}
                     />
                   )}
