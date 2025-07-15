@@ -19,6 +19,7 @@ interface DialogProps {
   onConfirm: () => Promise<void> | void;
   size?: Size;
   loader?: boolean;
+  children?: React.ReactNode;
 }
 
 export const Dialog: React.FC<DialogProps> = ({
@@ -32,6 +33,7 @@ export const Dialog: React.FC<DialogProps> = ({
   onConfirm,
   size = "md",
   loader = false,
+  children,
 }) => {
   const handleConfirm = async () => {
     onConfirm();
@@ -97,6 +99,7 @@ export const Dialog: React.FC<DialogProps> = ({
               {description}
             </RadixDialog.Description>
           )}
+          {children}
 
           <div
             style={{
