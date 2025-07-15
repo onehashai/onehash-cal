@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Trans } from "react-i18next";
 
-import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import type { FormValues } from "@calcom/features/eventtypes/lib/types";
 import classNames from "@calcom/lib/classNames";
@@ -244,75 +243,75 @@ function EventWorkflowsTab(props: Props) {
     },
   });
 
-  return (
-    <LicenseRequired>
-      {!isPending ? (
-        <>
-          {(isManagedEventType || isChildrenManagedEventType) && (
-            <Alert
-              severity={workflowsDisableProps.isLocked ? "neutral" : "green"}
-              className="mb-2"
-              title={
-                <Trans i18nKey={`${lockedText}_${isManagedEventType ? "for_members" : "by_team_admins"}`}>
-                  {lockedText[0].toUpperCase()}
-                  {lockedText.slice(1)} {isManagedEventType ? "for members" : "by team admins"}
-                </Trans>
-              }
-              actions={<div className="flex h-full items-center">{workflowsDisableProps.LockedIcon}</div>}
-              message={
-                <Trans
-                  i18nKey={`workflows_${lockedText}_${
-                    isManagedEventType ? "for_members" : "by_team_admins"
-                  }_description`}>
-                  {isManagedEventType ? "Members" : "You"}{" "}
-                  {workflowsDisableProps.isLocked
-                    ? "will be able to see the active workflows but will not be able to edit any workflow settings"
-                    : "will be able to see the active workflow and will be able to edit any workflow settings"}
-                </Trans>
+  return;
+
+  {
+    !isPending ? (
+      <>
+        {(isManagedEventType || isChildrenManagedEventType) && (
+          <Alert
+            severity={workflowsDisableProps.isLocked ? "neutral" : "green"}
+            className="mb-2"
+            title={
+              <Trans i18nKey={`${lockedText}_${isManagedEventType ? "for_members" : "by_team_admins"}`}>
+                {lockedText[0].toUpperCase()}
+                {lockedText.slice(1)} {isManagedEventType ? "for members" : "by team admins"}
+              </Trans>
+            }
+            actions={<div className="flex h-full items-center">{workflowsDisableProps.LockedIcon}</div>}
+            message={
+              <Trans
+                i18nKey={`workflows_${lockedText}_${
+                  isManagedEventType ? "for_members" : "by_team_admins"
+                }_description`}>
+                {isManagedEventType ? "Members" : "You"}{" "}
+                {workflowsDisableProps.isLocked
+                  ? "will be able to see the active workflows but will not be able to edit any workflow settings"
+                  : "will be able to see the active workflow and will be able to edit any workflow settings"}
+              </Trans>
+            }
+          />
+        )}
+        {data?.workflows && sortedWorkflows.length > 0 ? (
+          <div>
+            <div className="space-y-4">
+              {sortedWorkflows.map((workflow) => {
+                return (
+                  <WorkflowListItem
+                    key={workflow.id}
+                    workflow={workflow}
+                    eventType={props.eventType}
+                    isChildrenManagedEventType
+                    isActive={!!workflows.find((activeWorkflow) => activeWorkflow.id === workflow.id)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="pt-2 before:border-0">
+            <EmptyScreen
+              Icon="zap"
+              headline={t("workflows")}
+              description={t("no_workflows_description")}
+              buttonRaw={
+                <Button
+                  disabled={workflowsDisableProps.isLocked && !isManagedEventType}
+                  target="_blank"
+                  color="secondary"
+                  onClick={() => createMutation.mutate({ teamId: eventType.team?.id })}
+                  loading={createMutation.isPending}>
+                  {t("create_workflow")}
+                </Button>
               }
             />
-          )}
-          {data?.workflows && sortedWorkflows.length > 0 ? (
-            <div>
-              <div className="space-y-4">
-                {sortedWorkflows.map((workflow) => {
-                  return (
-                    <WorkflowListItem
-                      key={workflow.id}
-                      workflow={workflow}
-                      eventType={props.eventType}
-                      isChildrenManagedEventType
-                      isActive={!!workflows.find((activeWorkflow) => activeWorkflow.id === workflow.id)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="pt-2 before:border-0">
-              <EmptyScreen
-                Icon="zap"
-                headline={t("workflows")}
-                description={t("no_workflows_description")}
-                buttonRaw={
-                  <Button
-                    disabled={workflowsDisableProps.isLocked && !isManagedEventType}
-                    target="_blank"
-                    color="secondary"
-                    onClick={() => createMutation.mutate({ teamId: eventType.team?.id })}
-                    loading={createMutation.isPending}>
-                    {t("create_workflow")}
-                  </Button>
-                }
-              />
-            </div>
-          )}
-        </>
-      ) : (
-        <SkeletonLoader />
-      )}
-    </LicenseRequired>
-  );
+          </div>
+        )}
+      </>
+    ) : (
+      <SkeletonLoader />
+    );
+  }
 }
 
 export default EventWorkflowsTab;
