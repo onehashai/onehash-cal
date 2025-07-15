@@ -348,7 +348,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
       <Shell withoutMain>
         <div className="min-h-screen bg-white">
           <div className="mx-auto px-6 py-8">
-            <div className="mb-8 flex items-center justify-between">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
               <div className="flex gap-2">
                 <div className="h-10 w-32 animate-pulse rounded bg-gray-200" />
@@ -413,9 +413,9 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
         />
 
         <div className="mx-auto px-6 py-8">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-semibold text-gray-900">Workflow Editor</h1>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 variant="outline"
                 className="border-gray-300 text-gray-600"
