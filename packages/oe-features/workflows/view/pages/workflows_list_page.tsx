@@ -9,6 +9,8 @@ import { HttpError } from "@calcom/lib/http-error";
 import { trpc } from "@calcom/trpc/react";
 import { showToast } from "@calcom/ui";
 
+import WorkflowListSkeletonLoader from "../components/workflow_list_skeleton_loader";
+
 type PageProps = {
   // filteredList?: Awaited<ReturnType<typeof WorkflowRepository.getFilteredList>>;
 };
@@ -45,7 +47,9 @@ function WorkflowsListPage({}: PageProps) {
   });
   return (
     <Shell withoutMain>
-      {filteredWorkflows?.totalCount ? (
+      {isPending ? (
+        <WorkflowListSkeletonLoader />
+      ) : filteredWorkflows?.totalCount ? (
         <WorkflowList
           workflows={filteredWorkflows?.filtered}
           createWorkflowFn={() => {

@@ -23,7 +23,7 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
 const globalRoutes = ["/", "/login", "/embed", "/video", "/auth"];
 const allowedSubDomains = ["app", "www"];
 
-const enterpriseFeatureRoutes = ["/workflows", "/team", "/settings/developer/api-keys"];
+const enterpriseFeatureRoutes = ["/team", "/settings/developer/api-keys"];
 
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;

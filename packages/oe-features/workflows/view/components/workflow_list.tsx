@@ -1,5 +1,5 @@
 import { Button } from "@onehash/oe-features/ui";
-import type { Membership, Workflow } from "@prisma/client";
+import type { Membership, Workflow, WorkflowStep } from "@prisma/client";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -7,8 +7,7 @@ import { useState } from "react";
 import { WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 
-import type { WorkflowStep } from "../../types";
-import { WorkflowDeleteDialog } from "../components/workflow_delete_dialog";
+import { WorkflowDeleteDialog } from "./workflow_delete_dialog";
 
 export type WorkflowType = Workflow & {
   team: {

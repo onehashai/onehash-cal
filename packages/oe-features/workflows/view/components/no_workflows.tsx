@@ -7,6 +7,7 @@ interface Props {
   createWorkflowFn: () => void;
   loading?: boolean;
 }
+
 const NoWorkflowsComponent = ({ createWorkflowFn, loading }: Props) => {
   return (
     <div className="min-h-screen bg-white">
