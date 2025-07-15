@@ -448,9 +448,9 @@ async function handler(req: CustomRequest) {
     await prisma.booking.updateMany({
       where: {
         recurringEventId,
-        startTime: {
-          gte,
-        },
+        // startTime: {
+        //   gte,
+        // },
       },
       data: {
         status: BookingStatus.CANCELLED,
@@ -461,9 +461,9 @@ async function handler(req: CustomRequest) {
     const allUpdatedBookings = await prisma.booking.findMany({
       where: {
         recurringEventId: bookingToDelete.recurringEventId,
-        startTime: {
-          gte: new Date(),
-        },
+        // startTime: {
+        //   gte: new Date(),
+        // },
       },
       select: updatedBookingSelect,
     });
