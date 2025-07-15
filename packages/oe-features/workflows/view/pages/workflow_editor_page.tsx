@@ -66,6 +66,8 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
   const [targetWorkflowId, setTargetWorkflowId] = useState(0);
   const [chosenEventTypes, setChosenEventTypes] = useState<Option[]>([]);
   const [schedulingTextDisplay, setSchedulingTextDisplay] = useState<string | null>(null);
+  // Add a counter to ensure unique IDs for new steps
+  const [stepIdCounter, setStepIdCounter] = useState(-1);
 
   const { workflow: automationId } = routeParams ? querySchema.parse(routeParams) : { workflow: -1 };
 
@@ -129,7 +131,6 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
 
   const modificationMutation = trpc.viewer.workflows.update.useMutation({
     onSuccess: async ({ workflow }) => {
-      console.log("Workflow updated successfully:", workflow);
       if (workflow) {
         trpcUtils.viewer.workflows.get.setData({ id: +workflow.id }, workflow);
         showToast(
@@ -157,8 +158,17 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
   const persistWorkflowChanges = async (): Promise<void> => {
     const formValues = formController.getValues();
 
-    const processedSteps = formValues.steps.map((step) => ({
+    // Validate form before submission
+    const isValid = await formController.trigger();
+    if (!isValid) {
+      console.log("Form validation failed:", formController.formState.errors);
+      showToast("Please fix the errors in the form", "error");
+      return;
+    }
+
+    const processedSteps = formValues.steps.map((step, index) => ({
       ...step,
+      stepNumber: index + 1, // Ensure stepNumber is sequential
       reminderBody: step.reminderBody
         ? translateVariablesToEnglish(step.reminderBody, { locale: i18n.language, t })
         : null,
@@ -167,11 +177,13 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
         : null,
       template: step.template as "CANCELLED" | "REMINDER" | "CUSTOM" | "RESCHEDULED" | "COMPLETED" | "RATING",
     }));
+
     const enabledEventIds = formValues.activeOn
       .filter((option) => option.value !== "all")
       .map((option) => {
         return parseInt(option.value, 10);
       });
+
     const updatePayload = {
       ...formValues,
       steps: processedSteps,
@@ -243,10 +255,11 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
     formController.setValue("steps", renumberedSteps, {
       shouldDirty: true,
       shouldTouch: true,
-      shouldValidate: false,
+      shouldValidate: true,
     });
 
     formController.clearErrors();
+    formController.trigger("steps");
 
     showToast("Action removed successfully", "success");
   };
@@ -254,8 +267,10 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
   const appendAction = (): void => {
     const currentStepList = formController.getValues("steps") || [];
 
+    setStepIdCounter((prev) => prev - 1);
+
     const freshStep = {
-      id: Date.now(),
+      id: stepIdCounter - 1, // Using negative ID for new steps
       stepNumber: currentStepList.length + 1,
       action: WorkflowActions.EMAIL_HOST,
       template: WorkflowTemplates.CUSTOM,
@@ -278,7 +293,10 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
       shouldValidate: false,
     });
 
-    formController.trigger("steps");
+    // Trigger validation for the steps array
+    setTimeout(() => {
+      formController.trigger("steps");
+    }, 0);
 
     showToast("New action added successfully", "success");
   };
@@ -289,9 +307,10 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
     }
 
     if (currentWorkflow) {
-      const processedSteps = currentWorkflow.steps?.map((step) => {
+      const processedSteps = currentWorkflow.steps?.map((step, index) => {
         const modifiedStep = {
           ...step,
+          stepNumber: index + 1, // Ensure sequential step numbers
           senderName: step.sender,
           sender: isSmsAction(step.action) ? step.sender : SENDER_ID,
         };
@@ -586,7 +605,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
               {observedSteps &&
                 observedSteps.map((step, index) => (
                   <WorkflowStepAction
-                    key={step.id || index}
+                    key={`${step.id}_${index}`} // Use compound key to ensure re-rendering
                     step={step}
                     index={index}
                     form={formController}
