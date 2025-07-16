@@ -573,7 +573,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                               onValueChange={(value) => {
                                 timeUnitField.onChange(value);
                               }}>
-                              <SelectTrigger className="border-border bg-background h-8 rounded-l-none border-l px-2 text-sm">
+                              <SelectTrigger className="bg-background rounded-none border border-b-0 border-r-0 border-t-0 px-2 text-sm">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-white">

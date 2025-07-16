@@ -8,25 +8,20 @@ export type TextFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
 const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
   ({ className, trailing, type = "text", ...props }, ref) => {
     return (
-      <div className="flex w-full items-stretch">
-        {/* The input field container */}
-        <div
+      <div
+        className={cn(
+          " bg-background ring-offset-background focus-within:ring-ring  relative flex w-full items-center rounded-md border focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}>
+        <input
+          type={type}
           className={cn(
-            "border-input bg-background ring-offset-background focus-within:ring-ring relative flex w-full rounded-md border focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-            className
-          )}>
-          <input
-            type={type}
-            className={cn(
-              "placeholder:text-muted-foreground flex h-9 w-full rounded-md border-0 bg-transparent px-3 py-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            )}
-            ref={ref}
-            {...props}
-          />
-        </div>
-
-        {/* Trailing component outside the field */}
-        {trailing && <div className="h-full">{trailing}</div>}
+            "placeholder:text-muted-foreground flex h-9 w-full border-none  bg-transparent px-3 py-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          )}
+          ref={ref}
+          {...props}
+        />
+        {trailing && <div className="flex">{trailing}</div>}
       </div>
     );
   }
