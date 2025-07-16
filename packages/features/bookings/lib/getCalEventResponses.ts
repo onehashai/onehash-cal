@@ -48,10 +48,26 @@ export const getCalEventResponses = ({
       backwardCompatibleResponses["attendeePhoneNumber"]
     );
   }
+  const phonefield: Record<string, string> = {
+    number_text_notifications: "Phone Number (text notification)",
+    phone: "Phone Number",
+    phone_number: "Phone Number",
+  };
 
   if (parsedBookingFields) {
     parsedBookingFields.forEach((field) => {
-      const label = field.label || field.defaultLabel;
+      const dynamicLabel = field.defaultLabel ? phonefield[field.defaultLabel] : undefined;
+      const label = dynamicLabel || field.label || field.defaultLabel;
+      // let label: string;
+
+      // if (field.defaultLabel === "phone_number") {
+      //   label = "Phone Number";
+      // } else if (field.defaultLabel === "number_text_notification") {
+      //   label = "Phone Number (text notification)";
+      // } else {
+      //   label = field.label || field.defaultLabel;
+      // }
+
       if (!label) {
         //TODO: This error must be thrown while saving event-type as well so that such an event-type can't be saved
         throw new Error(`Missing label for booking field "${field.name}"`);
@@ -82,7 +98,7 @@ export const getCalEventResponses = ({
       const isSystemField = SystemField.safeParse(name);
 
       // Use name for Label because we don't have access to the label. This will not be needed once we start storing the label along with the response
-      const label = name;
+      const label = phonefield[name] || name;
 
       if (!isSystemField.success) {
         calEventUserFieldsResponses[name] = {
