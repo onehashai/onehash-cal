@@ -103,7 +103,7 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "focus:bg-accent bg-blue focus:text-accent-foreground relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "focus:bg-accent bg-blue focus:text-accent-foreground relative flex w-full cursor-default select-none items-center rounded-sm p-2 py-1.5 pl-8 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
     {...props}>
@@ -175,6 +175,7 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
   ) => {
     const [isOpen, setIsOpen] = React.useState(false);
     const [searchTerm, setSearchTerm] = React.useState("");
+    const containerRef = React.useRef<HTMLDivElement>(null);
 
     const handleOpenChange = (open: boolean) => {
       setIsOpen(open);
@@ -183,6 +184,23 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
         setSearchTerm("");
       }
     };
+
+    // Click outside detection
+    React.useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+          handleOpenChange(false);
+        }
+      };
+
+      if (isOpen) {
+        document.addEventListener("mousedown", handleClickOutside);
+      }
+
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [isOpen]);
 
     const handleToggleItem = (option: Option) => {
       const exists = selected.some((o) => o.value === option.value);
@@ -219,7 +237,7 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
     };
 
     return (
-      <div className={cn("relative", className)}>
+      <div ref={containerRef} className={cn("relative", className)}>
         <button
           ref={ref}
           type="button"
