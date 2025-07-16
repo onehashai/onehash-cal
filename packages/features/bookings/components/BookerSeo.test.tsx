@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { trpc } from "@calcom/trpc/react";
 import { HeadSeo } from "@calcom/ui";
 
@@ -25,7 +25,7 @@ vi.mock("@calcom/lib/hooks/useLocale", () => ({
   useLocale: () => ({ t: (key: string) => key }),
 }));
 
-vi.mock("@calcom/features/oe/organizations/lib/orgDomains", () => ({
+vi.mock("@calcom/features/ee/organizations/lib/orgDomains", () => ({
   getOrgFullOrigin: vi.fn(),
 }));
 

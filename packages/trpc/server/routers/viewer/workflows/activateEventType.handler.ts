@@ -1,6 +1,7 @@
-import { scheduleEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
-import { scheduleSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/smsReminderManager";
-import { scheduleWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/whatsappReminderManager";
+import { scheduleEmailReminder } from "@onehash/oe-features/workflows/managers/emailManager";
+import { scheduleSMSReminder } from "@onehash/oe-features/workflows/managers/smsManager";
+import { scheduleWhatsappReminder } from "@onehash/oe-features/workflows/managers/whatsappManager";
+
 import { getBookerBaseUrl } from "@calcom/lib/getBookerUrl/server";
 import { WorkflowRepository } from "@calcom/lib/server/repository/workflow";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";

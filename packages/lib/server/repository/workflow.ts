@@ -1,11 +1,11 @@
+import type { WorkflowType } from "@onehash/oe-features/workflows/config/types";
+import type { WorkflowStep } from "@onehash/oe-features/workflows/config/types";
+import { deleteScheduledEmailReminder } from "@onehash/oe-features/workflows/managers/emailManager";
+import { deleteScheduledSMSReminder } from "@onehash/oe-features/workflows/managers/smsManager";
+import { deleteScheduledWhatsappReminder } from "@onehash/oe-features/workflows/managers/whatsappManager";
 import { z } from "zod";
 
 import { hasFilter } from "@calcom/features/filters/lib/hasFilter";
-import type { WorkflowType } from "@calcom/features/oe/workflows/components/WorkflowListPage";
-import { deleteScheduledEmailReminder } from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
-import { deleteScheduledSMSReminder } from "@calcom/features/oe/workflows/lib/reminders/smsReminderManager";
-import { deleteScheduledWhatsappReminder } from "@calcom/features/oe/workflows/lib/reminders/whatsappReminderManager";
-import type { WorkflowStep } from "@calcom/features/oe/workflows/lib/types";
 import prisma from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/client";
 import { Prisma } from "@calcom/prisma/client";
@@ -195,16 +195,17 @@ export class WorkflowRepository {
           {
             userId,
           },
-          {
-            team: {
-              members: {
-                some: {
-                  userId,
-                  accepted: true,
-                },
-              },
-            },
-          },
+          //OE_FEATURES:WORKFLOWS: will be enabled after developing teams as part of OneHash Cal ID
+          // {
+          //   team: {
+          //     members: {
+          //       some: {
+          //         userId,
+          //         accepted: true,
+          //       },
+          //     },
+          //   },
+          // },
         ],
       },
       include: includedFields,

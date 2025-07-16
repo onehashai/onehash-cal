@@ -1,4 +1,5 @@
-import type { WorkflowType } from "@calcom/features/oe/workflows/components/WorkflowListPage";
+import type { WorkflowType } from "@onehash/oe-features/workflows/config/types";
+
 // import dayjs from "@calcom/dayjs";
 // import { getErrorFromUnknown } from "@calcom/lib/errors";
 import { prisma } from "@calcom/prisma";

@@ -1,6 +1,7 @@
+import { workflowSelect } from "@onehash/oe-features/workflows/utils/getWorkflows";
+
 import type { LocationObject } from "@calcom/app-store/locations";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
-import { workflowSelect } from "@calcom/features/oe/workflows/lib/getAllWorkflows";
 import { parseRecurringEvent } from "@calcom/lib";
 import prisma, { userSelect } from "@calcom/prisma";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";

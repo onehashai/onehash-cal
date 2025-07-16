@@ -1,6 +1,5 @@
+import { WorkflowEditor as Workflow } from "@onehash/oe-features/workflows/view/pages";
 import type { GetStaticPaths } from "next";
-
-import Workflow from "@calcom/features/oe/workflows/pages/workflow";
 
 import { getStaticProps } from "@lib/workflows/[workflow]/getStaticProps";
 

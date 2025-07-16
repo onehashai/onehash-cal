@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import type { z } from "zod";
 
 import { TeamBilling } from "@calcom/features/ee/billing/teams";
-import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
 import removeMember from "@calcom/features/oe/teams/lib/removeMember";
 import { deleteDomain } from "@calcom/lib/domainManager/organization";
 import logger from "@calcom/lib/logger";

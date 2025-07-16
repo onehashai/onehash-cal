@@ -3,7 +3,7 @@ import { isValidPhoneNumber } from "libphonenumber-js";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 
-import { useOrgBranding } from "@calcom/features/oe/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import { TeamEventTypeForm } from "@calcom/features/oe/teams/components/TeamEventTypeForm";
 import { useCreateEventType } from "@calcom/lib/hooks/useCreateEventType";
 import { useCustomerIO } from "@calcom/lib/hooks/useCustomerIO";

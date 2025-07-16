@@ -99,6 +99,4 @@ apps/auth
 
 
 **/.secrets
-
-
-packages/features/oe/similarity.md
+.specstory

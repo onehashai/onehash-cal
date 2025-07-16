@@ -1,15 +1,14 @@
+import type { WorkflowType } from "@onehash/oe-features/workflows/config/types";
+import { getActionIcon } from "@onehash/oe-features/workflows/utils/getActionicon";
+import SkeletonLoader from "@onehash/oe-features/workflows/view/components/event_workflow_tab_skeleton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Trans } from "react-i18next";
 
+import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import type { FormValues } from "@calcom/features/eventtypes/lib/types";
-import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
-import useLockedFieldsManager from "@calcom/features/oe/managed-event-types/hooks/useLockedFieldsManager";
-import SkeletonLoader from "@calcom/features/oe/workflows/components/SkeletonLoaderEventWorkflowsTab";
-import type { WorkflowType } from "@calcom/features/oe/workflows/components/WorkflowListPage";
-import { getActionIcon } from "@calcom/features/oe/workflows/lib/getActionIcon";
 import classNames from "@calcom/lib/classNames";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HttpError } from "@calcom/lib/http-error";
@@ -215,7 +214,13 @@ function EventWorkflowsTab(props: Props) {
       const allSortedWorkflows =
         workflowsDisableProps.isLocked && !isManagedEventType
           ? allActiveWorkflows
-          : allActiveWorkflows.concat(disabledWorkflows);
+          : allActiveWorkflows.concat(
+              disabledWorkflows.map((workflow) => ({
+                ...workflow,
+                readOnly: workflow.readOnly ?? false,
+                steps: workflow.steps ?? [],
+              })) as WorkflowType[]
+            );
       setSortedWorkflows(allSortedWorkflows);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,74 +243,70 @@ function EventWorkflowsTab(props: Props) {
     },
   });
 
-  return (
-    <LicenseRequired>
-      {!isPending ? (
-        <>
-          {(isManagedEventType || isChildrenManagedEventType) && (
-            <Alert
-              severity={workflowsDisableProps.isLocked ? "neutral" : "green"}
-              className="mb-2"
-              title={
-                <Trans i18nKey={`${lockedText}_${isManagedEventType ? "for_members" : "by_team_admins"}`}>
-                  {lockedText[0].toUpperCase()}
-                  {lockedText.slice(1)} {isManagedEventType ? "for members" : "by team admins"}
-                </Trans>
-              }
-              actions={<div className="flex h-full items-center">{workflowsDisableProps.LockedIcon}</div>}
-              message={
-                <Trans
-                  i18nKey={`workflows_${lockedText}_${
-                    isManagedEventType ? "for_members" : "by_team_admins"
-                  }_description`}>
-                  {isManagedEventType ? "Members" : "You"}{" "}
-                  {workflowsDisableProps.isLocked
-                    ? "will be able to see the active workflows but will not be able to edit any workflow settings"
-                    : "will be able to see the active workflow and will be able to edit any workflow settings"}
-                </Trans>
-              }
-            />
-          )}
-          {data?.workflows && sortedWorkflows.length > 0 ? (
-            <div>
-              <div className="space-y-4">
-                {sortedWorkflows.map((workflow) => {
-                  return (
-                    <WorkflowListItem
-                      key={workflow.id}
-                      workflow={workflow}
-                      eventType={props.eventType}
-                      isChildrenManagedEventType
-                      isActive={!!workflows.find((activeWorkflow) => activeWorkflow.id === workflow.id)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="pt-2 before:border-0">
-              <EmptyScreen
-                Icon="zap"
-                headline={t("workflows")}
-                description={t("no_workflows_description")}
-                buttonRaw={
-                  <Button
-                    disabled={workflowsDisableProps.isLocked && !isManagedEventType}
-                    target="_blank"
-                    color="secondary"
-                    onClick={() => createMutation.mutate({ teamId: eventType.team?.id })}
-                    loading={createMutation.isPending}>
-                    {t("create_workflow")}
-                  </Button>
-                }
-              />
-            </div>
-          )}
-        </>
-      ) : (
-        <SkeletonLoader />
+  return !isPending ? (
+    <>
+      {(isManagedEventType || isChildrenManagedEventType) && (
+        <Alert
+          severity={workflowsDisableProps.isLocked ? "neutral" : "green"}
+          className="mb-2"
+          title={
+            <Trans i18nKey={`${lockedText}_${isManagedEventType ? "for_members" : "by_team_admins"}`}>
+              {lockedText[0].toUpperCase()}
+              {lockedText.slice(1)} {isManagedEventType ? "for members" : "by team admins"}
+            </Trans>
+          }
+          actions={<div className="flex h-full items-center">{workflowsDisableProps.LockedIcon}</div>}
+          message={
+            <Trans
+              i18nKey={`workflows_${lockedText}_${
+                isManagedEventType ? "for_members" : "by_team_admins"
+              }_description`}>
+              {isManagedEventType ? "Members" : "You"}{" "}
+              {workflowsDisableProps.isLocked
+                ? "will be able to see the active workflows but will not be able to edit any workflow settings"
+                : "will be able to see the active workflow and will be able to edit any workflow settings"}
+            </Trans>
+          }
+        />
       )}
-    </LicenseRequired>
+      {data?.workflows && sortedWorkflows.length > 0 ? (
+        <div>
+          <div className="space-y-4">
+            {sortedWorkflows.map((workflow) => {
+              return (
+                <WorkflowListItem
+                  key={workflow.id}
+                  workflow={workflow}
+                  eventType={props.eventType}
+                  isChildrenManagedEventType
+                  isActive={!!workflows.find((activeWorkflow) => activeWorkflow.id === workflow.id)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="pt-2 before:border-0">
+          <EmptyScreen
+            Icon="zap"
+            headline={t("workflows")}
+            description={t("no_workflows_description")}
+            buttonRaw={
+              <Button
+                disabled={workflowsDisableProps.isLocked && !isManagedEventType}
+                target="_blank"
+                color="secondary"
+                onClick={() => createMutation.mutate({ teamId: eventType.team?.id })}
+                loading={createMutation.isPending}>
+                {t("create_workflow")}
+              </Button>
+            }
+          />
+        </div>
+      )}
+    </>
+  ) : (
+    <SkeletonLoader />
   );
 }
 

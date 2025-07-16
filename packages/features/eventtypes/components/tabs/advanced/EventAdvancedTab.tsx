@@ -1,3 +1,7 @@
+import {
+  canDisableParticipantNotifications,
+  canDisableOrganizerNotifications,
+} from "@onehash/oe-features/workflows/utils/notificationDisableCheck";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import type { z } from "zod";
@@ -7,6 +11,7 @@ import type { EventNameObjectType } from "@calcom/core/event";
 import { getEventName } from "@calcom/core/event";
 import getLocationsOptionsForSelect from "@calcom/features/bookings/lib/getLocationOptionsForSelect";
 import DestinationCalendarSelector from "@calcom/features/calendars/DestinationCalendarSelector";
+import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import { MultiplePrivateLinksController } from "@calcom/features/eventtypes/components";
 import type {
   FormValues,
@@ -19,11 +24,6 @@ import type {
 import { FormBuilder } from "@calcom/features/form-builder/FormBuilder";
 import type { fieldSchema } from "@calcom/features/form-builder/schema";
 import type { EditableSchema } from "@calcom/features/form-builder/schema";
-import useLockedFieldsManager from "@calcom/features/oe/managed-event-types/hooks/useLockedFieldsManager";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import { BookerLayoutSelector } from "@calcom/features/settings/BookerLayoutSelector";
 import { classNames } from "@calcom/lib";
 import cx from "@calcom/lib/classNames";
@@ -887,7 +887,7 @@ export const EventAdvancedTab = ({
           )}
         />
       )}
-      {allowDisablingAttendeeConfirmationEmails(workflows) && (
+      {canDisableParticipantNotifications(workflows) && (
         <Controller
           name="metadata.disableStandardEmails.confirmation.attendee"
           render={({ field: { value, onChange } }) => (
@@ -909,7 +909,7 @@ export const EventAdvancedTab = ({
           )}
         />
       )}
-      {allowDisablingHostConfirmationEmails(workflows) && (
+      {canDisableOrganizerNotifications(workflows) && (
         <Controller
           name="metadata.disableStandardEmails.confirmation.host"
           defaultValue={!!formMethods.getValues("seatsPerTimeSlot")}

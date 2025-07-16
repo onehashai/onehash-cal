@@ -23,30 +23,26 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
 const globalRoutes = ["/", "/login", "/embed", "/video", "/auth"];
 const allowedSubDomains = ["app", "www"];
 
-const blockRestrictedSubDomain = (requestHeaders: Headers, originalUrl: URL): NextResponse | undefined => {
-  const hostname = requestHeaders.get("host");
-  if (hostname) {
-    const parts = hostname.split(".");
-    if (parts.length > 2 && !allowedSubDomains.includes(parts[0])) {
-      const rootDomain = parts.slice(-2).join(".");
-      const url = new URL(originalUrl);
-      url.hostname = `app.${rootDomain}`;
-      url.port = "";
-      return NextResponse.redirect(url);
-    }
-  }
-};
+// const enterpriseFeatureRoutes = ["/team", "/settings/developer/api-keys"];
+const enterpriseFeatureRoutes = ["/settings/developer/api-keys"];
+
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;
   const requestHeaders = new Headers(req.headers);
 
-  // //TODO: blocking restricted subdomain other than www and app for now
-  // const redirect = blockRestrictedSubDomain(requestHeaders, url.clone());
-  // if (redirect) return redirect;
   requestHeaders.set("x-url", req.url);
   requestHeaders.set("Access-Control-Allow-Origin", "*");
 
   if (!url.pathname.startsWith("/api")) {
+    //redirect all enterprise feature routes to /event-types
+    if (enterpriseFeatureRoutes.some((route) => url.pathname.startsWith(route))) {
+      const absoluteURL = new URL("/", req.nextUrl.origin);
+      return NextResponse.redirect(absoluteURL.toString(), {
+        headers: requestHeaders,
+        status: 308,
+      });
+    }
+
     if (!globalRoutes.some((route) => url.pathname.includes(route))) {
       const session = await getToken({
         req: req,
@@ -219,6 +215,9 @@ export const config = {
     "/teams",
     "/future/teams/",
     "/settings/:path*",
+    //OE_FEATURE
+    //added middleware on public team route
+    // "/team/:path*",
   ],
 };
 

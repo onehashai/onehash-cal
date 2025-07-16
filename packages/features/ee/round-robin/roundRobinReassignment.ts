@@ -17,8 +17,8 @@ import type { IsFixedAwareUser } from "@calcom/features/bookings/lib/handleNewBo
 import {
   scheduleEmailReminder,
   deleteScheduledEmailReminder,
-} from "@calcom/features/oe/workflows/lib/reminders/emailReminderManager";
-import { scheduleWorkflowReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
+} from "@calcom/features/ee/workflows/lib/reminders/emailReminderManager";
+import { scheduleWorkflowReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { SENDER_NAME } from "@calcom/lib/constants";
@@ -396,7 +396,7 @@ export const roundRobinReassignment = async ({
 
   // Handle changing workflows with organizer
   if (hasOrganizerChanged) {
-    if (emailsEnabled) {
+    if (emailsEnabled && dayjs(evt.startTime).isAfter(dayjs())) {
       // send email with event updates to attendees
       await sendRoundRobinUpdatedEmailsAndSMS({
         calEvent: evtWithoutCancellationReason,

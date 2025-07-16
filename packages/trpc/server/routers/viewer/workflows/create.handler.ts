@@ -1,6 +1,6 @@
+import emailReminderTemplate from "@onehash/oe-features/workflows/templates/email/reminder";
 import type { Workflow } from "@prisma/client";
 
-import emailReminderTemplate from "@calcom/features/oe/workflows/lib/reminders/templates/emailReminderTemplate";
 import { SENDER_NAME } from "@calcom/lib/constants";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import type { PrismaClient } from "@calcom/prisma";

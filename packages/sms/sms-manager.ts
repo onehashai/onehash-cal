@@ -1,6 +1,7 @@
+import * as twilio from "@onehash/oe-features/workflows/providers/twilio";
+import { getSenderId } from "@onehash/oe-features/workflows/utils/getSenderId";
+
 import dayjs from "@calcom/dayjs";
-import { getSenderId } from "@calcom/features/oe/workflows/lib/alphanumericSenderIdSupport";
-import * as twilio from "@calcom/features/oe/workflows/lib/reminders/providers/twilioProvider";
 import { checkSMSRateLimit } from "@calcom/lib/checkRateLimitAndThrowError";
 import { SENDER_ID } from "@calcom/lib/constants";
 import { TimeFormat } from "@calcom/lib/timeFormat";

@@ -3,8 +3,8 @@ import { _generateMetadata, getTranslate } from "app/_utils";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
-import LicenseRequired from "@calcom/features/oe/common/components/LicenseRequired";
-import { UsersEditView } from "@calcom/features/oe/users/pages/users-edit-view";
+import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
+import { UsersEditView } from "@calcom/features/ee/users/pages/users-edit-view";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { UserRepository } from "@calcom/lib/server/repository/user";
 

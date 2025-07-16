@@ -57,6 +57,9 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives && \
     yarn config set httpTimeout 1200000
 
+# Allowing mutable installs
+RUN yarn config set enableImmutableInstalls false
+
 RUN export NEXTAUTH_URL=${NEXTAUTH_URL} && \
 export NEXTAUTH_SECRET=${NEXTAUTH_SECRET} && \
 export CALENDSO_ENCRYPTION_KEY=${CALENDSO_ENCRYPTION_KEY} && \

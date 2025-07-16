@@ -1,1 +1,1 @@
-export { default } from "@calcom/features/oe/workflows/api/scheduleWhatsappReminders";
+export { default } from "@onehash/oe-features/workflows/cron/queueWhatsappReminder";

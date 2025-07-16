@@ -1,4 +1,4 @@
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { ProfileRepository } from "@calcom/lib/server/repository/profile";
 import { TeamRepository } from "@calcom/lib/server/repository/team";
 import { UserRepository } from "@calcom/lib/server/repository/user";

@@ -1,3 +1,7 @@
+import {
+  canDisableParticipantNotifications,
+  canDisableOrganizerNotifications,
+} from "@onehash/oe-features/workflows/utils/notificationDisableCheck";
 // eslint-disable-next-line no-restricted-imports
 import { cloneDeep } from "lodash";
 import { uuid } from "short-uuid";
@@ -5,10 +9,6 @@ import { uuid } from "short-uuid";
 import EventManager from "@calcom/core/EventManager";
 import { sendScheduledSeatsEmailsAndSMS } from "@calcom/emails";
 import { refreshCredentials } from "@calcom/features/bookings/lib/getAllCredentialsForUsersOnEvent/refreshCredentials";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { HttpError } from "@calcom/lib/http-error";
 import { handlePayment } from "@calcom/lib/payment/handlePayment";
@@ -127,11 +127,11 @@ const createNewSeat = async (
       eventType.metadata?.disableStandardEmails?.confirmation?.attendee || false;
 
     if (isHostConfirmationEmailsDisabled) {
-      isHostConfirmationEmailsDisabled = allowDisablingHostConfirmationEmails(workflows);
+      isHostConfirmationEmailsDisabled = canDisableOrganizerNotifications(workflows);
     }
 
     if (isAttendeeConfirmationEmailDisabled) {
-      isAttendeeConfirmationEmailDisabled = allowDisablingAttendeeConfirmationEmails(workflows);
+      isAttendeeConfirmationEmailDisabled = canDisableParticipantNotifications(workflows);
     }
     await sendScheduledSeatsEmailsAndSMS(
       copyEvent,

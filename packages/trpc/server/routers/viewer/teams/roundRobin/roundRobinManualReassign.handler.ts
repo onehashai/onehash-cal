@@ -1,4 +1,4 @@
-import { roundRobinManualReassignment } from "@calcom/features/oe/round-robin/roundRobinManualReassignment";
+import { roundRobinManualReassignment } from "@calcom/features/ee/round-robin/roundRobinManualReassignment";
 import { BookingRepository } from "@calcom/lib/server/repository/booking";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 

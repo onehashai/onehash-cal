@@ -34,7 +34,7 @@ const steps = [
   "import-data",
 ] as const;
 
-const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+const BrandingComponent = dynamic(() => import("@onehash/oe-features/branding/BrandingComponent"));
 
 const stepTransform = (step: (typeof steps)[number]) => {
   const stepIndex = steps.indexOf(step);
@@ -202,7 +202,7 @@ const OnboardingPage = (props: PageProps) => {
             )}
           </div>
           <div key="logo" className={classNames("mt-6 flex w-full justify-center [&_img]:h-[32px]")}>
-            <PoweredBy logoOnly />
+            <BrandingComponent logoOnly />
           </div>
         </div>
       </div>

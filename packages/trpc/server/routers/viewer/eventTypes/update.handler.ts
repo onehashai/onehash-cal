@@ -1,12 +1,12 @@
+import {
+  canDisableParticipantNotifications,
+  canDisableOrganizerNotifications,
+} from "@onehash/oe-features/workflows/utils/notificationDisableCheck";
 import { Prisma } from "@prisma/client";
 import type { NextApiResponse, GetServerSidePropsContext } from "next";
 
 import type { appDataSchemas } from "@calcom/app-store/apps.schemas.generated";
-import updateChildrenEventTypes from "@calcom/features/oe/managed-event-types/lib/handleChildrenEventTypes";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
+import updateChildrenEventTypes from "@calcom/features/ee/managed-event-types/lib/handleChildrenEventTypes";
 import tasker from "@calcom/features/tasker";
 import { isPrismaObjOrUndefined, validateIntervalLimitOrder } from "@calcom/lib";
 import { IS_DEV, ONEHASH_API_KEY, ONEHASH_CHAT_SYNC_BASE_URL, WEBAPP_URL } from "@calcom/lib/constants";
@@ -372,13 +372,13 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     });
 
     if (input.metadata?.disableStandardEmails.confirmation?.host) {
-      if (!allowDisablingHostConfirmationEmails(workflows)) {
+      if (!canDisableOrganizerNotifications(workflows)) {
         input.metadata.disableStandardEmails.confirmation.host = false;
       }
     }
 
     if (input.metadata?.disableStandardEmails.confirmation?.attendee) {
-      if (!allowDisablingAttendeeConfirmationEmails(workflows)) {
+      if (!canDisableParticipantNotifications(workflows)) {
         input.metadata.disableStandardEmails.confirmation.attendee = false;
       }
     }

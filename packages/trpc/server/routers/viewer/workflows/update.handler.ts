@@ -1,4 +1,5 @@
-import { isSMSOrWhatsappAction } from "@calcom/features/oe/workflows/lib/actionHelperFunctions";
+import { isSmsOrWhatsappAction } from "@onehash/oe-features/workflows/config/utils";
+
 import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { WorkflowRepository } from "@calcom/lib/server/repository/workflow";
@@ -333,7 +334,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
       });
     } else if (isStepEdited(oldStep, newStep)) {
       // check if step that require team plan already existed before
-      if (!hasPaidPlan && !isSMSOrWhatsappAction(oldStep.action) && isSMSOrWhatsappAction(newStep.action)) {
+      if (!hasPaidPlan && !isSmsOrWhatsappAction(oldStep.action) && isSmsOrWhatsappAction(newStep.action)) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Not available on free plan" });
       }
 
@@ -390,7 +391,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     steps
       .filter((step) => step.id <= 0)
       .map(async (newStep) => {
-        if (isSMSOrWhatsappAction(newStep.action) && !hasPaidPlan) {
+        if (isSmsOrWhatsappAction(newStep.action) && !hasPaidPlan) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Not available on free plan" });
         }
 

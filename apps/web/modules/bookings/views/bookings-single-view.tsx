@@ -28,7 +28,7 @@ import {
 } from "@calcom/embed-core/embed-iframe";
 import { Price } from "@calcom/features/bookings/components/event-meta/Price";
 import { SystemField, TITLE_FIELD } from "@calcom/features/bookings/lib/SystemField";
-import { getOrgFullOrigin } from "@calcom/features/oe/organizations/lib/orgDomains";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { APP_NAME, ONEHASH_CHAT_ORIGIN, WEBAPP_URL } from "@calcom/lib/constants";
 import {
   formatToLocalizedDate,
@@ -235,7 +235,7 @@ export default function Success(props: PageProps) {
   const sendFeedback = async (rating: string, comment: string) => {
     mutation.mutate({ bookingUid: bookingInfo.uid, rating: rateValue, comment: comment });
   };
-  const PoweredBy = dynamic(() => import("@calcom/features/oe/components/PoweredBy"));
+  const BrandingComponent = dynamic(() => import("@onehash/oe-features/branding/BrandingComponent"));
 
   function setIsCancellationMode(value: boolean) {
     const _searchParams = new URLSearchParams(searchParams?.toString() ?? undefined);
@@ -1141,7 +1141,7 @@ export default function Success(props: PageProps) {
             </div>
           </div>
           <div key="logo" className={classNames("flex w-full justify-center [&_img]:h-[32px]")}>
-            <PoweredBy logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
+            <BrandingComponent logoOnly hideBranding={hideBranding} bannerUrl={bannerUrl ?? undefined} />
           </div>
         </main>
         <Toaster position="bottom-right" />

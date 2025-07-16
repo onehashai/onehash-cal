@@ -1,15 +1,15 @@
+import type { Workflow } from "@onehash/oe-features/workflows/config/types";
+import {
+  canDisableParticipantNotifications,
+  canDisableOrganizerNotifications,
+} from "@onehash/oe-features/workflows/utils/notificationDisableCheck";
+import { scheduleWorkflowReminders } from "@onehash/oe-features/workflows/utils/reminderScheduler";
+import { scheduleMandatoryReminder } from "@onehash/oe-features/workflows/utils/scheduleMandatoryReminder";
 import type { Prisma } from "@prisma/client";
 
 import type { EventManagerUser } from "@calcom/core/EventManager";
 import EventManager from "@calcom/core/EventManager";
 import { sendScheduledEmailsAndSMS } from "@calcom/emails";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/oe/workflows/lib/allowDisablingStandardEmails";
-import { scheduleWorkflowReminders } from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
-import { scheduleMandatoryReminder } from "@calcom/features/oe/workflows/lib/reminders/scheduleMandatoryReminder";
-import type { Workflow } from "@calcom/features/oe/workflows/lib/types";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { scheduleTrigger } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import sendPayload from "@calcom/features/webhooks/lib/sendOrSchedulePayload";
@@ -118,11 +118,11 @@ export async function handleConfirmation(args: {
           eventTypeMetadata?.disableStandardEmails?.confirmation?.attendee || false;
 
         if (isHostConfirmationEmailsDisabled) {
-          isHostConfirmationEmailsDisabled = allowDisablingHostConfirmationEmails(workflows);
+          isHostConfirmationEmailsDisabled = canDisableOrganizerNotifications(workflows);
         }
 
         if (isAttendeeConfirmationEmailDisabled) {
-          isAttendeeConfirmationEmailDisabled = allowDisablingAttendeeConfirmationEmails(workflows);
+          isAttendeeConfirmationEmailDisabled = canDisableParticipantNotifications(workflows);
         }
       }
 

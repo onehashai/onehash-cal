@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import type { Workflow } from "@onehash/oe-features/workflows/config/types";
 import type { UseFormReturn } from "react-hook-form";
 
 import type { ChildrenEventType } from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
@@ -11,7 +12,6 @@ import type {
   FormValues,
   EventTypeApps,
 } from "@calcom/features/eventtypes/lib/types";
-import type { Workflow } from "@calcom/features/oe/workflows/lib/types";
 import type { customInputSchema } from "@calcom/prisma/zod-utils";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import type { VerticalTabItemProps } from "@calcom/ui";

@@ -1,7 +1,7 @@
-// import { JOIN_COMMUNITY } from "@calcom/lib/constants";
+import { JOIN_COMMUNITY } from "@calcom/lib/constants";
 import { useHasPaidPlan } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { UpgradeTeamsBadge } from "@calcom/ui";
+import { Icon, UpgradeTeamsBadge } from "@calcom/ui";
 
 import FreshChatMenuItem from "../lib/freshchat/FreshChatMenuItem";
 import HelpscoutMenuItem from "../lib/helpscout/HelpscoutMenuItem";
@@ -29,7 +29,7 @@ export default function ContactMenuItem(props: ContactMenuItem) {
           <UpgradeTeamsBadge />
         </div>
       )}
-      {/* <a
+      <a
         href={JOIN_COMMUNITY}
         target="_blank"
         className="hover:bg-subtle hover:text-emphasis text-default flex w-full px-5 py-2 pr-4 text-sm font-medium transition">
@@ -38,7 +38,7 @@ export default function ContactMenuItem(props: ContactMenuItem) {
           name="external-link"
           className="group-hover:text-subtle text-muted ml-1 mt-px h-4 w-4 flex-shrink-0 ltr:mr-3"
         />
-      </a> */}
+      </a>
     </>
   );
 }

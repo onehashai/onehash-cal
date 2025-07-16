@@ -1,9 +1,8 @@
+import type * as reminderScheduler from "@onehash/oe-features/workflows/utils/reminderScheduler";
 import { beforeEach, vi } from "vitest";
 import { mockReset, mockDeep } from "vitest-mock-extended";
 
-import type * as reminderScheduler from "@calcom/features/oe/workflows/lib/reminders/reminderScheduler";
-
-vi.mock("@calcom/features/oe/workflows/lib/reminders/reminderScheduler", () => reminderSchedulerMock);
+vi.mock("@onehash/oe-features/workflows/utils/reminderScheduler", () => reminderSchedulerMock);
 
 beforeEach(() => {
   mockReset(reminderSchedulerMock);

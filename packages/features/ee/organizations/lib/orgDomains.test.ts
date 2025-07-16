@@ -4,7 +4,7 @@ import {
   getOrgSlug,
   getOrgDomainConfigFromHostname,
   getOrgFullOrigin,
-} from "@calcom/features/oe/organizations/lib/orgDomains";
+} from "@calcom/features/ee/organizations/lib/orgDomains";
 import * as constants from "@calcom/lib/constants";
 
 function setupEnvs({ WEBAPP_URL = "https://app.cal.com", WEBSITE_URL } = {}) {

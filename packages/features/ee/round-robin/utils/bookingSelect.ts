@@ -21,11 +21,6 @@ export const bookingSelect = {
   references: true,
   metadata: true,
   iCalUID: true,
-  eventType: {
-    select: {
-      id: true,
-    },
-  },
 };
 
 export type BookingSelectResult = Prisma.BookingGetPayload<{

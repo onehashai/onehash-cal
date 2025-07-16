@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { PaymentPageProps } from "@calcom/features/oe/payments/pages/payment";
+import type { PaymentPageProps } from "@calcom/features/ee/payments/pages/payment";
 import { SUCCESS_STATUS } from "@calcom/platform-constants";
 import type { ApiResponse } from "@calcom/platform-types";
 

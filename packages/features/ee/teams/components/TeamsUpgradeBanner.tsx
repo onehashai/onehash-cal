@@ -28,7 +28,7 @@ export function TeamsUpgradeBanner({ data }: TeamsUpgradeBannerProps) {
 
   return (
     <TopBanner
-      text={t("team_upgrade_banner_description")}
+      text={t("team_upgrade_banner_description", { teamName: membership.team.name })}
       variant="warning"
       actions={
         <button

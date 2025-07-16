@@ -15,6 +15,7 @@ type UserData = {
   completedOnboarding: boolean;
   customBrandingEnabled: boolean;
   timezone: string;
+  email_verified: boolean;
 };
 
 // Higher-level component where session state is managed
@@ -102,6 +103,7 @@ export default function SessionManager({ children }: { children: React.ReactNode
           branding_configured: statsData.branding_configured, //Whether custom branding is configured
           workflows_configured: statsData.workflows_configured, //Whether workflows are configured
           setup_items_completed: statsData.setup_items_completed, //Number of setup items completed
+          email_verified: userData.email_verified, // Whether the email is verified
         };
         posthog.identify(String(id), trackingPayload);
 
