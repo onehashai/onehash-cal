@@ -456,7 +456,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                       />
                       <Button
                         variant="outline"
-                        className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+                        className="-ml-[3px] h-[38px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
                         disabled={phoneVerificationMutation.isPending || readOnly}
                         onClick={() => {
                           phoneVerificationMutation.mutate({
@@ -479,11 +479,11 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
               {requiresSenderIdentification ? (
                 <>
                   <div className="pt-4">
-                    <div className="flex items-center">
+                    <div className="mb-2 flex items-center justify-start gap-2">
                       <Label>{t("sender_id")}</Label>
                       <Tooltip content={t("sender_id_info")}>
                         <span>
-                          <Icon name="info" className="mb-2 ml-2 mr-1 mt-0.5 h-4 w-4 text-gray-500" />
+                          <Icon name="info" className=" h-4 w-4 text-gray-500" />
                         </span>
                       </Tooltip>
                     </div>
@@ -608,7 +608,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                       />
                       <Button
                         variant="outline"
-                        className="-ml-[3px] h-[36px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+                        className="-ml-[3px] h-[38px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
                         disabled={emailVerificationMutation.isPending || readOnly}
                         onClick={() => {
                           emailVerificationMutation.mutate({
@@ -760,8 +760,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
         onOpenChange={setHelpDialogVisible}
         variant="warning"
         title={t("how_booking_questions_as_variables")}
-        confirmBtnText={t("ok")}
-        cancelBtnText=""
+        confirmBtnText={t("back")}
         onConfirm={() => setHelpDialogVisible(false)}
         size="lg">
         <div className="bg-muted-3 mb-6 rounded-md sm:p-4">

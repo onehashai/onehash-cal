@@ -561,7 +561,13 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                       min="1"
                       disabled={isReadOnlyMode}
                       className="-mt-2 rounded-r-none text-sm focus:ring-0"
-                      {...field}
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+
+                        const num = Number(val);
+                        field.onChange(val === "" ? undefined : num > 0 ? num : 1);
+                      }}
                       trailing={
                         <Controller
                           name="timeUnit"
@@ -590,12 +596,14 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                     />
                   )}
                 />
+
                 {(formController.formState.errors.time || formController.formState.errors.timeUnit) && (
                   <p className="mt-1 text-xs text-red-500">
                     {formController.formState.errors.time?.message ||
                       formController.formState.errors.timeUnit?.message}
                   </p>
                 )}
+                <Label className="text-sm text-gray-500">{`*${t("testing_workflow_info_message")}`}</Label>
               </div>
             )}
 

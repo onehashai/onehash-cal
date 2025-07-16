@@ -15,7 +15,7 @@ interface DialogProps {
   title: string;
   description?: string;
   confirmBtnText: string;
-  cancelBtnText: string;
+  cancelBtnText?: string;
   onConfirm: () => Promise<void> | void;
   size?: Size;
   loader?: boolean;
@@ -107,19 +107,21 @@ export const Dialog: React.FC<DialogProps> = ({
               justifyContent: "flex-end",
               gap: 8,
             }}>
-            <RadixDialog.Close asChild>
-              <button
-                type="button"
-                style={{
-                  padding: "6px 12px",
-                  border: "1px solid #ccc",
-                  borderRadius: 4,
-                  background: "white",
-                  cursor: "pointer",
-                }}>
-                {cancelBtnText}
-              </button>
-            </RadixDialog.Close>
+            {cancelBtnText && (
+              <RadixDialog.Close asChild>
+                <button
+                  type="button"
+                  style={{
+                    padding: "6px 12px",
+                    border: "1px solid #ccc",
+                    borderRadius: 4,
+                    background: "white",
+                    cursor: "pointer",
+                  }}>
+                  {cancelBtnText}
+                </button>
+              </RadixDialog.Close>
+            )}
             <button
               type="button"
               onClick={handleConfirm}
