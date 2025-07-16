@@ -283,7 +283,10 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       }
     } else {
       const templateType = isWhatsappAction(selectedAction) ? "REMINDER" : "CUSTOM";
-      templateType && form.setValue(`${fieldPath}.template`, templateType);
+      if (templateType) {
+        form.setValue(`${fieldPath}.template`, templateType);
+        updateTemplateContent(templateType);
+      }
     }
 
     form.unregister(`${fieldPath}.sendTo`);
@@ -364,13 +367,6 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
               name={`${fieldPath}.action`}
               control={form.control}
               render={({ field }) => {
-                const actionLabel = t(`${step.action.toLowerCase()}_action`);
-                const currentSelection = {
-                  label: actionLabel.charAt(0).toUpperCase() + actionLabel.slice(1),
-                  value: step.action,
-                  needsTeamsUpgrade: false,
-                };
-
                 return (
                   <Select
                     value={field.value}
