@@ -560,7 +560,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                       type="number"
                       min="1"
                       disabled={isReadOnlyMode}
-                      className="-mt-2 rounded-r-none text-sm focus:ring-0"
+                      className="text-sm focus:ring-0"
                       value={field.value ?? ""}
                       onChange={(e) => {
                         const val = e.target.value;

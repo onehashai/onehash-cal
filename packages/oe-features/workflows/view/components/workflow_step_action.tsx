@@ -281,13 +281,11 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
           form.setValue(`${fieldPath}.emailSubject`, emailTemplate.emailSubject);
         }
       }
-    } else {
-      const templateType = isWhatsappAction(selectedAction) ? "REMINDER" : "CUSTOM";
-      if (templateType) {
-        form.setValue(`${fieldPath}.template`, templateType);
-        updateTemplateContent(templateType);
-      }
     }
+
+    //update template content
+    form.setValue(`${fieldPath}.template`, WorkflowTemplates.REMINDER);
+    updateTemplateContent(WorkflowTemplates.REMINDER);
 
     form.unregister(`${fieldPath}.sendTo`);
     form.clearErrors(`${fieldPath}.sendTo`);
@@ -420,7 +418,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                   variant="outline"
                   disabled={phoneValidationStatus || readOnly || false}
                   className={cn(
-                    "-ml-[3px] h-[40px] min-w-fit sm:block sm:rounded-bl-none sm:rounded-tl-none",
+                    "h-[40px] min-w-fit border-l-0 sm:block sm:rounded-bl-none sm:rounded-tl-none",
                     phoneValidationStatus ? "hidden" : "mt-3 sm:mt-0"
                   )}
                   onClick={() =>
@@ -456,7 +454,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                       />
                       <Button
                         variant="outline"
-                        className="-ml-[3px] h-[38px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+                        className=" h-[38px]  min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
                         disabled={phoneVerificationMutation.isPending || readOnly}
                         onClick={() => {
                           phoneVerificationMutation.mutate({
@@ -570,7 +568,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                   variant="outline"
                   disabled={emailValidationStatus || readOnly || false}
                   className={cn(
-                    "-ml-[3px] h-[40px] min-w-fit sm:block sm:rounded-bl-none sm:rounded-tl-none",
+                    "h-[40px] min-w-fit border-l-0 sm:block sm:rounded-bl-none sm:rounded-tl-none",
                     emailValidationStatus ? "hidden" : "mt-3 sm:mt-0"
                   )}
                   onClick={() => {
@@ -608,7 +606,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                       />
                       <Button
                         variant="outline"
-                        className="-ml-[3px] h-[38px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
+                        className="-ml-[3px] h-[3px] min-w-fit py-0 sm:block sm:rounded-bl-none sm:rounded-tl-none "
                         disabled={emailVerificationMutation.isPending || readOnly}
                         onClick={() => {
                           emailVerificationMutation.mutate({
