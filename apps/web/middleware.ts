@@ -23,7 +23,8 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
 const globalRoutes = ["/", "/login", "/embed", "/video", "/auth"];
 const allowedSubDomains = ["app", "www"];
 
-const enterpriseFeatureRoutes = ["/team", "/settings/developer/api-keys"];
+// const enterpriseFeatureRoutes = ["/team", "/settings/developer/api-keys"];
+const enterpriseFeatureRoutes = ["/settings/developer/api-keys"];
 
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;
@@ -216,7 +217,7 @@ export const config = {
     "/settings/:path*",
     //OE_FEATURE
     //added middleware on public team route
-    "/team/:path*",
+    // "/team/:path*",
   ],
 };
 
