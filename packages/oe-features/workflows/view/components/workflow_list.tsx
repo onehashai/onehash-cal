@@ -133,7 +133,8 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
               return (
                 <div
                   key={workflow.id}
-                  className="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm sm:p-6">
+                  onClick={() => handleOnClickEdit(workflow.id)}
+                  className="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:cursor-pointer hover:shadow-sm sm:p-6">
                   {/* Mobile Layout */}
                   <div className="block sm:hidden">
                     <div className="flex items-start justify-between">

@@ -500,8 +500,8 @@ export const getOptions = ({
       const licenseKeyService = await LicenseKeySingleton.getInstance();
 
       //OE_FEATURE
-      // const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
-      const hasValidLicense = await licenseKeyService.checkLicense();
+      const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
+      // const hasValidLicense = await licenseKeyService.checkLicense();
 
       token["hasValidLicense"] = hasValidLicense;
 

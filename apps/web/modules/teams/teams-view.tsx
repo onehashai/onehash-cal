@@ -1,7 +1,7 @@
 "use client";
 
 import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
-import { TeamsListing } from "@calcom/features/ee/teams/components";
+import { TeamsListing } from "@calcom/features/oe/teams/components";
 import Shell from "@calcom/features/shell/Shell";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
