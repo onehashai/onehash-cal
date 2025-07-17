@@ -162,7 +162,13 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteWorkflow(workflow.id)}
+                          onClick={
+                            //prevent event bubbling to avoid triggering the edit action
+                            (e) => {
+                              e.stopPropagation();
+                              handleDeleteWorkflow(workflow.id);
+                            }
+                          }
                           className="h-8 w-8 p-2 text-gray-500 hover:bg-gray-100 hover:text-red-600">
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -229,7 +235,13 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-2 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                        onClick={() => handleDeleteWorkflow(workflow.id)}>
+                        onClick={
+                          //prevent event bubbling to avoid triggering the edit action
+                          (e) => {
+                            e.stopPropagation();
+                            handleDeleteWorkflow(workflow.id);
+                          }
+                        }>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
