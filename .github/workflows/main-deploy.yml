@@ -118,9 +118,8 @@ jobs:
           check "${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" "NEXT_PUBLIC_POSTHOG_HOST"
           check "${{ secrets.NEXT_PUBLIC_ONEHASH_CRM_URL }}" "NEXT_PUBLIC_ONEHASH_CRM_URL"
           check "${{ secrets.NEXT_PUBLIC_ONEHASH_ERP_URL }}" "NEXT_PUBLIC_ONEHASH_ERP_URL"
-          check "${{ secrets.NEXT_PUBLIC_WHITELISTED_ORGS }}" "NEXT_PUBLIC_WHITELISTED_ORGS"
+          check "${{ secrets.NEXT_PUBLIC_WHITELISTED_ORGS }}" "NEXT_PUBLIC_WHITELISTED_ORGS"  
           
-
           
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
@@ -229,7 +228,7 @@ jobs:
       #   with:
       #     region: ${{ secrets.AWS_REGION }}
       #     repository-name: ${{ steps.key_values.outputs.REPO_NAME }}
-      #     image-tag: ${{ steps.hash.outputs.git_hash }}
+      #     image-tag: ${{ steps.hash.outputs.GIT_HASH }}
       #     access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
       #     secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
@@ -256,7 +255,7 @@ jobs:
       #     platforms: linux/amd64
       #     push: true
       #     tags: |
-      #       ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
+      #       ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.GIT_HASH }}
       #       ${{ steps.login-ecr.outputs.registry }}/${{ steps.key_values.outputs.REPO_NAME }}:latest
       #     build-args: |
       #       CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
@@ -338,7 +337,7 @@ jobs:
         shell: bash
         run: |
           # Check if image exists by attempting to pull manifest
-          if docker manifest inspect ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.git_hash }} > /dev/null 2>&1; then
+          if docker manifest inspect ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.GIT_HASH }} > /dev/null 2>&1; then
             echo "image-exists=1" >> $GITHUB_OUTPUT
           else
             echo "image-exists=0" >> $GITHUB_OUTPUT
@@ -367,7 +366,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.git_hash }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.key_values.outputs.REPO_NAME }}:${{ steps.hash.outputs.GIT_HASH }}
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.key_values.outputs.REPO_NAME }}:latest
           build-args: |
             CALENDSO_ENCRYPTION_KEY=${{ secrets.CALENDSO_ENCRYPTION_KEY }}
@@ -438,7 +437,7 @@ jobs:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           REPO_NAME: ${{ steps.key_values.outputs.REPO_NAME }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
-          GIT_HASH: ${{ steps.hash.outputs.git_hash }}
+          GIT_HASH: ${{ steps.hash.outputs.GIT_HASH }}
           IS_ROLLBACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
