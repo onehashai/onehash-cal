@@ -5,9 +5,9 @@ import {
   OrgUpgradeBanner,
   type OrgUpgradeBannerProps,
 } from "@calcom/features/ee/organizations/components/OrgUpgradeBanner";
-import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/oe/teams/components";
+import { TeamsUpgradeBanner, type TeamsUpgradeBannerProps } from "@calcom/features/ee/teams/components";
 //OE_FEATURE
-// import TeamInviteBanner from "@calcom/features/oe/teams/components/TeamInviteBanner";
+// import TeamInviteBanner from "@calcom/features/ee/teams/components/TeamInviteBanner";
 import AdminPasswordBanner, {
   type AdminPasswordBannerProps,
 } from "@calcom/features/users/components/AdminPasswordBanner";
