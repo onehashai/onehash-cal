@@ -1,6 +1,6 @@
 import { _generateMetadata, getTranslate } from "app/_utils";
 
-import TeamBookingLimitsView from "@calcom/features/oe/teams/pages/team-booking-limits-view";
+import TeamBookingLimitsView from "@calcom/features/ee/teams/pages/team-booking-limits-view";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
 export const generateMetadata = async () =>

@@ -1,6 +1,6 @@
 import { AtomsWrapper } from "@/components/atoms-wrapper";
 
-import { TeamEventTypeForm } from "@calcom/features/oe/teams/components/TeamEventTypeForm";
+import { TeamEventTypeForm } from "@calcom/features/ee/teams/components/TeamEventTypeForm";
 import CreateEventTypeForm from "@calcom/features/eventtypes/components/CreateEventTypeForm";
 import { useCreateEventTypeForm } from "@calcom/lib/hooks/useCreateEventType";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
