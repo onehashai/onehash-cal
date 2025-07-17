@@ -613,7 +613,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
               {observedSteps &&
                 observedSteps.map((step, index) => (
                   <WorkflowStepAction
-                    key={`${step.id}_${index}`} // Use compound key to ensure re-rendering
+                    key={`${step.id}_${index}`}
                     step={step}
                     index={index}
                     form={formController}
