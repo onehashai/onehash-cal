@@ -10,9 +10,9 @@ import {
 } from "@calcom/features/ee/organizations/context/provider";
 import { KBarTrigger } from "@calcom/features/kbar/Kbar";
 import { classNames, isPrismaObjOrUndefined } from "@calcom/lib";
-import { WHITELISTED_ORGS } from "@calcom/lib/constants";
 import useIsWebView from "@calcom/lib/hooks/useIsWebView";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import type { IconName } from "@calcom/ui";
 import { showToast, Tooltip, Icon, Button } from "@calcom/ui";
@@ -57,6 +57,7 @@ const getNavigationItems = (
       ]
     : []),
 
+  //#WHITELISTED
   ...(isUserWhiteListed
     ? [
         {
@@ -193,33 +194,16 @@ const platformNavigationItems: NavigationItemType[] = [
   // },
 ];
 
-//Whitelisted users check
-const allowedDomains = (WHITELISTED_ORGS || "")
-  .split(",")
-  .map((domain) => domain.trim().toLowerCase())
-  .filter(Boolean); // remove empty strings
-
-const allowedDomainSet = new Set(allowedDomains);
-
-export function checkIfUserWhiteListed(email: string): boolean {
-  if (!email || !email.includes("@")) return false;
-  const domain = email.split("@")[1].toLowerCase();
-
-  return allowedDomainSet.has(domain);
-}
-
 const useNavigationItems = (isPlatformNavigation = false) => {
   const orgBranding = useOrgBranding();
   const isWebView = useIsWebView();
-  const { data } = useSession();
 
-  const { email } = data?.user || {};
-
-  const isUserWhiteListed: boolean = checkIfUserWhiteListed(email ?? "");
-
+  //#WHITELISTED
+  const { isUserWhiteListed } = useWhitelistCheck();
   return useMemo(() => {
     const items = !isPlatformNavigation
-      ? getNavigationItems(orgBranding, isWebView, isUserWhiteListed)
+      ? //#WHITELISTED
+        getNavigationItems(orgBranding, isWebView, isUserWhiteListed)
       : platformNavigationItems;
 
     const desktopNavigationItems = items.filter((item) => item.name !== MORE_SEPARATOR_NAME);

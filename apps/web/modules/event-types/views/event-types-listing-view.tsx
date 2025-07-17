@@ -29,6 +29,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import { useGetTheme } from "@calcom/lib/hooks/useTheme";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import { HttpError } from "@calcom/lib/http-error";
 import type { MembershipRole } from "@calcom/prisma/enums";
 import { SchedulingType } from "@calcom/prisma/enums";
@@ -929,6 +930,8 @@ const InfiniteScrollMain = ({
     avatar: item.profile.image,
   }));
 
+  //if user not whitelisted, filter out the event type groups belonging to team
+
   const activeEventTypeGroup =
     eventTypeGroups.filter((item) => item.teamId === data.teamId) ?? eventTypeGroups[0];
 
@@ -974,17 +977,27 @@ const EventTypesPage: React.FC & {
   const routerQuery = useRouterQuery();
   const filters = getTeamsFiltersFromQuery(routerQuery);
   const router = useRouter();
+  //#WHITELISTED
+  const { isUserWhiteListed, isLoading: isUserWhiteListedLoading } = useWhitelistCheck();
 
   // TODO: Maybe useSuspenseQuery to focus on success case only? Remember that it would crash the page when there is an error in query. Also, it won't support skeleton
   const {
     data: getUserEventGroupsData,
     status: getUserEventGroupsStatus,
     error: getUserEventGroupsStatusError,
-  } = trpc.viewer.eventTypes.getUserEventGroups.useQuery(filters && { filters }, {
-    refetchOnWindowFocus: false,
-    gcTime: 1 * 60 * 60 * 1000,
-    staleTime: 1 * 60 * 60 * 1000,
-  });
+  } = trpc.viewer.eventTypes.getUserEventGroups.useQuery(
+    {
+      ...(filters ? { filters } : {}),
+      //#WHITELISTED
+      isUserWhiteListed,
+    },
+    {
+      enabled: !isUserWhiteListedLoading,
+      refetchOnWindowFocus: false,
+      gcTime: 1 * 60 * 60 * 1000,
+      staleTime: 1 * 60 * 60 * 1000,
+    }
+  );
 
   useEffect(() => {
     if (searchParams?.get("openIntercom") === "true") {
