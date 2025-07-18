@@ -125,8 +125,7 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
             {workflows.map((workflow) => {
               const isActive = workflow.activeOn?.length || workflow.activeOnTeams?.length;
               const trigger = triggerMap[workflow.trigger];
-              const channels = workflow.steps
-                .map((s) => channelsMap[s.action])
+              const channels = [...new Set(workflow.steps.map((s) => channelsMap[s.action]))]
                 .sort()
                 .join(",");
 
