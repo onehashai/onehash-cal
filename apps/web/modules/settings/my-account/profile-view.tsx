@@ -771,14 +771,14 @@ const ProfileForm = ({
                 handleItemDelete={() => deleteSecondaryEmail(index)}
               />
             ))}
-            <Button
+            {/* <Button
               color="secondary"
               StartIcon="plus"
               className="mt-2 h-full"
               onClick={() => handleAddSecondaryEmail()}
               data-testid="add-secondary-email">
               {t("add_email")}
-            </Button>
+            </Button> */}
           </div>
         </div>
         <div className="mt-3 w-full">
