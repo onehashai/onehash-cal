@@ -16,13 +16,14 @@ import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import type { OrganizationRepository } from "@calcom/lib/server/repository/organization";
 import { IdentityProvider, MembershipRole, UserPermissionRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
-import type { VerticalTabItemProps } from "@calcom/ui";
+import type { IconName, VerticalTabItemProps } from "@calcom/ui";
 import { Badge, Button, ErrorBoundary, Icon, Skeleton, VerticalTabItem } from "@calcom/ui";
 
-const getTabs = (orgBranding: OrganizationBranding | null) => {
+const getTabs = (orgBranding: OrganizationBranding | null, isUserWhiteListed: boolean) => {
   const tabs: VerticalTabItemProps[] = [
     {
       name: "my_account",
@@ -122,12 +123,17 @@ const getTabs = (orgBranding: OrganizationBranding | null) => {
         // },
       ],
     },
-    {
-      name: "teams",
-      href: "/teams",
-      icon: "users",
-      children: [],
-    },
+
+    ...(isUserWhiteListed
+      ? [
+          {
+            name: "teams",
+            href: "/teams",
+            icon: "users" as IconName,
+            children: [],
+          },
+        ]
+      : []),
     {
       name: "other_teams",
       href: "/settings/organizations/teams/other",
@@ -182,9 +188,10 @@ const useTabs = () => {
   const isAdmin = session.data?.user.role === UserPermissionRole.ADMIN;
   const isOrgAdminOrOwner =
     orgBranding?.role === MembershipRole.ADMIN || orgBranding?.role === MembershipRole.OWNER;
-
+  //#WHITELISTED
+  const { isUserWhiteListed } = useWhitelistCheck();
   const processTabsMemod = useMemo(() => {
-    const processedTabs = getTabs(orgBranding).map((tab) => {
+    const processedTabs = getTabs(orgBranding, isUserWhiteListed).map((tab) => {
       if (tab.href === "/settings/my-account") {
         return {
           ...tab,
