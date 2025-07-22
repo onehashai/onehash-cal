@@ -4,10 +4,10 @@ import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 
+import SkeletonLoaderTeamList from "@calcom/features/ee/teams/components/SkeletonloaderTeamList";
 import { FilterResults } from "@calcom/features/filters/components/FilterResults";
 import { TeamsFilter } from "@calcom/features/filters/components/TeamsFilter";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
-import SkeletonLoaderTeamList from "@calcom/features/ee/teams/components/SkeletonloaderTeamList";
 import Shell, { ShellMain } from "@calcom/features/shell/Shell";
 import { UpgradeTip } from "@calcom/features/tips";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -15,6 +15,7 @@ import useApp from "@calcom/lib/hooks/useApp";
 import { useHasPaidPlan } from "@calcom/lib/hooks/useHasPaidPlan";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import { trpc } from "@calcom/trpc/react";
 import {
   ArrowButton,
@@ -146,6 +147,9 @@ export default function RoutingForms({
     }
   }
 
+  //#WHITELISTED
+  const { isUserWhiteListed } = useWhitelistCheck();
+
   return (
     <>
       <ShellMain
@@ -174,9 +178,11 @@ export default function RoutingForms({
           <FormActionsProvider appUrl={appUrl}>
             <div className="-mx-4 md:-mx-8">
               <div className="mb-10 w-full px-4 pb-2 sm:px-6 md:px-8">
-                <div className="flex">
-                  <TeamsFilter />
-                </div>
+                {isUserWhiteListed && (
+                  <div className="flex">
+                    <TeamsFilter />
+                  </div>
+                )}
                 <FilterResults
                   queryRes={queryRes}
                   emptyScreen={

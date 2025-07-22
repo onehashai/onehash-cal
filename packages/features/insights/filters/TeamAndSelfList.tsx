@@ -7,8 +7,9 @@ import {
 } from "@calcom/features/filters/components/TeamsFilter";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import { trpc } from "@calcom/trpc";
-import { AnimatedPopover, Avatar, Divider, Icon } from "@calcom/ui";
+import { AnimatedPopover, Avatar, Icon, Divider } from "@calcom/ui";
 
 import { useFilterContext } from "../context/provider";
 
@@ -18,9 +19,13 @@ export const TeamAndSelfList = ({ omitOrg = false }: { omitOrg?: boolean }) => {
   const currentOrgId = session.data?.user.org?.id;
   const { filter, setConfigFilters } = useFilterContext();
   const { selectedTeamId, selectedUserId, isAll } = filter;
+
+  //#WHITELISTED
+  const { isUserWhiteListed, isLoading } = useWhitelistCheck();
   const { data, isSuccess } = trpc.viewer.insights.teamListForUser.useQuery(undefined, {
     // Teams don't change that frequently
     refetchOnWindowFocus: false,
+    enabled: !isLoading && isUserWhiteListed,
     trpc: {
       context: {
         skipBatch: true,
@@ -35,32 +40,43 @@ export const TeamAndSelfList = ({ omitOrg = false }: { omitOrg?: boolean }) => {
       filter.initialConfig?.isAll
     );
     if (isInitialSetupAlready) return;
-    if (isSuccess && session.data?.user.id) {
-      // We have a team?
-      if (data[0]?.id && data && data?.length > 0) {
-        const isAllSelected = !!data[0]?.isOrg;
-        setConfigFilters({
-          selectedTeamId: data[0].id,
-          selectedUserId: null,
-          isAll: isAllSelected,
-          initialConfig: {
-            teamId: data[0].id,
-            userId: null,
-            isAll: isAllSelected,
-          },
-        });
-      } else if (session.data?.user.id) {
-        // default to user
-        setConfigFilters({
-          selectedUserId: session.data?.user.id,
-          initialConfig: {
-            teamId: null,
-            userId: session.data?.user.id,
-            isAll: false,
-          },
-        });
-      }
+    if (session.data?.user.id) {
+      // default to user
+      setConfigFilters({
+        selectedUserId: session.data?.user.id,
+        initialConfig: {
+          teamId: null,
+          userId: session.data?.user.id,
+          isAll: false,
+        },
+      });
     }
+    // if (isSuccess && session.data?.user.id) {
+    //   // We have a team?
+    //   if (data[0]?.id && data && data?.length > 0) {
+    //     const isAllSelected = !!data[0]?.isOrg;
+    //     setConfigFilters({
+    //       selectedTeamId: data[0].id,
+    //       selectedUserId: null,
+    //       isAll: isAllSelected,
+    //       initialConfig: {
+    //         teamId: data[0].id,
+    //         userId: null,
+    //         isAll: isAllSelected,
+    //       },
+    //     });
+    //   } else if (session.data?.user.id) {
+    //     // default to user
+    //     setConfigFilters({
+    //       selectedUserId: session.data?.user.id,
+    //       initialConfig: {
+    //         teamId: null,
+    //         userId: session.data?.user.id,
+    //         isAll: false,
+    //       },
+    //     });
+    //   }
+    // }
   }, [data, session.data?.user.id, filter.initialConfig, isSuccess, setConfigFilters]);
 
   const getTextPopover = () => {
@@ -99,47 +115,47 @@ export const TeamAndSelfList = ({ omitOrg = false }: { omitOrg?: boolean }) => {
             label={t("all")}
           />
         )}
+        <Divider />
 
-        <Divider />
-        {data?.map((team) => {
-          if (omitOrg && team.id === currentOrgId) return null;
-          return (
-            <FilterCheckboxField
-              key={team.id}
-              id={team.name || ""}
-              label={team.name || ""}
-              checked={selectedTeamId === team.id && !isAll}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setConfigFilters({
-                    selectedTeamId: team.id,
-                    selectedUserId: null,
-                    selectedTeamName: team.name,
-                    isAll: false,
-                    // Setting these to null to reset the filters
-                    selectedEventTypeId: null,
-                    selectedMemberUserId: null,
-                    selectedFilter: null,
-                  });
-                } else if (!e.target.checked) {
-                  setConfigFilters({
-                    selectedTeamId: null,
-                    selectedTeamName: null,
-                    isAll: true,
-                  });
+        {isUserWhiteListed &&
+          data?.map((team) => {
+            if (omitOrg && team.id === currentOrgId) return null;
+            return (
+              <FilterCheckboxField
+                key={team.id}
+                id={team.name || ""}
+                label={team.name || ""}
+                checked={selectedTeamId === team.id && !isAll}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setConfigFilters({
+                      selectedTeamId: team.id,
+                      selectedUserId: null,
+                      selectedTeamName: team.name,
+                      isAll: false,
+                      // Setting these to null to reset the filters
+                      selectedEventTypeId: null,
+                      selectedMemberUserId: null,
+                      selectedFilter: null,
+                    });
+                  } else if (!e.target.checked) {
+                    setConfigFilters({
+                      selectedTeamId: null,
+                      selectedTeamName: null,
+                      isAll: true,
+                    });
+                  }
+                }}
+                icon={
+                  <Avatar
+                    alt={team.name || ""}
+                    imageSrc={getPlaceholderAvatar(team.logoUrl, team.name)}
+                    size="xs"
+                  />
                 }
-              }}
-              icon={
-                <Avatar
-                  alt={team.name || ""}
-                  imageSrc={getPlaceholderAvatar(team.logoUrl, team.name)}
-                  size="xs"
-                />
-              }
-            />
-          );
-        })}
-        <Divider />
+              />
+            );
+          })}
 
         <FilterCheckboxField
           id="yours"
