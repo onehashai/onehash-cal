@@ -345,7 +345,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
   }, [step, validatedPhoneNumbers, confirmedEmailAddresses]);
 
   return (
-    <div key={step.id} className="relative rounded-lg border border-gray-200 p-6">
+    <div key={step.id} className="border-default relative rounded-lg border p-6">
       {!readOnly && onRemove && (
         <Button
           variant="ghost"
@@ -358,7 +358,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       )}
       <div className="space-y-6">
         <div className="space-y-4">
-          <Label className="font-sm text-sm text-gray-900">Action {index + 1}</Label>
+          <Label className="font-sm text-default text-sm">Action {index + 1}</Label>
 
           <div className="space-y-3">
             <Controller
@@ -373,10 +373,10 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                       field.onChange(val);
                       updateActionType(val);
                     }}>
-                    <SelectTrigger className="border-gray-200 text-base focus:border-gray-400 focus:ring-0">
+                    <SelectTrigger className="bg-default border-default text-base  focus:ring-0">
                       <SelectValue placeholder="Choose delivery method" />
                     </SelectTrigger>
-                    <SelectContent className="border-gray-200 bg-white">
+                    <SelectContent className="bg-default border-default ">
                       {actionOptions?.map((action) => (
                         <SelectItem key={action.value} value={action.value}>
                           {t(`${action.value.toLowerCase()}_action`)}
@@ -481,7 +481,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                       <Label>{t("sender_id")}</Label>
                       <Tooltip content={t("sender_id_info")}>
                         <span>
-                          <Icon name="info" className=" h-4 w-4 text-gray-500" />
+                          <Icon name="info" className=" text-default h-4 w-4" />
                         </span>
                       </Tooltip>
                     </div>
@@ -530,7 +530,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                         form.setValue(`${fieldPath}.numberRequired`, e ? true : false);
                       }}
                     />
-                    <Label htmlFor={`${fieldPath}.numberRequired`} className="ml-2 text-sm text-gray-700">
+                    <Label htmlFor={`${fieldPath}.numberRequired`} className="text-default ml-2 text-sm">
                       {t("make_phone_number_required")}
                     </Label>
                   </div>
@@ -637,10 +637,10 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                     updateTemplateContent(val);
                   }}
                   value={field.value}>
-                  <SelectTrigger className="border-gray-200 text-base focus:border-gray-400 focus:ring-0">
+                  <SelectTrigger className="bg-default border-default text-base  focus:ring-0">
                     <SelectValue placeholder="Choose Template" />
                   </SelectTrigger>
-                  <SelectContent className="border-gray-200 bg-white">
+                  <SelectContent className="bg-default border-default">
                     {availableTemplates?.map((template) => (
                       <SelectItem key={template.value} value={template.value}>
                         {template.label}
@@ -733,7 +733,7 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
                     />
                   )}
                 />
-                <Label htmlFor="include_calendar_event" className="text-sm text-gray-700">
+                <Label htmlFor="include_calendar_event" className="text-default text-sm">
                   {t("include_calendar_event")}
                 </Label>
               </div>
