@@ -1,4 +1,5 @@
-import { verifyPhoneNumber } from "@calcom/features/ee/workflows/lib/reminders/verifyPhoneNumber";
+import { verifyPhoneNumber } from "@onehash/oe-features/workflows/utils/phoneVerification";
+
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
 import type { TVerifyPhoneNumberInputSchema } from "./verifyPhoneNumber.schema";

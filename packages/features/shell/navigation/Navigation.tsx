@@ -109,12 +109,12 @@ const getNavigationItems = (
     moreOnMobile: true,
   },
   //OE_FEATURE
-  // {
-  //   name: "workflows",
-  //   href: "/workflows",
-  //   icon: "zap",
-  //   moreOnMobile: true,
-  // },
+  {
+    name: "workflows",
+    href: "/workflows",
+    icon: "zap",
+    moreOnMobile: true,
+  },
   {
     name: "insights",
     href: "/insights",

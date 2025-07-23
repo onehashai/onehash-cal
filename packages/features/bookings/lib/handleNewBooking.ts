@@ -1,3 +1,9 @@
+import {
+  canDisableParticipantNotifications,
+  canDisableOrganizerNotifications,
+} from "@onehash/oe-features/workflows/utils/notificationDisableCheck";
+import { scheduleWorkflowReminders } from "@onehash/oe-features/workflows/utils/reminderScheduler";
+import { scheduleMandatoryReminder } from "@onehash/oe-features/workflows/utils/scheduleMandatoryReminder";
 import type { DestinationCalendar } from "@prisma/client";
 // eslint-disable-next-line no-restricted-imports
 import { cloneDeep } from "lodash";
@@ -32,12 +38,6 @@ import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/
 import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhookTrigger";
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
 import AssignmentReasonRecorder from "@calcom/features/ee/round-robin/assignmentReason/AssignmentReasonRecorder";
-import {
-  allowDisablingAttendeeConfirmationEmails,
-  allowDisablingHostConfirmationEmails,
-} from "@calcom/features/ee/workflows/lib/allowDisablingStandardEmails";
-import { scheduleWorkflowReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
-import { scheduleMandatoryReminder } from "@calcom/features/ee/workflows/lib/reminders/scheduleMandatoryReminder";
 import { getFullName } from "@calcom/features/form-builder/utils";
 import { subscriptionSchema } from "@calcom/features/instant-meeting/schema";
 import { sendNotification } from "@calcom/features/notifications/sendNotification";
@@ -1649,11 +1649,11 @@ async function handler(
           eventType.metadata?.disableStandardEmails?.confirmation?.attendee || false;
 
         if (isHostConfirmationEmailsDisabled) {
-          isHostConfirmationEmailsDisabled = allowDisablingHostConfirmationEmails(workflows);
+          isHostConfirmationEmailsDisabled = canDisableOrganizerNotifications(workflows);
         }
 
         if (isAttendeeConfirmationEmailDisabled) {
-          isAttendeeConfirmationEmailDisabled = allowDisablingAttendeeConfirmationEmails(workflows);
+          isAttendeeConfirmationEmailDisabled = canDisableParticipantNotifications(workflows);
         }
 
         loggerWithEventDetails.debug(

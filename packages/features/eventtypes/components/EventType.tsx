@@ -2,9 +2,9 @@
 
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import type { Workflow } from "@onehash/oe-features/workflows/config/types";
 import type { UseFormReturn } from "react-hook-form";
 
-import type { Workflow } from "@calcom/features/ee/workflows/lib/types";
 import type { ChildrenEventType } from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
 import type {
   TabMap,

@@ -1,4 +1,5 @@
-import { getWorkflowActionOptions } from "@calcom/features/ee/workflows/lib/getOptions";
+import { getWorkflowActionOptions } from "@onehash/oe-features/workflows/utils/getWorkflowOptions";
+
 import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { getTranslation } from "@calcom/lib/server/i18n";
