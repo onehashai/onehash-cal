@@ -365,54 +365,54 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
   if (workflowIsLoading) {
     return (
       <Shell withoutMain>
-        <div className="min-h-screen bg-white">
+        <div className="bg-default min-h-screen">
           <div className="mx-auto px-6 py-8">
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
+              <div className="bg-emphasis h-8 w-48 animate-pulse  rounded" />
               <div className="flex gap-2">
-                <div className="h-10 w-32 animate-pulse rounded bg-gray-200" />
-                <div className="h-10 w-32 animate-pulse rounded bg-gray-200" />
+                <div className="bg-emphasis h-10 w-32 animate-pulse  rounded" />
+                <div className="bg-emphasis h-10 w-32 animate-pulse  rounded" />
               </div>
             </div>
 
             <div className="space-y-8">
               <div className="space-y-3">
-                <div className="h-5 w-32 animate-pulse rounded bg-gray-200" />
-                <div className="h-10 w-full animate-pulse rounded bg-gray-200" />
+                <div className="bg-emphasis h-5 w-32 animate-pulse  rounded" />
+                <div className="bg-emphasis h-10 w-full animate-pulse  rounded" />
               </div>
 
               <div className="space-y-4">
-                <div className="h-5 w-48 animate-pulse rounded bg-gray-200" />
-                <div className="h-10 w-full animate-pulse rounded bg-gray-200" />
+                <div className="bg-emphasis h-5 w-48 animate-pulse  rounded" />
+                <div className="bg-emphasis h-10 w-full animate-pulse  rounded" />
                 <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 animate-pulse rounded bg-gray-200" />
-                  <div className="h-4 w-40 animate-pulse rounded bg-gray-200" />
+                  <div className="bg-emphasis h-4 w-4 animate-pulse  rounded" />
+                  <div className="bg-emphasis h-4 w-40 animate-pulse  rounded" />
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div className="h-5 w-56 animate-pulse rounded bg-gray-200" />
-                <div className="h-10 w-full animate-pulse rounded bg-gray-200" />
+                <div className="bg-emphasis h-5 w-56 animate-pulse  rounded" />
+                <div className="bg-emphasis h-10 w-full animate-pulse  rounded" />
               </div>
 
               <div className="space-y-4">
-                <div className="h-5 w-20 animate-pulse rounded bg-gray-200" />
+                <div className="bg-emphasis h-5 w-20 animate-pulse  rounded" />
 
                 {[1, 2].map((index) => (
-                  <div key={index} className="relative rounded-lg border border-gray-200 p-6">
+                  <div key={index} className="border-default relative rounded-lg border p-6">
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <div className="h-4 w-20 animate-pulse rounded bg-gray-200" />
-                        <div className="h-10 w-full animate-pulse rounded bg-gray-200" />
-                        <div className="h-5 w-32 animate-pulse rounded bg-gray-200" />
-                        <div className="h-10 w-full animate-pulse rounded bg-gray-200" />
-                        <div className="h-64 w-full animate-pulse rounded bg-gray-200" />
+                        <div className="bg-emphasis h-4 w-20 animate-pulse  rounded" />
+                        <div className="bg-emphasis h-10 w-full animate-pulse  rounded" />
+                        <div className="bg-emphasis h-5 w-32 animate-pulse  rounded" />
+                        <div className="bg-emphasis h-10 w-full animate-pulse  rounded" />
+                        <div className="bg-emphasis h-64 w-full animate-pulse  rounded" />
                       </div>
                     </div>
                   </div>
                 ))}
 
-                <div className="h-12 w-full animate-pulse rounded border-dashed bg-gray-100" />
+                <div className="bg-emphasis h-12 w-full animate-pulse rounded border-dashed" />
               </div>
             </div>
           </div>
@@ -423,7 +423,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
 
   return (
     <Shell withoutMain>
-      <div className="min-h-screen bg-white">
+      <div className="bg-default min-h-screen">
         <WorkflowDeleteDialog
           isOpenDialog={confirmationDialogVisible}
           setIsOpenDialog={setConfirmationDialogVisible}
@@ -433,17 +433,18 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
 
         <div className="mx-auto px-6 py-8">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">Workflow Editor</h1>
+            <h1 className="text-emphasis text-2xl font-semibold">Workflow Editor</h1>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 variant="outline"
-                className="border-gray-300 text-gray-600"
+                className="text-emphasis hover:bg-emphasis "
                 onClick={executeWorkflowDeletion}
                 disabled={isReadOnlyMode}>
                 Delete Workflow
               </Button>
               <Button
-                className="bg-black text-white hover:bg-gray-800"
+                variant="outline"
+                className="text-emphasis hover:bg-emphasis "
                 onClick={persistWorkflowChanges}
                 disabled={isReadOnlyMode || modificationMutation.isPending}>
                 {modificationMutation.isPending ? "Saving..." : "Save Workflow"}
@@ -453,7 +454,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
 
           <div className="space-y-8">
             <div className="space-y-3">
-              <Label htmlFor="workflow-name" className="text-base font-medium text-gray-900">
+              <Label htmlFor="workflow-name" className="text-default text-base font-medium">
                 Workflow Name
               </Label>
               <Controller
@@ -464,7 +465,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                     id="workflow-name"
                     {...field}
                     placeholder="Enter workflow name"
-                    className="border-gray-200 focus:border-gray-400 focus:ring-0"
+                    className="border-default focus:border-gray-900 focus:ring-0"
                     disabled={isReadOnlyMode}
                   />
                 )}
@@ -475,7 +476,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
             </div>
 
             <div className="space-y-4">
-              <Label className="text-base font-medium text-gray-900">Apply this workflow to</Label>
+              <Label className="text-default text-base font-medium">Apply this workflow to</Label>
 
               <Controller
                 name="activeOn"
@@ -512,14 +513,14 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                     />
                   )}
                 />
-                <Label htmlFor="apply-future" className="text-sm text-gray-700">
+                <Label htmlFor="apply-future" className="text-default text-sm">
                   {t("apply_to_all_event_types")}
                 </Label>
               </div>
             </div>
 
             <div className="space-y-4">
-              <Label className="text-base font-medium text-gray-900">Trigger this workflow when</Label>
+              <Label className="text-default text-base font-medium">Trigger this workflow when</Label>
               <Controller
                 name="trigger"
                 control={formController.control}
@@ -531,10 +532,10 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                       field.onChange(value);
                       modifyTriggerSelection(value as WorkflowTriggerEvents);
                     }}>
-                    <SelectTrigger className="border-gray-200 text-base focus:border-gray-400 focus:ring-0">
+                    <SelectTrigger className=" bg-default border-default text-base  focus:ring-0">
                       <SelectValue placeholder="Choose a trigger event" />
                     </SelectTrigger>
-                    <SelectContent className="border-gray-200 bg-white">
+                    <SelectContent className="bg-default border-default">
                       {triggerChoices.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -551,7 +552,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
 
             {!!schedulingTextDisplay && (
               <div className="space-y-4">
-                <Label className="text-base font-medium text-gray-900">{schedulingTextDisplay}</Label>
+                <Label className="text-default text-base font-medium">{schedulingTextDisplay}</Label>
                 <Controller
                   name="time"
                   control={formController.control}
@@ -579,10 +580,10 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                               onValueChange={(value) => {
                                 timeUnitField.onChange(value);
                               }}>
-                              <SelectTrigger className="bg-background rounded-none border border-b-0 border-r-0 border-t-0 px-2 text-sm">
+                              <SelectTrigger className="bg-default border-default rounded-none border border-b-0 border-r-0 border-t-0 px-2 text-sm">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent className="bg-white">
+                              <SelectContent className="bg-default">
                                 {TIME_UNITS.map((timeUnit) => (
                                   <SelectItem key={timeUnit} value={timeUnit}>
                                     {timeUnitChoices[timeUnit]}
@@ -603,12 +604,12 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                       formController.formState.errors.timeUnit?.message}
                   </p>
                 )}
-                <Label className="text-sm text-gray-500">{`*${t("testing_workflow_info_message")}`}</Label>
+                <Label className="text-emphasis text-sm">{`*${t("testing_workflow_info_message")}`}</Label>
               </div>
             )}
 
             <div className="space-y-4">
-              <Label className="text-base font-medium text-gray-900">Actions</Label>
+              <Label className="text-default text-base font-medium">Actions</Label>
 
               {observedSteps &&
                 observedSteps.map((step, index) => (
@@ -629,7 +630,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                 <Button
                   variant="outline"
                   onClick={appendAction}
-                  className="w-full border-dashed border-gray-300 text-gray-600 hover:bg-gray-50"
+                  className="text-emphasis border-default hover:bg-emphasis w-full border-dashed"
                   disabled={modificationMutation.isPending}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Another Action

@@ -6,7 +6,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getLocale } from "@calcom/features/auth/lib/getLocale";
-import { checkIfUserWhiteListed } from "@calcom/features/flags/whitelist.config";
 import { extendEventData, nextCollectBasicSettings } from "@calcom/lib/telemetry";
 
 import { csp } from "@lib/csp";
@@ -25,7 +24,11 @@ const globalRoutes = ["/", "/login", "/embed", "/video", "/auth"];
 const allowedSubDomains = ["app", "www"];
 
 // const enterpriseFeatureRoutes = ["/team", "/settings/developer/api-keys"];
-const enterpriseFeatureRoutes = ["/settings/developer/api-keys"];
+const enterpriseFeatureRoutes = [
+  "/settings/developer/api-keys",
+  "/settings/organizations/new",
+  "/settings/platform",
+];
 
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   const url = req.nextUrl;
@@ -44,11 +47,6 @@ const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
         const absoluteURL = new URL("/", req.nextUrl.origin);
         return NextResponse.redirect(absoluteURL.toString());
       }
-    }
-
-    //#WHITELISTED
-    if (session && session?.email && !checkIfUserWhiteListed(session.email)) {
-      enterpriseFeatureRoutes.push("/settings/teams");
     }
     //redirect all enterprise feature routes to /event-types
     if (enterpriseFeatureRoutes.some((route) => url.pathname.startsWith(route))) {
