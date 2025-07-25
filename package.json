@@ -79,7 +79,7 @@
     "test-e2e:embed-react": "yarn db-seed && yarn e2e:embed-react",
     "test-playwright": "yarn playwright test --config=playwright.config.ts",
     "test": "vitest run",
-    "test-web": "vitest run apps/web packages",
+    "test-web": "vitest run apps/web",
     "test:ui": "vitest --ui",
     "type-check": "turbo run type-check",
     "type-check:ci": "turbo run type-check:ci --log-prefix=none",
