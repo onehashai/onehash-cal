@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 
@@ -78,7 +79,7 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
   };
 
   const utils = trpc.useUtils();
-
+  const { t } = useLocale();
   return (
     <div className="bg-default min-h-screen">
       <WorkflowDeleteDialog
@@ -94,12 +95,8 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
         <div className="mx-auto max-w-6xl">
           <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex-1">
-              <h1 className="text-emphasis mb-2 text-xl font-semibold sm:text-2xl">
-                Automate Booking Reminders with Workflows
-              </h1>
-              <p className="text-default text-sm sm:text-base">
-                Send reminders through Email, SMS, and more — automatically and on time.
-              </p>
+              <h1 className="text-emphasis mb-2 text-xl font-semibold sm:text-2xl">{t("workflows_title")}</h1>
+              <p className="text-default text-sm sm:text-base">{t("workflows_description")}</p>
             </div>
             <Button
               className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto"
@@ -108,7 +105,7 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
               }}
               loading={loading}>
               <Plus className="mr-2 h-4 w-4" />
-              Create Workflow
+              {t("create_workflow")}
             </Button>
           </div>
           {/* //OE_FEATURES: will enable after developing teams
@@ -177,11 +174,11 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                     {/* Mobile Details */}
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-default text-sm">Trigger:</span>
+                        <span className="text-default text-sm">{t("trigger")}:</span>
                         <span className="text-emphasis text-sm">{trigger}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-default text-sm">Channels:</span>
+                        <span className="text-default text-sm">{t("channels")}:</span>
                         <span className="text-emphasis text-sm">{channels}</span>
                       </div>
                     </div>
@@ -195,19 +192,19 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                         <h3 className="text-emphasis mb-1 font-medium">
                           {workflow.name != "" ? workflow.name : "Untitled Workflow"}
                         </h3>
-                        <p className="text-default text-sm">Workflow</p>
+                        <p className="text-default text-sm">{t("workflow")}</p>
                       </div>
 
                       {/* Trigger On */}
                       <div>
                         <p className="text-emphasis mb-1">{trigger}</p>
-                        <p className="text-default text-sm">Trigger</p>
+                        <p className="text-default text-sm">{t("trigger")}</p>
                       </div>
 
                       {/* Delivery Channels */}
                       <div className="hidden md:block">
                         <p className="text-emphasis mb-1">{channels}</p>
-                        <p className="text-default text-sm">Channels</p>
+                        <p className="text-default text-sm">{t("channels")}</p>
                       </div>
 
                       {/* Status */}
