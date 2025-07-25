@@ -358,7 +358,9 @@ const WorkflowStepAction: React.FC<WorkflowStepComponentProps> = ({
       )}
       <div className="space-y-6">
         <div className="space-y-4">
-          <Label className="font-sm text-default text-sm">Action {index + 1}</Label>
+          <Label className="font-sm text-default text-sm">
+            {t("action")} {index + 1}
+          </Label>
 
           <div className="space-y-3">
             <Controller

@@ -162,7 +162,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
     const isValid = await formController.trigger();
     if (!isValid) {
       console.log("Form validation failed:", formController.formState.errors);
-      showToast("Please fix the errors in the form", "error");
+      showToast(t("form_error"), "error");
       return;
     }
 
@@ -261,7 +261,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
     formController.clearErrors();
     formController.trigger("steps");
 
-    showToast("Action removed successfully", "success");
+    showToast(t("action_removed_successfully"), "success");
   };
 
   const appendAction = (): void => {
@@ -298,7 +298,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
       formController.trigger("steps");
     }, 0);
 
-    showToast("New action added successfully", "success");
+    showToast(t("new_action_added"), "success");
   };
 
   useEffect(() => {
@@ -357,7 +357,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
 
   useEffect(() => {
     if (!currentWorkflow && !workflowIsLoading && automationId !== -1) {
-      showToast("Workflow not found", "error");
+      showToast(t("workflow_not_found"), "error");
       navigationRouter.replace("/workflows");
     }
   }, [currentWorkflow, workflowIsLoading, automationId, navigationRouter]);
@@ -433,21 +433,21 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
 
         <div className="mx-auto px-6 py-8">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-emphasis text-2xl font-semibold">Workflow Editor</h1>
+            <h1 className="text-emphasis text-2xl font-semibold">{t("workflow_editor")}</h1>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 variant="outline"
                 className="text-emphasis hover:bg-emphasis "
                 onClick={executeWorkflowDeletion}
                 disabled={isReadOnlyMode}>
-                Delete Workflow
+                {t("delete_workflow")}
               </Button>
               <Button
                 variant="outline"
                 className="text-emphasis hover:bg-emphasis "
                 onClick={persistWorkflowChanges}
                 disabled={isReadOnlyMode || modificationMutation.isPending}>
-                {modificationMutation.isPending ? "Saving..." : "Save Workflow"}
+                {modificationMutation.isPending ? t("saving_load") : t("save_workflow")}
               </Button>
             </div>
           </div>
@@ -455,7 +455,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
           <div className="space-y-8">
             <div className="space-y-3">
               <Label htmlFor="workflow-name" className="text-default text-base font-medium">
-                Workflow Name
+                {t("workflow_name")}
               </Label>
               <Controller
                 name="name"
@@ -476,7 +476,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
             </div>
 
             <div className="space-y-4">
-              <Label className="text-default text-base font-medium">Apply this workflow to</Label>
+              <Label className="text-default text-base font-medium">{t("apply_workflow_to")}</Label>
 
               <Controller
                 name="activeOn"
@@ -520,7 +520,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
             </div>
 
             <div className="space-y-4">
-              <Label className="text-default text-base font-medium">Trigger this workflow when</Label>
+              <Label className="text-default text-base font-medium">{t("trigger_workflow_when")}</Label>
               <Controller
                 name="trigger"
                 control={formController.control}
@@ -609,7 +609,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
             )}
 
             <div className="space-y-4">
-              <Label className="text-default text-base font-medium">Actions</Label>
+              <Label className="text-default text-base font-medium">{t("actions")}</Label>
 
               {observedSteps &&
                 observedSteps.map((step, index) => (
@@ -633,7 +633,7 @@ const WorkflowEditor: React.FC<WorkflowPageProps> = ({
                   className="text-emphasis border-default hover:bg-emphasis w-full border-dashed"
                   disabled={modificationMutation.isPending}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Another Action
+                  {t("add_action")}
                 </Button>
               )}
             </div>
