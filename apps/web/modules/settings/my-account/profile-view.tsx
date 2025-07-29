@@ -19,6 +19,7 @@ import { APP_NAME, FULL_NAME_LENGTH_MAX_LIMIT } from "@calcom/lib/constants";
 import { emailSchema } from "@calcom/lib/emailSchema";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { usePhoneNumberVerification } from "@calcom/lib/hooks/usePhoneVerification";
 import { md } from "@calcom/lib/markdownIt";
 import turndown from "@calcom/lib/turndownService";
 import { IdentityProvider } from "@calcom/prisma/enums";
@@ -51,14 +52,30 @@ import {
   UserAvatar,
 } from "@calcom/ui";
 
-import { HttpError } from "@lib/core/http/error";
-
 import TwoFactor from "@components/auth/TwoFactor";
 import CustomEmailTextField from "@components/settings/CustomEmailTextField";
 import SecondaryEmailConfirmModal from "@components/settings/SecondaryEmailConfirmModal";
 import SecondaryEmailModal from "@components/settings/SecondaryEmailModal";
 import { UsernameAvailabilityField } from "@components/ui/UsernameAvailability";
 
+type Email = {
+  id: number;
+  email: string;
+  emailVerified: string | null;
+  emailPrimary: boolean;
+};
+
+export type UserFormValues = {
+  username: string;
+  avatarUrl: string | null;
+  name: string;
+  email: string;
+  bio: string;
+  secondaryEmails: Email[];
+  metadata: {
+    phoneNumber: string;
+  };
+};
 const SkeletonLoader = () => {
   return (
     <SkeletonContainer>
@@ -81,14 +98,7 @@ interface DeleteAccountValues {
   totpCode: string;
 }
 
-type Email = {
-  id: number;
-  email: string;
-  emailVerified: string | null;
-  emailPrimary: boolean;
-};
-
-export type FormValues = {
+export type UseFormValues = {
   username: string;
   avatarUrl: string | null;
   name: string;
@@ -506,7 +516,7 @@ type SecondaryEmailApiPayload = {
   isDeleted: boolean;
 };
 
-type ExtendedFormValues = Omit<FormValues, "secondaryEmails"> & {
+type ExtendedFormValues = Omit<UseFormValues, "secondaryEmails"> & {
   secondaryEmails: SecondaryEmailApiPayload[];
 };
 
@@ -523,7 +533,7 @@ const ProfileForm = ({
   userOrganization,
   isCALIdentityProvider,
 }: {
-  defaultValues: FormValues;
+  defaultValues: UseFormValues;
   onSubmit: (values: ExtendedFormValues) => void;
   handleAddSecondaryEmail: () => void;
   handleResendVerifyEmail: (email: string) => void;
@@ -572,58 +582,27 @@ const ProfileForm = ({
       })
       .optional(),
   });
-  const formMethods = useForm<FormValues>({
+  const formMethods = useForm<UseFormValues>({
     defaultValues,
     resolver: zodResolver(profileFormSchema),
   });
 
-  const [otpSent, setOtpSent] = useState(false);
-  const sendVerificationCodeMutation = trpc.viewer.workflows.sendVerificationCode.useMutation({
-    onMutate: () => {
-      setOtpSent(false);
-      setVerificationCode("");
-    },
-    onSuccess: async () => {
-      showToast(t("verification_code_sent"), "success");
-      setOtpSent(true);
-    },
-    onError: async (error) => {
-      showToast(error.message, "error");
-    },
-  });
-
-  const { data: _verifiedNumbers } = trpc.viewer.workflows.getVerifiedNumbers.useQuery({ teamId: undefined });
-
-  const [verificationCode, setVerificationCode] = useState("");
-
-  const verifiedNumbers = _verifiedNumbers?.map((number) => number.phoneNumber) || [];
-
-  const getNumberVerificationStatus = (phoneNumber: string) => {
-    return !!verifiedNumbers.find(
-      (number: string) => number.replace(/\s/g, "") === phoneNumber.replace(/\s/g, "")
-    );
-  };
-
-  const [numberVerified, setNumberVerified] = useState(defaultValues.metadata.phoneNumber != "");
-
-  const [isNumberValid, setIsNumberValid] = useState<boolean>(
-    formMethods.getValues("metadata.phoneNumber") != ""
-      ? isValidPhoneNumber(formMethods.getValues("metadata.phoneNumber"))
-      : false
-  );
-
-  const verifyPhoneNumberMutation = trpc.viewer.workflows.verifyPhoneNumber.useMutation({
-    onSuccess: async (isVerified) => {
-      showToast(isVerified ? t("verified_successfully") : t("wrong_code"), "success");
-      setNumberVerified(isVerified);
-    },
-    onError: (err) => {
-      if (err instanceof HttpError) {
-        const message = `${err.statusCode}: ${err.message}`;
-        showToast(message, "error");
-        setNumberVerified(false);
-      }
-    },
+  const {
+    otpSent,
+    verificationCode,
+    setVerificationCode,
+    numberVerified,
+    setNumberVerified,
+    isNumberValid,
+    setIsNumberValid,
+    getNumberVerificationStatus,
+    sendVerificationCode,
+    verifyPhoneNumber,
+    isSendingCode,
+    isVerifying,
+  } = usePhoneNumberVerification<UserFormValues>({
+    getValues: formMethods.getValues,
+    defaultValues,
   });
 
   const {
@@ -636,10 +615,10 @@ const ProfileForm = ({
     keyName: "itemId",
   });
 
-  const getUpdatedFormValues = (values: FormValues): ExtendedFormValues => {
+  const getUpdatedFormValues = (values: UseFormValues): ExtendedFormValues => {
     const changedFields = formMethods.formState.dirtyFields?.secondaryEmails || [];
 
-    const updatedValues: FormValues = {
+    const updatedValues: UseFormValues = {
       ...values,
     };
 
@@ -676,7 +655,7 @@ const ProfileForm = ({
     };
   };
 
-  const handleFormSubmit = (values: FormValues) => {
+  const handleFormSubmit = (values: UseFormValues) => {
     if (
       formMethods.formState.dirtyFields.metadata &&
       formMethods.formState.dirtyFields.metadata.phoneNumber === true &&
@@ -755,7 +734,7 @@ const ProfileForm = ({
               <CustomEmailTextField
                 key={field.itemId}
                 formMethods={formMethods}
-                formMethodFieldName={`secondaryEmails.${index}.email` as keyof FormValues}
+                formMethodFieldName={`secondaryEmails.${index}.email` as keyof UseFormValues}
                 errorMessage={get(formMethods.formState.errors, `secondaryEmails.${index}.email.message`)}
                 emailVerified={Boolean(field.emailVerified)}
                 emailPrimary={field.emailPrimary}
@@ -803,9 +782,9 @@ const ProfileForm = ({
               color="secondary"
               className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block  "
               disabled={!isNumberValid || numberVerified}
-              loading={sendVerificationCodeMutation.isPending}
+              loading={isSendingCode}
               onClick={() =>
-                sendVerificationCodeMutation.mutate({
+                sendVerificationCode({
                   phoneNumber: formMethods.getValues("metadata.phoneNumber"),
                 })
               }>
@@ -839,7 +818,7 @@ const ProfileForm = ({
                 <TextField
                   className="h-[38px]"
                   placeholder="Verification code"
-                  disabled={otpSent === false || verifyPhoneNumberMutation.isPending}
+                  disabled={otpSent === false || isVerifying}
                   value={verificationCode}
                   onChange={(e) => {
                     setVerificationCode(e.target.value);
@@ -850,9 +829,9 @@ const ProfileForm = ({
                   color="secondary"
                   className="-ml-[2px] h-[38px] min-w-fit py-0 sm:block "
                   disabled={!verificationCode}
-                  loading={verifyPhoneNumberMutation.isPending}
+                  loading={isVerifying}
                   onClick={() => {
-                    verifyPhoneNumberMutation.mutate({
+                    verifyPhoneNumber({
                       phoneNumber: formMethods.getValues("metadata.phoneNumber") || "",
                       code: verificationCode,
                       teamId: undefined,
