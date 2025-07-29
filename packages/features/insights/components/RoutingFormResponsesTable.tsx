@@ -262,7 +262,7 @@ export function RoutingFormResponsesTable({
         teamId: selectedTeamId,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        userId: selectedMemberUserId ?? undefined,
+        userId: initialConfig?.userId ?? selectedMemberUserId ?? undefined,
         isAll: isAll ?? false,
         routingFormId: selectedRoutingFormId ?? undefined,
         bookingStatus: selectedBookingStatus ?? undefined,

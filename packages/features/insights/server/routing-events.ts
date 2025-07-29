@@ -13,6 +13,7 @@ type RoutingFormInsightsTeamFilter = {
   isAll: boolean;
   organizationId?: number | null;
   routingFormId?: string | null;
+  userId?: number | null;
 };
 
 type RoutingFormInsightsFilter = RoutingFormInsightsTeamFilter & {
@@ -32,6 +33,7 @@ class RoutingEventsInsights {
     isAll,
     organizationId,
     routingFormId,
+    userId,
   }: RoutingFormInsightsTeamFilter) {
     // Get team IDs based on organization if applicable
     let teamIds: number[] = [];
@@ -59,6 +61,9 @@ class RoutingEventsInsights {
       }),
       ...(routingFormId && {
         id: routingFormId,
+      }),
+      ...(userId && {
+        ownerId: userId,
       }),
     };
 
@@ -89,6 +94,7 @@ class RoutingEventsInsights {
       isAll,
       organizationId,
       routingFormId,
+      userId,
     });
 
     // Base where condition for responses
@@ -100,13 +106,12 @@ class RoutingEventsInsights {
             lte: dayjs(endDate).endOf("day").toDate(),
           },
         }),
-      ...(userId || bookingStatus
+      ...(bookingStatus
         ? {
             ...(bookingStatus === "NO_BOOKING"
               ? { routedToBooking: null }
               : {
                   routedToBooking: {
-                    ...(userId && { userId }),
                     ...(bookingStatus && { status: bookingStatus }),
                   },
                 }),
@@ -196,6 +201,7 @@ class RoutingEventsInsights {
       isAll,
       organizationId,
       routingFormId,
+      userId,
     });
 
     const responsesWhereCondition: Prisma.App_RoutingForms_FormResponseWhereInput = {
@@ -206,13 +212,12 @@ class RoutingEventsInsights {
             lte: dayjs(endDate).endOf("day").toDate(),
           },
         }),
-      ...(userId || bookingStatus
+      ...(bookingStatus
         ? {
             ...(bookingStatus === "NO_BOOKING"
               ? { routedToBooking: null }
               : {
                   routedToBooking: {
-                    ...(userId && { userId }),
                     ...(bookingStatus && { status: bookingStatus }),
                   },
                 }),
@@ -494,6 +499,7 @@ class RoutingEventsInsights {
       isAll,
       organizationId,
       routingFormId,
+      userId,
     });
 
     // First get all forms and their fields to build a mapping
@@ -543,13 +549,12 @@ class RoutingEventsInsights {
             lte: dayjs(endDate).endOf("day").toDate(),
           },
         }),
-      ...(userId || bookingStatus
+      ...(bookingStatus
         ? {
             ...(bookingStatus === "NO_BOOKING"
               ? { routedToBooking: null }
               : {
                   routedToBooking: {
-                    ...(userId && { userId }),
                     ...(bookingStatus && { status: bookingStatus }),
                   },
                 }),

@@ -36,7 +36,7 @@ export const RoutingKPICards = () => {
       eventTypeId: selectedEventTypeId ?? undefined,
       isAll,
       routingFormId: selectedRoutingFormId ?? undefined,
-      userId: selectedMemberUserId ?? undefined,
+      userId: initialConfig?.userId ?? selectedMemberUserId ?? undefined,
       bookingStatus: selectedBookingStatus ?? undefined,
       fieldFilter: selectedRoutingFormFilter ?? undefined,
     },
