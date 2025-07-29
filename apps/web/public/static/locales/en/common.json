@@ -80,6 +80,7 @@
   "trigger_workflow_when":"Trigger this workflow when",
   "actions": "Actions",
   "add_action": "Add new action",
+  "at_least_one_location_is_required": "At least one location is required",
   "identity_provider": "Identity provider",
   "insights_workflow_subtitle":"View workflow insights across your events",
   "view_schedule": "View schedule",
