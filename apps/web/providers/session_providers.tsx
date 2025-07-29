@@ -88,7 +88,6 @@ export default function SessionManager({ children }: { children: React.ReactNode
         const { id, email, name, username, createdAt, completedOnboarding, customBrandingEnabled, timezone } =
           userData;
         const [first_name, last_name] = getFullNameFromField(name);
-        const [first_name, last_name] = getNameFromField(name);
         const trackingPayload = {
           id,
           email,
