@@ -5,7 +5,7 @@ import type { RefCallback, ReactNode } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
-import { WEBSITE_URL, IS_SELF_HOSTED } from "@calcom/lib/constants";
+import { WEBSITE_URL } from "@calcom/lib/constants";
 import type { TRPCClientErrorLike } from "@calcom/trpc/client";
 import { trpc } from "@calcom/trpc/react";
 import type { AppRouter } from "@calcom/trpc/server/routers/_app";
@@ -65,7 +65,7 @@ export const UsernameAvailabilityField = ({
     ? orgBranding?.fullDomain.replace(/^(https?:|)\/\//, "")
     : `${WEBSITE_URL?.replace(/^(https?:|)\/\//, "")}`;
 
-  const isPremium = !IS_SELF_HOSTED && !user.organization?.id;
+  const isPremium = true;
 
   return (
     <Controller
