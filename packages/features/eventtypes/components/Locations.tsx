@@ -240,7 +240,7 @@ const Locations: React.FC<LocationsProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillLocation, seatsEnabled]);
 
-  const isPlatorm = useIsPlatform();
+  const isPlatform = useIsPlatform();
 
   return (
     <div className={classNames("w-full", customClassNames?.container)}>
@@ -473,8 +473,17 @@ const Locations: React.FC<LocationsProps> = ({
             </Button>
           </li>
         )}
+        <ErrorMessage
+          name="locations"
+          errors={formState.errors}
+          render={({ message }) => (
+            <div className="text-error my-1 text-sm" id="location-error">
+              {message}
+            </div>
+          )}
+        />
       </ul>
-      {props.showAppStoreLink && !isPlatorm && (
+      {props.showAppStoreLink && !isPlatform && (
         <p className="text-default mt-2 text-sm">
           <Trans i18nKey="cant_find_the_right_conferencing_app_visit_our_app_store">
             Can&apos;t find the right conferencing app? Visit our
