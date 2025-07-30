@@ -140,6 +140,14 @@ function buildSlots({
 
   return slots;
 }
+function alignToNextQuarterHour(time: dayjs.Dayjs): dayjs.Dayjs {
+  const minute = time.minute();
+  const roundedMinute = Math.ceil(minute / 15) * 15;
+  //if already adjusted to quarter hour, return the time else adjust it to the next quarter hour
+  return minute % 15 === 0
+    ? time.second(0).millisecond(0)
+    : time.startOf("hour").add(roundedMinute, "minute").second(0).millisecond(0);
+}
 
 function buildSlotsWithDateRanges({
   dateRanges,
@@ -192,10 +200,13 @@ function buildSlotsWithDateRanges({
       ? range.start
       : startTimeWithMinNotice;
 
-    slotStartTime =
-      slotStartTime.minute() % interval !== 0
-        ? slotStartTime.startOf("hour").add(Math.ceil(slotStartTime.minute() / interval) * interval, "minute")
-        : slotStartTime;
+    //NOTE: not required as we only allow availability in the multiples of quarter hours ,i.e. 00, 15, 30, 45
+    // but still we are aligning the start time to the next quarter hour just to be sure.
+    // slotStartTime =
+    //   slotStartTime.minute() % interval !== 0
+    //     ? slotStartTime.startOf("hour").add(Math.ceil(slotStartTime.minute() / interval) * interval, "minute")
+    //     : slotStartTime;
+    slotStartTime = alignToNextQuarterHour(slotStartTime);
 
     // Adding 1 minute to date ranges that end at midnight to ensure that the last slot is included
     const rangeEnd = range.end
