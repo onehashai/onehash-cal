@@ -117,7 +117,6 @@ export const sendScheduledEmailsAndSMS = async (
   const formattedCalEvent = formatCalEvent(calEvent);
   const emailsToSend: Promise<unknown>[] = [];
   const disableCancelAndRescheduleMeeting = eventTypeMetadata?.disableCancelAndRescheduleMeeting ?? false;
-
   if (!hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
     emailsToSend.push(
       sendEmail(
@@ -133,7 +132,7 @@ export const sendScheduledEmailsAndSMS = async (
               new OrganizerScheduledEmail({
                 calEvent: formattedCalEvent,
                 teamMember,
-                disableCancelAndRescheduleMeeting,
+                disableCancelAndRescheduleMeeting: false,
               })
           )
         );
@@ -155,6 +154,7 @@ export const sendScheduledEmailsAndSMS = async (
                 }),
               },
               attendee,
+              true,
               disableCancelAndRescheduleMeeting
             )
         );
