@@ -48,41 +48,62 @@ export const getCalEventResponses = ({
       backwardCompatibleResponses["attendeePhoneNumber"]
     );
   }
+  const phonefield: Record<string, string> = {
+    number_text_notifications: "Phone Number (text notification)",
+    phone: "Phone Number",
+    phone_number: "Phone Number",
+  };
 
   if (parsedBookingFields) {
     parsedBookingFields.forEach((field) => {
-      const label = field.label || field.defaultLabel;
+      const dynamicLabel = field.defaultLabel ? phonefield[field.defaultLabel] : undefined;
+      const label = dynamicLabel || field.label || field.defaultLabel;
+      // let label: string;
+
+      // if (field.defaultLabel === "phone_number") {
+      //   label = "Phone Number";
+      // } else if (field.defaultLabel === "number_text_notification") {
+      //   label = "Phone Number (text notification)";
+      // } else {
+      //   label = field.label || field.defaultLabel;
+      // }
+
       if (!label) {
         //TODO: This error must be thrown while saving event-type as well so that such an event-type can't be saved
         throw new Error(`Missing label for booking field "${field.name}"`);
       }
-
       // If the guests field is hidden (disableGuests is set on the event type) don't try and infer guests from attendees list
       if (field.name == "guests" && field.hidden) {
         backwardCompatibleResponses[field.name] = [];
       }
 
+      const response_val = backwardCompatibleResponses[field.name];
+      if (response_val === undefined) return;
+
       if (field.editable === "user" || field.editable === "user-readonly") {
         calEventUserFieldsResponses[field.name] = {
           label,
-          value: backwardCompatibleResponses[field.name],
+          // value: backwardCompatibleResponses[field.name],
+          value: response_val,
           isHidden: !!field.hidden,
         };
       }
 
       calEventResponses[field.name] = {
         label,
-        value: backwardCompatibleResponses[field.name],
+        // value: backwardCompatibleResponses[field.name],
+        value: response_val,
         isHidden: !!field.hidden,
       };
     });
   } else {
     // Alternative way to generate for a booking of whose eventType has been deleted
     for (const [name, value] of Object.entries(backwardCompatibleResponses)) {
+      if (name === undefined) continue;
       const isSystemField = SystemField.safeParse(name);
 
       // Use name for Label because we don't have access to the label. This will not be needed once we start storing the label along with the response
-      const label = name;
+      const label = phonefield[name] || name;
 
       if (!isSystemField.success) {
         calEventUserFieldsResponses[name] = {

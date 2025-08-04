@@ -73,7 +73,7 @@ const SelectContent = React.forwardRef<
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          "bg-white p-1 ",
+          "bg-default p-1 ",
           position === "popper" &&
             "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
         )}>
@@ -272,7 +272,7 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
               "bg-popover text-popover-foreground absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-md border shadow-md",
               maxHeight
             )}>
-            <div className="max-h-96 overflow-y-auto bg-white p-1">
+            <div className="bg-default max-h-96 overflow-y-auto p-1">
               {searchable && (
                 <div className="border-b p-2">
                   <input
@@ -288,7 +288,7 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
               {selectAllOption && (
                 <>
                   <div
-                    className="flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100"
+                    className="hover:bg-emphasis flex cursor-pointer items-center px-3 py-2 text-sm"
                     onClick={handleSelectAll}>
                     <input
                       type="checkbox"
@@ -313,7 +313,7 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
                   <div
                     key={option.value}
                     className={cn(
-                      "flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100",
+                      "hover:bg-emphasis flex cursor-pointer items-center px-3 py-2 text-sm",
                       option.disabled && "cursor-not-allowed opacity-50"
                     )}
                     onClick={() => !option.disabled && handleToggleItem(option)}>

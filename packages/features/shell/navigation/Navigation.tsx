@@ -12,10 +12,13 @@ import { KBarTrigger } from "@calcom/features/kbar/Kbar";
 import { classNames, isPrismaObjOrUndefined } from "@calcom/lib";
 import useIsWebView from "@calcom/lib/hooks/useIsWebView";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
+import type { IconName } from "@calcom/ui";
 import { showToast, Tooltip, Icon, Button } from "@calcom/ui";
 
 import AllProducts from "../AllProducts";
+import { TeamInviteBadge } from "../TeamInviteBadge";
 import type { NavigationItemType } from "./NavigationItem";
 import { NavigationItem, MobileNavigationItem, MobileNavigationMoreItem } from "./NavigationItem";
 
@@ -23,7 +26,8 @@ export const MORE_SEPARATOR_NAME = "more";
 
 const getNavigationItems = (
   orgBranding: OrganizationBranding,
-  isWebView: boolean | null
+  isWebView: boolean | null,
+  isUserWhiteListed = false
 ): NavigationItemType[] => [
   {
     name: "event_types_page_title",
@@ -52,14 +56,19 @@ const getNavigationItems = (
         } satisfies NavigationItemType,
       ]
     : []),
-  //OE_FEATURE
-  // {
-  //   name: "teams",
-  //   href: "/teams",
-  //   icon: "users",
-  //   onlyDesktop: true,
-  //   badge: <TeamInviteBadge />,
-  // },
+
+  //#WHITELISTED
+  ...(isUserWhiteListed
+    ? [
+        {
+          name: "teams",
+          href: "/teams",
+          icon: "users" as IconName,
+          onlyDesktop: true,
+          badge: <TeamInviteBadge />,
+        },
+      ]
+    : []),
 
   ...(!isWebView
     ? [
@@ -188,9 +197,13 @@ const platformNavigationItems: NavigationItemType[] = [
 const useNavigationItems = (isPlatformNavigation = false) => {
   const orgBranding = useOrgBranding();
   const isWebView = useIsWebView();
+
+  //#WHITELISTED
+  const { isUserWhiteListed } = useWhitelistCheck();
   return useMemo(() => {
     const items = !isPlatformNavigation
-      ? getNavigationItems(orgBranding, isWebView)
+      ? //#WHITELISTED
+        getNavigationItems(orgBranding, isWebView, isUserWhiteListed)
       : platformNavigationItems;
 
     const desktopNavigationItems = items.filter((item) => item.name !== MORE_SEPARATOR_NAME);
@@ -210,7 +223,13 @@ type TIntegrationRequest = {
   account_user_id: number;
   account_user_email: string;
 };
-export const Navigation = ({ isPlatformNavigation = false }: { isPlatformNavigation?: boolean }) => {
+export const Navigation = ({
+  isPlatformNavigation = false,
+  isUserWhiteListed = false,
+}: {
+  isPlatformNavigation?: boolean;
+  isUserWhiteListed?: boolean;
+}) => {
   const { desktopNavigationItems } = useNavigationItems(isPlatformNavigation);
   const { data: user } = useMeQuery();
 

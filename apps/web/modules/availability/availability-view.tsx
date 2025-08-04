@@ -13,6 +13,7 @@ import Shell from "@calcom/features/shell/Shell";
 import { AvailabilitySliderTable } from "@calcom/features/timezone-buddy/components/AvailabilitySliderTable";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import { HttpError } from "@calcom/lib/http-error";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
@@ -228,6 +229,8 @@ export default function AvailabilityPage() {
     toggleGroupOptions.push({ value: "team", label: t("team_availability") });
   }
 
+  //#WHITELISTED
+  const { isUserWhiteListed } = useWhitelistCheck();
   return (
     <div>
       <Shell
@@ -238,18 +241,20 @@ export default function AvailabilityPage() {
         hideHeadingOnMobile
         withoutMain={false}
         CTA={
-          <div className="flex gap-2">
-            <ToggleGroup
-              className="hidden md:block"
-              defaultValue={searchParams?.get("type") ?? "mine"}
-              onValueChange={(value) => {
-                if (!value) return;
-                router.push(`${pathname}?${createQueryString("type", value)}`);
-              }}
-              options={toggleGroupOptions}
-            />
-            <NewScheduleButton />
-          </div>
+          isUserWhiteListed ? (
+            <div className="flex gap-2">
+              <ToggleGroup
+                className="hidden md:block"
+                defaultValue={searchParams?.get("type") ?? "mine"}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  router.push(`${pathname}?${createQueryString("type", value)}`);
+                }}
+                options={toggleGroupOptions}
+              />
+              <NewScheduleButton />
+            </div>
+          ) : null
         }>
         {searchParams?.get("type") === "team" && canViewTeamAvailability ? (
           <AvailabilitySliderTable userTimeFormat={me?.data?.timeFormat ?? null} />
