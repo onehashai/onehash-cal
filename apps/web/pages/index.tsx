@@ -1,36 +1,23 @@
 import type { GetServerSidePropsContext } from "next";
 import Head from "next/head";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { DEMO_URL, SIGNUP_URL } from "@calcom/lib/constants";
+import { DEMO_URL } from "@calcom/lib/constants";
 
 function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter();
-  const [signUpUrl, setSignUpUrl] = useState("");
   const handleGotoLoginPage = () => {
     const url = new URL(window.location.href);
     url.pathname = "/auth/login";
     window.location.href = url.href;
   };
 
-  const getSignUpUrlWithCurrentParams = () => {
-    if (!SIGNUP_URL) throw new Error("SIGNUP_URL not defined");
-    const currentParams = new URLSearchParams(window.location.search);
-    const url = new URL(SIGNUP_URL);
-    currentParams.forEach((value, key) => {
-      url.searchParams.append(key, value);
-    });
-    return url.href;
+  const handleGotoSignUpPage = () => {
+    const url = new URL(window.location.href);
+    url.pathname = "/signup";
+    window.location.href = url.href;
   };
-
-  useEffect(() => {
-    if (window) {
-      const signUpUrlWithParams = getSignUpUrlWithCurrentParams();
-      setSignUpUrl(signUpUrlWithParams);
-    }
-  }, []);
 
   const handleGoToApp = () => {
     const url = new URL(window.location.href);
@@ -159,13 +146,11 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
                       className="border-primary-color rounded-full border px-4 py-2 text-blue-500 hover:text-blue-700 md:px-6">
                       Log in
                     </button>
-                    <a
-                      href={signUpUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={handleGotoSignUpPage}
                       className="bg-primary-color hover:bg-hover-primary-color flex items-center justify-center rounded-full px-4 py-2 text-white transition md:px-6">
                       Signup
-                    </a>
+                    </button>
                   </div>
                 )}
               </div>
@@ -202,12 +187,11 @@ function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     Get Started
                   </button>
                 ) : (
-                  <a
-                    href={signUpUrl}
-                    target="_blank"
+                  <button
+                    onClick={handleGotoSignUpPage}
                     className="bg-primary-color hover:bg-hover-primary-color flex w-full items-center justify-center rounded-full px-6 py-2 text-white transition md:h-14 md:w-40">
                     Get Started
-                  </a>
+                  </button>
                 )}
 
                 <a

@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 
-import { hashPassword } from "@calcom/features/auth/lib/hashPassword";
+import { hashPasswordWithSalt } from "@calcom/features/auth/lib/hashPassword";
 import { whereClauseForOrgWithSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -552,7 +552,7 @@ export class UserRepository {
     organizationId: number | null;
   }) {
     const password = createHash("md5").update(`${email}${process.env.CALENDSO_ENCRYPTION_KEY}`).digest("hex");
-    const hashedPassword = await hashPassword(password);
+    const { hash, salt } = await hashPasswordWithSalt(password);
     const t = await getTranslation("en", "common");
     const availability = getAvailabilityFromSchedule(DEFAULT_SCHEDULE);
 
@@ -560,7 +560,7 @@ export class UserRepository {
       data: {
         username: slugify(username),
         email: email,
-        password: { create: { hash: hashedPassword } },
+        password: { create: { hash, salt } },
         // Default schedule
         schedules: {
           create: {

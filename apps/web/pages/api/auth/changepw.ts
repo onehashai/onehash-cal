@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { hashPassword } from "@calcom/features/auth/lib/hashPassword";
+import { hashPasswordWithSalt } from "@calcom/features/auth/lib/hashPassword";
 import { verifyPassword } from "@calcom/features/auth/lib/verifyPassword";
 import prisma from "@calcom/prisma";
 import { IdentityProvider } from "@calcom/prisma/enums";
@@ -52,17 +52,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: ErrorCode.NewPasswordMatchesOld });
   }
 
-  const hashedPassword = await hashPassword(newPassword);
+  const { hash, salt } = hashPasswordWithSalt(newPassword);
+
   await prisma.userPassword.upsert({
     where: {
       userId: user.id,
     },
     create: {
-      hash: hashedPassword,
+      hash,
+      salt,
       userId: user.id,
     },
     update: {
-      hash: hashedPassword,
+      hash,
+      salt,
     },
   });
 

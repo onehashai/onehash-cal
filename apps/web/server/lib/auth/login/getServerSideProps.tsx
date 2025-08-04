@@ -1,9 +1,15 @@
 import { jwtVerify } from "jose";
 import type { GetServerSidePropsContext } from "next";
+import { getCsrfToken } from "next-auth/react";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { isSAMLLoginEnabled, samlProductID, samlTenantID } from "@calcom/features/ee/sso/lib/saml";
-import { WEBSITE_URL } from "@calcom/lib/constants";
+import {
+  IS_APPLE_LOGIN_ENABLED,
+  IS_GITHUB_LOGIN_ENABLED,
+  IS_MICROSOFT_LOGIN_ENABLED,
+  WEBSITE_URL,
+} from "@calcom/lib/constants";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import prisma from "@calcom/prisma";
 
@@ -89,9 +95,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   }
   return {
     props: {
-      // csrfToken: await getCsrfToken(context),
+      csrfToken: await getCsrfToken(context),
       trpcState: ssr.dehydrate(),
       isGoogleLoginEnabled: IS_GOOGLE_LOGIN_ENABLED,
+      isAppleLoginEnabled: IS_APPLE_LOGIN_ENABLED,
+      isMicrosoftLoginEnabled: IS_MICROSOFT_LOGIN_ENABLED,
+      isGitHubLoginEnabled: IS_GITHUB_LOGIN_ENABLED,
       isSAMLLoginEnabled,
       samlTenantID,
       samlProductID,
