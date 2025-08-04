@@ -24,21 +24,21 @@ export const getUsernameForOrgMember = async ({
 };
 
 export const validateAndGetCorrectedUsernameAndEmail = async ({
-  username,
+  // username,
   email,
   organizationId,
   orgAutoAcceptEmail,
   isSignup,
 }: {
-  username: string;
+  // username?: string;
   email: string;
   organizationId?: number;
   orgAutoAcceptEmail?: string;
   isSignup: boolean;
 }) => {
-  if (username.includes("+")) {
-    return { isValid: false, username: undefined, email };
-  }
+  // if (username.includes("+")) {
+  //   return { isValid: false, username: undefined, email };
+  // }
   // There is an existingUser if, within an org context or not, the username matches
   // OR if the email matches AND either the email is verified
   // or both username and password are set
@@ -48,7 +48,7 @@ export const validateAndGetCorrectedUsernameAndEmail = async ({
       OR: [
         // When inviting to org, invited user gets created with username now, so in an org context we
         // can't check for username as it will exist on signup
-        ...(!organizationId ? [{ username }] : [{}]),
+        // ...(!organizationId ? [{ username }] : [{}]),
         {
           AND: [
             { email },
@@ -66,20 +66,24 @@ export const validateAndGetCorrectedUsernameAndEmail = async ({
       email: true,
     },
   });
-  let validatedUsername = username;
-  if (organizationId) {
-    validatedUsername = await getUsernameForOrgMember({
-      email,
-      orgAutoAcceptEmail,
-      isSignup,
-    });
-  }
+  // let validatedUsername = username;
+  // if (organizationId) {
+  //   validatedUsername = await getUsernameForOrgMember({
+  //     email,
+  //     orgAutoAcceptEmail,
+  //     isSignup,
+  //   });
+  // }
 
-  return { isValid: !existingUser, username: validatedUsername, email: existingUser?.email };
+  return {
+    isValid: !existingUser,
+    // username: validatedUsername,
+    email: existingUser?.email,
+  };
 };
 
 export const validateAndGetCorrectedUsernameInTeam = async (
-  username: string,
+  // username: string,
   email: string,
   teamId: number,
   isSignup: boolean
@@ -111,7 +115,7 @@ export const validateAndGetCorrectedUsernameInTeam = async (
       // Organization context -> org-context username check
       const orgId = team?.parentId || teamId;
       return validateAndGetCorrectedUsernameAndEmail({
-        username,
+        // username,
         email,
         organizationId: orgId,
         orgAutoAcceptEmail: organization?.organizationSettings?.orgAutoAcceptEmail || "",
@@ -119,7 +123,11 @@ export const validateAndGetCorrectedUsernameInTeam = async (
       });
     } else {
       // Regular team context -> regular username check
-      return validateAndGetCorrectedUsernameAndEmail({ username, email, isSignup });
+      return validateAndGetCorrectedUsernameAndEmail({
+        // username,
+        email,
+        isSignup,
+      });
     }
   } catch (error) {
     console.error(error);

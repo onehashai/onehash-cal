@@ -1,628 +1,382 @@
-// "use client";
+"use client";
 
-// import dynamic from "next/dynamic";
-// import { useEffect } from "react";
-// import { useFormContext } from "react-hook-form";
-// import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { z } from "zod";
 
-// import { getPremiumPlanPriceValue } from "@calcom/app-store/stripepayment/lib/utils";
-// import { APP_NAME } from "@calcom/lib/constants";
-// import { fetchUsername } from "@calcom/lib/fetchUsername";
-// import { useDebounce } from "@calcom/lib/hooks/useDebounce";
-// import { useLocale } from "@calcom/lib/hooks/useLocale";
-// import { signupSchema as apiSignupSchema } from "@calcom/prisma/zod-utils";
-// import type { inferSSRProps } from "@calcom/types/inferSSRProps";
-// import { TextField, Icon } from "@calcom/ui";
+import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
+import { HOSTED_CAL_FEATURES, WEBAPP_URL, WEBSITE_URL } from "@calcom/lib/constants";
+import { emailRegex } from "@calcom/lib/emailSchema";
+import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
+import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { trpc } from "@calcom/trpc/react";
+import { Alert, Button, EmailField, PasswordField } from "@calcom/ui";
 
-// import type { getServerSideProps } from "@lib/signup/getServerSideProps";
+import type { getServerSideProps } from "@lib/signup/getServerSideProps";
+import type { inferSSRProps } from "@lib/types/inferSSRProps";
 
-// const signupSchema = apiSignupSchema.extend({
-//   apiError: z.string().optional(), // Needed to display API errors doesnt get passed to the API
-//   cfToken: z.string().optional(),
-// });
+import AddToHomescreen from "@components/AddToHomescreen";
+import AuthContainer from "@components/ui/AuthContainer";
 
-// const TurnstileCaptcha = dynamic(() => import("@components/auth/Turnstile"), { ssr: false });
+interface SignupValues {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  // csrfToken: string;
+}
 
-// type FormValues = z.infer<typeof signupSchema>;
+const GoogleIcon = () => (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M21.35 11.1H12v2.8h5.37c-.23 1.25-.93 2.3-1.98 3l3.17 2.46c1.85-1.7 2.91-4.2 2.91-7.26 0-.67-.06-1.32-.17-1.95zM12 22c2.43 0 4.47-.8 5.96-2.17l-3.17-2.46c-.88.6-2 .96-3.3.96-2.55 0-4.7-1.72-5.47-4.04H3.71v2.54C5.2 19.95 8.36 22 12 22zM6.53 13.29c-.2-.6-.31-1.25-.31-1.91s.11-1.31.31-1.91V6.93H3.71A9.98 9.98 0 0 0 2 11.38c0 1.59.38 3.09 1.04 4.45l2.49-2.54zM12 4.98c1.32 0 2.52.46 3.46 1.36l2.6-2.6C16.45 2.39 14.4 1.5 12 1.5 8.36 1.5 5.2 3.55 3.71 6.93l2.82 2.54C7.3 6.7 9.45 4.98 12 4.98z" />
+  </svg>
+);
 
-// export type SignupProps = inferSSRProps<typeof getServerSideProps>;
+const AppleIcon = () => (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+  </svg>
+);
 
-// const FEATURES = [
-//   {
-//     title: "connect_all_calendars",
-//     description: "connect_all_calendars_description",
-//     i18nOptions: {
-//       appName: APP_NAME,
-//     },
-//     icon: "calendar-heart" as const,
-//   },
-//   {
-//     title: "set_availability",
-//     description: "set_availbility_description",
-//     icon: "users" as const,
-//   },
-//   {
-//     title: "share_a_link_or_embed",
-//     description: "share_a_link_or_embed_description",
-//     icon: "link-2" as const,
-//     i18nOptions: {
-//       appName: APP_NAME,
-//     },
-//   },
-// ];
+const MicrosoftIcon = () => (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z" />
+  </svg>
+);
 
-// function UsernameField({
-//   username,
-//   setPremium,
-//   premium,
-//   setUsernameTaken,
-//   orgSlug,
-//   usernameTaken,
-//   disabled,
-//   ...props
-// }: React.ComponentProps<typeof TextField> & {
-//   username: string;
-//   setPremium: (value: boolean) => void;
-//   premium: boolean;
-//   usernameTaken: boolean;
-//   orgSlug?: string;
-//   setUsernameTaken: (value: boolean) => void;
-// }) {
-//   const { t } = useLocale();
-//   const { register, formState } = useFormContext<FormValues>();
-//   const debouncedUsername = useDebounce(username, 600);
+const GitHubIcon = () => (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+  </svg>
+);
 
-//   useEffect(() => {
-//     if (formState.isSubmitting || formState.isSubmitSuccessful) return;
+export type PageProps = inferSSRProps<typeof getServerSideProps>;
+function addOrUpdateQueryParam(url: string, key: string, value: string) {
+  const separator = url.includes("?") ? "&" : "?";
+  const param = `${key}=${encodeURIComponent(value)}`;
+  return `${url}${separator}${param}`;
+}
+export default function Signup(props: PageProps) {
+  const {
+    isGoogleLoginEnabled,
+    isSAMLLoginEnabled,
+    prepopulateFormValues,
+    emailVerificationEnabled,
+    isAppleLoginEnabled,
+    isMicrosoftLoginEnabled,
+    isGitHubLoginEnabled,
+  } = props;
+  const searchParams = useCompatSearchParams();
+  const { t } = useLocale();
+  const router = useRouter();
 
-//     async function checkUsername() {
-//       // If the username can't be changed, there is no point in doing the username availability check
-//       if (disabled) return;
-//       if (!debouncedUsername) {
-//         setPremium(false);
-//         setUsernameTaken(false);
-//         return;
-//       }
-//       fetchUsername(debouncedUsername, orgSlug ?? null).then(({ data }) => {
-//         setPremium(data.premium);
-//         setUsernameTaken(!data.available);
-//       });
-//     }
-//     checkUsername();
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, [debouncedUsername, disabled, orgSlug, formState.isSubmitting, formState.isSubmitSuccessful]);
+  const formSchema = z
+    .object({
+      email: z
+        .string()
+        .min(1, `${t("error_required_field")}`)
+        .regex(emailRegex, `${t("enter_valid_email")}`),
+      password: z
+        .string()
+        .min(8, "Password must be at least 8 characters long")
+        .regex(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+          "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+        ),
+      confirmPassword: z.string().min(1, `${t("error_required_field")}`),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ["confirmPassword"],
+    });
 
-//   return (
-//     <div>
-//       <TextField
-//         disabled={disabled}
-//         {...props}
-//         {...register("username")}
-//         data-testid="signup-usernamefield"
-//         addOnFilled={false}
-//       />
-//       {(!formState.isSubmitting || !formState.isSubmitted) && (
-//         <div className="text-gray text-default flex items-center text-sm">
-//           <div className="text-sm ">
-//             {usernameTaken ? (
-//               <div className="text-error flex items-center">
-//                 <Icon name="info" className="mr-1 inline-block h-4 w-4" />
-//                 <p>{t("already_in_use_error")}</p>
-//               </div>
-//             ) : premium ? (
-//               <div data-testid="premium-username-warning" className="flex items-center">
-//                 <Icon name="star" className="mr-1 inline-block h-4 w-4" />
-//                 <p>
-//                   {t("premium_username", {
-//                     price: getPremiumPlanPriceValue(),
-//                   })}
-//                 </p>
-//               </div>
-//             ) : null}
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
+  const methods = useForm<SignupValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: prepopulateFormValues?.email || "",
+    },
+    mode: "onChange",
+  });
+  const { register, formState, watch } = methods;
 
-// function addOrUpdateQueryParam(url: string, key: string, value: string) {
-//   const separator = url.includes("?") ? "&" : "?";
-//   const param = `${key}=${encodeURIComponent(value)}`;
-//   return `${url}${separator}${param}`;
-// }
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const password = watch("password");
+  const confirmPassword = watch("confirmPassword");
 
-// export default function Signup({
-//   prepopulateFormValues,
-//   token,
-//   orgSlug,
-//   isGoogleLoginEnabled,
-//   isSAMLLoginEnabled,
-//   orgAutoAcceptEmail,
-//   redirectUrl,
-//   emailVerificationEnabled,
-// }: SignupProps) {
-//   const [premiumUsername, setPremiumUsername] = useState(false);
-//   const [usernameTaken, setUsernameTaken] = useState(false);
-//   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-//   const searchParams = useCompatSearchParams();
-//   const telemetry = useTelemetry();
-//   const { t, i18n } = useLocale();
-//   const router = useRouter();
-//   const formMethods = useForm<FormValues>({
-//     resolver: zodResolver(signupSchema),
-//     defaultValues: prepopulateFormValues satisfies FormValues,
-//     mode: "onChange",
-//   });
-//   const {
-//     register,
-//     watch,
-//     formState: { isSubmitting, errors, isSubmitSuccessful },
-//   } = formMethods;
+  const errorMessages: { [key: string]: string } = {
+    [ErrorCode.UserNotFound]: t("no_account_exists"),
+    [ErrorCode.IncorrectEmailPassword]: t("incorrect_email_password"),
+    [ErrorCode.InternalServerError]: `${t("something_went_wrong")} ${t("please_try_again_and_contact_us")}`,
+    [ErrorCode.NewPasswordMatchesOld]: t("new_password_matches_old_password"),
+    [ErrorCode.ThirdPartyIdentityProviderEnabled]: t("account_created_with_identity_provider"),
+  };
 
-//   useEffect(() => {
-//     if (redirectUrl) {
-//       localStorage.setItem("onBoardingRedirect", redirectUrl);
-//     }
-//   }, [redirectUrl]);
+  let callbackUrl = searchParams?.get("callbackUrl") || "";
 
-//   const [COOKIE_CONSENT, setCOOKIE_CONSENT] = useState(false);
+  const cleanCallbackUrl = () => {
+    if (!callbackUrl) return;
+    if (/"\//.test(callbackUrl)) callbackUrl = callbackUrl.substring(1);
+    const safeCallbackUrl = getSafeRedirectUrl(callbackUrl);
+    callbackUrl = safeCallbackUrl || "";
+  };
 
-//   function handleConsentChange(consent: boolean) {
-//     setCOOKIE_CONSENT(!consent);
-//   }
+  useEffect(() => {
+    if (!callbackUrl) return;
+    cleanCallbackUrl();
+  }, [callbackUrl]);
 
-//   const loadingSubmitState = isSubmitSuccessful || isSubmitting;
+  const SignupFooter = (
+    <Link href={`${WEBSITE_URL}/auth/login`} className="text-brand-500 font-medium">
+      {t("already_have_account")}
+    </Link>
+  );
 
-//   const handleErrorsAndStripe = async (resp: Response) => {
-//     if (!resp.ok) {
-//       const err = await resp.json();
-//       if (err.checkoutSessionId) {
-//         const stripe = await getStripe();
-//         if (stripe) {
-//           console.log("Redirecting to stripe checkout");
-//           const { error } = await stripe.redirectToCheckout({
-//             sessionId: err.checkoutSessionId,
-//           });
-//           console.warn(error.message);
-//         }
-//       } else {
-//         throw new Error(err.message);
-//       }
-//     }
-//   };
+  // Password strength indicator
+  const getPasswordStrength = (password: string) => {
+    if (!password) return { strength: 0, label: "", color: "" };
 
-//   const isOrgInviteByLink = orgSlug && !prepopulateFormValues?.username;
-//   const isPlatformUser = redirectUrl?.includes("platform") && redirectUrl?.includes("new");
+    let strength = 0;
+    const checks = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      number: /\d/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
 
-//   const signUp: SubmitHandler<FormValues> = async (_data) => {
-//     const { cfToken, ...data } = _data;
-//     await fetch("/api/auth/signup", {
-//       body: JSON.stringify({
-//         ...data,
-//         language: i18n.language,
-//         token,
-//       }),
-//       headers: {
-//         "Content-Type": "application/json",
-//         "cf-access-token": cfToken ?? "invalid-token",
-//       },
-//       method: "POST",
-//     })
-//       .then(handleErrorsAndStripe)
-//       .then(async () => {
-//         if (process.env.NEXT_PUBLIC_GTM_ID)
-//           pushGTMEvent("create_account", { email: data.email, user: data.username, lang: data.language });
+    strength = Object.values(checks).filter(Boolean).length;
 
-//         telemetry.event(telemetryEventTypes.signup, collectPageParameters());
+    if (strength <= 2) return { strength, label: "Weak", color: "text-red-600" };
+    if (strength <= 3) return { strength, label: "Fair", color: "text-yellow-600" };
+    if (strength <= 4) return { strength, label: "Good", color: "text-blue-600" };
+    return { strength, label: "Strong", color: "text-green-600" };
+  };
 
-//         const verifyOrGettingStarted = emailVerificationEnabled ? "auth/verify-email" : "getting-started";
-//         const gettingStartedWithPlatform = "settings/platform/new";
+  const passwordStrength = getPasswordStrength(password || "");
 
-//         const constructCallBackIfUrlPresent = () => {
-//           if (isOrgInviteByLink) {
-//             return `${WEBAPP_URL}/${searchParams.get("callbackUrl")}`;
-//           }
+  const onSubmit = async (values: SignupValues) => {
+    setErrorMessage(null);
 
-//           return addOrUpdateQueryParam(`${WEBAPP_URL}/${searchParams.get("callbackUrl")}`, "from", "signup");
-//         };
+    try {
+      const { confirmPassword, ...submitValues } = values;
 
-//         const constructCallBackIfUrlNotPresent = () => {
-//           if (!!isPlatformUser) {
-//             return `${WEBAPP_URL}/${gettingStartedWithPlatform}?from=signup`;
-//           }
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...submitValues,
+          language: "en",
+        }),
+      });
 
-//           return `${WEBAPP_URL}/${verifyOrGettingStarted}?from=signup`;
-//         };
+      if (!res.ok) {
+        const data = await res.json();
+        const errorMessage = errorMessages[data.message] || data.message || t("something_went_wrong");
+        setErrorMessage(errorMessage);
+      } else {
+        const verifyOrGettingStarted = emailVerificationEnabled ? "auth/verify-email" : "getting-started";
 
-//         const constructCallBackUrl = () => {
-//           const callbackUrlSearchParams = searchParams?.get("callbackUrl");
+        const constructCallBackIfUrlPresent = () => {
+          // if (isOrgInviteByLink) {
+          //   return `${WEBAPP_URL}/${searchParams.get("callbackUrl")}`;
+          // }
 
-//           return !!callbackUrlSearchParams
-//             ? constructCallBackIfUrlPresent()
-//             : constructCallBackIfUrlNotPresent();
-//         };
+          return addOrUpdateQueryParam(`${WEBAPP_URL}/${searchParams.get("callbackUrl")}`, "from", "signup");
+        };
 
-//         const callBackUrl = constructCallBackUrl();
+        const constructCallBackIfUrlNotPresent = () => {
+          return `${WEBAPP_URL}/${verifyOrGettingStarted}?from=signup`;
+        };
 
-//         await signIn<"credentials">("credentials", {
-//           ...data,
-//           callbackUrl: callBackUrl,
-//         });
-//       })
-//       .catch((err) => {
-//         formMethods.setError("apiError", { message: err.message });
-//       });
-//   };
+        const constructCallBackUrl = () => {
+          const callbackUrlSearchParams = searchParams?.get("callbackUrl");
 
-//   return (
-//     <>
-//       {IS_CALCOM && (!IS_EUROPE || COOKIE_CONSENT) ? (
-//         <>
-//           {process.env.NEXT_PUBLIC_GTM_ID && (
-//             <>
-//               <Script
-//                 id="gtm-init-script"
-//                 dangerouslySetInnerHTML={{
-//                   __html: `(function (w, d, s, l, i) {
-//                         w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-//                         var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
-//                         j.async = true; j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
-//                     })(window, document, 'script', 'dataLayer', '${process.env.NEXT_PUBLIC_GTM_ID}');`,
-//                 }}
-//               />
-//               <noscript
-//                 dangerouslySetInnerHTML={{
-//                   __html: `<iframe src="https://www.googletagmanager.com/ns.html?id=${process.env.NEXT_PUBLIC_GTM_ID}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`,
-//                 }}
-//               />
-//             </>
-//           )}
-//           <DubAnalytics
-//             cookieOptions={{
-//               domain: isENVDev ? undefined : `.${new URL(WEBSITE_URL).hostname}`,
-//             }}
-//           />
-//         </>
-//       ) : null}
-//       <div
-//         className={classNames(
-//           "light bg-muted 2xl:bg-default flex min-h-screen w-full flex-col items-center justify-center [--cal-brand:#111827] dark:[--cal-brand:#FFFFFF]",
-//           "[--cal-brand-subtle:#9CA3AF]",
-//           "[--cal-brand-text:#FFFFFF] dark:[--cal-brand-text:#000000]",
-//           "[--cal-brand-emphasis:#101010] dark:[--cal-brand-emphasis:#e1e1e1] "
-//         )}>
-//         <div className="bg-muted 2xl:border-subtle grid w-full max-w-[1440px] grid-cols-1 grid-rows-1 overflow-hidden lg:grid-cols-2 2xl:rounded-[20px] 2xl:border 2xl:py-6">
-//           <HeadSeo title={t("sign_up")} description={t("sign_up")} />
-//           {/* Left side */}
-//           <div className="ml-auto mr-auto mt-0 flex w-full max-w-xl flex-col px-4 pt-6 sm:px-16 md:px-20 lg:mt-12 2xl:px-28">
-//             <div className="flex flex-col gap-2">
-//               <h1 className="font-cal text-[28px] leading-none ">
-//                 {IS_CALCOM ? t("create_your_calcom_account") : t("create_your_account")}
-//               </h1>
-//               {IS_CALCOM ? (
-//                 <p className="text-subtle text-base font-medium leading-5">{t("cal_signup_description")}</p>
-//               ) : (
-//                 <p className="text-subtle text-base font-medium leading-5">
-//                   {t("calcom_explained", {
-//                     appName: APP_NAME,
-//                   })}
-//                 </p>
-//               )}
-//             </div>
-//             {/* Form Container */}
-//             <div className="mt-12">
-//               <Form
-//                 className="flex flex-col gap-4"
-//                 form={formMethods}
-//                 handleSubmit={async (values) => {
-//                   let updatedValues = values;
-//                   if (!formMethods.getValues().username && isOrgInviteByLink && orgAutoAcceptEmail) {
-//                     updatedValues = {
-//                       ...values,
-//                       username: getOrgUsernameFromEmail(values.email, orgAutoAcceptEmail),
-//                     };
-//                   }
-//                   await signUp(updatedValues);
-//                 }}>
-//                 {/* Username */}
-//                 {!isOrgInviteByLink ? (
-//                   <UsernameField
-//                     orgSlug={orgSlug}
-//                     label={t("username")}
-//                     username={watch("username") || ""}
-//                     premium={premiumUsername}
-//                     usernameTaken={usernameTaken}
-//                     disabled={!!orgSlug}
-//                     setUsernameTaken={(value) => setUsernameTaken(value)}
-//                     data-testid="signup-usernamefield"
-//                     setPremium={(value) => setPremiumUsername(value)}
-//                     addOnLeading={
-//                       orgSlug
-//                         ? `${getOrgFullOrigin(orgSlug, { protocol: true }).replace(URL_PROTOCOL_REGEX, "")}/`
-//                         : `${process.env.NEXT_PUBLIC_WEBSITE_URL.replace(URL_PROTOCOL_REGEX, "")}/`
-//                     }
-//                   />
-//                 ) : null}
-//                 {/* Email */}
-//                 <TextField
-//                   {...register("email")}
-//                   label={t("email")}
-//                   type="email"
-//                   disabled={prepopulateFormValues?.email}
-//                   data-testid="signup-emailfield"
-//                 />
+          return !!callbackUrlSearchParams
+            ? constructCallBackIfUrlPresent()
+            : constructCallBackIfUrlNotPresent();
+        };
 
-//                 {/* Password */}
-//                 <PasswordField
-//                   data-testid="signup-passwordfield"
-//                   label={t("password")}
-//                   {...register("password")}
-//                   hintErrors={["caplow", "min", "num"]}
-//                 />
-//                 {/* Cloudflare Turnstile Captcha */}
-//                 {CLOUDFLARE_SITE_ID ? (
-//                   <TurnstileCaptcha
-//                     appearance="interaction-only"
-//                     onVerify={(token) => {
-//                       formMethods.setValue("cfToken", token);
-//                     }}
-//                   />
-//                 ) : null}
+        const callbackUrl = constructCallBackUrl();
 
-//                 <CheckboxField
-//                   onChange={() => handleConsentChange(COOKIE_CONSENT)}
-//                   description={t("cookie_consent_checkbox")}
-//                 />
-//                 {errors.apiError && (
-//                   <Alert
-//                     className="mb-3"
-//                     severity="error"
-//                     message={errors.apiError?.message}
-//                     data-testid="signup-error-message"
-//                   />
-//                 )}
-//                 <Button
-//                   type="submit"
-//                   className="my-2 w-full justify-center"
-//                   loading={loadingSubmitState}
-//                   disabled={
-//                     !!formMethods.formState.errors.username ||
-//                     !!formMethods.formState.errors.email ||
-//                     !formMethods.getValues("email") ||
-//                     !formMethods.getValues("password") ||
-//                     (CLOUDFLARE_SITE_ID &&
-//                       !process.env.NEXT_PUBLIC_IS_E2E &&
-//                       !formMethods.getValues("cfToken")) ||
-//                     isSubmitting ||
-//                     usernameTaken
-//                   }>
-//                   {premiumUsername && !usernameTaken
-//                     ? `Create Account for ${getPremiumPlanPriceValue()}`
-//                     : t("create_account")}
-//                 </Button>
-//               </Form>
-//               {!isGoogleLoginEnabled && !isSAMLLoginEnabled ? null : (
-//                 <div className="mt-6">
-//                   <div className="relative flex items-center">
-//                     <div className="border-subtle flex-grow border-t" />
-//                     <span className="text-subtle mx-2 flex-shrink text-sm font-normal leading-none">
-//                       {t("or_continue_with")}
-//                     </span>
-//                     <div className="border-subtle flex-grow border-t" />
-//                   </div>
-//                 </div>
-//               )}
-//               <div className="mt-6 flex flex-col gap-2 md:flex-row">
-//                 {isGoogleLoginEnabled ? (
-//                   <Button
-//                     color="secondary"
-//                     disabled={!!formMethods.formState.errors.username || premiumUsername}
-//                     loading={isGoogleLoading}
-//                     CustomStartIcon={
-//                       <img
-//                         className={classNames(
-//                           "text-subtle  mr-2 h-4 w-4 dark:invert",
-//                           premiumUsername && "opacity-50"
-//                         )}
-//                         src="/google-icon.svg"
-//                         alt=""
-//                       />
-//                     }
-//                     className={classNames(
-//                       "w-full justify-center rounded-md text-center",
-//                       formMethods.formState.errors.username ? "opacity-50" : ""
-//                     )}
-//                     onClick={async () => {
-//                       setIsGoogleLoading(true);
-//                       const username = formMethods.getValues("username");
-//                       const baseUrl = process.env.NEXT_PUBLIC_WEBAPP_URL;
-//                       const GOOGLE_AUTH_URL = `${baseUrl}/auth/sso/google`;
-//                       const searchQueryParams = new URLSearchParams();
-//                       if (username) {
-//                         // If username is present we save it in query params to check for premium
-//                         searchQueryParams.set("username", username);
-//                         localStorage.setItem("username", username);
-//                       }
-//                       if (token) {
-//                         searchQueryParams.set("email", prepopulateFormValues?.email);
-//                       }
-//                       const url = searchQueryParams.toString()
-//                         ? `${GOOGLE_AUTH_URL}?${searchQueryParams.toString()}`
-//                         : GOOGLE_AUTH_URL;
+        // await signIn<"credentials">("credentials", {
+        //   ...submitValues,
+        //   callbackUrl,
+        // });
+        // Auto sign in after successful signup
+        await signIn<"credentials">("credentials", {
+          email: values.email,
+          password: values.password,
+          callbackUrl,
+        });
+      }
+    } catch (error: any) {
+      setErrorMessage(error.message || t("something_went_wrong"));
+    }
+  };
 
-//                       router.push(url);
-//                     }}>
-//                     Google
-//                   </Button>
-//                 ) : null}
-//                 {isSAMLLoginEnabled ? (
-//                   <Button
-//                     color="secondary"
-//                     disabled={
-//                       !!formMethods.formState.errors.username ||
-//                       !!formMethods.formState.errors.email ||
-//                       premiumUsername ||
-//                       isSubmitting ||
-//                       isGoogleLoading
-//                     }
-//                     className={classNames(
-//                       "w-full justify-center rounded-md text-center",
-//                       formMethods.formState.errors.username && formMethods.formState.errors.email
-//                         ? "opacity-50"
-//                         : ""
-//                     )}
-//                     onClick={() => {
-//                       if (!formMethods.getValues("username")) {
-//                         formMethods.trigger("username");
-//                       }
-//                       if (!formMethods.getValues("email")) {
-//                         formMethods.trigger("email");
+  const handleSSOSignup = async (provider: string) => {
+    await signIn(provider, {
+      callbackUrl,
+    });
+  };
 
-//                         return;
-//                       }
-//                       const username = formMethods.getValues("username");
-//                       if (!username) {
-//                         showToast("error", t("username_required"));
-//                         return;
-//                       }
-//                       localStorage.setItem("username", username);
-//                       const sp = new URLSearchParams();
-//                       // @NOTE: don't remove username query param as it's required right now for stripe payment page
-//                       sp.set("username", username);
-//                       sp.set("email", formMethods.getValues("email"));
-//                       router.push(
-//                         `${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/sso/saml` + `?${sp.toString()}`
-//                       );
-//                     }}>
-//                     <Icon name="shield-check" className="mr-2 h-5 w-5" />
-//                     {t("saml_sso")}
-//                   </Button>
-//                 ) : null}
-//               </div>
-//             </div>
-//             {/* Already have an account & T&C */}
-//             <div className="mt-10 flex h-full flex-col justify-end pb-6 text-xs">
-//               <div className="flex flex-col text-sm">
-//                 <div className="flex gap-1">
-//                   <p className="text-subtle">{t("already_have_account")}</p>
-//                   <Link href="/auth/login" className="text-emphasis hover:underline">
-//                     {t("sign_in")}
-//                   </Link>
-//                 </div>
-//                 <div className="text-subtle ">
-//                   <Trans
-//                     i18nKey="signing_up_terms"
-//                     components={[
-//                       <Link
-//                         className="text-emphasis hover:underline"
-//                         key="terms"
-//                         href={`${WEBSITE_TERMS_URL}`}
-//                         target="_blank">
-//                         Terms
-//                       </Link>,
-//                       <Link
-//                         className="text-emphasis hover:underline"
-//                         key="privacy"
-//                         href={`${WEBSITE_PRIVACY_POLICY_URL}`}
-//                         target="_blank">
-//                         Privacy Policy.
-//                       </Link>,
-//                     ]}
-//                   />
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//           <div className="border-subtle lg:bg-subtle mx-auto mt-24 w-full max-w-2xl flex-col justify-between rounded-l-2xl pl-4 lg:mt-0 lg:flex lg:max-w-full lg:border lg:py-12 lg:pl-12 dark:bg-none">
-//             {IS_CALCOM && (
-//               <>
-//                 <div className="-mt-4 mb-6 mr-12 grid w-full grid-cols-3 gap-5 pr-4 sm:gap-3 lg:grid-cols-4">
-//                   <div>
-//                     <img
-//                       src="/product-cards/product-of-the-day.svg"
-//                       className="h-[34px] w-full dark:invert"
-//                       alt="Cal.com was Product of the Day at ProductHunt"
-//                     />
-//                   </div>
-//                   <div>
-//                     <img
-//                       src="/product-cards/product-of-the-week.svg"
-//                       className="h-[34px] w-full dark:invert"
-//                       alt="Cal.com was Product of the Week at ProductHunt"
-//                     />
-//                   </div>
-//                   <div>
-//                     <img
-//                       src="/product-cards/product-of-the-month.svg"
-//                       className="h-[34px] w-full dark:invert"
-//                       alt="Cal.com was Product of the Month at ProductHunt"
-//                     />
-//                   </div>
-//                 </div>
-//                 <div className="mb-6 mr-12 grid w-full grid-cols-3 gap-5 pr-4 sm:gap-3 lg:grid-cols-4">
-//                   <div>
-//                     <img
-//                       src="/product-cards/producthunt.svg"
-//                       className="h-[54px] w-full"
-//                       alt="ProductHunt Rating of 5 Stars"
-//                     />
-//                   </div>
-//                   <div>
-//                     <img
-//                       src="/product-cards/google-reviews.svg"
-//                       className="h-[54px] w-full"
-//                       alt="Google Reviews Rating of 4.7 Stars"
-//                     />
-//                   </div>
-//                   <div>
-//                     <img
-//                       src="/product-cards/g2.svg"
-//                       className="h-[54px] w-full"
-//                       alt="G2 Rating of 4.7 Stars"
-//                     />
-//                   </div>
-//                 </div>
-//               </>
-//             )}
-//             <div className="border-default hidden rounded-bl-2xl rounded-br-none rounded-tl-2xl border border-r-0 border-dashed bg-black/[3%] lg:block lg:py-[6px] lg:pl-[6px] dark:bg-white/5">
-//               <img className="block dark:hidden" src="/mock-event-type-list.svg" alt="Cal.com Booking Page" />
-//               <img
-//                 className="hidden dark:block"
-//                 src="/mock-event-type-list-dark.svg"
-//                 alt="Cal.com Booking Page"
-//               />
-//             </div>
-//             <div className="mr-12 mt-8 hidden h-full w-full grid-cols-3 gap-4 overflow-hidden lg:grid">
-//               {FEATURES.map((feature) => (
-//                 <>
-//                   <div className="mb-8 flex max-w-52 flex-col leading-none sm:mb-0">
-//                     <div className="text-emphasis items-center">
-//                       <Icon name={feature.icon} className="mb-1 h-4 w-4" />
-//                       <span className="text-sm font-medium">{t(feature.title)}</span>
-//                     </div>
-//                     <div className="text-subtle text-sm">
-//                       <p>
-//                         {t(
-//                           feature.description,
-//                           feature.i18nOptions && {
-//                             ...feature.i18nOptions,
-//                           }
-//                         )}
-//                       </p>
-//                     </div>
-//                   </div>
-//                 </>
-//               ))}
-//             </div>
-//           </div>
-//         </div>
-//         <Toaster position="bottom-right" />
-//       </div>
-//     </>
-//   );
-// }
+  const { data, isPending, error } = trpc.viewer.public.ssoConnections.useQuery();
 
-export default function Signup() {
-  return <></>;
+  useEffect(() => {
+    if (error) {
+      setErrorMessage(error.message);
+    }
+  }, [error]);
+
+  const displaySSOLogin = HOSTED_CAL_FEATURES
+    ? true
+    : isSAMLLoginEnabled && !isPending && data?.connectionExists;
+
+  const ssoProviders = [
+    { id: "google", name: "Google", icon: GoogleIcon, enabled: isGoogleLoginEnabled },
+    { id: "apple", name: "Apple", icon: AppleIcon, enabled: isAppleLoginEnabled },
+    { id: "azure-ad-b2c", name: "Microsoft", icon: MicrosoftIcon, enabled: isMicrosoftLoginEnabled },
+    { id: "github", name: "GitHub", icon: GitHubIcon, enabled: isGitHubLoginEnabled },
+  ].filter((provider) => provider.enabled);
+
+  return (
+    <div className="dark:bg-brand dark:text-brand-contrast text-emphasis min-h-screen [--cal-brand-emphasis:#101010] [--cal-brand-subtle:#9CA3AF] [--cal-brand-text:white] [--cal-brand:#111827] dark:[--cal-brand-emphasis:#e1e1e1] dark:[--cal-brand-text:black] dark:[--cal-brand:white]">
+      <AuthContainer showLogo heading={t("create_your_account")} footerText={SignupFooter}>
+        <FormProvider {...methods}>
+          <form onSubmit={methods.handleSubmit(onSubmit)} noValidate data-testid="signup-form">
+            {/* <div>
+              <input defaultValue={csrfToken || undefined} type="hidden" hidden {...register("csrfToken")} />
+            </div> */}
+            <div className="space-y-6">
+              <EmailField
+                id="email"
+                label={t("email_address")}
+                defaultValue={prepopulateFormValues?.email || (searchParams?.get("email") as string)}
+                placeholder="john.doe@example.com"
+                required
+                autoComplete="email"
+                {...register("email")}
+              />
+
+              <div>
+                <PasswordField
+                  id="password"
+                  label={t("password")}
+                  autoComplete="new-password"
+                  required
+                  className="mb-0"
+                  {...register("password")}
+                />
+                {password && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Password strength:</span>
+                      <span className={`text-sm font-medium ${passwordStrength.color}`}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div className="flex space-x-1">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-2 w-full rounded ${
+                            level <= passwordStrength.strength
+                              ? passwordStrength.strength <= 2
+                                ? "bg-red-500"
+                                : passwordStrength.strength <= 3
+                                ? "bg-yellow-500"
+                                : passwordStrength.strength <= 4
+                                ? "bg-blue-500"
+                                : "bg-green-500"
+                              : "bg-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="space-y-1 text-xs text-gray-600">
+                      <p className={password.length >= 8 ? "text-green-600" : ""}>✓ At least 8 characters</p>
+                      <p className={/[a-z]/.test(password) ? "text-green-600" : ""}>✓ One lowercase letter</p>
+                      <p className={/[A-Z]/.test(password) ? "text-green-600" : ""}>✓ One uppercase letter</p>
+                      <p className={/\d/.test(password) ? "text-green-600" : ""}>✓ One number</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <PasswordField
+                  id="confirmPassword"
+                  label="Confirm Password"
+                  autoComplete="new-password"
+                  required
+                  className="mb-0"
+                  {...register("confirmPassword")}
+                />
+                {confirmPassword && password && (
+                  <div className="mt-1">
+                    {password === confirmPassword && (
+                      <p className="flex items-center text-sm text-green-600">
+                        <span className="mr-1">✓</span>
+                        Passwords match
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {errorMessage && <Alert severity="error" title={errorMessage} />}
+
+              <Button
+                type="submit"
+                color="secondary"
+                disabled={formState.isSubmitting || !formState.isValid}
+                className="w-full justify-center">
+                <span>{t("create_account")}</span>
+              </Button>
+
+              {/* SSO Signup Options */}
+              {ssoProviders.length > 0 && (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="border-subtle w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="text-subtle bg-default px-2">
+                        {t("or_continue_with") || "Or continue with"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-3">
+                    {ssoProviders.map((provider) => {
+                      const IconComponent = provider.icon;
+                      return (
+                        <button
+                          key={provider.id}
+                          type="button"
+                          onClick={() => handleSSOSignup(provider.id)}
+                          disabled={formState.isSubmitting}
+                          className="relative inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          title={`Continue with ${provider.name}`}>
+                          <IconComponent />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </form>
+        </FormProvider>
+      </AuthContainer>
+      <AddToHomescreen />
+    </div>
+  );
 }
