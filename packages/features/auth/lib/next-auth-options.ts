@@ -293,6 +293,7 @@ const providers: Provider[] = [
         GitHubProvider({
           clientId: process.env.GITHUB_CLIENT_ID ?? "789ou2jq1ptuc9",
           clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "WPL_AP1.Rpa3HrC7j0Cj6LxH.tczxXg==",
+          allowDangerousEmailAccountLinking: true,
         }),
       ]
     : []),
@@ -301,6 +302,7 @@ const providers: Provider[] = [
         AppleProvider({
           clientId: process.env.AUTH_APPLE_ID!,
           clientSecret: process.env.AUTH_APPLE_SECRET!,
+          allowDangerousEmailAccountLinking: true,
         }),
       ]
     : []),
@@ -312,6 +314,7 @@ const providers: Provider[] = [
           tenantId: process.env.AZURE_AD_TENANT_ID!, // Required for Microsoft
           authorization: { params: { scope: "offline_access openid" } },
           primaryUserFlow: process.env.AZURE_AD_B2C_PRIMARY_USER_FLOW,
+          allowDangerousEmailAccountLinking: true,
         }),
       ]
     : []),
