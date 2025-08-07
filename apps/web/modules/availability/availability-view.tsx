@@ -241,8 +241,8 @@ export default function AvailabilityPage() {
         hideHeadingOnMobile
         withoutMain={false}
         CTA={
-          isUserWhiteListed ? (
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            {isUserWhiteListed && (
               <ToggleGroup
                 className="hidden md:block"
                 defaultValue={searchParams?.get("type") ?? "mine"}
@@ -252,9 +252,9 @@ export default function AvailabilityPage() {
                 }}
                 options={toggleGroupOptions}
               />
-              <NewScheduleButton />
-            </div>
-          ) : null
+            )}
+            <NewScheduleButton />
+          </div>
         }>
         {searchParams?.get("type") === "team" && canViewTeamAvailability ? (
           <AvailabilitySliderTable userTimeFormat={me?.data?.timeFormat ?? null} />
