@@ -16,6 +16,7 @@ export const AttendeeScheduledEmail = (
       t={props.attendee.language.translate}
       timeFormat={props.attendee?.timeFormat}
       disableCancelAndRescheduleMeeting={props.disableCancelAndRescheduleMeeting}
+      isOrganizer={false}
       {...props}
     />
   );
