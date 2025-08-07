@@ -1,12 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { checkPremiumUsername } from "@calcom/ee/common/lib/checkPremiumUsername";
-import { hashPassword } from "@calcom/features/auth/lib/hashPassword";
+import { hashPasswordWithSalt } from "@calcom/features/auth/lib/hashPassword";
 import { sendEmailVerification } from "@calcom/features/auth/lib/verifyEmail";
 import { createOrUpdateMemberships } from "@calcom/features/auth/signup/utils/createOrUpdateMemberships";
-import { IS_PREMIUM_USERNAME_ENABLED } from "@calcom/lib/constants";
+import { getUserNameFromField } from "@calcom/lib/getName";
 import logger from "@calcom/lib/logger";
-import { isUsernameReservedDueToMigration } from "@calcom/lib/server/username";
+import { randomString } from "@calcom/lib/random";
 import slugify from "@calcom/lib/slugify";
 import { validateAndGetCorrectedUsernameAndEmail } from "@calcom/lib/validateUsername";
 import prisma from "@calcom/prisma";
@@ -21,47 +20,66 @@ import {
   validateAndGetCorrectedUsernameForTeam,
 } from "../utils/token";
 
+async function checkIfUserNameTaken(user: { name: string }) {
+  const username = getUserNameFromField(user.name);
+  const existingUserWithUsername = await prisma.user.findFirst({
+    where: {
+      username,
+      organizationId: null,
+    },
+  });
+  return { existingUserWithUsername, username };
+}
+
+const usernameSlugRandom = (username: string) => `${slugify(username)}-${randomString(6).toLowerCase()}`;
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const data = req.body;
   const { email, password, language, token } = signupSchema.parse(data);
 
-  const username = slugify(data.username);
+  // const username = slugify(data.username);
   const userEmail = email.toLowerCase();
 
-  if (!username) {
-    res.status(422).json({ message: "Invalid username" });
-    return;
-  }
+  // if (!username) {
+  //   res.status(422).json({ message: "Invalid username" });
+  //   return;
+  // }
 
   let foundToken: { id: number; teamId: number | null; expires: Date } | null = null;
-  let correctedUsername = username;
+  // let correctedUsername = username;
   if (token) {
     foundToken = await findTokenByToken({ token });
     throwIfTokenExpired(foundToken?.expires);
-    correctedUsername = await validateAndGetCorrectedUsernameForTeam({
-      username,
+    // correctedUsername =
+    await validateAndGetCorrectedUsernameForTeam({
+      // username,
       email: userEmail,
       teamId: foundToken?.teamId,
       isSignup: true,
     });
   } else {
     const userValidation = await validateAndGetCorrectedUsernameAndEmail({
-      username,
+      // username,
       email: userEmail,
       isSignup: true,
     });
     if (!userValidation.isValid) {
       logger.error("User validation failed", { userValidation });
-      return res.status(409).json({ message: "Username or email is already taken" });
+      return res.status(409).json({ message: "Email is already taken" });
     }
-    if (!userValidation.username) {
-      return res.status(422).json({ message: "Invalid username" });
-    }
-    correctedUsername = userValidation.username;
+    // if (!userValidation.username) {
+    //   return res.status(422).json({ message: "Invalid username" });
+    // }
+    // correctedUsername = userValidation.username;
   }
 
-  const hashedPassword = await hashPassword(password);
+  const { hash, salt } = hashPasswordWithSalt(password);
 
+  const nameFromEmail = getUserNameFromField(userEmail);
+  //check if user with given username already exists
+  const { existingUserWithUsername, username } = await checkIfUserNameTaken({
+    name: nameFromEmail,
+  });
   if (foundToken && foundToken?.teamId) {
     const team = await prisma.team.findUnique({
       where: {
@@ -80,34 +98,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (team) {
-      const isInviteForATeamInOrganization = !!team.parent;
-      const isCheckingUsernameInGlobalNamespace = !team.isOrganization && !isInviteForATeamInOrganization;
+      // const isInviteForATeamInOrganization = !!team.parent;
+      // const isCheckingUsernameInGlobalNamespace = !team.isOrganization && !isInviteForATeamInOrganization;
 
-      if (isCheckingUsernameInGlobalNamespace) {
-        const isUsernameAvailable = !(await isUsernameReservedDueToMigration(correctedUsername));
-        if (!isUsernameAvailable) {
-          res.status(409).json({ message: "A user exists with that username" });
-          return;
-        }
-      }
+      // if (isCheckingUsernameInGlobalNamespace) {
+      //   const isUsernameAvailable = !(await isUsernameReservedDueToMigration(correctedUsername));
+      //   if (!isUsernameAvailable) {
+      //     res.status(409).json({ message: "A user exists with that username" });
+      //     return;
+      //   }
+      // }
 
       const user = await prisma.user.upsert({
         where: { email: userEmail },
         update: {
-          username: correctedUsername,
+          username: existingUserWithUsername ? usernameSlugRandom(nameFromEmail) : username,
+          name: nameFromEmail,
           password: {
             upsert: {
-              create: { hash: hashedPassword },
-              update: { hash: hashedPassword },
+              create: { hash, salt },
+              update: { hash, salt },
             },
           },
           emailVerified: new Date(Date.now()),
           identityProvider: IdentityProvider.CAL,
         },
         create: {
-          username: correctedUsername,
+          username: existingUserWithUsername ? usernameSlugRandom(nameFromEmail) : username,
           email: userEmail,
-          password: { create: { hash: hashedPassword } },
+          name: nameFromEmail,
+          password: { create: { hash, salt } },
           identityProvider: IdentityProvider.CAL,
         },
       });
@@ -133,37 +153,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
   } else {
-    const isUsernameAvailable = !(await isUsernameReservedDueToMigration(correctedUsername));
-    if (!isUsernameAvailable) {
-      res.status(409).json({ message: "A user exists with that username" });
-      return;
-    }
-    if (IS_PREMIUM_USERNAME_ENABLED) {
-      const checkUsername = await checkPremiumUsername(correctedUsername);
-      if (checkUsername.premium) {
-        res.status(422).json({
-          message: "Sign up from https://cal.id/signup to claim your premium username",
-        });
-        return;
-      }
-    }
+    // const isUsernameAvailable = !(await isUsernameReservedDueToMigration(correctedUsername));
+    // if (!isUsernameAvailable) {
+    //   res.status(409).json({ message: "A user exists with that username" });
+    //   return;
+    // }
+    // if (IS_PREMIUM_USERNAME_ENABLED) {
+    //   const checkUsername = await checkPremiumUsername(correctedUsername);
+    //   if (checkUsername.premium) {
+    //     res.status(422).json({
+    //       message: "Sign up from https://cal.id/signup to claim your premium username",
+    //     });
+    //     return;
+    //   }
+    // }
     await prisma.user.upsert({
       where: { email: userEmail },
       update: {
-        username: correctedUsername,
+        username: existingUserWithUsername ? usernameSlugRandom(nameFromEmail) : username,
         password: {
           upsert: {
-            create: { hash: hashedPassword },
-            update: { hash: hashedPassword },
+            create: { hash, salt },
+            update: { hash, salt },
           },
         },
+        name: nameFromEmail,
         emailVerified: new Date(Date.now()),
         identityProvider: IdentityProvider.CAL,
       },
       create: {
-        username: correctedUsername,
+        username: existingUserWithUsername ? usernameSlugRandom(nameFromEmail) : username,
         email: userEmail,
-        password: { create: { hash: hashedPassword } },
+        name: nameFromEmail,
+        password: { create: { hash, salt } },
         identityProvider: IdentityProvider.CAL,
       },
     });
@@ -174,7 +196,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     await sendEmailVerification({
       email: userEmail,
-      username: correctedUsername,
+      // username: correctedUsername,
       language,
     });
   }

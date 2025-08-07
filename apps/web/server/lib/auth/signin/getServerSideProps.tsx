@@ -6,6 +6,9 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { req } = context;
 
+  return {
+    redirect: { destination: "/auth/login" },
+  };
   const session = await getServerSession({ req });
   const csrfToken = await getCsrfToken(context);
   const providers = await getProviders();

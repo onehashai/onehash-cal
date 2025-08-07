@@ -6,8 +6,11 @@ import type { AuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { encode } from "next-auth/jwt";
 import type { Provider } from "next-auth/providers";
+import AppleProvider from "next-auth/providers/apple";
+import AzureADB2CProvider from "next-auth/providers/azure-ad-b2c";
 import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
+import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import KeyCloakProvider from "next-auth/providers/keycloak";
 
@@ -19,7 +22,14 @@ import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/Imperso
 import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { clientSecretVerifier, hostedCal, isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-import { GOOGLE_CALENDAR_SCOPES, GOOGLE_OAUTH_SCOPES, HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
+import {
+  GOOGLE_CALENDAR_SCOPES,
+  GOOGLE_OAUTH_SCOPES,
+  HOSTED_CAL_FEATURES,
+  IS_APPLE_LOGIN_ENABLED,
+  IS_GITHUB_LOGIN_ENABLED,
+  IS_MICROSOFT_LOGIN_ENABLED,
+} from "@calcom/lib/constants";
 import { ENABLE_PROFILE_SWITCHER, IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
 import { defaultCookies } from "@calcom/lib/default-cookies";
@@ -40,7 +50,7 @@ import { KEYCLOAK_COOKIE_DOMAIN } from "./../../../lib/constants";
 import { ErrorCode } from "./ErrorCode";
 import { isPasswordValid } from "./isPasswordValid";
 import CalComAdapter from "./next-auth-custom-adapter";
-import { verifyPassword } from "./verifyPassword";
+import { verifyKeycloakPassword } from "./verifyPassword";
 
 const log = logger.getSubLogger({ prefix: ["next-auth-options"] });
 const GOOGLE_API_CREDENTIALS = process.env.GOOGLE_API_CREDENTIALS || "{}";
@@ -153,7 +163,14 @@ const providers: Provider[] = [
         if (!user.password?.hash) {
           throw new Error(ErrorCode.IncorrectEmailPassword);
         }
-        const isCorrectPassword = await verifyPassword(credentials.password, user.password.hash);
+        //Switched to keycloak implementation
+        // const isCorrectPassword = await verifyPassword(credentials.password, user.password.hash);
+        const isCorrectPassword = verifyKeycloakPassword({
+          inputPassword: credentials.password,
+          storedHashBase64: user.password.hash,
+          saltBase64: user.password.salt,
+          iterations: 27500,
+        });
         if (!isCorrectPassword) {
           throw new Error(ErrorCode.IncorrectEmailPassword);
         }
@@ -253,24 +270,72 @@ const providers: Provider[] = [
     },
   }),
   ImpersonationProvider,
+
+  //oauth providers
+  ...(IS_GOOGLE_LOGIN_ENABLED
+    ? [
+        GoogleProvider({
+          clientId: GOOGLE_CLIENT_ID,
+          clientSecret: GOOGLE_CLIENT_SECRET,
+          allowDangerousEmailAccountLinking: true,
+          authorization: {
+            params: {
+              scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
+              access_type: "offline",
+              prompt: "consent",
+            },
+          },
+        }),
+      ]
+    : []),
+  ...(IS_GITHUB_LOGIN_ENABLED
+    ? [
+        GitHubProvider({
+          clientId: process.env.GITHUB_CLIENT_ID ?? "789ou2jq1ptuc9",
+          clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "WPL_AP1.Rpa3HrC7j0Cj6LxH.tczxXg==",
+          allowDangerousEmailAccountLinking: true,
+        }),
+      ]
+    : []),
+  ...(IS_APPLE_LOGIN_ENABLED
+    ? [
+        AppleProvider({
+          clientId: process.env.AUTH_APPLE_ID!,
+          clientSecret: process.env.AUTH_APPLE_SECRET!,
+          allowDangerousEmailAccountLinking: true,
+        }),
+      ]
+    : []),
+  ...(IS_MICROSOFT_LOGIN_ENABLED
+    ? [
+        AzureADB2CProvider({
+          clientId: process.env.AZURE_AD_CLIENT_ID!,
+          clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+          tenantId: process.env.AZURE_AD_TENANT_ID!, // Required for Microsoft
+          authorization: { params: { scope: "offline_access openid" } },
+          primaryUserFlow: process.env.AZURE_AD_B2C_PRIMARY_USER_FLOW,
+          allowDangerousEmailAccountLinking: true,
+        }),
+      ]
+    : []),
 ];
 
-if (IS_GOOGLE_LOGIN_ENABLED) {
-  providers.push(
-    GoogleProvider({
-      clientId: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-      authorization: {
-        params: {
-          scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
-          access_type: "offline",
-          prompt: "consent",
-        },
-      },
-    })
-  );
-}
+// if (IS_GOOGLE_LOGIN_ENABLED) {
+//   providers.push(
+// GoogleProvider({
+//   clientId: GOOGLE_CLIENT_ID,
+//   clientSecret: GOOGLE_CLIENT_SECRET,
+//   allowDangerousEmailAccountLinking: true,
+//   authorization: {
+//     params: {
+//       scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
+//       access_type: "offline",
+//       prompt: "consent",
+//     },
+//   },
+// })
+//   );
+// }
 
 if (IS_KEYCLOAK_LOGIN_ENABLED) {
   providers.push(
