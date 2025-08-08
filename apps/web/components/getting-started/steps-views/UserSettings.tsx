@@ -131,7 +131,11 @@ const UserSettings = (props: IUserSettingsProps) => {
   );
 
   const onSubmit = handleSubmit((data) => {
-    if (isPhoneFieldMandatory && data.metadata.phoneNumber && !numberVerified) {
+    if (
+      isPhoneFieldMandatory &&
+      data.metadata.phoneNumber &&
+      (PHONE_NUMBER_VERIFICATION_ENABLED ? !numberVerified : false)
+    ) {
       showToast(t("phone_verification_required"), "error");
       return;
     }
