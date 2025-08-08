@@ -24,6 +24,22 @@ type GetByViewerOptions = {
   input: TEventTypeInputSchema;
 };
 
+type EventTypeGroup = {
+  teamId?: number | null;
+  parentId?: number | null;
+  bookerUrl: string;
+  membershipRole?: MembershipRole | null;
+  profile: {
+    slug: (typeof profile)["username"] | null;
+    name: (typeof profile)["name"];
+    image: string;
+    eventTypesLockedByOrg?: boolean;
+  };
+  metadata: {
+    membershipCount: number;
+    readOnly: boolean;
+  };
+};
 export const getUserEventGroups = async ({ ctx, input }: GetByViewerOptions) => {
   await checkRateLimitAndThrowError({
     identifier: `eventTypes:getUserProfiles:${ctx.user.id}`,
@@ -32,6 +48,8 @@ export const getUserEventGroups = async ({ ctx, input }: GetByViewerOptions) => 
   const user = ctx.user;
   const filters = input?.filters;
   const forRoutingForms = input?.forRoutingForms;
+  // #WHITELISTED
+  const isUserWhiteListed = input?.isUserWhiteListed ?? false;
 
   const userProfile = user.profile;
   const profile = await ProfileRepository.findByUpId(userProfile.upId);
@@ -60,36 +78,22 @@ export const getUserEventGroups = async ({ ctx, input }: GetByViewerOptions) => 
   if (!profile) {
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
   }
+  const memberships = isUserWhiteListed
+    ? profileMemberships.map((membership) => ({
+        ...membership,
+        team: {
+          ...membership.team,
+          metadata: teamMetadataSchema.parse(membership.team.metadata),
+        },
+      }))
+    : [];
 
-  const memberships = profileMemberships.map((membership) => ({
-    ...membership,
-    team: {
-      ...membership.team,
-      metadata: teamMetadataSchema.parse(membership.team.metadata),
-    },
-  }));
-
-  const teamMemberships = profileMemberships.map((membership) => ({
-    teamId: membership.team.id,
-    membershipRole: membership.role,
-  }));
-
-  type EventTypeGroup = {
-    teamId?: number | null;
-    parentId?: number | null;
-    bookerUrl: string;
-    membershipRole?: MembershipRole | null;
-    profile: {
-      slug: (typeof profile)["username"] | null;
-      name: (typeof profile)["name"];
-      image: string;
-      eventTypesLockedByOrg?: boolean;
-    };
-    metadata: {
-      membershipCount: number;
-      readOnly: boolean;
-    };
-  };
+  const teamMemberships = isUserWhiteListed
+    ? profileMemberships.map((membership) => ({
+        teamId: membership.team.id,
+        membershipRole: membership.role,
+      }))
+    : [];
 
   let eventTypeGroups: EventTypeGroup[] = [];
 

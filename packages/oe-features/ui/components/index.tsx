@@ -7,3 +7,4 @@ export * from "./Textarea";
 export * from "./Dialog";
 export * from "./CircularLoader";
 export * from "./TextField";
+export * from "./PhoneNumberField";

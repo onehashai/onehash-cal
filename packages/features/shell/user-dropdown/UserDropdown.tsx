@@ -1,7 +1,7 @@
+import HelpPanel from "@onehash/oe-features/support/help_panel";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import HelpMenuItem from "@calcom/features/ee/support/components/HelpMenuItem";
 import { classNames } from "@calcom/lib";
 import { JOIN_COMMUNITY, ROADMAP } from "@calcom/lib/constants";
 import useIsWebView from "@calcom/lib/hooks/useIsWebView";
@@ -129,7 +129,7 @@ export function UserDropdown({ small }: UserDropdownProps) {
             }}
             className="group overflow-hidden rounded-md">
             {helpOpen ? (
-              <HelpMenuItem onHelpItemSelect={() => onHelpItemSelect()} />
+              <HelpPanel onHelpItemSelect={() => onHelpItemSelect()} />
             ) : (
               <>
                 {!isPlatformPages && (

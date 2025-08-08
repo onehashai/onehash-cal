@@ -80,7 +80,7 @@ const CustomEmailTextField = ({
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem>
+              {/* <DropdownMenuItem>
                 <DropdownItem
                   StartIcon="flag"
                   color="secondary"
@@ -90,7 +90,7 @@ const CustomEmailTextField = ({
                   data-testid="secondary-email-make-primary-button">
                   {t("make_primary")}
                 </DropdownItem>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               {!emailVerified && (
                 <DropdownMenuItem>
                   <DropdownItem

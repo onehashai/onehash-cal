@@ -24,6 +24,7 @@ import { ENABLE_PROFILE_SWITCHER, IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@c
 import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
 import { defaultCookies } from "@calcom/lib/default-cookies";
 import { isENVDev } from "@calcom/lib/env";
+import { getUserNameFromField } from "@calcom/lib/getName";
 import logger from "@calcom/lib/logger";
 import { randomString } from "@calcom/lib/random";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -54,7 +55,7 @@ const IS_KEYCLOAK_LOGIN_ENABLED = process.env.KEYCLOAK_LOGIN_ENABLED === "true";
 const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "";
 const KEYCLOAK_CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || "";
 const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER || "";
-const usernameSlug = (username: string) => `${slugify(username)}-${randomString(6).toLowerCase()}`;
+const usernameSlugRandom = (username: string) => `${slugify(username)}-${randomString(6).toLowerCase()}`;
 const getDomainFromEmail = (email: string): string => email.split("@")[1];
 const getVerifiedOrganizationByAutoAcceptEmailDomain = async (domain: string) => {
   const existingOrg = await prisma.team.findFirst({
@@ -440,6 +441,17 @@ const mapIdentityProvider = (providerName: string) => {
   }
 };
 
+async function checkIfUserNameTaken(user: { name: string }) {
+  const username = getUserNameFromField(user.name);
+  const existingUserWithUsername = await prisma.user.findFirst({
+    where: {
+      username,
+      organizationId: null,
+    },
+  });
+  return { existingUserWithUsername, username };
+}
+
 export const getOptions = ({
   res,
   keycloak_token,
@@ -500,8 +512,8 @@ export const getOptions = ({
       const licenseKeyService = await LicenseKeySingleton.getInstance();
 
       //OE_FEATURE
-      // const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
-      const hasValidLicense = await licenseKeyService.checkLicense();
+      const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
+      // const hasValidLicense = await licenseKeyService.checkLicense();
 
       token["hasValidLicense"] = hasValidLicense;
 
@@ -932,6 +944,10 @@ export const getOptions = ({
             !existingUserWithEmail.emailVerified &&
             !existingUserWithEmail.username
           ) {
+            //check if user with given username already exists
+            const { existingUserWithUsername, username } = await checkIfUserNameTaken({
+              name: user.name,
+            });
             await prisma.user.update({
               where: {
                 email: existingUserWithEmail.email,
@@ -939,9 +955,9 @@ export const getOptions = ({
               data: {
                 // update the email to the IdP email
                 email: user.email,
-                // Slugify the incoming name and append a few random characters to
+                //If username already associated with another user ,slugify the incoming name and append a few random characters to
                 // prevent conflicts for users with the same name.
-                username: usernameSlug(user.name),
+                username: existingUserWithUsername ? usernameSlugRandom(user.name) : username,
                 emailVerified: new Date(Date.now()),
                 name: user.name,
                 identityProvider: idP,
@@ -1001,11 +1017,19 @@ export const getOptions = ({
         // Associate with organization if enabled by flag and idP is Google (for now)
         const { orgUsername, orgId } = await checkIfUserShouldBelongToOrg(idP, user.email);
 
+        //check if user with given username already exists
+        const { existingUserWithUsername, username } = await checkIfUserNameTaken({
+          name: user.name,
+        });
         const newUser = await prisma.user.create({
           data: {
             // Slugify the incoming name and append a few random characters to
             // prevent conflicts for users with the same name.
-            username: orgId ? slugify(orgUsername) : usernameSlug(user.name),
+            username: orgId
+              ? slugify(orgUsername)
+              : existingUserWithUsername
+              ? usernameSlugRandom(user.name)
+              : username,
             emailVerified: new Date(Date.now()),
             name: user.name,
             ...(user.image && { avatarUrl: user.image }),
