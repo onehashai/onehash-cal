@@ -291,9 +291,18 @@ const providers: Provider[] = [
   ...(IS_GITHUB_LOGIN_ENABLED
     ? [
         GitHubProvider({
-          clientId: process.env.GITHUB_CLIENT_ID ?? "789ou2jq1ptuc9",
-          clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "WPL_AP1.Rpa3HrC7j0Cj6LxH.tczxXg==",
+          clientId: process.env.GITHUB_CLIENT_ID!,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET!,
           allowDangerousEmailAccountLinking: true,
+          profile(profile) {
+            return {
+              ...profile,
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              image: profile.avatar_url,
+            };
+          },
         }),
       ]
     : []),
