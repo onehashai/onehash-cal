@@ -294,12 +294,26 @@ const providers: Provider[] = [
           clientId: process.env.GITHUB_CLIENT_ID!,
           clientSecret: process.env.GITHUB_CLIENT_SECRET!,
           allowDangerousEmailAccountLinking: true,
-          profile(profile) {
+          async profile(profile, tokens) {
+            // Fetch all emails from GitHub
+            const res = await fetch("https://api.github.com/user/emails", {
+              headers: {
+                Accept: "application/vnd.github+json",
+                Authorization: `Bearer ${tokens.access_token}`, // matches your curl
+                "X-GitHub-Api-Version": "2022-11-28",
+              },
+            });
+            const emails = await res.json();
+
+            // Find the primary email
+            const primaryEmail = emails.find((e) => e.primary) || emails[0];
+
             return {
               ...profile,
               id: profile.id,
               name: profile.name,
-              email: profile.email,
+              email: primaryEmail?.email || profile.email,
+              email_verified: !!primaryEmail?.verified,
               image: profile.avatar_url,
             };
           },
