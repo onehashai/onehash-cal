@@ -297,7 +297,11 @@ const providers: Provider[] = [
           async profile(profile, tokens) {
             // Fetch all emails from GitHub
             const res = await fetch("https://api.github.com/user/emails", {
-              headers: { Authorization: `token ${tokens.access_token}` },
+              headers: {
+                Accept: "application/vnd.github+json",
+                Authorization: `Bearer ${tokens.access_token}`, // matches your curl
+                "X-GitHub-Api-Version": "2022-11-28",
+              },
             });
             const emails = await res.json();
 
