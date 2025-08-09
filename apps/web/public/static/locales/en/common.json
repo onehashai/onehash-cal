@@ -81,6 +81,7 @@
   "actions": "Actions",
   "add_action": "Add new action",
   "at_least_one_location_is_required": "At least one location is required",
+  "number_valid":"Number is valid",
   "identity_provider": "Identity provider",
   "insights_workflow_subtitle":"View workflow insights across your events",
   "view_schedule": "View schedule",

@@ -1,31 +1,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { usePhoneNumberField, PhoneNumberField } from "@onehash/oe-features/ui";
 import { isValidPhoneNumber } from "libphonenumber-js";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useState, useMemo } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import dayjs from "@calcom/dayjs";
 import { useTimePreferences } from "@calcom/features/bookings/lib";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
-import { FULL_NAME_LENGTH_MAX_LIMIT } from "@calcom/lib/constants";
+import { FULL_NAME_LENGTH_MAX_LIMIT, PHONE_NUMBER_VERIFICATION_ENABLED } from "@calcom/lib/constants";
 import { designationTypes, professionTypeAndEventTypes, customEvents } from "@calcom/lib/customEvents";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { usePhoneNumberVerification } from "@calcom/lib/hooks/usePhoneVerification";
 import { telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import { trpc } from "@calcom/trpc/react";
-import {
-  Button,
-  TimezoneSelect,
-  Icon,
-  Input,
-  Select,
-  showToast,
-  Label,
-  InfoBadge,
-  Badge,
-  PhoneInput,
-  TextField,
-} from "@calcom/ui";
+import { Button, TimezoneSelect, Icon, Input, Select, showToast } from "@calcom/ui";
 
 import * as fbq from "@lib/fpixel";
 
@@ -85,10 +74,16 @@ const UserSettings = (props: IUserSettingsProps) => {
     formState: { errors },
     setValue,
     getValues,
+    control,
   } = useForm<z.infer<typeof userSettingsSchema>>({
     defaultValues,
     reValidateMode: "onChange",
     resolver: zodResolver(userSettingsSchema),
+  });
+
+  const watchedPhoneNumber = useWatch({
+    control,
+    name: "metadata.phoneNumber",
   });
 
   useEffect(() => {
@@ -129,10 +124,18 @@ const UserSettings = (props: IUserSettingsProps) => {
   const mutation = trpc.viewer.updateProfile.useMutation({
     onSuccess: onSuccess,
   });
+  const { getValue: getPhoneValue, setValue: setPhoneValue } = usePhoneNumberField(
+    { getValues, setValue },
+    defaultValues,
+    "metadata.phoneNumber"
+  );
 
   const onSubmit = handleSubmit((data) => {
-    // If phone field is mandatory, ensure phone number is verified
-    if (isPhoneFieldMandatory && data.metadata.phoneNumber && !numberVerified) {
+    if (
+      isPhoneFieldMandatory &&
+      data.metadata.phoneNumber &&
+      (PHONE_NUMBER_VERIFICATION_ENABLED ? !numberVerified : false)
+    ) {
       showToast(t("phone_verification_required"), "error");
       return;
     }
@@ -147,6 +150,16 @@ const UserSettings = (props: IUserSettingsProps) => {
     });
   });
 
+  const handlePhoneDelete = () => {
+    mutation.mutate({
+      metadata: {
+        currentOnboardingStep: "connected-calendar",
+      },
+      name: getValues("name"),
+      timeZone: selectedTimeZone,
+    });
+  };
+
   const designationTypeOptions: { value: string; label: string }[] = Object.keys(designationTypes).map(
     (key) => ({
       value: key,
@@ -154,33 +167,25 @@ const UserSettings = (props: IUserSettingsProps) => {
     })
   );
 
-  const {
-    otpSent,
-    verificationCode,
-    setVerificationCode,
-    numberVerified,
-    setNumberVerified,
-    isNumberValid,
-    setIsNumberValid,
-    getNumberVerificationStatus,
-    sendVerificationCode,
-    verifyPhoneNumber,
-    isSendingCode,
-    isVerifying,
-  } = usePhoneNumberVerification<UserFormValues>({
+  const { numberVerified } = usePhoneNumberVerification<UserFormValues>({
     getValues,
     defaultValues,
   });
 
   // Check if form can be submitted
-  const canSubmit = () => {
+  const canSubmit = useMemo(() => {
     if (selectedBusiness === null) return false;
+
     if (isPhoneFieldMandatory) {
-      const phoneNumber = getValues("metadata.phoneNumber");
-      return phoneNumber && isNumberValid && numberVerified;
+      const phoneNumber = watchedPhoneNumber || "";
+      return (
+        phoneNumber &&
+        isValidPhoneNumber(phoneNumber) &&
+        (PHONE_NUMBER_VERIFICATION_ENABLED ? numberVerified : true)
+      );
     }
     return true;
-  };
+  }, [selectedBusiness, watchedPhoneNumber, numberVerified, isPhoneFieldMandatory]);
 
   return (
     <form onSubmit={onSubmit}>
@@ -219,7 +224,7 @@ const UserSettings = (props: IUserSettingsProps) => {
             </p>
           )}
         </div>
-        <div className="mt-3 w-full">
+        {/* <div className="mt-3 w-full">
           <Label className="flex">
             <p className="text-sm">
               {t("phone_number")}
@@ -310,7 +315,19 @@ const UserSettings = (props: IUserSettingsProps) => {
               </div>
             </>
           )}
-        </div>
+        </div> */}
+        <PhoneNumberField
+          getValue={getPhoneValue}
+          setValue={setPhoneValue}
+          getValues={getValues}
+          defaultValues={defaultValues}
+          isRequired={isPhoneFieldMandatory}
+          allowDelete={!isPhoneFieldMandatory && defaultValues?.metadata?.phoneNumber !== ""}
+          hasExistingNumber={defaultValues?.metadata?.phoneNumber !== ""}
+          errorMessage={errors.metadata?.phoneNumber?.message}
+          onDeleteNumber={handlePhoneDelete}
+          isNumberVerificationRequired={PHONE_NUMBER_VERIFICATION_ENABLED} // Only require OTP when phone is mandatory
+        />
         {/* Designation select field */}
         <div className="w-full">
           <label htmlFor="timeZone" className="text-default block text-sm font-medium">
@@ -350,7 +367,7 @@ const UserSettings = (props: IUserSettingsProps) => {
         type="submit"
         className="mt-8 flex w-full flex-row justify-center"
         loading={mutation.isPending}
-        disabled={mutation.isPending || !canSubmit()}>
+        disabled={mutation.isPending || !canSubmit}>
         {t("next_step_text")}
         <Icon name="arrow-right" className="ml-2 h-4 w-4 self-center" aria-hidden="true" />
       </Button>
