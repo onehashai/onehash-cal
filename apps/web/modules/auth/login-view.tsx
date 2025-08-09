@@ -305,7 +305,7 @@ export default function Login({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(0,1fr))] gap-3">
                     {ssoProviders.map((provider) => {
                       const IconComponent = provider.icon;
                       return (
