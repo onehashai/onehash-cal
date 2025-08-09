@@ -7,6 +7,7 @@ import { hashSync as hash } from "bcryptjs";
 import { uuid } from "short-uuid";
 import { v4 } from "uuid";
 
+import { hashPasswordWithSalt } from "@calcom/features/auth/lib/hashPassword";
 import updateChildrenEventTypes from "@calcom/features/ee/managed-event-types/lib/handleChildrenEventTypes";
 import stripe from "@calcom/features/ee/payments/server/stripe";
 import { DEFAULT_SCHEDULE, getAvailabilityFromSchedule } from "@calcom/lib/availability";
@@ -912,13 +913,15 @@ const createUser = (
       : `${opts?.username || "user"}${suffixToMakeUsernameUnique}`;
 
   const emailDomain = opts?.emailDomain || "example.com";
+  const { hash, salt } = hashPasswordWithSalt(opts?.password ?? uname);
   return {
     username: uname,
     name: opts?.name,
     email: opts?.email ?? `${uname}@${emailDomain}`,
     password: {
       create: {
-        hash: hashPassword(uname),
+        hash,
+        salt,
       },
     },
     emailVerified: new Date(),

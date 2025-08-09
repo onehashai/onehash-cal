@@ -15,7 +15,7 @@
   "mark_no_show":"Mark as No-Show",
   "mark_no_show_subtitle":"Are you sure you want to mark this attendee as No-Show?",
   "mark_no_show_desc":"After Event workflow reminders will not be triggered for attendees marked as no-show",
-  "disable_cancel_and_reschedule_meeting":"Diable Cancel and Reschedule options for this event type",
+  "disable_cancel_and_reschedule_meeting":"Disable Cancel and Reschedule options for this event type",
   "description_disable_cancel_and_reschedule_meeting":"Attendees will not be able to cancel or reschedule their bookings",
   "proceed":"Proceed",
   "marked_as_no_show":"Attendee marked as No-Show",

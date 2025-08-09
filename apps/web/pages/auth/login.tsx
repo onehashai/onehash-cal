@@ -1,10 +1,10 @@
 import PageWrapper from "@components/PageWrapper";
 
-// import type { PageProps } from "~/auth/login-view";
+import type { PageProps } from "~/auth/login-view";
 import Login from "~/auth/login-view";
 
-// const Page = (props: PageProps) => <Login {...props} />;
-const Page = () => <Login />;
+const Page = (props: PageProps) => <Login {...props} />;
+// const Page = () => <Login />;
 
 Page.PageWrapper = PageWrapper;
 

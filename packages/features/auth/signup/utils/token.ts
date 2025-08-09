@@ -41,7 +41,7 @@ export async function validateAndGetCorrectedUsernameForTeam({
   teamId,
   isSignup,
 }: {
-  username: string;
+  username?: string;
   email: string;
   teamId: number | null;
   isSignup: boolean;

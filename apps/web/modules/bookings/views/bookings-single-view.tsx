@@ -29,6 +29,7 @@ import {
 import { Price } from "@calcom/features/bookings/components/event-meta/Price";
 import { SystemField, TITLE_FIELD } from "@calcom/features/bookings/lib/SystemField";
 import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { APP_NAME, ONEHASH_CHAT_ORIGIN, WEBAPP_URL } from "@calcom/lib/constants";
 import {
   formatToLocalizedDate,
@@ -453,6 +454,8 @@ export default function Success(props: PageProps) {
       defaultFavicons.forEach((link) => link.parentNode?.removeChild(link));
     }
   }, [faviconUrl]);
+  const canCancelAndReschedule =
+    userIsOwner || isPrismaObjOrUndefined(eventType?.metadata)?.disableCancelAndRescheduleMeeting != true;
 
   return (
     <>
@@ -780,7 +783,8 @@ export default function Success(props: PageProps) {
                           </div>
                         </>
                       )}
-                      {!requiresLoginToUpdate &&
+                      {canCancelAndReschedule &&
+                        !requiresLoginToUpdate &&
                         (!needsConfirmation || !userIsOwner) &&
                         isReschedulable &&
                         !isRerouting &&

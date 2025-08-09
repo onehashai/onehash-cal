@@ -32,12 +32,20 @@ export const BaseScheduledEmail = (
     reassigned?: { name: string | null; email: string; reason?: string; byUser?: string };
   } & Partial<React.ComponentProps<typeof BaseEmailHtml>>
 ) => {
-  const { t, timeZone, locale, timeFormat: timeFormat_, disableCancelAndRescheduleMeeting } = props;
+  const {
+    t,
+    timeZone,
+    locale,
+    timeFormat: timeFormat_,
+    disableCancelAndRescheduleMeeting,
+    isOrganizer,
+  } = props;
 
   const timeFormat = timeFormat_ ?? TimeFormat.TWELVE_HOUR;
-  const manageLinkComponent = !disableCancelAndRescheduleMeeting ? (
-    <ManageLink attendee={props.attendee} calEvent={props.calEvent} />
-  ) : null;
+  const manageLinkComponent =
+    isOrganizer || !disableCancelAndRescheduleMeeting ? (
+      <ManageLink attendee={props.attendee} calEvent={props.calEvent} />
+    ) : null;
   function getRecipientStart(format: string) {
     return dayjs(props.calEvent.startTime).tz(timeZone).format(format);
   }

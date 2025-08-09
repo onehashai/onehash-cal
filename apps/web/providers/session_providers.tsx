@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import { capitalize } from "lodash";
-import { signOut } from "next-auth/react";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 
@@ -36,7 +35,7 @@ export default function SessionManager({ children }: { children: React.ReactNode
         data.message === "Access Token absent. Please log in again." ||
         data.message === "Keycloak Session not found. Please log in again."
       ) {
-        await signOut();
+        // await signOut();
         posthog.reset(true);
         return undefined;
       }

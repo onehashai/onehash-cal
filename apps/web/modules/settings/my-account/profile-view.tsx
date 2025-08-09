@@ -193,7 +193,9 @@ const ProfileView = () => {
 
     setHasDeleteErrors(false); // dismiss any open errors
 
-    await signOut({ callbackUrl: redirectUrl });
+    // await signOut({ callbackUrl: redirectUrl });
+    await signOut();
+
     // if (redirectUrl !== "") window.location.href = redirectUrl;
   };
 
@@ -238,7 +240,7 @@ const ProfileView = () => {
 
   const onConfirmButton = (e: Event | React.MouseEvent<HTMLElement, MouseEvent>) => {
     e.preventDefault();
-    const deleteAccount = async (url: string) => {
+    const deleteAccount = async (url?: string) => {
       setRedirectUrl(url);
       if (isCALIdentityProvider) {
         const totpCode = form.getValues("totpCode");
