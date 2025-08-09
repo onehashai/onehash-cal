@@ -101,5 +101,4 @@ apps/auth
 **/.secrets
 .specstory
 
-
 packages/prisma/affected_users_stag.txt
