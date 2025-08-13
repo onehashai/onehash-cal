@@ -28,6 +28,7 @@ const enterpriseFeatureRoutes = [
   "/settings/developer/api-keys",
   "/settings/organizations/new",
   "/settings/platform",
+  "/settings/teams",
 ];
 
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
