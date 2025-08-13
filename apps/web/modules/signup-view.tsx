@@ -239,10 +239,10 @@ export default function Signup(props: PageProps) {
     : isSAMLLoginEnabled && !isPending && data?.connectionExists;
 
   const ssoProviders = [
-    { id: "google", name: "Google", icon: GoogleIcon, enabled: isGoogleLoginEnabled },
-    { id: "apple", name: "Apple", icon: AppleIcon, enabled: isAppleLoginEnabled },
-    { id: "azure-ad-b2c", name: "Microsoft", icon: MicrosoftIcon, enabled: isMicrosoftLoginEnabled },
-    { id: "github", name: "GitHub", icon: GitHubIcon, enabled: isGitHubLoginEnabled },
+    { id: "Google", name: "Google", icon: GoogleIcon, enabled: isGoogleLoginEnabled },
+    { id: "Apple", name: "Apple", icon: AppleIcon, enabled: isAppleLoginEnabled },
+    { id: "Microsoft", name: "Microsoft", icon: MicrosoftIcon, enabled: isMicrosoftLoginEnabled },
+    { id: "Github", name: "GitHub", icon: GitHubIcon, enabled: isGitHubLoginEnabled },
   ].filter((provider) => provider.enabled);
 
   return (
@@ -335,6 +335,7 @@ export default function Signup(props: PageProps) {
               <Button
                 type="submit"
                 color="secondary"
+                id="calidCustomSignup"
                 disabled={formState.isSubmitting || !formState.isValid}
                 className="w-full justify-center">
                 <span>{t("create_account")}</span>
@@ -360,6 +361,7 @@ export default function Signup(props: PageProps) {
                       return (
                         <button
                           key={provider.id}
+                          id={`calidSignup${provider.name}`}
                           type="button"
                           onClick={() => handleSSOSignup(provider.id)}
                           disabled={formState.isSubmitting}
