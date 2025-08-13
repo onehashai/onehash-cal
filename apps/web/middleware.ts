@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getLocale } from "@calcom/features/auth/lib/getLocale";
+import { checkIfUserWhiteListed } from "@calcom/features/flags/whitelist.config";
 import { extendEventData, nextCollectBasicSettings } from "@calcom/lib/telemetry";
 
 import { csp } from "@lib/csp";
@@ -29,6 +30,7 @@ const enterpriseFeatureRoutes = [
   "/settings/organizations/new",
   "/settings/platform",
   "/settings/teams",
+  "/teams",
 ];
 
 const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
@@ -37,12 +39,11 @@ const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
 
   requestHeaders.set("x-url", req.url);
   requestHeaders.set("Access-Control-Allow-Origin", "*");
-
+  const session = await getToken({
+    req: req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
   if (!url.pathname.startsWith("/api")) {
-    const session = await getToken({
-      req: req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
     if (!globalRoutes.some((route) => url.pathname.includes(route))) {
       if (!session) {
         const absoluteURL = new URL("/", req.nextUrl.origin);
@@ -51,11 +52,15 @@ const middleware = async (req: NextRequest): Promise<NextResponse<unknown>> => {
     }
     //redirect all enterprise feature routes to /event-types
     if (enterpriseFeatureRoutes.some((route) => url.pathname.startsWith(route))) {
-      const absoluteURL = new URL("/", req.nextUrl.origin);
-      return NextResponse.redirect(absoluteURL.toString(), {
-        headers: requestHeaders,
-        status: 308,
-      });
+      //check if user is whitelisted
+      const email = session?.email;
+      if (!email || !checkIfUserWhiteListed(email)) {
+        const absoluteURL = new URL("/", req.nextUrl.origin);
+        return NextResponse.redirect(absoluteURL.toString(), {
+          headers: requestHeaders,
+          status: 308,
+        });
+      }
     }
 
     // NOTE: When tRPC hits an error a 500 is returned, when this is received
