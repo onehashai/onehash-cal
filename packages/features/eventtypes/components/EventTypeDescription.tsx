@@ -26,6 +26,18 @@ export type EventTypeDescriptionProps = {
   isPublic?: boolean;
 };
 
+//helper function to pass to the parent component
+export const isRecurringEvent = (recurringEventData: any) => {
+  if (!recurringEventData) return false;
+  // If it's already a parsed recurring event object
+  if (typeof recurringEventData === "object" && "count" in recurringEventData) {
+    return recurringEventData.count && recurringEventData.count > 0;
+  }
+  // If it's JSON that needs parsing
+  const parsed = parseRecurringEvent(recurringEventData);
+  return parsed?.count && parsed.count > 0;
+};
+
 export const EventTypeDescription = ({
   eventType,
   className,
