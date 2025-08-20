@@ -1,7 +1,9 @@
 "use client";
 
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { useRouter } from "next/navigation";
 import { Fragment, useState, useMemo } from "react";
+import { useEffect } from "react";
 import { z } from "zod";
 
 import { WipeMyCalActionButton } from "@calcom/app-store/wipemycalother/components";
@@ -30,7 +32,9 @@ import { validStatuses } from "~/bookings/lib/validStatuses";
 type BookingListingStatus = z.infer<NonNullable<typeof filterQuerySchema>>["status"];
 type BookingOutput = RouterOutputs["viewer"]["bookings"]["get"]["bookings"][0];
 type AllBookingOutput = RouterOutputs["viewer"]["bookings"]["getAll"][0];
-type BookingListingByStatusType = "Unconfirmed" | "Cancelled" | "Recurring" | "Upcoming" | "Past";
+// type BookingListingByStatusType = "Unconfirmed" | "Cancelled" | "Recurring" | "Upcoming" | "Past";
+type BookingListingByStatusType = "Unconfirmed" | "Cancelled" | "Upcoming" | "Past";
+
 type BookingExportType = AllBookingOutput & {
   type: BookingListingByStatusType;
   startDate: string;
@@ -53,10 +57,10 @@ const tabs: (VerticalTabItemProps | HorizontalTabItemProps)[] = [
     name: "unconfirmed",
     href: "/bookings/unconfirmed",
   },
-  {
-    name: "recurring",
-    href: "/bookings/recurring",
-  },
+  // {
+  //   name: "recurring",
+  //   href: "/bookings/recurring",
+  // },
   {
     name: "past",
     href: "/bookings/past",
@@ -80,9 +84,15 @@ const querySchema = z.object({
 });
 
 export default function Bookings() {
+  const router = useRouter();
   const params = useParamsWithFallback();
   const { data: filterQuery } = useFilterQuery();
   const { status } = params ? querySchema.parse(params) : { status: "upcoming" as const };
+  useEffect(() => {
+    if (status === "recurring") {
+      router.replace("/");
+    }
+  });
   const {
     t,
     i18n: { language },

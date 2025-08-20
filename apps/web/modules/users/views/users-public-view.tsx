@@ -5,6 +5,7 @@ import type { InferGetServerSidePropsType } from "next";
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
@@ -17,6 +18,7 @@ import {
 import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { EventTypeDescriptionLazy as EventTypeDescription } from "@calcom/features/eventtypes/components";
 import EmptyPage from "@calcom/features/eventtypes/components/EmptyPage";
+import { isRecurringEvent } from "@calcom/features/eventtypes/components/EventTypeDescription";
 import { SIGNUP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
@@ -26,7 +28,10 @@ import { Button, HeadSeo, Icon, UnpublishedEntity, UserAvatar } from "@calcom/ui
 import type { UserNotFoundProps, UserFoundProps } from "@server/lib/[user]/getServerSideProps";
 import { type getServerSideProps } from "@server/lib/[user]/getServerSideProps";
 
+// import { E } from "@upstash/redis/zmscore-4382faf4";
+
 function UserFound(props: UserFoundProps) {
+  const router = useRouter();
   const { users, profile, eventTypes, markdownStrippedBio, entity, isOrgSEOIndexable } = props;
 
   const BrandingComponent = dynamic(() => import("@onehash/oe-features/branding/BrandingComponent"));
@@ -160,7 +165,16 @@ function UserFound(props: UserFoundProps) {
                   query,
                 }}
                 passHref
-                onClick={async () => {
+                onClick={async (e) => {
+                  //Redirect if it is recurring event
+                  if (isRecurringEvent(type.recurringEvent)) {
+                    e.preventDefault();
+
+                    sdkActionManager?.fire("eventTypeSelected", {
+                      eventType: type,
+                    });
+                    router.push("/");
+                  }
                   sdkActionManager?.fire("eventTypeSelected", {
                     eventType: type,
                   });
