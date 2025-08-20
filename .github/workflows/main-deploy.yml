@@ -740,9 +740,10 @@ jobs:
               exit 1
             fi
 
-            if ! exec_command "Replace HOMEPAGE_URL" "sudo sed -i \"s/HOMEPAGE_URL_PLACEHOLDER/$HOMEPAGE_URL/g\" \"$NGINX_CONF_PATH\""; then
-              exit 1
+            if ! exec_command "Replace HOMEPAGE_URL" "sudo sed -i \"s|HOMEPAGE_URL_PLACEHOLDER|$HOMEPAGE_URL|g\" \"$NGINX_CONF_PATH\""; then
+                exit 1
             fi
+
 
             # # Test NGINX config
             # log_message "INFO" "Testing NGINX config before reload"
