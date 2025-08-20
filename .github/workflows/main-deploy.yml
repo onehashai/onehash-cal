@@ -119,6 +119,7 @@ jobs:
           check "${{ secrets.NEXT_PUBLIC_ONEHASH_CRM_URL }}" "NEXT_PUBLIC_ONEHASH_CRM_URL"
           check "${{ secrets.NEXT_PUBLIC_ONEHASH_ERP_URL }}" "NEXT_PUBLIC_ONEHASH_ERP_URL"
           check "${{ secrets.NEXT_PUBLIC_WHITELISTED_ORGS }}" "NEXT_PUBLIC_WHITELISTED_ORGS"  
+          check "${{ secrets.HOMEPAGE_URL }}" "HOMEPAGE_URL"  
           
           
       # SETTING NECESSARY ENV VARIABLES
@@ -441,12 +442,13 @@ jobs:
           IS_ROLLBACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          HOMEPAGE_URL: ${{ secrets.HOMEPAGE_URL }}
         with:
           host: ${{ env.EC2_HOST }}
           username: "onehash"
           key: ${{ env.EC2_SSH_KEY }}
           command_timeout: 1500s # 25 minutes
-          envs:  AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK ,DOMAIN_NAME,DOCKERHUB_USERNAME, DOCKERHUB_TOKEN
+          envs:  AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK ,DOMAIN_NAME,DOCKERHUB_USERNAME, DOCKERHUB_TOKEN,HOMEPAGE_URL
           script: |
             #!/bin/bash
 
@@ -729,12 +731,16 @@ jobs:
             fi
 
             # Replace placeholders
-            log_message "INFO" "Replacing 'PORT_PLACEHOLDER' and 'DOMAIN_PLACEHOLDER'"
+            log_message "INFO" "Replacing 'PORT_PLACEHOLDER','DOMAIN_PLACEHOLDER' and 'HOMEPAGE_URL_PLACEHOLDER'"
             if ! exec_command "Replace PORT" "sudo sed -i \"s/PORT_PLACEHOLDER/$NEW_PORT/g\" \"$NGINX_CONF_PATH\""; then
               exit 1
             fi
 
             if ! exec_command "Replace DOMAIN" "sudo sed -i \"s/DOMAIN_PLACEHOLDER/$DOMAIN_NAME/g\" \"$NGINX_CONF_PATH\""; then
+              exit 1
+            fi
+
+            if ! exec_command "Replace HOMEPAGE_URL" "sudo sed -i \"s/HOMEPAGE_URL_PLACEHOLDER/$HOMEPAGE_URL/g\" \"$NGINX_CONF_PATH\""; then
               exit 1
             fi
 
