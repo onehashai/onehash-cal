@@ -733,7 +733,7 @@ jobs:
             fi
 
             # Replace placeholders
-            log_message "INFO" "Replacing 'PORT_PLACEHOLDER','DOMAIN_PLACEHOLDER' and 'HOMEPAGE_URL_PLACEHOLDER'"
+            log_message "INFO" "Replacing 'PORT_PLACEHOLDER','DOMAIN_PLACEHOLDER' and 'HOMEPAGE_DOMAIN_PLACEHOLDER'"
             if ! exec_command "Replace PORT" "sudo sed -i \"s/PORT_PLACEHOLDER/$NEW_PORT/g\" \"$NGINX_CONF_PATH\""; then
               exit 1
             fi
@@ -742,7 +742,7 @@ jobs:
               exit 1
             fi
 
-            if ! exec_command "Replace HOMEPAGE_URL" "sudo sed -i \"s|HOMEPAGE_URL_PLACEHOLDER|$HOMEPAGE_URL|g\" \"$NGINX_CONF_PATH\""; then
+            if ! exec_command "Replace HOMEPAGE_URL" "sudo sed -i \"s|HOMEPAGE_DOMAIN_PLACEHOLDER|$HOMEPAGE_URL|g\" \"$NGINX_CONF_PATH\""; then
                 exit 1
             fi
 
