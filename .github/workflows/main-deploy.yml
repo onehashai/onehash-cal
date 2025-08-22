@@ -119,9 +119,9 @@ jobs:
           check "${{ secrets.NEXT_PUBLIC_ONEHASH_CRM_URL }}" "NEXT_PUBLIC_ONEHASH_CRM_URL"
           check "${{ secrets.NEXT_PUBLIC_ONEHASH_ERP_URL }}" "NEXT_PUBLIC_ONEHASH_ERP_URL"
           check "${{ secrets.NEXT_PUBLIC_WHITELISTED_ORGS }}" "NEXT_PUBLIC_WHITELISTED_ORGS"  
-          check "${{ secrets.HOMEPAGE_URL }}" "HOMEPAGE_URL"  
-          
-          
+          check "${{ secrets.HOMEPAGE_URL_STAG }}" "HOMEPAGE_URL_STAG" 
+          check "${{ secrets.HOMEPAGE_URL_PROD }}" "HOMEPAGE_URL_PROD"
+
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
         if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
@@ -162,6 +162,7 @@ jobs:
             echo "NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_PROD }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_SIGNUP_URL=${{ secrets.NEXT_PUBLIC_SIGNUP_URL_PROD }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_PROD }}" >> $GITHUB_OUTPUT
+            echo "HOMEPAGE_URL=${{ secrets.HOMEPAGE_URL_PROD }}" >> $GITHUB_OUTPUT
           else
             echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_STAG }}" >> $GITHUB_OUTPUT
             echo "EC2_HOST=${{ secrets.EC2_HOST_STAG }}" >> $GITHUB_OUTPUT
@@ -178,6 +179,7 @@ jobs:
             echo "NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_STAG }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_SIGNUP_URL=${{ secrets.NEXT_PUBLIC_SIGNUP_URL_STAG }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_STAG }}" >> $GITHUB_OUTPUT
+            echo "HOMEPAGE_URL=${{ secrets.HOMEPAGE_URL_STAG }}" >> $GITHUB_OUTPUT
           fi
 
       # # BUILDING AND PUSHING DOCKER IMAGE USING AWS ECR
@@ -442,7 +444,7 @@ jobs:
           IS_ROLLBACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          HOMEPAGE_URL: ${{ secrets.HOMEPAGE_URL }}
+          HOMEPAGE_URL: ${{ steps.key_values.outputs.HOMEPAGE_URL }}
         with:
           host: ${{ env.EC2_HOST }}
           username: "onehash"
