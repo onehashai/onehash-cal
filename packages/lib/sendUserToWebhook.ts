@@ -1,3 +1,7 @@
+import logger from "@calcom/lib/logger";
+
+const log = logger.getSubLogger({ prefix: ["sendUserToMakeWebhook"] });
+
 export const sendUserToMakeWebhook = async (userData: {
   id: number;
   email: string;
@@ -9,12 +13,11 @@ export const sendUserToMakeWebhook = async (userData: {
   try {
     const MAKE_SIGNUP_WEBHOOK_URL = process.env.MAKE_SIGNUP_WEBHOOK_URL;
     if (!MAKE_SIGNUP_WEBHOOK_URL) {
-      console.error("MAKE_SIGNUP_WEBHOOK_URL is not defined");
-      return;
+      log.error("MAKE_SIGNUP_WEBHOOK_URL is not defined");
+      throw new Error("MAKE_SIGNUP_WEBHOOK_URL is not defined");
     }
-    const webhookUrl = MAKE_SIGNUP_WEBHOOK_URL;
 
-    const response = await fetch(webhookUrl, {
+    const response = await fetch(MAKE_SIGNUP_WEBHOOK_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -30,11 +33,21 @@ export const sendUserToMakeWebhook = async (userData: {
     });
 
     if (!response.ok) {
-      console.error("Failed to send user data to Make webhook:", response.status, response.statusText);
-    } else {
-      console.log("Successfully sent user data to Make webhook");
+      log.error(`Failed to send user data to Make webhook: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to send user data to Make webhook: ${response.status} ${response.statusText}`);
     }
+
+    // Handle plain text or JSON response
+    const contentType = response.headers.get("content-type");
+    let data;
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+    log.info(`Successfully sent user data to Make webhook: ${JSON.stringify(data)}`);
   } catch (error) {
-    console.error("Error sending user data to Make webhook:", error);
+    log.error(`Error sending user data to Make webhook: ${error}`);
+    throw new Error(`Error sending user data to Make webhook: ${error}`);
   }
 };
