@@ -1,9 +1,9 @@
 // eslint-disable-next-line no-restricted-imports
 import { capitalize } from "lodash";
-import { signOut } from "next-auth/react";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 
+import { getFullNameFromField } from "@calcom/lib/getName";
 import { trpc } from "@calcom/trpc";
 
 type UserData = {
@@ -35,7 +35,7 @@ export default function SessionManager({ children }: { children: React.ReactNode
         data.message === "Access Token absent. Please log in again." ||
         data.message === "Keycloak Session not found. Please log in again."
       ) {
-        await signOut();
+        // await signOut();
         posthog.reset(true);
         return undefined;
       }
@@ -86,7 +86,7 @@ export default function SessionManager({ children }: { children: React.ReactNode
         }
         const { id, email, name, username, createdAt, completedOnboarding, customBrandingEnabled, timezone } =
           userData;
-        const [first_name, last_name] = getNameFromField(name);
+        const [first_name, last_name] = getFullNameFromField(name);
         const trackingPayload = {
           id,
           email,

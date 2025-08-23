@@ -6,8 +6,11 @@ import type { AuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { encode } from "next-auth/jwt";
 import type { Provider } from "next-auth/providers";
+import AppleProvider from "next-auth/providers/apple";
+import AzureADB2CProvider from "next-auth/providers/azure-ad-b2c";
 import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
+import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import KeyCloakProvider from "next-auth/providers/keycloak";
 
@@ -19,14 +22,23 @@ import ImpersonationProvider from "@calcom/features/ee/impersonation/lib/Imperso
 import { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { clientSecretVerifier, hostedCal, isSAMLLoginEnabled } from "@calcom/features/ee/sso/lib/saml";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-import { GOOGLE_CALENDAR_SCOPES, GOOGLE_OAUTH_SCOPES, HOSTED_CAL_FEATURES } from "@calcom/lib/constants";
+import {
+  GOOGLE_CALENDAR_SCOPES,
+  GOOGLE_OAUTH_SCOPES,
+  HOSTED_CAL_FEATURES,
+  IS_APPLE_LOGIN_ENABLED,
+  IS_GITHUB_LOGIN_ENABLED,
+  IS_MICROSOFT_LOGIN_ENABLED,
+} from "@calcom/lib/constants";
 import { ENABLE_PROFILE_SWITCHER, IS_TEAM_BILLING_ENABLED, WEBAPP_URL } from "@calcom/lib/constants";
 import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
 import { defaultCookies } from "@calcom/lib/default-cookies";
 import { isENVDev } from "@calcom/lib/env";
+import { getUserNameFromField } from "@calcom/lib/getName";
 import logger from "@calcom/lib/logger";
 import { randomString } from "@calcom/lib/random";
 import { safeStringify } from "@calcom/lib/safeStringify";
+import { sendUserToMakeWebhook } from "@calcom/lib/sendUserToWebhook";
 import { CredentialRepository } from "@calcom/lib/server/repository/credential";
 import { ProfileRepository } from "@calcom/lib/server/repository/profile";
 import { UserRepository } from "@calcom/lib/server/repository/user";
@@ -39,7 +51,7 @@ import { KEYCLOAK_COOKIE_DOMAIN } from "./../../../lib/constants";
 import { ErrorCode } from "./ErrorCode";
 import { isPasswordValid } from "./isPasswordValid";
 import CalComAdapter from "./next-auth-custom-adapter";
-import { verifyPassword } from "./verifyPassword";
+import { verifyKeycloakPassword } from "./verifyPassword";
 
 const log = logger.getSubLogger({ prefix: ["next-auth-options"] });
 const GOOGLE_API_CREDENTIALS = process.env.GOOGLE_API_CREDENTIALS || "{}";
@@ -54,7 +66,7 @@ const IS_KEYCLOAK_LOGIN_ENABLED = process.env.KEYCLOAK_LOGIN_ENABLED === "true";
 const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "";
 const KEYCLOAK_CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || "";
 const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER || "";
-const usernameSlug = (username: string) => `${slugify(username)}-${randomString(6).toLowerCase()}`;
+const usernameSlugRandom = (username: string) => `${slugify(username)}-${randomString(6).toLowerCase()}`;
 const getDomainFromEmail = (email: string): string => email.split("@")[1];
 const getVerifiedOrganizationByAutoAcceptEmailDomain = async (domain: string) => {
   const existingOrg = await prisma.team.findFirst({
@@ -152,7 +164,14 @@ const providers: Provider[] = [
         if (!user.password?.hash) {
           throw new Error(ErrorCode.IncorrectEmailPassword);
         }
-        const isCorrectPassword = await verifyPassword(credentials.password, user.password.hash);
+        //Switched to keycloak implementation
+        // const isCorrectPassword = await verifyPassword(credentials.password, user.password.hash);
+        const isCorrectPassword = verifyKeycloakPassword({
+          inputPassword: credentials.password,
+          storedHashBase64: user.password.hash,
+          saltBase64: user.password.salt,
+          iterations: 27500,
+        });
         if (!isCorrectPassword) {
           throw new Error(ErrorCode.IncorrectEmailPassword);
         }
@@ -252,24 +271,95 @@ const providers: Provider[] = [
     },
   }),
   ImpersonationProvider,
+
+  //oauth providers
+  ...(IS_GOOGLE_LOGIN_ENABLED
+    ? [
+        GoogleProvider({
+          clientId: GOOGLE_CLIENT_ID,
+          clientSecret: GOOGLE_CLIENT_SECRET,
+          allowDangerousEmailAccountLinking: true,
+          authorization: {
+            params: {
+              scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
+              access_type: "offline",
+              prompt: "consent",
+            },
+          },
+        }),
+      ]
+    : []),
+  ...(IS_GITHUB_LOGIN_ENABLED
+    ? [
+        GitHubProvider({
+          clientId: process.env.GITHUB_CLIENT_ID!,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+          allowDangerousEmailAccountLinking: true,
+          async profile(profile, tokens) {
+            // Fetch all emails from GitHub
+            const res = await fetch("https://api.github.com/user/emails", {
+              headers: {
+                Accept: "application/vnd.github+json",
+                Authorization: `Bearer ${tokens.access_token}`, // matches your curl
+                "X-GitHub-Api-Version": "2022-11-28",
+              },
+            });
+            const emails = await res.json();
+
+            // Find the primary email
+            const primaryEmail = emails.find((e) => e.primary) || emails[0];
+
+            return {
+              ...profile,
+              id: profile.id,
+              name: profile.name,
+              email: primaryEmail?.email || profile.email,
+              email_verified: !!primaryEmail?.verified,
+              image: profile.avatar_url,
+            };
+          },
+        }),
+      ]
+    : []),
+  ...(IS_APPLE_LOGIN_ENABLED
+    ? [
+        AppleProvider({
+          clientId: process.env.AUTH_APPLE_ID!,
+          clientSecret: process.env.AUTH_APPLE_SECRET!,
+          allowDangerousEmailAccountLinking: true,
+        }),
+      ]
+    : []),
+  ...(IS_MICROSOFT_LOGIN_ENABLED
+    ? [
+        AzureADB2CProvider({
+          clientId: process.env.AZURE_AD_CLIENT_ID!,
+          clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+          tenantId: process.env.AZURE_AD_TENANT_ID!, // Required for Microsoft
+          authorization: { params: { scope: "offline_access openid" } },
+          primaryUserFlow: process.env.AZURE_AD_B2C_PRIMARY_USER_FLOW,
+          allowDangerousEmailAccountLinking: true,
+        }),
+      ]
+    : []),
 ];
 
-if (IS_GOOGLE_LOGIN_ENABLED) {
-  providers.push(
-    GoogleProvider({
-      clientId: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-      authorization: {
-        params: {
-          scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
-          access_type: "offline",
-          prompt: "consent",
-        },
-      },
-    })
-  );
-}
+// if (IS_GOOGLE_LOGIN_ENABLED) {
+//   providers.push(
+// GoogleProvider({
+//   clientId: GOOGLE_CLIENT_ID,
+//   clientSecret: GOOGLE_CLIENT_SECRET,
+//   allowDangerousEmailAccountLinking: true,
+//   authorization: {
+//     params: {
+//       scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
+//       access_type: "offline",
+//       prompt: "consent",
+//     },
+//   },
+// })
+//   );
+// }
 
 if (IS_KEYCLOAK_LOGIN_ENABLED) {
   providers.push(
@@ -394,6 +484,16 @@ if (isSAMLLoginEnabled) {
               user = await UserRepository.findByEmailAndIncludeProfilesAndPassword({
                 email: email,
               });
+              if (user) {
+                await sendUserToMakeWebhook({
+                  id: user.id,
+                  email: user.email,
+                  name: user.name || `${firstName} ${lastName}`.trim(),
+                  username: user.username ?? "N/A",
+                  identityProvider: "SAML",
+                  createdAt: new Date(),
+                });
+              }
             }
           }
           if (!user) throw new Error(ErrorCode.UserNotFound);
@@ -439,6 +539,17 @@ const mapIdentityProvider = (providerName: string) => {
       return IdentityProvider.GOOGLE;
   }
 };
+
+async function checkIfUserNameTaken(user: { name: string }) {
+  const username = getUserNameFromField(user.name);
+  const existingUserWithUsername = await prisma.user.findFirst({
+    where: {
+      username,
+      organizationId: null,
+    },
+  });
+  return { existingUserWithUsername, username };
+}
 
 export const getOptions = ({
   res,
@@ -500,8 +611,8 @@ export const getOptions = ({
       const licenseKeyService = await LicenseKeySingleton.getInstance();
 
       //OE_FEATURE
-      // const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
-      const hasValidLicense = await licenseKeyService.checkLicense();
+      const hasValidLicense = IS_TEAM_BILLING_ENABLED ? await licenseKeyService.checkLicense() : true;
+      // const hasValidLicense = await licenseKeyService.checkLicense();
 
       token["hasValidLicense"] = hasValidLicense;
 
@@ -932,6 +1043,10 @@ export const getOptions = ({
             !existingUserWithEmail.emailVerified &&
             !existingUserWithEmail.username
           ) {
+            //check if user with given username already exists
+            const { existingUserWithUsername, username } = await checkIfUserNameTaken({
+              name: user.name,
+            });
             await prisma.user.update({
               where: {
                 email: existingUserWithEmail.email,
@@ -939,14 +1054,22 @@ export const getOptions = ({
               data: {
                 // update the email to the IdP email
                 email: user.email,
-                // Slugify the incoming name and append a few random characters to
+                //If username already associated with another user ,slugify the incoming name and append a few random characters to
                 // prevent conflicts for users with the same name.
-                username: usernameSlug(user.name),
+                username: existingUserWithUsername ? usernameSlugRandom(user.name) : username,
                 emailVerified: new Date(Date.now()),
                 name: user.name,
                 identityProvider: idP,
                 identityProviderId: account.providerAccountId,
               },
+            });
+            await sendUserToMakeWebhook({
+              id: existingUserWithEmail.id,
+              email: user.email,
+              name: user.name,
+              username: existingUserWithUsername ? usernameSlugRandom(user.name) : username,
+              identityProvider: idP,
+              createdAt: new Date(),
             });
 
             if (existingUserWithEmail.twoFactorEnabled) {
@@ -1001,11 +1124,19 @@ export const getOptions = ({
         // Associate with organization if enabled by flag and idP is Google (for now)
         const { orgUsername, orgId } = await checkIfUserShouldBelongToOrg(idP, user.email);
 
+        //check if user with given username already exists
+        const { existingUserWithUsername, username } = await checkIfUserNameTaken({
+          name: user.name,
+        });
         const newUser = await prisma.user.create({
           data: {
             // Slugify the incoming name and append a few random characters to
             // prevent conflicts for users with the same name.
-            username: orgId ? slugify(orgUsername) : usernameSlug(user.name),
+            username: orgId
+              ? slugify(orgUsername)
+              : existingUserWithUsername
+              ? usernameSlugRandom(user.name)
+              : username,
             emailVerified: new Date(Date.now()),
             name: user.name,
             ...(user.image && { avatarUrl: user.image }),
@@ -1020,6 +1151,14 @@ export const getOptions = ({
               },
             }),
           },
+        });
+        await sendUserToMakeWebhook({
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name ?? "N/A",
+          username: newUser.username ?? "N/A",
+          identityProvider: idP,
+          createdAt: new Date(),
         });
         account.userId = newUser.id.toString();
 

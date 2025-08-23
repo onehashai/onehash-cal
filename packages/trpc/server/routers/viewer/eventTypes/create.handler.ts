@@ -37,7 +37,19 @@ type CreateOptions = {
   };
   input: TCreateInputSchema;
 };
+async function resolveLocations(
+  inputLocations: EventTypeLocation[] | undefined,
+  user: User,
+  teamId?: number | null
+): Promise<EventTypeLocation[]> {
+  if (inputLocations?.length) return inputLocations;
 
+  if (teamId) {
+    return [{ type: "conferencing" }];
+  }
+
+  return getDefaultLocations(user);
+}
 export const createHandler = async ({ ctx, input }: CreateOptions) => {
   const { schedulingType, teamId, metadata, locations: inputLocations, scheduleId, length, ...rest } = input;
 
@@ -45,8 +57,7 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
   const isManagedEventType = schedulingType === SchedulingType.MANAGED;
   const isOrgAdmin = !!ctx.user?.organization?.isOrgAdmin;
 
-  const locations: EventTypeLocation[] =
-    inputLocations && inputLocations.length !== 0 ? inputLocations : await getDefaultLocations(ctx.user);
+  const locations: EventTypeLocation[] = await resolveLocations(inputLocations, ctx.user, teamId);
 
   const data: Prisma.EventTypeCreateInput = {
     ...rest,

@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 
@@ -78,9 +79,9 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
   };
 
   const utils = trpc.useUtils();
-
+  const { t } = useLocale();
   return (
-    <div className="min-h-screen bg-white">
+    <div className="bg-default min-h-screen">
       <WorkflowDeleteDialog
         isOpenDialog={deleteDialogOpen}
         setIsOpenDialog={setDeleteDialogOpen}
@@ -94,12 +95,8 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
         <div className="mx-auto max-w-6xl">
           <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex-1">
-              <h1 className="mb-2 text-xl font-semibold text-gray-900 sm:text-2xl">
-                Automate Booking Reminders with Workflows
-              </h1>
-              <p className="text-sm text-gray-600 sm:text-base">
-                Send reminders through Email, SMS, and more — automatically and on time.
-              </p>
+              <h1 className="text-emphasis mb-2 text-xl font-semibold sm:text-2xl">{t("workflows_title")}</h1>
+              <p className="text-default text-sm sm:text-base">{t("workflows_description")}</p>
             </div>
             <Button
               className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto"
@@ -108,7 +105,7 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
               }}
               loading={loading}>
               <Plus className="mr-2 h-4 w-4" />
-              Create Workflow
+              {t("create_workflow")}
             </Button>
           </div>
           {/* //OE_FEATURES: will enable after developing teams
@@ -125,8 +122,7 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
             {workflows.map((workflow) => {
               const isActive = workflow.activeOn?.length || workflow.activeOnTeams?.length;
               const trigger = triggerMap[workflow.trigger];
-              const channels = workflow.steps
-                .map((s) => channelsMap[s.action])
+              const channels = Array.from(new Set(workflow.steps.map((s) => channelsMap[s.action])))
                 .sort()
                 .join(",");
 
@@ -134,19 +130,19 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                 <div
                   key={workflow.id}
                   onClick={() => handleOnClickEdit(workflow.id)}
-                  className="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:cursor-pointer hover:shadow-sm sm:p-6">
+                  className="bg-default rounded-lg border border-gray-200 p-4 transition-shadow hover:cursor-pointer hover:shadow-sm sm:p-6">
                   {/* Mobile Layout */}
                   <div className="block sm:hidden">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="mb-1 font-medium text-gray-900">
+                        <h3 className="text-default mb-1 font-medium">
                           {workflow.name != "" ? workflow.name : "Untitled Workflow"}
                         </h3>
                         <div className="mb-3 flex items-center gap-2">
                           <span
                             className={`h-2 w-2 rounded-full ${isActive ? "bg-green-500" : "bg-gray-400"}`}
                           />
-                          <span className="text-sm text-gray-600">{isActive ? "Active" : "Inactive"}</span>
+                          <span className="text-default text-sm">{isActive ? "Active" : "Inactive"}</span>
                         </div>
                       </div>
 
@@ -156,14 +152,20 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleOnClickEdit(workflow.id)}
-                          className="h-8 w-8 p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+                          className="text-subtle hover:bg-muted hover:text-emphasis h-8 w-8 p-2">
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteWorkflow(workflow.id)}
-                          className="h-8 w-8 p-2 text-gray-500 hover:bg-gray-100 hover:text-red-600">
+                          onClick={
+                            //prevent event bubbling to avoid triggering the edit action
+                            (e) => {
+                              e.stopPropagation();
+                              handleDeleteWorkflow(workflow.id);
+                            }
+                          }
+                          className="text-default h-8 w-8 p-2 hover:bg-gray-100 hover:text-red-600">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -172,12 +174,12 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                     {/* Mobile Details */}
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Trigger:</span>
-                        <span className="text-sm text-gray-900">{trigger}</span>
+                        <span className="text-default text-sm">{t("trigger")}:</span>
+                        <span className="text-emphasis text-sm">{trigger}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Channels:</span>
-                        <span className="text-sm text-gray-900">{channels}</span>
+                        <span className="text-default text-sm">{t("channels")}:</span>
+                        <span className="text-emphasis text-sm">{channels}</span>
                       </div>
                     </div>
                   </div>
@@ -187,22 +189,22 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                     <div className="grid flex-1 grid-cols-2 gap-4 md:grid-cols-4 md:gap-8">
                       {/* Workflow Name */}
                       <div>
-                        <h3 className="mb-1 font-medium text-gray-900">
+                        <h3 className="text-emphasis mb-1 font-medium">
                           {workflow.name != "" ? workflow.name : "Untitled Workflow"}
                         </h3>
-                        <p className="text-sm text-gray-500">Workflow</p>
+                        <p className="text-default text-sm">{t("workflow")}</p>
                       </div>
 
                       {/* Trigger On */}
                       <div>
-                        <p className="mb-1 text-gray-900">{trigger}</p>
-                        <p className="text-sm text-gray-500">Trigger</p>
+                        <p className="text-emphasis mb-1">{trigger}</p>
+                        <p className="text-default text-sm">{t("trigger")}</p>
                       </div>
 
                       {/* Delivery Channels */}
                       <div className="hidden md:block">
-                        <p className="mb-1 text-gray-900">{channels}</p>
-                        <p className="text-sm text-gray-500">Channels</p>
+                        <p className="text-emphasis mb-1">{channels}</p>
+                        <p className="text-default text-sm">{t("channels")}</p>
                       </div>
 
                       {/* Status */}
@@ -211,7 +213,7 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                           <span
                             className={`h-2 w-2 rounded-full ${isActive ? "bg-green-500" : "bg-gray-400"}`}
                           />
-                          <span className="text-gray-900">{isActive ? "Active" : "Inactive"}</span>
+                          <span className="text-emphasis">{isActive ? "Active" : "Inactive"}</span>
                         </div>
                       </div>
                     </div>
@@ -221,15 +223,21 @@ const WorkflowList = ({ workflows, createWorkflowFn, loading }: Props) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                        className="text-subtle hover:bg-muted hover:text-emphasis h-8 w-8 p-2"
                         onClick={() => handleOnClickEdit(workflow.id)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-2 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                        onClick={() => handleDeleteWorkflow(workflow.id)}>
+                        className="text-subtle hover:bg-muted hover:text-emphasis h-8 w-8 p-2"
+                        onClick={
+                          //prevent event bubbling to avoid triggering the edit action
+                          (e) => {
+                            e.stopPropagation();
+                            handleDeleteWorkflow(workflow.id);
+                          }
+                        }>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

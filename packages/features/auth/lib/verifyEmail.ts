@@ -16,7 +16,7 @@ import { prisma } from "@calcom/prisma";
 const log = logger.getSubLogger({ prefix: [`[[Auth] `] });
 
 interface VerifyEmailType {
-  username?: string;
+  // username?: string;
   email: string;
   language?: string;
   secondaryEmailId?: number;
@@ -27,7 +27,7 @@ interface VerifyEmailType {
 export const sendEmailVerification = async ({
   email,
   language,
-  username,
+  // username,
   secondaryEmailId,
   isPlatform = false,
 }: VerifyEmailType) => {
@@ -68,7 +68,7 @@ export const sendEmailVerification = async ({
     verificationEmailLink: `${WEBAPP_URL}/api/auth/verify-email?${params.toString()}`,
     user: {
       email,
-      name: username,
+      // name: username,
     },
     isSecondaryEmailVerification: !!secondaryEmailId,
   });
@@ -79,7 +79,7 @@ export const sendEmailVerification = async ({
 export const sendEmailVerificationByCode = async ({
   email,
   language,
-  username,
+  // username,
   isVerifyingEmail,
 }: VerifyEmailType) => {
   const translation = await getTranslation(language ?? "en", "common");
@@ -95,7 +95,7 @@ export const sendEmailVerificationByCode = async ({
     verificationEmailCode: code,
     user: {
       email,
-      name: username,
+      // name: username,
     },
     isVerifyingEmail,
   });

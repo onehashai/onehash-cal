@@ -17,7 +17,7 @@ const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
     return (
       <div
         className={cn(
-          "bg-background ring-offset-background focus-within:ring-ring relative flex w-full items-center rounded-md border focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "bg-default ring-offset-background focus-within:ring-ring relative flex w-full items-center rounded-md border focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}>
         <input

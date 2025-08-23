@@ -14,6 +14,7 @@ import { EventTypeEmbedButton, EventTypeEmbedDialog } from "@calcom/features/emb
 import { EventTypeDescription } from "@calcom/features/eventtypes/components";
 import CreateEventTypeDialog from "@calcom/features/eventtypes/components/CreateEventTypeDialog";
 import { DuplicateDialog } from "@calcom/features/eventtypes/components/DuplicateDialog";
+import { isRecurringEvent } from "@calcom/features/eventtypes/components/EventTypeDescription";
 import { InfiniteSkeletonLoader } from "@calcom/features/eventtypes/components/SkeletonLoader";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
 import Shell from "@calcom/features/shell/Shell";
@@ -29,6 +30,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import { useGetTheme } from "@calcom/lib/hooks/useTheme";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import { HttpError } from "@calcom/lib/http-error";
 import type { MembershipRole } from "@calcom/prisma/enums";
 import { SchedulingType } from "@calcom/prisma/enums";
@@ -568,30 +570,32 @@ export const InfiniteEventTypeList = ({
                           <ButtonGroup combined>
                             {!isManagedEventType && (
                               <>
-                                <Tooltip content={t("preview")}>
-                                  <Button
-                                    data-testid="preview-link-button"
-                                    color="secondary"
-                                    target="_blank"
-                                    variant="icon"
-                                    href={calLink}
-                                    StartIcon="external-link"
-                                  />
-                                </Tooltip>
-
-                                <Tooltip content={t("copy_link")}>
-                                  <Button
-                                    color="secondary"
-                                    variant="icon"
-                                    StartIcon="link"
-                                    onClick={() => {
-                                      showToast(t("link_copied"), "success");
-                                      copyToClipboard(calLink);
-                                    }}
-                                  />
-                                </Tooltip>
-
-                                {isPrivateURLEnabled && (
+                                {!isRecurringEvent(type.recurringEvent) && (
+                                  <Tooltip content={t("preview")}>
+                                    <Button
+                                      data-testid="preview-link-button"
+                                      color="secondary"
+                                      target="_blank"
+                                      variant="icon"
+                                      href={calLink}
+                                      StartIcon="external-link"
+                                    />
+                                  </Tooltip>
+                                )}
+                                {!isRecurringEvent(type.recurringEvent) && (
+                                  <Tooltip content={t("copy_link")}>
+                                    <Button
+                                      color="secondary"
+                                      variant="icon"
+                                      StartIcon="link"
+                                      onClick={() => {
+                                        showToast(t("link_copied"), "success");
+                                        copyToClipboard(calLink);
+                                      }}
+                                    />
+                                  </Tooltip>
+                                )}
+                                {isPrivateURLEnabled && !isRecurringEvent(type.recurringEvent) && (
                                   <Tooltip content={t("copy_private_link_to_event")}>
                                     <Button
                                       color="secondary"
@@ -694,7 +698,7 @@ export const InfiniteEventTypeList = ({
                       </DropdownMenuTrigger>
                       <DropdownMenuPortal>
                         <DropdownMenuContent>
-                          {!isManagedEventType && (
+                          {!isManagedEventType && !isRecurringEvent(type.recurringEvent) && (
                             <>
                               <DropdownMenuItem className="outline-none">
                                 <DropdownItem
@@ -929,6 +933,8 @@ const InfiniteScrollMain = ({
     avatar: item.profile.image,
   }));
 
+  //if user not whitelisted, filter out the event type groups belonging to team
+
   const activeEventTypeGroup =
     eventTypeGroups.filter((item) => item.teamId === data.teamId) ?? eventTypeGroups[0];
 
@@ -974,17 +980,27 @@ const EventTypesPage: React.FC & {
   const routerQuery = useRouterQuery();
   const filters = getTeamsFiltersFromQuery(routerQuery);
   const router = useRouter();
+  //#WHITELISTED
+  const { isUserWhiteListed, isLoading: isUserWhiteListedLoading } = useWhitelistCheck();
 
   // TODO: Maybe useSuspenseQuery to focus on success case only? Remember that it would crash the page when there is an error in query. Also, it won't support skeleton
   const {
     data: getUserEventGroupsData,
     status: getUserEventGroupsStatus,
     error: getUserEventGroupsStatusError,
-  } = trpc.viewer.eventTypes.getUserEventGroups.useQuery(filters && { filters }, {
-    refetchOnWindowFocus: false,
-    gcTime: 1 * 60 * 60 * 1000,
-    staleTime: 1 * 60 * 60 * 1000,
-  });
+  } = trpc.viewer.eventTypes.getUserEventGroups.useQuery(
+    {
+      ...(filters ? { filters } : {}),
+      //#WHITELISTED
+      isUserWhiteListed,
+    },
+    {
+      enabled: !isUserWhiteListedLoading,
+      refetchOnWindowFocus: false,
+      gcTime: 1 * 60 * 60 * 1000,
+      staleTime: 1 * 60 * 60 * 1000,
+    }
+  );
 
   useEffect(() => {
     if (searchParams?.get("openIntercom") === "true") {

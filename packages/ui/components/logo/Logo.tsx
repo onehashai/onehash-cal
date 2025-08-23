@@ -5,7 +5,7 @@ export default function Logo({
   icon,
   inline = true,
   className,
-  src = "/api/logo",
+  src = "/oh-logo-word.svg",
 }: {
   small?: boolean;
   icon?: boolean;
@@ -18,10 +18,10 @@ export default function Logo({
       <strong>
         {icon ? (
           <div className="mx-auto dark:invert">
-            <img alt="Cal" title="Cal.id" src={`${src}?type=icon`} />
+            <img alt="Cal ID" title="Cal ID" src={`${src}?type=icon`} />
           </div>
         ) : (
-          <img alt="Cal.id" title="Cal.id" src={src} className="h-full w-24" />
+          <img alt="Cal ID" title="Cal ID" src={`${src}?type=icon`} className="h-full w-48" />
         )}
       </strong>
     </h3>

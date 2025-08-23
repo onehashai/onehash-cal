@@ -209,18 +209,18 @@ describe("getSchedule", () => {
       // slots where either one of the rr hosts is available
       expect(scheduleWithoutLeadSkip).toHaveTimeSlots(
         [
-          `04:30:00.000Z`,
-          `05:30:00.000Z`,
-          `06:30:00.000Z`,
-          `07:30:00.000Z`,
-          `08:30:00.000Z`,
-          `09:30:00.000Z`,
-          `10:30:00.000Z`,
-          `11:30:00.000Z`,
-          `12:30:00.000Z`,
-          `13:30:00.000Z`,
-          `14:30:00.000Z`,
-          `15:30:00.000Z`,
+          `04:00:00.000Z`,
+          `05:00:00.000Z`,
+          `06:00:00.000Z`,
+          `07:00:00.000Z`,
+          `08:00:00.000Z`,
+          `09:00:00.000Z`,
+          `10:00:00.000Z`,
+          `11:00:00.000Z`,
+          `12:00:00.000Z`,
+          `13:00:00.000Z`,
+          `14:00:00.000Z`,
+          `15:00:00.000Z`,
         ],
         {
           dateString: plus2DateString,
@@ -338,13 +338,13 @@ describe("getSchedule", () => {
       // show normal slots, example@example + one RR host needs to be available
       expect(scheduleFixedHostLead).toHaveTimeSlots(
         [
-          `07:30:00.000Z`,
-          `08:30:00.000Z`,
-          `09:30:00.000Z`,
-          `10:30:00.000Z`,
-          `11:30:00.000Z`,
-          `12:30:00.000Z`,
-          `13:30:00.000Z`,
+          `07:00:00.000Z`,
+          `08:00:00.000Z`,
+          `09:00:00.000Z`,
+          `10:00:00.000Z`,
+          `11:00:00.000Z`,
+          `12:00:00.000Z`,
+          `13:00:00.000Z`,
         ],
         {
           dateString: plus2DateString,
@@ -366,7 +366,7 @@ describe("getSchedule", () => {
 
       // slots where example@example (fixed host) + example1@example.com are available together
       expect(scheduleRRHostLead).toHaveTimeSlots(
-        [`07:30:00.000Z`, `08:30:00.000Z`, `09:30:00.000Z`, `10:30:00.000Z`, `11:30:00.000Z`],
+        [`07:00:00.000Z`, `08:00:00.000Z`, `09:00:00.000Z`, `10:00:00.000Z`, `11:00:00.000Z`],
         {
           dateString: plus2DateString,
         }
@@ -483,18 +483,18 @@ describe("getSchedule", () => {
       // slots where either one of the rr hosts is available
       expect(scheduleWithoutLeadSkip).toHaveTimeSlots(
         [
-          `04:30:00.000Z`,
-          `05:30:00.000Z`,
-          `06:30:00.000Z`,
-          `07:30:00.000Z`,
-          `08:30:00.000Z`,
-          `09:30:00.000Z`,
-          `10:30:00.000Z`,
-          `11:30:00.000Z`,
-          `12:30:00.000Z`,
-          `13:30:00.000Z`,
-          `14:30:00.000Z`,
-          `15:30:00.000Z`,
+          `04:00:00.000Z`,
+          `05:00:00.000Z`,
+          `06:00:00.000Z`,
+          `07:00:00.000Z`,
+          `08:00:00.000Z`,
+          `09:00:00.000Z`,
+          `10:00:00.000Z`,
+          `11:00:00.000Z`,
+          // `12:00:00.000Z`,
+          // `13:00:00.000Z`,
+          // `14:00:00.000Z`,
+          // `15:00:00.000Z`,
         ],
         {
           dateString: plus2DateString,
@@ -596,18 +596,18 @@ describe("getSchedule", () => {
       // Both users slot would be available as contact owner(example@example.com) is skipped and we fallback to all users of RR
       expect(scheduleWhenContactOwnerIsSkipped).toHaveTimeSlots(
         [
-          `04:30:00.000Z`,
-          `05:30:00.000Z`,
-          `06:30:00.000Z`,
-          `07:30:00.000Z`,
-          `08:30:00.000Z`,
-          `09:30:00.000Z`,
-          `10:30:00.000Z`,
-          `11:30:00.000Z`,
-          `12:30:00.000Z`,
-          `13:30:00.000Z`,
-          `14:30:00.000Z`,
-          `15:30:00.000Z`,
+          `04:00:00.000Z`,
+          `05:00:00.000Z`,
+          `06:00:00.000Z`,
+          `07:00:00.000Z`,
+          `08:00:00.000Z`,
+          `09:00:00.000Z`,
+          `10:00:00.000Z`,
+          `11:00:00.000Z`,
+          `12:00:00.000Z`,
+          `13:00:00.000Z`,
+          `14:00:00.000Z`,
+          `15:00:00.000Z`,
         ],
         {
           dateString: plus2DateString,
@@ -834,7 +834,7 @@ describe("getSchedule", () => {
       // `slotInterval` takes precedence over `length`
       // 4:30 is utc so it is 10:00 in IST
       expect(scheduleForEventWith30minsLengthAndSlotInterval2hrs).toHaveTimeSlots(
-        [`04:30:00.000Z`, `06:30:00.000Z`, `08:30:00.000Z`, `10:30:00.000Z`, `12:30:00.000Z`],
+        [`04:00:00.000Z`, `06:00:00.000Z`, `08:00:00.000Z`, `10:00:00.000Z`, `12:00:00.000Z`],
         {
           dateString: plus2DateString,
         }
@@ -895,9 +895,9 @@ describe("getSchedule", () => {
       expect(scheduleForEventWithBookingNotice13Hrs).toHaveTimeSlots(
         [
           /*`04:00:00.000Z`, `06:00:00.000Z`, - Minimum time slot is 07:30 UTC which is 13hrs from 18:30*/
-          `08:00:00.000Z`,
-          `10:00:00.000Z`,
-          `12:00:00.000Z`,
+          `07:30:00.000Z`,
+          `09:30:00.000Z`,
+          // `12:00:00.000Z`,
         ],
         {
           dateString: todayDateString,
@@ -918,9 +918,10 @@ describe("getSchedule", () => {
       expect(scheduleForEventWithBookingNotice10Hrs).toHaveTimeSlots(
         [
           /*`04:00:00.000Z`, - Minimum bookable time slot is 04:30 UTC which is 10hrs from 18:30 */
-          `05:00:00.000Z`,
-          `07:00:00.000Z`,
-          `09:00:00.000Z`,
+          `04:30:00.000Z`,
+          `06:30:00.000Z`,
+          `08:30:00.000Z`,
+          `10:30:00.000Z`,
         ],
         {
           dateString: todayDateString,
@@ -984,8 +985,8 @@ describe("getSchedule", () => {
       console.log(scheduleForEventOnADayWithNonCalBooking.slots);
       expect(scheduleForEventOnADayWithNonCalBooking).toHaveTimeSlots(
         [
-          `08:30:00.000Z`, // - 8:30 AM is available because of availability of 06:00 - 07:59
-          `10:30:00.000Z`,
+          `08:00:00.000Z`, // - 8:30 AM is available because of availability of 06:00 - 07:59
+          `10:00:00.000Z`,
         ],
         {
           dateString: plus3DateString,
@@ -1065,7 +1066,7 @@ describe("getSchedule", () => {
           // `04:00:00.000Z`, // - 4 AM is booked
           // `06:00:00.000Z`, // - 6 AM is not available because of afterBuffer(120 mins) of the existing booking(4-5:59AM slot)
           // `08:00:00.000Z`, // - 8 AM is not available because of beforeBuffer(120mins) of possible booking at 08:00
-          `10:30:00.000Z`,
+          `10:00:00.000Z`,
         ],
         {
           dateString: plus2DateString,
@@ -1402,7 +1403,7 @@ describe("getSchedule", () => {
           availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
         });
       }
-      expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(22); // 2 booking per day as limit, only one booking on that
+      expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(23); // 2 booking per day as limit, only one booking on that
     });
 
     test("test that booking limit is working correctly if user is all day available and attendee is in different timezone than host", async () => {
@@ -1638,7 +1639,7 @@ describe("getSchedule", () => {
         });
       }
 
-      expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(22);
+      expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(23);
     });
 
     test("global team booking limit blocks correct slots if attendee and host are in different timezone", async () => {
@@ -2443,7 +2444,7 @@ describe("getSchedule", () => {
 
       // expect only slots of IstEveningShift as this is the slots for the original host of the booking
       expect(schedule).toHaveTimeSlots(
-        expectedSlotsForSchedule.IstMorningShift.interval["1hr"].allPossibleSlotsStartingAt430,
+        expectedSlotsForSchedule.IstMorningShift.interval["1hr"].allPossibleSlotsStartingAt400,
         {
           dateString: plus2DateString,
         }

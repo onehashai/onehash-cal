@@ -31,6 +31,7 @@ import {
   VerticalTabs,
 } from "@calcom/ui";
 
+import { isRecurringEvent } from "./EventTypeDescription";
 import { DeleteDialog } from "./dialogs/DeleteDialog";
 
 type Props = {
@@ -95,7 +96,7 @@ function EventTypeSingleLayout({
   const [Shell] = useMemo(() => {
     return isPlatform ? [PlatformShell] : [WebShell];
   }, [isPlatform]);
-
+  const isRecurring = isRecurringEvent(eventType.recurringEvent);
   return (
     <Shell
       backPath="/event-types"
@@ -146,7 +147,7 @@ function EventTypeSingleLayout({
             {!isManagedEventType && (
               <>
                 {/* We have to warp this in tooltip as it has a href which disabels the tooltip on buttons */}
-                {!isPlatform && (
+                {!isPlatform && !isRecurring && (
                   <Tooltip content={t("preview")} side="bottom" sideOffset={4}>
                     <Button
                       color="secondary"
@@ -160,7 +161,7 @@ function EventTypeSingleLayout({
                   </Tooltip>
                 )}
 
-                {!isPlatform && (
+                {!isPlatform && !isRecurring && (
                   <Button
                     color="secondary"
                     variant="icon"
@@ -210,27 +211,31 @@ function EventTypeSingleLayout({
               <Button className="lg:hidden" StartIcon="ellipsis" variant="icon" color="secondary" />
             </DropdownMenuTrigger>
             <DropdownMenuContent style={{ minWidth: "200px" }}>
-              <DropdownMenuItem className="focus:ring-muted">
-                <DropdownItem
-                  target="_blank"
-                  type="button"
-                  StartIcon="external-link"
-                  href={permalink}
-                  rel="noreferrer">
-                  {t("preview")}
-                </DropdownItem>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="focus:ring-muted">
-                <DropdownItem
-                  type="button"
-                  StartIcon="link"
-                  onClick={() => {
-                    navigator.clipboard.writeText(permalink);
-                    showToast("Link copied!", "success");
-                  }}>
-                  {t("copy_link")}
-                </DropdownItem>
-              </DropdownMenuItem>
+              {!isRecurring && (
+                <>
+                  <DropdownMenuItem className="focus:ring-muted">
+                    <DropdownItem
+                      target="_blank"
+                      type="button"
+                      StartIcon="external-link"
+                      href={permalink}
+                      rel="noreferrer">
+                      {t("preview")}
+                    </DropdownItem>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="focus:ring-muted">
+                    <DropdownItem
+                      type="button"
+                      StartIcon="link"
+                      onClick={() => {
+                        navigator.clipboard.writeText(permalink);
+                        showToast("Link copied!", "success");
+                      }}>
+                      {t("copy_link")}
+                    </DropdownItem>
+                  </DropdownMenuItem>
+                </>
+              )}
               {allowDelete && (
                 <DropdownMenuItem className="focus:ring-muted">
                   <DropdownItem

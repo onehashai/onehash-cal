@@ -4,6 +4,7 @@ import { PeopleFilter } from "@calcom/features/bookings/components/PeopleFilter"
 import { useFilterQuery } from "@calcom/features/bookings/lib/useFilterQuery";
 import { TeamsFilter } from "@calcom/features/filters/components/TeamsFilter";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { useWhitelistCheck } from "@calcom/lib/hooks/useWhitelistCheck";
 import { Tooltip, Button } from "@calcom/ui";
 
 import { AttendeeFilter } from "./AttendeeFilter";
@@ -18,7 +19,8 @@ export function FiltersContainer({ isFiltersVisible }: FiltersContainerProps) {
   const [animationParentRef] = useAutoAnimate<HTMLDivElement>();
   const { removeAllQueryParams } = useFilterQuery();
   const { t } = useLocale();
-
+  //#WHITELISTED
+  const { isUserWhiteListed } = useWhitelistCheck();
   return (
     <div ref={animationParentRef}>
       {isFiltersVisible ? (
@@ -26,7 +28,7 @@ export function FiltersContainer({ isFiltersVisible }: FiltersContainerProps) {
           <AttendeeFilter />
           <PeopleFilter />
           <EventTypeFilter />
-          <TeamsFilter />
+          {isUserWhiteListed && <TeamsFilter />}
           <DateFilter />
           <Tooltip content={t("remove_filters")}>
             <Button

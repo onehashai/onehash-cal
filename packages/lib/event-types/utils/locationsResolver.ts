@@ -66,5 +66,5 @@ export const locationsResolver = (t: TFunction) => {
           return;
         })
     )
-    .optional();
+    .min(1, { message: t("at_least_one_location_is_required") });
 };
