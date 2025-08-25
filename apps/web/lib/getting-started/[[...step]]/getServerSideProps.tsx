@@ -43,6 +43,11 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     throw new Error("User from session not found");
   }
 
+  //if onboarding completed redirect to "event-types"
+  if (user.completedOnboarding) {
+    return { redirect: { permanent: true, destination: "/event-types" } };
+  }
+
   const locale = await getLocale(context.req);
   let currentOnboardingStep: string | undefined = undefined;
 
