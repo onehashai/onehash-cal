@@ -283,7 +283,7 @@ const providers: Provider[] = [
             params: {
               scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
               access_type: "offline",
-              prompt: "consent",
+              prompt: "select_account",
             },
           },
         }),
