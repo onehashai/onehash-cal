@@ -278,7 +278,7 @@ const providers: Provider[] = [
         GoogleProvider({
           clientId: GOOGLE_CLIENT_ID,
           clientSecret: GOOGLE_CLIENT_SECRET,
-          allowDangerousEmailAccountLinking: true,
+          allowDangerousEmailAccountLinking: false,
           authorization: {
             params: {
               scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
@@ -294,7 +294,7 @@ const providers: Provider[] = [
         GitHubProvider({
           clientId: process.env.GITHUB_CLIENT_ID!,
           clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-          allowDangerousEmailAccountLinking: true,
+          allowDangerousEmailAccountLinking: false,
           async profile(profile, tokens) {
             // Fetch all emails from GitHub
             const res = await fetch("https://api.github.com/user/emails", {
@@ -326,7 +326,7 @@ const providers: Provider[] = [
         AppleProvider({
           clientId: process.env.AUTH_APPLE_ID!,
           clientSecret: process.env.AUTH_APPLE_SECRET!,
-          allowDangerousEmailAccountLinking: true,
+          allowDangerousEmailAccountLinking: false,
         }),
       ]
     : []),
@@ -338,7 +338,7 @@ const providers: Provider[] = [
           tenantId: process.env.AZURE_AD_TENANT_ID!, // Required for Microsoft
           authorization: { params: { scope: "offline_access openid" } },
           primaryUserFlow: process.env.AZURE_AD_B2C_PRIMARY_USER_FLOW,
-          allowDangerousEmailAccountLinking: true,
+          allowDangerousEmailAccountLinking: false,
         }),
       ]
     : []),
@@ -349,7 +349,7 @@ const providers: Provider[] = [
 // GoogleProvider({
 //   clientId: GOOGLE_CLIENT_ID,
 //   clientSecret: GOOGLE_CLIENT_SECRET,
-//   allowDangerousEmailAccountLinking: true,
+//   allowDangerousEmailAccountLinking: false,
 //   authorization: {
 //     params: {
 //       scope: [...GOOGLE_OAUTH_SCOPES, ...GOOGLE_CALENDAR_SCOPES].join(" "),
@@ -367,7 +367,7 @@ if (IS_KEYCLOAK_LOGIN_ENABLED) {
       clientId: KEYCLOAK_CLIENT_ID,
       clientSecret: KEYCLOAK_CLIENT_SECRET,
       issuer: KEYCLOAK_ISSUER,
-      allowDangerousEmailAccountLinking: true,
+      allowDangerousEmailAccountLinking: false,
       checks: [],
     })
   );
@@ -420,7 +420,7 @@ if (isSAMLLoginEnabled) {
       clientId: "dummy",
       clientSecret: clientSecretVerifier,
     },
-    allowDangerousEmailAccountLinking: true,
+    allowDangerousEmailAccountLinking: false,
   });
 
   // Idp initiated login
