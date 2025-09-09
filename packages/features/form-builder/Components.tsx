@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { isSupportedCountry } from "libphonenumber-js";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 
 import type {
@@ -7,6 +8,7 @@ import type {
 } from "@calcom/app-store/routing-forms/components/react-awesome-query-builder/widgets";
 import Widgets from "@calcom/app-store/routing-forms/components/react-awesome-query-builder/widgets";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { trpc } from "@calcom/trpc/react";
 import {
   AddressInput,
   Button,
@@ -38,6 +40,49 @@ export const isValidValueProp: Record<Component["propsType"], (val: unknown) => 
   date: (val) => typeof val === "string",
 };
 
+//To automatically detect booker's location and change the number code.
+const useDefaultCountry = () => {
+  const [defaultCountry, setDefaultCountry] = useState("in");
+
+  const query = trpc.viewer.public.countryCode.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
+  });
+
+  useEffect(
+    function refactorMeWithoutEffect() {
+      const data = query.data;
+      if (!data?.countryCode) {
+        return;
+      }
+      isSupportedCountry(data?.countryCode)
+        ? setDefaultCountry(data.countryCode.toLowerCase())
+        : setDefaultCountry(navigator.language.split("-")[1]?.toLocaleLowerCase() || "us");
+    },
+    [query.data]
+  );
+  return defaultCountry;
+};
+// Components for Phone
+const PhoneInputComponent = ({ setValue, readOnly, ...props }: any) => {
+  const defaultCountry = useDefaultCountry();
+
+  if (!props) {
+    return <div />;
+  }
+
+  return (
+    <PhoneInput
+      disabled={readOnly}
+      country={defaultCountry}
+      onChange={(val: string) => {
+        setValue(val);
+      }}
+      {...props}
+    />
+  );
+};
 type Component =
   | {
       propsType: "text";
@@ -199,23 +244,27 @@ export const Components: Record<FieldType, Component> = {
       );
     },
   },
+  // phone: {
+  //   propsType: propsTypes.phone,
+  //   factory: ({ setValue, readOnly, ...props }) => {
+  //     if (!props) {
+  //       return <div />;
+  //     }
+  //     return (
+  //       <PhoneInput
+  //         disabled={readOnly}
+  //         country={defaultCountry}
+  //         onChange={(val: string) => {
+  //           setValue(val);
+  //         }}
+  //         {...props}
+  //       />
+  //     );
+  //   },
+  // },
   phone: {
     propsType: propsTypes.phone,
-    factory: ({ setValue, readOnly, ...props }) => {
-      if (!props) {
-        return <div />;
-      }
-
-      return (
-        <PhoneInput
-          disabled={readOnly}
-          onChange={(val: string) => {
-            setValue(val);
-          }}
-          {...props}
-        />
-      );
-    },
+    factory: (props) => <PhoneInputComponent {...props} />,
   },
   email: {
     propsType: propsTypes.email,

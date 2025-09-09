@@ -2,8 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 // Import the reusable PhoneNumberField component
-import { PhoneNumberField, usePhoneNumberField, isPhoneNumberComplete } from "@onehash/oe-features/ui";
-import { isValidPhoneNumber } from "libphonenumber-js";
+import {
+  PhoneNumberField,
+  usePhoneNumberField,
+  isPhoneNumberComplete,
+  isStrictlyValidNumber,
+} from "@onehash/oe-features/ui";
 // eslint-disable-next-line no-restricted-imports
 import { get, pick } from "lodash";
 import { signOut, useSession } from "next-auth/react";
@@ -580,7 +584,8 @@ const ProfileForm = ({
           .string()
           .refine(
             (val) => {
-              return val === "" || isValidPhoneNumber(val);
+              return val === "" || isStrictlyValidNumber(val);
+              //  return val === "" || isValidPhoneNumber(val);
             },
             { message: t("invalid_phone_number") }
           )

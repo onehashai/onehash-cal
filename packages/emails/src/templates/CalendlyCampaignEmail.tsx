@@ -7,7 +7,11 @@ export type CalendlyCampaignEmailProps = {
     slug: string;
     fullName: string;
   };
-  receiverEmail: string;
+  receiver: {
+    email: string;
+    slug: string;
+    firstName: string;
+  };
 };
 
 export const CalendlyCampaignEmail = (
@@ -15,6 +19,7 @@ export const CalendlyCampaignEmail = (
 ) => {
   return (
     <BaseEmailHtml subject="">
+      <p>Hi, {props.receiver.firstName}</p>
       <p style={{ fontWeight: 400, lineHeight: "24px", margin: "0 0 20px" }}>
         Drumroll, please! 🥁 I just made the leap from Calendly to CAL ID, and it’s a total game-changer.
       </p>
@@ -24,8 +29,11 @@ export const CalendlyCampaignEmail = (
       <ul style={{ fontWeight: 400, lineHeight: "24px", paddingLeft: "20px", margin: "0 0 20px" }}>
         <li>
           <strong>Sleek URL</strong>: Get a clean and customizable booking link{" "}
-          <a href={`https://cal.id/${props.user.slug}`} style={{ color: "#007bff", textDecoration: "none" }}>
-            cal.id/{props.user.slug}
+          {/* <a href={`https://cal.id/${props.user.slug}`} style={{ color: "#007bff", textDecoration: "none" }}> */}
+          <a
+            href={`https://cal.id/${props.receiver.slug}`}
+            style={{ color: "#007bff", textDecoration: "none" }}>
+            cal.id/{props.receiver.slug}
           </a>
         </li>
         <li>
