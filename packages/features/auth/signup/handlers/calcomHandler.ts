@@ -2,7 +2,7 @@ import type { NextApiResponse } from "next";
 
 import stripe from "@calcom/app-store/stripepayment/lib/server";
 import { getPremiumMonthlyPlanPriceId } from "@calcom/app-store/stripepayment/lib/utils";
-import { hashPassword } from "@calcom/features/auth/lib/hashPassword";
+import { hashPasswordWithSalt } from "@calcom/features/auth/lib/hashPassword";
 import { sendEmailVerification } from "@calcom/features/auth/lib/verifyEmail";
 import { createOrUpdateMemberships } from "@calcom/features/auth/signup/utils/createOrUpdateMemberships";
 import { prefillAvatar } from "@calcom/features/auth/signup/utils/prefillAvatar";
@@ -73,7 +73,7 @@ async function handler(req: RequestWithUsernameStatus, res: NextApiResponse) {
     });
   } else {
     const usernameAndEmailValidation = await validateAndGetCorrectedUsernameAndEmail({
-      username,
+      // username,
       email,
       isSignup: true,
     });
@@ -84,14 +84,14 @@ async function handler(req: RequestWithUsernameStatus, res: NextApiResponse) {
       });
     }
 
-    if (!usernameAndEmailValidation.username) {
-      throw new HttpError({
-        statusCode: 422,
-        message: "Invalid username",
-      });
-    }
+    // if (!usernameAndEmailValidation.username) {
+    //   throw new HttpError({
+    //     statusCode: 422,
+    //     message: "Invalid username",
+    //   });
+    // }
 
-    username = usernameAndEmailValidation.username;
+    // username = usernameAndEmailValidation.username;
   }
 
   // Create the customer in Stripe
@@ -127,7 +127,7 @@ async function handler(req: RequestWithUsernameStatus, res: NextApiResponse) {
   }
 
   // Hash the password
-  const hashedPassword = await hashPassword(password);
+  const { hash, salt } = hashPasswordWithSalt(password);
 
   if (foundToken && foundToken?.teamId) {
     const team = await prisma.team.findUnique({
@@ -154,8 +154,8 @@ async function handler(req: RequestWithUsernameStatus, res: NextApiResponse) {
           identityProvider: IdentityProvider.CAL,
           password: {
             upsert: {
-              create: { hash: hashedPassword },
-              update: { hash: hashedPassword },
+              create: { hash, salt },
+              update: { hash, salt },
             },
           },
         },
@@ -163,7 +163,7 @@ async function handler(req: RequestWithUsernameStatus, res: NextApiResponse) {
           username,
           email,
           identityProvider: IdentityProvider.CAL,
-          password: { create: { hash: hashedPassword } },
+          password: { create: { hash, salt } },
         },
       });
       // Wrapping in a transaction as if one fails we want to rollback the whole thing to preventa any data inconsistencies
@@ -194,7 +194,7 @@ async function handler(req: RequestWithUsernameStatus, res: NextApiResponse) {
         username,
         email,
         locked: shouldLockByDefault,
-        password: { create: { hash: hashedPassword } },
+        password: { create: { hash, salt } },
         metadata: {
           stripeCustomerId: customer.id,
           checkoutSessionId,
@@ -207,7 +207,7 @@ async function handler(req: RequestWithUsernameStatus, res: NextApiResponse) {
     sendEmailVerification({
       email,
       language: await getLocaleFromRequest(req),
-      username: username || "",
+      // username: username || "",
     });
   }
 

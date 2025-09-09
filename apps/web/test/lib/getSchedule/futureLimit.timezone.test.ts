@@ -132,7 +132,7 @@ describe("getSchedule", () => {
 
         expect(scheduleForEvent).toHaveTimeSlots(
           // All slots on current day are available
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: todayDateString,
             doExactMatch: true,
@@ -140,7 +140,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -148,7 +148,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus2DateString,
             doExactMatch: true,
@@ -224,7 +224,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -232,7 +232,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus2DateString,
             doExactMatch: true,
@@ -305,7 +305,16 @@ describe("getSchedule", () => {
         // No timeslots of current day available
         expect(scheduleForEvent).toHaveTimeSlots(
           // First timeslot not available
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430.slice(1),
+          // expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400.slice(1),
+          [
+            "2024-05-31T04:45:00.000Z",
+            "2024-05-31T05:45:00.000Z",
+            "2024-05-31T06:45:00.000Z",
+            "2024-05-31T07:45:00.000Z",
+            "2024-05-31T08:45:00.000Z",
+            "2024-05-31T09:45:00.000Z",
+            "2024-05-31T10:45:00.000Z",
+          ],
           {
             doExactMatch: true,
             dateString: todayDateString,
@@ -313,7 +322,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -321,7 +330,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus2DateString,
             doExactMatch: true,
@@ -399,7 +408,7 @@ describe("getSchedule", () => {
 
         expect(scheduleForEvent).toHaveTimeSlots(
           // All slots on current day are available
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: todayDateString,
             doExactMatch: true,
@@ -408,7 +417,7 @@ describe("getSchedule", () => {
 
         // Being a Saturday, plus1Date is available as per Availability but not counted in periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -417,7 +426,7 @@ describe("getSchedule", () => {
 
         // Being a Saturday, plus2Date is available as per Availability but not counted in periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus2DateString,
             doExactMatch: true,
@@ -426,7 +435,7 @@ describe("getSchedule", () => {
 
         // Day1 of periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus3DateString,
             doExactMatch: true,
@@ -435,7 +444,7 @@ describe("getSchedule", () => {
 
         // Day2 of periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus4DateString,
             doExactMatch: true,
@@ -505,7 +514,7 @@ describe("getSchedule", () => {
 
           expect(scheduleForEvent).toHaveTimeSlots(
             // All slots on current day are available
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: todayDateString,
               doExactMatch: true,
@@ -513,7 +522,7 @@ describe("getSchedule", () => {
           );
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus1DateString,
               doExactMatch: true,
@@ -521,7 +530,7 @@ describe("getSchedule", () => {
           );
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus2DateString,
               doExactMatch: true,
@@ -596,7 +605,7 @@ describe("getSchedule", () => {
           });
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus1DateString,
               doExactMatch: true,
@@ -604,7 +613,7 @@ describe("getSchedule", () => {
           );
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus2DateString,
               doExactMatch: true,
@@ -676,26 +685,26 @@ describe("getSchedule", () => {
           });
 
           const allTimeSlotsForToday = [
-            "2024-05-31T11:30:00.000Z",
-            "2024-06-01T04:30:00.000Z",
-            "2024-06-01T05:30:00.000Z",
-            "2024-06-01T06:30:00.000Z",
-            "2024-06-01T07:30:00.000Z",
-            "2024-06-01T08:30:00.000Z",
-            "2024-06-01T09:30:00.000Z",
-            "2024-06-01T10:30:00.000Z",
+            "2024-05-31T11:00:00.000Z",
+            "2024-06-01T04:00:00.000Z",
+            "2024-06-01T05:00:00.000Z",
+            "2024-06-01T06:00:00.000Z",
+            "2024-06-01T07:00:00.000Z",
+            "2024-06-01T08:00:00.000Z",
+            "2024-06-01T09:00:00.000Z",
+            "2024-06-01T10:00:00.000Z",
           ];
 
           expect(scheduleForEvent).toHaveTimeSlots(
             [
               // "2024-05-30T04:30:00.000Z", // Not available as before the start of the range
-              "2024-05-31T04:30:00.000Z",
-              "2024-05-31T05:30:00.000Z",
-              "2024-05-31T06:30:00.000Z",
-              "2024-05-31T07:30:00.000Z",
-              "2024-05-31T08:30:00.000Z",
-              "2024-05-31T09:30:00.000Z",
-              "2024-05-31T10:30:00.000Z",
+              "2024-05-31T04:00:00.000Z",
+              "2024-05-31T05:00:00.000Z",
+              "2024-05-31T06:00:00.000Z",
+              "2024-05-31T07:00:00.000Z",
+              "2024-05-31T08:00:00.000Z",
+              "2024-05-31T09:00:00.000Z",
+              "2024-05-31T10:00:00.000Z",
             ],
             {
               dateString: yesterdayDateString,
@@ -799,7 +808,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: todayDateString,
             doExactMatch: true,
@@ -807,7 +816,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -820,7 +829,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus3DateString,
             doExactMatch: true,
@@ -901,7 +910,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -914,7 +923,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus3DateString,
             doExactMatch: true,
@@ -922,7 +931,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus4DateString,
             doExactMatch: true,
@@ -998,7 +1007,16 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430.slice(1),
+          // expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400.slice(1),
+          [
+            "2024-05-31T04:45:00.000Z",
+            "2024-05-31T05:45:00.000Z",
+            "2024-05-31T06:45:00.000Z",
+            "2024-05-31T07:45:00.000Z",
+            "2024-05-31T08:45:00.000Z",
+            "2024-05-31T09:45:00.000Z",
+            "2024-05-31T10:45:00.000Z",
+          ],
           {
             dateString: todayDateString,
             doExactMatch: true,
@@ -1006,7 +1024,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -1019,7 +1037,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus3DateString,
             doExactMatch: true,
@@ -1107,7 +1125,7 @@ describe("getSchedule", () => {
 
         // Day1 of periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: todayDateString,
             doExactMatch: true,
@@ -1116,7 +1134,7 @@ describe("getSchedule", () => {
 
         // plus1Date is a Saturday and available as per Availability but not counted in periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -1125,7 +1143,7 @@ describe("getSchedule", () => {
 
         // plus2Date is a Sunday and available as per Availability but not counted in periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus2DateString,
             doExactMatch: true,
@@ -1139,7 +1157,7 @@ describe("getSchedule", () => {
 
         // Day2 of periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus4DateString,
             doExactMatch: true,
@@ -1148,7 +1166,7 @@ describe("getSchedule", () => {
 
         // Day3 of periodDays
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus5DateString,
             doExactMatch: true,
@@ -1226,7 +1244,7 @@ describe("getSchedule", () => {
           });
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: todayDateString,
               doExactMatch: true,
@@ -1234,7 +1252,7 @@ describe("getSchedule", () => {
           );
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus1DateString,
               doExactMatch: true,
@@ -1247,7 +1265,7 @@ describe("getSchedule", () => {
           });
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus3DateString,
               doExactMatch: true,
@@ -1327,7 +1345,7 @@ describe("getSchedule", () => {
           });
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus1DateString,
               doExactMatch: true,
@@ -1340,7 +1358,7 @@ describe("getSchedule", () => {
           });
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus3DateString,
               doExactMatch: true,
@@ -1348,7 +1366,7 @@ describe("getSchedule", () => {
           );
 
           expect(scheduleForEvent).toHaveTimeSlots(
-            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+            expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
             {
               dateString: plus4DateString,
               doExactMatch: true,
@@ -1432,7 +1450,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: todayDateString,
             doExactMatch: true,
@@ -1455,7 +1473,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus4DateString,
             doExactMatch: true,
@@ -1463,7 +1481,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus5DateString,
             doExactMatch: true,
@@ -1539,7 +1557,7 @@ describe("getSchedule", () => {
         });
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus1DateString,
             doExactMatch: true,
@@ -1547,7 +1565,7 @@ describe("getSchedule", () => {
         );
 
         expect(scheduleForEvent).toHaveTimeSlots(
-          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt430,
+          expectedSlotsForSchedule["IstWorkHours"].interval["1hr"].allPossibleSlotsStartingAt400,
           {
             dateString: plus2DateString,
             doExactMatch: true,
@@ -1637,13 +1655,13 @@ describe("getSchedule", () => {
 
           expect(scheduleForEventForPagoTz).toHaveTimeSlots(
             [
-              "2024-07-25T04:30:00.000Z",
-              "2024-07-25T05:30:00.000Z",
-              "2024-07-25T06:30:00.000Z",
-              "2024-07-25T07:30:00.000Z",
-              "2024-07-25T08:30:00.000Z",
-              "2024-07-25T09:30:00.000Z",
-              "2024-07-25T10:30:00.000Z",
+              "2024-07-25T04:00:00.000Z",
+              "2024-07-25T05:00:00.000Z",
+              "2024-07-25T06:00:00.000Z",
+              "2024-07-25T07:00:00.000Z",
+              "2024-07-25T08:00:00.000Z",
+              "2024-07-25T09:00:00.000Z",
+              "2024-07-25T10:00:00.000Z",
             ],
             {
               // 25th timeslots are shown mostly on 24th of Pago Pago
@@ -1654,14 +1672,14 @@ describe("getSchedule", () => {
 
           expect(scheduleForEventForPagoTz).toHaveTimeSlots(
             [
-              "2024-07-25T11:30:00.000Z",
-              "2024-07-26T04:30:00.000Z",
-              "2024-07-26T05:30:00.000Z",
-              "2024-07-26T06:30:00.000Z",
-              "2024-07-26T07:30:00.000Z",
-              "2024-07-26T08:30:00.000Z",
-              "2024-07-26T09:30:00.000Z",
-              "2024-07-26T10:30:00.000Z",
+              "2024-07-25T11:00:00.000Z",
+              "2024-07-26T04:00:00.000Z",
+              "2024-07-26T05:00:00.000Z",
+              "2024-07-26T06:00:00.000Z",
+              "2024-07-26T07:00:00.000Z",
+              "2024-07-26T08:00:00.000Z",
+              "2024-07-26T09:00:00.000Z",
+              "2024-07-26T10:00:00.000Z",
             ],
             {
               dateString: "2024-07-25",
@@ -1669,7 +1687,7 @@ describe("getSchedule", () => {
             }
           );
 
-          expect(scheduleForEventForPagoTz).toHaveTimeSlots(["2024-07-26T11:30:00.000Z"], {
+          expect(scheduleForEventForPagoTz).toHaveTimeSlots(["2024-07-26T11:00:00.000Z"], {
             dateString: "2024-07-26",
             doExactMatch: true,
           });

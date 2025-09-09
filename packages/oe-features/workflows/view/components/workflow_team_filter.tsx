@@ -98,7 +98,7 @@ export const TeamsSelectFilter = ({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-700">{t("teams")}:</span>
+      <span className="text-emphasis text-sm">{t("teams")}:</span>
       <Select value={getCurrentValue()} onValueChange={handleValueChange}>
         <SelectTrigger
           className={`h-9 min-w-[100px] border-gray-200 text-sm ${selectTriggerClassNames || ""}`}>

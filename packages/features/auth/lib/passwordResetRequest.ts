@@ -40,6 +40,7 @@ const passwordResetRequest = async (user: Pick<User, "email" | "name" | "locale"
   const t = await getTranslation(user.locale ?? "en", "common");
   await guardAgainstTooManyPasswordResets(email);
   const resetLink = await createPasswordReset(email);
+  console.log("resetLink", resetLink);
   // send email in user language
   await sendPasswordResetEmail({
     language: t,

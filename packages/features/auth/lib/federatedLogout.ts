@@ -5,30 +5,39 @@ import { showToast } from "@calcom/ui";
 
 export default async function federatedLogout() {
   try {
-    const response = await fetch("/api/auth/federated-logout");
-    const data = await response.json();
+    // const response = await fetch("/api/auth/federated-logout");
+    // const data = await response.json();
 
-    if (response.ok) {
-      await signOut({ callbackUrl: data.data });
-      posthog.reset(true);
+    // if (response.ok) {
+    //   await signOut({ callbackUrl: data.data });
+    //   posthog.reset(true);
 
-      return;
-    }
+    //   return;
+    // }
+
+    await signOut({ callbackUrl: "/" });
+
+    posthog.reset(true);
+
+    return;
   } catch (error) {
     showToast(`Failed to signout from SSO`, "error");
   }
 }
 
-export async function logoutAndDeleteUser(deleteAccount: (url: string) => Promise<void>) {
+export async function logoutAndDeleteUser(deleteAccount: (url?: string) => Promise<void>) {
   try {
-    const response = await fetch("/api/auth/federated-logout");
-    const data = await response.json();
-    if (response.ok) {
-      await deleteAccount(data.data);
-      posthog.reset(true);
-      return;
-    }
-    console.error("Failed to logout user from Keycloak", status);
+    // const response = await fetch("/api/auth/federated-logout");
+    // const data = await response.json();
+    // if (response.ok) {
+    // await deleteAccount(data.data);
+    // posthog.reset(true);
+    // return;
+    // }
+    // console.error("Failed to logout user from Keycloak", status);
+
+    await deleteAccount();
+    posthog.reset(true);
   } catch (error) {
     console.log(error);
   }

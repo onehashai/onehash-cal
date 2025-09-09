@@ -49,9 +49,10 @@ const stepRouteSchema = z.object({
   from: z.string().optional(),
 });
 
-export type PageProps = inferSSRProps<typeof getServerSideProps>;
+export type OnboardingPageProps = inferSSRProps<typeof getServerSideProps>;
 // TODO: Refactor how steps work to be contained in one array/object. Currently we have steps,initalsteps,headers etc. These can all be in one place
-const OnboardingPage = (props: PageProps) => {
+const OnboardingPage = (props: OnboardingPageProps) => {
+  const { country = "IN" } = props;
   const pathname = usePathname();
   const params = useParamsWithFallback();
 
@@ -168,7 +169,11 @@ const OnboardingPage = (props: PageProps) => {
             <StepCard>
               <Suspense fallback={<Icon name="loader" />}>
                 {currentStep === "user-settings" && (
-                  <UserSettings nextStep={() => goToIndex(1)} hideUsername={from === "signup"} />
+                  <UserSettings
+                    nextStep={() => goToIndex(1)}
+                    hideUsername={from === "signup"}
+                    isPhoneFieldMandatory={country === "IN"}
+                  />
                 )}
                 {currentStep === "connected-calendar" && <ConnectedCalendars nextStep={() => goToIndex(2)} />}
 

@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 
 import dayjs from "@calcom/dayjs";
-import { hashPassword } from "@calcom/features/auth/lib/hashPassword";
+import { hashPasswordWithSalt } from "@calcom/features/auth/lib/hashPassword";
 import { BookingStatus } from "@calcom/prisma/enums";
 
 import { seedAttributes, seedRoutingFormResponses, seedRoutingForms } from "./seed-utils";
@@ -319,11 +319,13 @@ async function createPerformanceData() {
     for (let i = 0; i < numInsightsUsers; i++) {
       const timestamp = Date.now();
       const email = `insightsuser${timestamp}@example.com`;
+      const { hash, salt } = hashPasswordWithSalt("insightsuser");
       const insightsUser = {
         email,
         password: {
           create: {
-            hash: await hashPassword("insightsuser"),
+            hash,
+            salt,
           },
         },
         name: `Insights User ${timestamp}`,

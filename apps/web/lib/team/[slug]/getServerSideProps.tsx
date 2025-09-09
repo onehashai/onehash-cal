@@ -2,6 +2,7 @@ import type { GetServerSidePropsContext } from "next";
 
 import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getFeatureFlag } from "@calcom/features/flags/server/utils";
+import { checkIfUserWhiteListed } from "@calcom/features/flags/whitelist.config";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { getBookerBaseUrlSync } from "@calcom/lib/getBookerUrl/client";
 import logger from "@calcom/lib/logger";
@@ -177,6 +178,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
         return {
           name: member.name,
           id: member.id,
+          email: member.email,
           avatarUrl: member.avatarUrl,
           bio: member.bio,
           profile: member.profile,
@@ -189,6 +191,21 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
         };
       })
     : [];
+
+  //#WHITELISTED
+  //check if team is whitelisted by checking if any of the team member email belongs to a whitelisted domain
+  const isWhitelisted = team.members.some((member) => {
+    return checkIfUserWhiteListed(member.email);
+  });
+
+  if (!isWhitelisted) {
+    return {
+      redirect: {
+        permanent: true,
+        destination: `/`,
+      },
+    };
+  }
 
   const markdownStrippedBio = stripMarkdown(team?.bio || "");
 

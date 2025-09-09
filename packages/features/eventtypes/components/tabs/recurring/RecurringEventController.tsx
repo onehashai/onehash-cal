@@ -88,6 +88,7 @@ export default function RecurringEventController({
               {...recurringLocked}
               description={t("recurring_event_description")}
               checked={recurringEventState !== null}
+              disabled={true}
               data-testid="recurring-event-check"
               onCheckedChange={(e) => {
                 if (!e) {
