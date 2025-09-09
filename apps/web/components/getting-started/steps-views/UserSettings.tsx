@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { usePhoneNumberField, PhoneNumberField } from "@onehash/oe-features/ui";
+import { usePhoneNumberField, PhoneNumberField, isStrictlyValidNumber } from "@onehash/oe-features/ui";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { useEffect, useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -48,13 +48,13 @@ const UserSettings = (props: IUserSettingsProps) => {
             .min(1, { message: t("phone_number_required") })
             .refine(
               (val) => {
-                return isValidPhoneNumber(val);
+                return isStrictlyValidNumber(val);
               },
               { message: t("invalid_phone_number") }
             )
         : z.string().refine(
             (val) => {
-              return val === "" || isValidPhoneNumber(val);
+              return val === "" || isStrictlyValidNumber(val);
             },
             { message: t("invalid_phone_number") }
           ),

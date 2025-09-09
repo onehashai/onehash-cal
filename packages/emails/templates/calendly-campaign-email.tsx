@@ -13,7 +13,7 @@ export default class CalendlyCampaignEmail extends BaseEmail {
   protected async getNodeMailerPayload(): Promise<Record<string, unknown>> {
     return {
       from: `${this.calendlyCampaignEmailProps.user.fullName} <${this.getMailerOptions().from}>`,
-      to: this.calendlyCampaignEmailProps.receiverEmail,
+      to: this.calendlyCampaignEmailProps.receiver.email,
       subject: `I Just Switched to CAL ID – Here’s Why You Should Too!`,
       html: await renderEmail("CalendlyCampaignEmail", this.calendlyCampaignEmailProps),
       text: "",

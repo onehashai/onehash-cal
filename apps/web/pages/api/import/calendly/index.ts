@@ -22,8 +22,11 @@ import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventR
 import { handleConfirmation } from "@calcom/features/bookings/lib/handleConfirmation";
 import { isPrismaObjOrUndefined } from "@calcom/lib";
 import { INNGEST_ID } from "@calcom/lib/constants";
+import { randomString } from "@calcom/lib/random";
 import { defaultHandler, defaultResponder, getTranslation } from "@calcom/lib/server";
 import { getUsersCredentials } from "@calcom/lib/server/getUsersCredentials";
+// import { capitalize } from "lodash";
+import { slugify } from "@calcom/lib/slugify";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import { getServerTimezone } from "@calcom/lib/timezone";
 import prisma from "@calcom/prisma";
@@ -1263,7 +1266,9 @@ const sendCampaigningEmails = async (
     });
   }
 };
-
+const capitalize = (str: string): string => {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
+};
 const sendBatchEmail = async ({
   fullName,
   slug,
@@ -1274,8 +1279,19 @@ const sendBatchEmail = async ({
   email: string;
 }) => {
   try {
+    const username = email.split("@")[0];
+    const parts = username.split(/[._\-]+/);
+    const words = parts.map((word) => capitalize(word));
+    const firstName = words[0] || "";
+
+    const attendeeSlug = (firstName: string) => `${slugify(firstName)}-${randomString(6).toLowerCase()}`;
+
     const data: CalendlyCampaignEmailProps = {
-      receiverEmail: email,
+      receiver: {
+        email,
+        slug: attendeeSlug(firstName),
+        firstName,
+      },
       user: {
         fullName,
         slug,

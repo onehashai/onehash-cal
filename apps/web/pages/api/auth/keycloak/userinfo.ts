@@ -21,6 +21,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     info: { ...session.user, email_verified: true },
   });
   const userInfoEndpoint = `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`;
+
   const keycloak_token = session.keycloak_token;
   if (!keycloak_token) {
     return res.status(200).json({ message: "Access Token absent. Please log in again." });
