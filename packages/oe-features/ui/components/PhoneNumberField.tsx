@@ -1,4 +1,4 @@
-import { isValidPhoneNumber } from "libphonenumber-js";
+import { isValidPhoneNumber, parsePhoneNumber } from "libphonenumber-js";
 import React from "react";
 import type { UseFormGetValues, UseFormSetValue } from "react-hook-form";
 
@@ -27,6 +27,22 @@ interface PhoneNumberFieldProps<T extends Record<string, any>> {
 
   // Field name for form integration
   fieldName?: string;
+}
+
+//For Correctly Validating Phone Number on Onboarding and Profile Page
+export function isStrictlyValidNumber(val: string) {
+  try {
+    const parsed = parsePhoneNumber(val);
+    if (!parsed.isValid()) return false;
+
+    // Extra safety for India
+    if (parsed.country === "IN" && parsed.nationalNumber.length !== 10) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function PhoneNumberField<T extends Record<string, any>>({
@@ -65,10 +81,10 @@ export function PhoneNumberField<T extends Record<string, any>>({
   const handlePhoneNumberChange = (val: string | undefined) => {
     const phoneNumber = val || "";
     setValue(phoneNumber, { shouldDirty: true });
-    setIsNumberValid(isValidPhoneNumber(phoneNumber));
+    setIsNumberValid(isStrictlyValidNumber(phoneNumber));
 
     // If verification is not required, consider the number verified when it's valid
-    if (!isNumberVerificationRequired && isValidPhoneNumber(phoneNumber)) {
+    if (!isNumberVerificationRequired && isStrictlyValidNumber(phoneNumber)) {
       setNumberVerified(true);
     } else {
       setNumberVerified(getNumberVerificationStatus(phoneNumber));
