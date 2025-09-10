@@ -119,8 +119,9 @@ jobs:
           check "${{ secrets.NEXT_PUBLIC_ONEHASH_CRM_URL }}" "NEXT_PUBLIC_ONEHASH_CRM_URL"
           check "${{ secrets.NEXT_PUBLIC_ONEHASH_ERP_URL }}" "NEXT_PUBLIC_ONEHASH_ERP_URL"
           check "${{ secrets.NEXT_PUBLIC_WHITELISTED_ORGS }}" "NEXT_PUBLIC_WHITELISTED_ORGS"  
-          
-          
+          check "${{ secrets.HOMEPAGE_URL_STAG }}" "HOMEPAGE_URL_STAG" 
+          check "${{ secrets.HOMEPAGE_URL_PROD }}" "HOMEPAGE_URL_PROD"
+
       # SETTING NECESSARY ENV VARIABLES
       - name: Extract Git commit hash
         if: ${{ steps.check_required_secrets_status.outputs.passed != 'failure' }}
@@ -161,6 +162,7 @@ jobs:
             echo "NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_PROD }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_SIGNUP_URL=${{ secrets.NEXT_PUBLIC_SIGNUP_URL_PROD }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_PROD }}" >> $GITHUB_OUTPUT
+            echo "HOMEPAGE_URL=${{ secrets.HOMEPAGE_URL_PROD }}" >> $GITHUB_OUTPUT
           else
             echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME_STAG }}" >> $GITHUB_OUTPUT
             echo "EC2_HOST=${{ secrets.EC2_HOST_STAG }}" >> $GITHUB_OUTPUT
@@ -177,6 +179,7 @@ jobs:
             echo "NEXT_PUBLIC_RAZORPAY_CLIENT_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_CLIENT_ID_STAG }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_SIGNUP_URL=${{ secrets.NEXT_PUBLIC_SIGNUP_URL_STAG }}" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY_STAG }}" >> $GITHUB_OUTPUT
+            echo "HOMEPAGE_URL=${{ secrets.HOMEPAGE_URL_STAG }}" >> $GITHUB_OUTPUT
           fi
 
       # # BUILDING AND PUSHING DOCKER IMAGE USING AWS ECR
@@ -441,12 +444,13 @@ jobs:
           IS_ROLLBACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_hash != '' }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          HOMEPAGE_URL: ${{ steps.key_values.outputs.HOMEPAGE_URL }}
         with:
           host: ${{ env.EC2_HOST }}
           username: "onehash"
           key: ${{ env.EC2_SSH_KEY }}
           command_timeout: 1500s # 25 minutes
-          envs:  AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK ,DOMAIN_NAME,DOCKERHUB_USERNAME, DOCKERHUB_TOKEN
+          envs:  AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ACCOUNT_ID, AWS_ACCOUNT_ID, REPO_NAME, REPO_URL, BRANCH_NAME, CERTBOT_EMAIL, GIT_HASH ,IS_ROLLBACK ,DOMAIN_NAME,DOCKERHUB_USERNAME, DOCKERHUB_TOKEN,HOMEPAGE_URL
           script: |
             #!/bin/bash
 
@@ -729,7 +733,7 @@ jobs:
             fi
 
             # Replace placeholders
-            log_message "INFO" "Replacing 'PORT_PLACEHOLDER' and 'DOMAIN_PLACEHOLDER'"
+            log_message "INFO" "Replacing 'PORT_PLACEHOLDER','DOMAIN_PLACEHOLDER' and 'HOMEPAGE_PLACEHOLDER'"
             if ! exec_command "Replace PORT" "sudo sed -i \"s/PORT_PLACEHOLDER/$NEW_PORT/g\" \"$NGINX_CONF_PATH\""; then
               exit 1
             fi
@@ -737,6 +741,11 @@ jobs:
             if ! exec_command "Replace DOMAIN" "sudo sed -i \"s/DOMAIN_PLACEHOLDER/$DOMAIN_NAME/g\" \"$NGINX_CONF_PATH\""; then
               exit 1
             fi
+
+            if ! exec_command "Replace HOMEPAGE_URL" "sudo sed -i \"s|HOMEPAGE_PLACEHOLDER|$HOMEPAGE_URL|g\" \"$NGINX_CONF_PATH\""; then
+                exit 1
+            fi
+
 
             # # Test NGINX config
             # log_message "INFO" "Testing NGINX config before reload"

@@ -14,6 +14,7 @@ import { EventTypeEmbedButton, EventTypeEmbedDialog } from "@calcom/features/emb
 import { EventTypeDescription } from "@calcom/features/eventtypes/components";
 import CreateEventTypeDialog from "@calcom/features/eventtypes/components/CreateEventTypeDialog";
 import { DuplicateDialog } from "@calcom/features/eventtypes/components/DuplicateDialog";
+import { isRecurringEvent } from "@calcom/features/eventtypes/components/EventTypeDescription";
 import { InfiniteSkeletonLoader } from "@calcom/features/eventtypes/components/SkeletonLoader";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
 import Shell from "@calcom/features/shell/Shell";
@@ -569,30 +570,32 @@ export const InfiniteEventTypeList = ({
                           <ButtonGroup combined>
                             {!isManagedEventType && (
                               <>
-                                <Tooltip content={t("preview")}>
-                                  <Button
-                                    data-testid="preview-link-button"
-                                    color="secondary"
-                                    target="_blank"
-                                    variant="icon"
-                                    href={calLink}
-                                    StartIcon="external-link"
-                                  />
-                                </Tooltip>
-
-                                <Tooltip content={t("copy_link")}>
-                                  <Button
-                                    color="secondary"
-                                    variant="icon"
-                                    StartIcon="link"
-                                    onClick={() => {
-                                      showToast(t("link_copied"), "success");
-                                      copyToClipboard(calLink);
-                                    }}
-                                  />
-                                </Tooltip>
-
-                                {isPrivateURLEnabled && (
+                                {!isRecurringEvent(type.recurringEvent) && (
+                                  <Tooltip content={t("preview")}>
+                                    <Button
+                                      data-testid="preview-link-button"
+                                      color="secondary"
+                                      target="_blank"
+                                      variant="icon"
+                                      href={calLink}
+                                      StartIcon="external-link"
+                                    />
+                                  </Tooltip>
+                                )}
+                                {!isRecurringEvent(type.recurringEvent) && (
+                                  <Tooltip content={t("copy_link")}>
+                                    <Button
+                                      color="secondary"
+                                      variant="icon"
+                                      StartIcon="link"
+                                      onClick={() => {
+                                        showToast(t("link_copied"), "success");
+                                        copyToClipboard(calLink);
+                                      }}
+                                    />
+                                  </Tooltip>
+                                )}
+                                {isPrivateURLEnabled && !isRecurringEvent(type.recurringEvent) && (
                                   <Tooltip content={t("copy_private_link_to_event")}>
                                     <Button
                                       color="secondary"
@@ -695,7 +698,7 @@ export const InfiniteEventTypeList = ({
                       </DropdownMenuTrigger>
                       <DropdownMenuPortal>
                         <DropdownMenuContent>
-                          {!isManagedEventType && (
+                          {!isManagedEventType && !isRecurringEvent(type.recurringEvent) && (
                             <>
                               <DropdownMenuItem className="outline-none">
                                 <DropdownItem

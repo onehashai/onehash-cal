@@ -6,6 +6,7 @@ import { createOrUpdateMemberships } from "@calcom/features/auth/signup/utils/cr
 import { getUserNameFromField } from "@calcom/lib/getName";
 import logger from "@calcom/lib/logger";
 import { randomString } from "@calcom/lib/random";
+import { sendUserToMakeWebhook } from "@calcom/lib/sendUserToWebhook";
 import slugify from "@calcom/lib/slugify";
 import { validateAndGetCorrectedUsernameAndEmail } from "@calcom/lib/validateUsername";
 import prisma from "@calcom/prisma";
@@ -80,6 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { existingUserWithUsername, username } = await checkIfUserNameTaken({
     name: nameFromEmail,
   });
+  let user;
   if (foundToken && foundToken?.teamId) {
     const team = await prisma.team.findUnique({
       where: {
@@ -109,7 +111,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       //   }
       // }
 
-      const user = await prisma.user.upsert({
+      user = await prisma.user.upsert({
         where: { email: userEmail },
         update: {
           username: existingUserWithUsername ? usernameSlugRandom(nameFromEmail) : username,
@@ -167,7 +169,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     //     return;
     //   }
     // }
-    await prisma.user.upsert({
+    user = await prisma.user.upsert({
       where: { email: userEmail },
       update: {
         username: existingUserWithUsername ? usernameSlugRandom(nameFromEmail) : username,
@@ -200,6 +202,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       language,
     });
   }
+
+  if (user)
+    await sendUserToMakeWebhook({
+      id: user.id,
+      email: user.email,
+      name: user.name ?? "N/A",
+      username: user.username ?? "N/A",
+      identityProvider: user.identityProvider,
+    });
 
   res.status(201).json({ message: "Created user" });
 }
