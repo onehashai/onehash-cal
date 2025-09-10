@@ -62,11 +62,11 @@ const useDefaultCountry = () => {
     },
     [query.data]
   );
-  return defaultCountry;
+  return { defaultCountry, loading: query.isLoading };
 };
 // Components for Phone
 const PhoneInputComponent = ({ setValue, readOnly, ...props }: any) => {
-  const defaultCountry = useDefaultCountry();
+  const { defaultCountry, loading } = useDefaultCountry();
 
   if (!props) {
     return <div />;
@@ -74,7 +74,7 @@ const PhoneInputComponent = ({ setValue, readOnly, ...props }: any) => {
 
   return (
     <PhoneInput
-      disabled={readOnly}
+      disabled={readOnly || loading}
       country={defaultCountry}
       onChange={(val: string) => {
         setValue(val);

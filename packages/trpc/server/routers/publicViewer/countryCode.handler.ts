@@ -12,19 +12,19 @@ export const countryCodeHandler = async ({ ctx }: CountryCodeOptions) => {
 
   const forwarded = req?.headers?.["x-forwarded-for"];
   const ip = typeof forwarded === "string" ? forwarded.split(",")[0] : req?.socket?.remoteAddress;
-  let country;
+  let country = "IN";
   try {
     if (ip) {
-      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+      const apiKey = process.env.GEOLOCATION_API_KEY;
+      // const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+      const geoRes = await fetch(`https://api.ipgeolocation.io/v2/ipgeo?apiKey=${apiKey}&ip=${ip}`);
       const geoData = await geoRes.json();
-      if (geoData?.country) {
-        country = geoData?.country;
-      }
+      country = geoData.location.country_code2;
     }
   } catch (err) {
     console.error("Failed to fetch GeoLocation : ", err);
   }
-  return { countryCode: Array.isArray(country) ? country[0] : country };
+  return { countryCode: country };
 };
 
 export default countryCodeHandler;
