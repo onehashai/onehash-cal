@@ -77,8 +77,19 @@ class MyDocument extends Document<Props> {
       "/insights",
     ];
 
+    // Meta Pixel allowed paths
+    const allowedMetaPixelPaths = [
+      "/signup",
+      "/auth/sso/google",
+      "/auth/verify-email",
+      "/getting-started",
+      "/event-types",
+    ];
+
     const allowScript =
       currentPath === "/" || allowedAnalyticsPaths.some((path) => currentPath.startsWith(path));
+
+    const allowMetaPixel = allowedMetaPixelPaths.some((path) => currentPath.startsWith(path));
 
     return (
       <Html
@@ -140,11 +151,14 @@ class MyDocument extends Document<Props> {
                 `,
             }}
           /> */}
-          {/* Facebook Pixel Script */}
-          {/* <script
-            id="pixel"
-            dangerouslySetInnerHTML={{
-              __html: `
+
+          {/* Meta Pixel Code */}
+          {allowMetaPixel && (
+            <script
+              id="meta-pixel"
+              nonce={nonce}
+              dangerouslySetInnerHTML={{
+                __html: `
                   !function(f,b,e,v,n,t,s)
                   {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
                   n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -156,8 +170,10 @@ class MyDocument extends Document<Props> {
                   fbq('init', '${process.env.NEXT_PUBLIC_PIXEL}');
                   fbq('track', 'PageView');
                 `,
-            }}
-          /> */}
+              }}
+            />
+          )}
+
           <link rel="apple-touch-icon" sizes="180x180" href="/api/logo?type=apple-touch-icon" />
           <link rel="icon" type="image/png" sizes="32x32" href="/api/logo?type=favicon-32" />
           <link rel="icon" type="image/png" sizes="16x16" href="/api/logo?type=favicon-16" />
@@ -180,34 +196,6 @@ class MyDocument extends Document<Props> {
               strategy="beforeInteractive"
             />
           )}
-          {/* {allowScript && (
-            <Script
-              src="https://cdn.amplitude.com/script/ca8f70a47b97a98998c9b476e4977212.js"
-              strategy="afterInteractive"
-              onLoad={() => {
-                if (window.amplitude && window.amplitude.init) {
-                  const plugin = window.sessionReplay?.plugin({ sampleRate: 1 });
-                  if (plugin) {
-                    window.amplitude.add(plugin);
-                  }
-                  window.amplitude.init("ca8f70a47b97a98998c9b476e4977212", {
-                    fetchRemoteConfig: true,
-                    autocapture: true,
-                  });
-                  console.log("Amplitude plugin loaded");
-                } else {
-                  console.error("Amplitude failed to initialize.");
-                }
-              }}
-            />
-          )}
-          {allowScript && (
-            <Script
-              strategy="afterInteractive"
-              src="https://www.googletagmanager.com/gtag/js?id=AW-613079827"
-              async
-            />
-          )} */}
 
           {allowScript && (
             <Script
@@ -388,40 +376,20 @@ class MyDocument extends Document<Props> {
               />
             </noscript>
           )}
-          {/* <Script
-            id="frill-widget"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-            (function(t,r){
-              function s(){
-                var a=r.getElementsByTagName("script")[0],
-                    e=r.createElement("script");
-                e.type="text/javascript";
-                e.async=!0;
-                e.src="https://widget.frill.co/v2/container.js";
-                a.parentNode.insertBefore(e,a);
-              }
-              if(!t.Frill){
-                var o=0,i={};
-                t.Frill=function(e,p){
-                  var n,l=o++,
-                      c=new Promise(function(v,d){
-                        i[l]={params:[e,p],resolve:function(f){n=f,v(f)},reject:d}
-                      });
-                  return c.destroy=function(){delete i[l],n&&n.destroy()},c;
-                };
-                t.Frill.q=i;
-              }
-              r.readyState==="complete"||r.readyState==="interactive"?s():r.addEventListener("DOMContentLoaded",s);
-            })(window,document);
-            
-            window.Frill('container', {
-              key: '7df14bbd-25da-4ac1-9916-cb27dfeec4da'
-            });
-          `,
-            }}
-          /> */}
+
+          {/* Meta Pixel noscript fallback */}
+          {allowMetaPixel && (
+            <noscript>
+              <img
+                height="1"
+                width="1"
+                style={{ display: "none" }}
+                src="https://www.facebook.com/tr?id=1095461542653320&ev=PageView&noscript=1"
+                alt=""
+              />
+            </noscript>
+          )}
+
           <Main />
           <NextScript nonce={nonce} />
         </body>
